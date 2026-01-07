@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Setting\AppSetting;
 use App\Traits\ApiResponserTrait;
 use Closure;
 use Illuminate\Http\Request;
@@ -27,6 +28,11 @@ class AppChecker
 
         // Check From env variable if app on maintance or live 
         $appStatus = env('APP_ENV', 'production');
+
+        $appSetting = app(AppSetting::class)->first();
+        if ($appSetting && $appSetting->maintenance_mode) {
+            $appStatus = 'maintenance';
+        }
 
         if ($appStatus === 'maintenance') {
             return $this->showErrorMessage(__('messages.error_messages.maintenance_mode'), 503);

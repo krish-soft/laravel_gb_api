@@ -19,6 +19,9 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
 
+            // App Settings
+            \Database\Seeders\Setting\AppSettingSeeder::class,
+
             // User Testing
             \Database\Seeders\User\UserSeeder::class,
 
