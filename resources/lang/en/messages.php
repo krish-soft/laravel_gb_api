@@ -44,6 +44,7 @@ return [
     */
     'error_messages' => [
 
+
         // Authentication & Authorization
         'unauthenticated'             => 'Unauthenticated. Token or session expired. Please log in.',
         'unauthorized_access'         => 'You are not authorized to access this resource.',
@@ -53,6 +54,10 @@ return [
         'something_went_wrong' => 'Something went wrong. Please try again later.',
         'already_exists'       => 'The resource you are trying to create already exists.',
         'cannot_delete_used_in_transactions' => 'Cannot delete this resource as it is used in existing transactions.',
+        'maintenance_mode' => 'The application is currently under maintenance. Please try again later.',
+
+        'missing_configuration_ms_api_key' => 'Missing configuration MS-API key',
+        'invalid_configuration_ms_api_key' => 'Invalid configuration MS-API key',
 
         // Account & Login
         'invalid_credentials'       => 'Invalid credentials provided.',

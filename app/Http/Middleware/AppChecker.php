@@ -29,7 +29,7 @@ class AppChecker
         $appStatus = env('APP_ENV', 'production');
 
         if ($appStatus === 'maintenance') {
-            return $this->showErrorMessage("The application is currently under maintenance. Please try again later.", 503);
+            return $this->showErrorMessage(__('messages.error_messages.maintenance_mode'), 503);
         }
 
         // Keep Pending to check Version code to check (optional)

@@ -23,13 +23,21 @@ class MsApiKeyChecker
         // $lhrtapLocalKey = env(Utils::$LHRTAP_MS_API_KEY_NAME_LOCAL);
         $lhrtapLocalKey = env('MS_SELF_API_KEY');
         if (!isset($lhrtapLocalKey)) {
-            return $this->showErrorMEssage("Missing configuration MS-API key.", 404);
+            // return $this->showErrorMEssage("Missing configuration MS-API key.", 404);
+            return $this->showErrorMessage(
+                __('messages.error_messages.missing_configuration_ms_api_key'),
+                404
+            );
         }
 
         // $lhrtapApiKey = $request->header(Utils::$LHRTAP_MS_API_KEY_NAME_HEADER);
         $lhrtapApiKey = $request->header('X-API-KEY');
         if ($lhrtapApiKey !== $lhrtapLocalKey) {
-            return $this->showErrorMessage("Invalid MS-API key header.", 401);
+            // return $this->showErrorMessage("Invalid MS-API key header.", 401);
+            return $this->showErrorMessage(
+                __('messages.error_messages.invalid_configuration_ms_api_key'),
+                401
+            );
         }
 
         return $next($request);
