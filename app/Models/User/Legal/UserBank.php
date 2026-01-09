@@ -4,9 +4,11 @@ namespace App\Models\User\Legal;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class UserBank extends Model
 {
+    use SoftDeletes;
     //
 
     /**
@@ -30,7 +32,7 @@ class UserBank extends Model
         'status',
 
         'verification_mode',
-        
+
         'test_deposit_required',
         'test_deposit_amount',
         'test_deposit_ref',
