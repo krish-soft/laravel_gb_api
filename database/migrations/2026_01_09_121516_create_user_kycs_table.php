@@ -38,6 +38,7 @@ return new class extends Migration
             $table->string('status', 20)->default('pending')->nullable();    // pending | needs_update | verified | expired
 
             // Verification audit
+            $table->string('verification_mode', 20)->nullable();    // manual | system
             $table->timestamp('verified_at')->nullable();
             $table->string('verified_by', 100)->nullable();
             $table->foreignId('verified_user_id')->nullable()

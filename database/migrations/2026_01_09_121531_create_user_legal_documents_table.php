@@ -47,6 +47,8 @@ return new class extends Migration
             // Review audit
             $table->text('review_comment')->nullable(); // user-visible
 
+            $table->string('verification_mode', 20)->nullable();    // manual | system
+
             $table->timestamp('verified_at')->nullable();
             $table->string('verified_by', 100)->nullable();
             $table->foreignId('verified_user_id')->nullable()

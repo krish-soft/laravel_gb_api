@@ -26,6 +26,7 @@ class UserKyc extends Model
 
         'status',
 
+        'verification_mode',
         'verified_at',
         'verified_by',
         'verified_user_id',

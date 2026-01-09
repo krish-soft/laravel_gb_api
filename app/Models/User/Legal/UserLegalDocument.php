@@ -33,6 +33,7 @@ class UserLegalDocument extends Model
         'status',
         'review_comment',
 
+        'verification_mode',
         'verified_at',
         'verified_by',
         'verified_user_id',
