@@ -43,6 +43,15 @@ return new class extends Migration
             $table->boolean('is_active')->default(true)->nullable();    // block/unblock login
             $table->string('inactive_reason', 100)->nullable();
 
+            // other to map table 
+            $table->string('price_level_code', 50)->nullable();
+            $table->string('kyc_code', 50)->nullable(); // current KYC code
+            $table->string('sales_rep', 50)->nullable(); // To Identify who get onboard this user
+
+            $table->string('bill_addr_code', 50)->nullable(); // Billing Address Code
+            $table->string('addr_code', 50)->nullable(); // Shipping Address Code
+
+
             // Tracking
             $table->timestamp('last_login_at')->nullable();
             $table->string('last_login_ip', 45)->nullable();

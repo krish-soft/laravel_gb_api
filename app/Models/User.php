@@ -7,6 +7,8 @@ namespace App\Models;
 use App\Enum\User\AdminRoleEnum;
 use App\Enum\User\UserRoleEnum;
 use App\Enum\User\UserTypeEnum;
+use App\Models\User\Legal\UserKyc;
+use App\Models\User\Legal\UserLegalDocument;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -53,11 +55,17 @@ class User extends Authenticatable
         'user_key',
 
         'is_test_user',
-        'is_sales_rep',
         'is_important',
 
         'is_active',
         'inactive_reason',
+
+        'price_level_code',
+        'kyc_code',
+        'sales_rep', // To Identify who get onboard this user
+
+        'bill_addr_code',
+        'addr_code',
 
         'last_login_at',
         'last_login_ip',
@@ -154,6 +162,28 @@ class User extends Authenticatable
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    // Relationships
+
+    public function kyc()
+    {
+        return $this->hasOne(UserKyc::class, 'kyc_code', 'kyc_code');
+    }
+
+    public function legalDocuments()
+    {
+        return $this->hasMany(UserLegalDocument::class, 'user_id', 'id');
+    }
+
+    public function billAddress()
+    {
+        return $this->belongsTo(Address::class, 'bill_addr_code', 'addr_code');
+    }
+
+    public function address()
+    {
+        return $this->belongsTo(Address::class, 'addr_code', 'addr_code');
     }
 
 

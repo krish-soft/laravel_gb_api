@@ -1,0 +1,117 @@
+<?php
+
+namespace App\Models\User\Legal;
+
+use App\Models\Address;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class UserKyc extends Model
+{
+
+    use SoftDeletes;
+
+
+    protected $fillable = [
+        'user_id',
+        'kyc_code',
+
+        'legal_name',
+        'other_legal_name',
+
+        'pan_card',
+        'aadhaar_last4',
+        'aadhaar_vid_last4',
+
+        'status',
+
+        'verified_at',
+        'verified_by',
+        'verified_user_id',
+
+        'review_comment',
+
+        'is_expired',
+        'expired_at',
+
+        'addr_code',
+
+        'custchar1',
+        'custchar2',
+    ];
+
+
+    protected $guarded = [
+        'kyc_code',
+    ];
+
+    /**
+     * Attribute casting
+     */
+    protected $casts = [
+        'pan_card'    => 'encrypted',   // PAN encrypted
+        'verified_at' => 'datetime',
+        'expired_at'  => 'datetime',
+        'is_expired'  => 'boolean',
+    ];
+
+    /**
+     * Auto-generate unique KYC code
+     */
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            if (empty($model->kyc_code)) {
+                $model->kyc_code = self::generateUniqueKycCode();
+            }
+        });
+    }
+
+    /**
+     * Generate unique alphanumeric KYC code
+     * Example: KYC-A9F3XQ82
+     */
+    public static function generateUniqueKycCode(): string
+    {
+        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no O I L 0 1
+        $length = 10;
+
+        do {
+            $code = '';
+            for ($i = 0; $i < $length; $i++) {
+                $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+            }
+        } while (self::where('kyc_code', $code)->exists());
+
+        return $code;
+    }
+
+    /**
+     * Relationships
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function verifiedByUser()
+    {
+        return $this->belongsTo(User::class, 'verified_user_id');
+    }
+
+    public function address()
+    {
+        return $this->belongsTo(Address::class, 'addr_code', 'addr_code');
+    }
+
+
+    public function legalDocuments()
+    {
+        return $this->hasMany(UserLegalDocument::class, 'user_kyc_id', 'id');
+    }
+
+
+
+    //
+}
