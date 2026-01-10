@@ -30,6 +30,7 @@ class UserKyc extends BaseModel
         'dob',
         'gender',
 
+        // Verification fields
         'status',
 
         'verification_mode',
@@ -62,6 +63,21 @@ class UserKyc extends BaseModel
         'expired_at'  => 'datetime',
         'is_expired'  => 'boolean',
     ];
+
+    protected $hidden = [
+        'pan_card_no',
+
+        // Verification fields
+        'status',
+
+        'verification_mode',
+        'verified_at',
+        'verified_by',
+        'verified_user_id',
+
+        'review_comment',
+    ];
+
 
     /**
      * Auto-generate unique KYC code

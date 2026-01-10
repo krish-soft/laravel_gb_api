@@ -4,10 +4,12 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use App\Enum\Legal\BankStatusEnum;
 use App\Enum\Legal\KycStatusEnum;
 use App\Enum\User\AdminRoleEnum;
 use App\Enum\User\UserRoleEnum;
 use App\Enum\User\UserTypeEnum;
+use App\Models\User\Legal\UserBank;
 use App\Models\User\Legal\UserKyc;
 use App\Models\User\Legal\UserLegalDocument;
 use App\Traits\Auditable;
@@ -175,6 +177,11 @@ class User extends Authenticatable
         return $this->hasOne(UserKyc::class, 'kyc_code', 'kyc_code');
     }
 
+    public function bank()
+    {
+        return $this->hasOne(UserBank::class, 'user_id', 'id'); // Limiting only one Bank
+    }
+
     public function legalDocuments()
     {
         return $this->hasMany(UserLegalDocument::class, 'user_id', 'id');
@@ -230,6 +237,11 @@ class User extends Authenticatable
     public function isKycApproved(): bool
     {
         return $this->kyc && $this->kyc->status ===  KycStatusEnum::APPROVED->value;
+    }
+
+    public function isBankVerified(): bool
+    {
+        return  $this->bank && $this->bank->status ===  BankStatusEnum::VERIFIED->value;
     }
 
     //

@@ -29,11 +29,11 @@ class UserBank extends BaseModel
         'branch_name',
 
         'account_type',
+        'is_primary',
 
+        // Verification fields
         'status',
-
         'verification_mode',
-
         'test_deposit_required',
         'test_deposit_amount',
         'test_deposit_ref',
@@ -45,7 +45,6 @@ class UserBank extends BaseModel
 
         'review_comment',
 
-        'is_primary',
     ];
 
     /**
@@ -55,6 +54,24 @@ class UserBank extends BaseModel
         'account_number_encrypted' => 'encrypted', // auto encrypt/decrypt
         'verified_at'              => 'datetime',
         'is_primary'               => 'boolean',
+    ];
+
+    protected $hidden = [
+        'account_number_encrypted',
+
+        // Verification fields
+        'status',
+        'verification_mode',
+        'test_deposit_required',
+        'test_deposit_amount',
+        'test_deposit_ref',
+        'test_deposit_verified_at',
+
+        'verified_at',
+        'verified_by',
+        'verified_user_id',
+
+        'review_comment',
     ];
 
     /**

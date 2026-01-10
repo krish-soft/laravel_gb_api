@@ -17,7 +17,7 @@ trait ApiResponserTrait
     }
 
 
-    protected static function successResponse($message, $data, $statusCode): \Illuminate\Http\JsonResponse
+    protected static function successResponse($message, $data, $statusCode = 200): \Illuminate\Http\JsonResponse
     {
         return response()->json(
             ['isSuccess' => true, 'message' => $message, 'statusCode' => $statusCode, 'data' => $data],

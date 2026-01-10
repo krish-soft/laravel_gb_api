@@ -42,6 +42,13 @@ return [
         'kyc_approved'  => 'KYC has been approved successfully.',
         'kyc_rejected'  => 'KYC has been rejected.',
         'kyc_deleted'   => 'KYC record deleted successfully.',
+
+        /* ===================== BANK ===================== */
+        'bank_added' => 'Bank account added successfully.',
+        'bank_updated' => 'Bank account updated successfully.',
+        'bank_reviewed' =>   'Bank account reviewed successfully.',
+        'bank_deleted' =>  'Bank account deleted successfully.',
+        'bank_primary_set' => 'Primary bank account updated successfully.',
     ],
 
     /*
@@ -95,6 +102,15 @@ return [
 
         // Uniqueness / Conflicts
         'document_already_registered' => 'An account is already registered with the provided document.',
+
+
+        /* ===================== BANK ===================== */
+        'bank_verified_locked' => 'Verified bank details cannot be modified.',
+        'invalid_bank_status' => 'Invalid bank status provided.',
+        'primary_bank_delete_forbidden' => 'Primary bank account cannot be deleted.',
+        'unauthorized_action' => 'You are not authorized to perform this action.',
+
+        'bank_already_exists' => 'Bank details already exists. Only one bank account is allowed.',
     ],
 
 ];
