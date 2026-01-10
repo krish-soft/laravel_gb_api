@@ -175,6 +175,12 @@ class KycService
         User $loginAdmin
     ): UserKyc {
 
+        if (!$loginAdmin->isAdminManagement()) {
+            throw new RuntimeException(
+                __('messages.error_messages.unauthorized_action')
+            );
+        }
+
         $kyc = UserKyc::where('id', $kycId)->first();
 
         if (!$kyc) {
@@ -247,6 +253,12 @@ class KycService
         User $loginAdmin,
         string $reason = null
     ): void {
+
+        if (!$loginAdmin->isAdminManagement()) {
+            throw new RuntimeException(
+                __('messages.error_messages.unauthorized_action')
+            );
+        }
 
         $kyc = UserKyc::where('id', $kycId)->first();
 
@@ -379,12 +391,12 @@ class KycService
     ): void {
         $front = uploadPrivateFile(
             $files['aadhaar_front_image'],
-            "user_kyc/{$user->user_code}/aadhaar/"
+            "user_kyc/{$user->user_code}/aadhaar"
         );
 
         $back = uploadPrivateFile(
             $files['aadhaar_back_image'],
-            "user_kyc/{$user->user_code}/aadhaar/"
+            "user_kyc/{$user->user_code}/aadhaar"
         );
 
         UserLegalDocument::updateOrCreate(
@@ -411,7 +423,7 @@ class KycService
     ): void {
         $path = uploadPrivateFile(
             $files['pan_card_image'],
-            "user_kyc/{$user->user_code}/pan_card/"
+            "user_kyc/{$user->user_code}/pan_card"
         );
 
         UserLegalDocument::updateOrCreate(

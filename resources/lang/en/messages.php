@@ -27,23 +27,21 @@ return [
         'success_cancel' => 'Resource cancelled successfully.',
 
         // Authentication
-        'success_login'      => 'Login successful.',
-        'success_logout'     => 'Logout successful.',
-        'success_logout_all' => 'Logged out from all devices successfully.',
+        'success_login'      => 'Login completed successfully.',
+        'success_logout'     => 'Logout completed successfully.',
+        'success_logout_all' => 'You have been logged out from all devices successfully.',
         'register_success'   => 'Registration completed successfully.',
 
         // OTP / Password
-        'otp_sent_successfully'       => 'OTP sent successfully.',
-        'password_reset_successfully' => 'Password reset successfully.',
+        'otp_sent_successfully'       => 'A one-time password (OTP) has been sent successfully.',
+        'password_reset_successfully' => 'Password has been reset successfully.',
 
         // KYC
-        'kyc_submitted' => 'KYC submitted successfully',
-        'kyc_updated'   => 'KYC updated successfully',
-        'kyc_approved'  => 'KYC approved successfully',
-        'kyc_rejected'  => 'KYC rejected successfully',
-        'kyc_deleted'   => 'KYC deleted successfully',
-
-
+        'kyc_submitted' => 'KYC information submitted successfully and is under review.',
+        'kyc_updated'   => 'KYC information updated successfully.',
+        'kyc_approved'  => 'KYC has been approved successfully.',
+        'kyc_rejected'  => 'KYC has been rejected.',
+        'kyc_deleted'   => 'KYC record deleted successfully.',
     ],
 
     /*
@@ -53,56 +51,50 @@ return [
     */
     'error_messages' => [
 
-
         // Authentication & Authorization
-        'unauthenticated'             => 'Unauthenticated. Token or session expired. Please log in.',
-        'unauthorized_access'         => 'You are not authorized to access this resource.',
-        'unauthorized_access_admin'   => 'You are not authorized to access this admin resource.',
+        'unauthenticated'           => 'Authentication required. Your session or token has expired. Please log in again.',
+        'unauthorized_access'       => 'You are not authorized to access this resource.',
+        'unauthorized_access_admin' => 'You are not authorized to access this administrative resource.',
 
         // Generic Errors
-        'something_went_wrong' => 'Something went wrong. Please try again later.',
-        'already_exists'       => 'The resource you are trying to create already exists.',
-        'cannot_delete_used_in_transactions' => 'Cannot delete this resource as it is used in existing transactions.',
-        'maintenance_mode' => 'The application is currently under maintenance. Please try again later.',
-        'unauthorized_action' => 'You are not authorized to perform this action',
+        'something_went_wrong' => 'An unexpected error occurred. Please try again later.',
+        'already_exists'       => 'The requested resource already exists.',
+        'cannot_delete_used_in_transactions' => 'This resource cannot be deleted because it is associated with existing transactions.',
+        'maintenance_mode'     => 'The application is currently under maintenance. Please try again later.',
+        'unauthorized_action'  => 'You are not authorized to perform this action.',
+        'not_adult'            => 'You must be at least 18 years of age to perform this action.',
 
-
-        'missing_configuration_ms_api_key' => 'Missing configuration MS-API key',
-        'invalid_configuration_ms_api_key' => 'Invalid configuration MS-API key',
+        // Configuration
+        'missing_configuration_ms_api_key' => 'Required MS API key configuration is missing.',
+        'invalid_configuration_ms_api_key' => 'The configured MS API key is invalid.',
 
         // Account & Login
-        'invalid_credentials'       => 'Invalid credentials provided.',
-        'account_not_associate'     => 'No account is associated with the provided information.',
-        'account_already_registered' => 'An account with these details already exists.',
-        'account_inactive'        => 'Your account is inactive.',
+        'invalid_credentials'         => 'The provided credentials are invalid.',
+        'account_not_associate'       => 'No account is associated with the provided information.',
+        'account_already_registered'  => 'An account with the provided details already exists.',
+        'account_inactive'            => 'Your account is currently inactive. Please contact support.',
 
         // OTP
-        'failed_to_send_otp'   => 'Failed to send OTP. Please try again later.',
-        'invalid_or_expired_otp' => 'The OTP is invalid or has expired.',
+        'failed_to_send_otp'     => 'Failed to send OTP. Please try again later.',
+        'invalid_or_expired_otp' => 'The provided OTP is invalid or has expired.',
 
-        // KYC lifecycle
-        'kyc_already_under_review' => 'KYC is already submitted and under review',
-        'kyc_not_found'            => 'KYC record not found',
-        'invalid_kyc_status'       => 'Invalid KYC status',
-        'kyc_cannot_delete_approved' => 'Approved KYC cannot be deleted',
+        // KYC Lifecycle
+        'kyc_already_under_review'   => 'KYC information has already been submitted and is currently under review.',
+        'kyc_not_found'              => 'KYC record could not be found.',
+        'invalid_kyc_status'         => 'The provided KYC status is invalid.',
+        'kyc_cannot_delete_approved' => 'An approved KYC record cannot be deleted.',
+        'kyc_not_approved'           => 'KYC is not approved. Access to this resource is restricted.',
 
         // Aadhaar
-        'invalid_aadhaar_number'   => 'Invalid Aadhaar number',
-        'aadhaar_images_required'  => 'Aadhaar front and back images are required',
+        'invalid_aadhaar_number'  => 'The provided Aadhaar number is invalid.',
+        'aadhaar_images_required' => 'Both front and back images of the Aadhaar card are required.',
 
         // PAN
-        'invalid_pan_card_format'  => 'Invalid PAN card format',
-        'pan_card_image_required'  => 'PAN card image is required',
+        'invalid_pan_card_format' => 'The provided PAN card number format is invalid.',
+        'pan_card_image_required' => 'PAN card image is required.',
 
-        // Uniqueness / conflicts
-        'account_already_registered' => 'Account already registered with this document',
-
-        // Generic
-        'unauthorized_action'      => 'You are not authorized to perform this action',
-
-
-
-
+        // Uniqueness / Conflicts
+        'document_already_registered' => 'An account is already registered with the provided document.',
     ],
 
 ];

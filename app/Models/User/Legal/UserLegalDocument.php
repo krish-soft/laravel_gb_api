@@ -18,6 +18,7 @@ class UserLegalDocument extends BaseModel
      */
     protected $fillable = [
         'user_id',
+        'user_code',
         'user_kyc_id',
 
         'legal_doc_code',

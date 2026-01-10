@@ -50,14 +50,31 @@ Route::group([
         Route::post('/signout/all', [UserLogoutApiController::class, 'logoutAllDevices']);
 
 
-        Route::get('user', function (Request $request) {
-            return $request->user();
-        });
 
 
         // KYC Routes
         Route::post('/kyc', [UserKycApiController::class, 'storeKyc']); // Add KYC
-        Route::post('/kyc/update', [UserKycApiController::class, 'updateKyc']); // Update / Re-KYC
+        Route::put('/kyc/update', [UserKycApiController::class, 'updateKyc']); // Update / Re-KYC
+
+
+        // Whihc Required KYC Approved User Only
+        Route::group([
+            'middleware' => [
+                'user-legal-checker' // Custom Middleware to check user legal (KYC) status
+
+            ]
+        ], function () {
+
+
+
+            Route::get('user', function (Request $request) {
+                return $request->user();
+            });
+
+
+
+            //
+        });
 
         //
     });

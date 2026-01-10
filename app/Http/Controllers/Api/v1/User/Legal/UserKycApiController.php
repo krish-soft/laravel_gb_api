@@ -23,7 +23,20 @@ class UserKycApiController extends ApiResponseWithAuthController
 
             'pan_card_no' => 'nullable|string|max:15',
             'pan_card_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+
+            'dob' => 'required|date_format:Y-m-d|before:today',
         ]);
+
+        // Check DOB is adult base on india
+
+        $dob = $request->input('dob');
+        $today = date('Y-m-d');
+        $age = date_diff(date_create($dob), date_create($today))->y;
+
+        if ($age < 18) {
+            return $this->showErrorMessage(__('messages.error_messages.not_adult'), 422);
+        }
+
 
         try {
             $kycService->addKyc(
@@ -54,6 +67,9 @@ class UserKycApiController extends ApiResponseWithAuthController
 
             'pan_card_no' => 'sometimes|string|max:15',
             'pan_card_image' => 'sometimes|image|mimes:jpg,jpeg,png|max:2048',
+
+            'dob' => 'nullable|date_format:Y-m-d|before:today',
+
         ]);
 
         try {

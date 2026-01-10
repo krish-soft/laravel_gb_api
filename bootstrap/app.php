@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'ms-api-key-checker' => \App\Http\Middleware\MsApiKeyChecker::class,
             'user-checker' => \App\Http\Middleware\UserChecker::class,
             'admin-user-checker' => \App\Http\Middleware\AdminUserChecker::class, // Added Admin User Checker Middleware
+            'user-legal-checker' => \App\Http\Middleware\UserLegalChecker::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

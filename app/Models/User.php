@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use App\Enum\Legal\KycStatusEnum;
 use App\Enum\User\AdminRoleEnum;
 use App\Enum\User\UserRoleEnum;
 use App\Enum\User\UserTypeEnum;
@@ -225,6 +226,11 @@ class User extends Authenticatable
         return in_array($moduleCode, $this->access_modules, true);
     }
 
+
+    public function isKycApproved(): bool
+    {
+        return $this->kyc && $this->kyc->status ===  KycStatusEnum::APPROVED->value;
+    }
 
     //
 }
