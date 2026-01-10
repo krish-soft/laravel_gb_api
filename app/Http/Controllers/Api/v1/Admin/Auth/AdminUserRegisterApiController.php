@@ -28,8 +28,6 @@ class AdminUserRegisterApiController extends ApiResponseController
             'user_type'     => 'required|string|in:' . implode(',', array_map(fn($case) => $case->value, AdminUserTypeEnum::cases())),
         ]);
 
-
-
         // Create Admin User
         $user = User::create([
             'email' => $request->email,
@@ -41,6 +39,18 @@ class AdminUserRegisterApiController extends ApiResponseController
             'sales_rep'     => $request->sales_rep ?? null,
 
         ]);
+
+        // Log activity
+        logActivity(
+            'user_registration',
+            $user->user_code,
+            get_class($user),
+            $user->id,
+            [
+                'user_code' => $user->user_code,
+                'email' => $user->email,
+            ]
+        );
 
         return $this->showSuccessMessage(
             __('messages.success_messages.register_success')

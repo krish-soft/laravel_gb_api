@@ -18,6 +18,17 @@ class AdminUserLogoutApiController extends ApiResponseWithAuthController
         // Revoke the token that was used to authenticate the current request
         $user->currentAccessToken()->delete();
 
+        // Log activity
+        logActivity(
+            'user_logout',
+            $user->user_code,
+            get_class($user),
+            $user->id,
+            [
+                'logout_type' => 'single_device',
+            ]
+        );
+
         return $this->showSuccessMessage(__('messages.success_messages.success_logout'));
     }
 
@@ -29,6 +40,16 @@ class AdminUserLogoutApiController extends ApiResponseWithAuthController
         $user = $request->user();
         // Revoke all tokens for the user
         $user->tokens()->delete();
+
+        logActivity(
+            'user_logout',
+            $user->user_code,
+            get_class($user),
+            $user->id,
+            [
+                'logout_type' => 'all_devices',
+            ]
+        );
 
         return $this->showSuccessMessage(__('messages.success_messages.success_logout_all'));
     }

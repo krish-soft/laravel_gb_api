@@ -2,10 +2,11 @@
 
 namespace App\Models\Setting;
 
+use App\Models\BaseModel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
-class AppSetting extends Model
+class AppSetting extends BaseModel
 {
     //
 

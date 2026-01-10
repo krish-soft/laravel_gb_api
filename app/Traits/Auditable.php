@@ -35,19 +35,21 @@ trait Auditable
 
     protected static function logAudit(
         string $action,
-        Model $model,
+        $model,
         array $oldValues,
         array $newValues
     ): void {
-        AuditLog::create([
-            'user_id'        => request()->user()?->id,
-            'auditable_type' => get_class($model),
-            'auditable_id'   => $model->getKey(),
-            'action'         => $action,
-            'old_values'     => $oldValues ?: null,
-            'new_values'     => $newValues ?: null,
-            'ip_address'     => request()->ip(),
-            'user_agent'     => request()->userAgent(),
-        ]);
+        // skip audit table + console
+        if ($model instanceof AuditLog || app()->runningInConsole()) {
+            return;
+        }
+
+        AuditLog::log(
+            $action,
+            $model,
+            $oldValues,
+            $newValues,
+            request()->user()?->user_code
+        );
     }
 }

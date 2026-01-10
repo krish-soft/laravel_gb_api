@@ -12,19 +12,19 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('audit_logs', function (Blueprint $table) {
+            // Schema::connection('log_mysql')->create('audit_logs', function (Blueprint $table) {
+
             $table->id();
 
             // Who did the action
-            $table->foreignId('user_id')->nullable()
-                ->constrained()
-                ->nullOnDelete();
+            $table->string('user_code', 20)->nullable();
 
             // What was changed
             $table->string('auditable_type', 100); // Model class name
             $table->unsignedBigInteger('auditable_id');
 
             // Action type
-            $table->string('action', 20);
+            $table->string('action', 100);
             // created | updated | deleted | verified | approved | rejected
 
             // Change tracking
@@ -51,5 +51,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('audit_logs');
+        // Schema::connection('log_mysql')->dropIfExists('audit_logs');
     }
 };

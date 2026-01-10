@@ -3,11 +3,12 @@
 namespace App\Models\User\Legal;
 
 use App\Models\Address;
+use App\Models\BaseModel;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class UserKyc extends Model
+class UserKyc extends BaseModel
 {
 
     use SoftDeletes;

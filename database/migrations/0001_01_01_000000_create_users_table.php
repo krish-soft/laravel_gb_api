@@ -67,6 +67,7 @@ return new class extends Migration
             $table->unique(['email', 'deleted_at']);
 
             $table->index('role');
+            $table->index('user_code');
             $table->index('user_type');
             $table->index('is_active');
         });

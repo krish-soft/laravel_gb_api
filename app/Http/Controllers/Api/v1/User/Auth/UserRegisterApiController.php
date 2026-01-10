@@ -119,6 +119,18 @@ class UserRegisterApiController extends ApiResponseController
 
         ]);
 
+        // Log activity
+        logActivity(
+            'user_registration',
+            $user->user_code,
+            get_class($user),
+            $user->id,
+            [
+                'user_code' => $user->user_code,
+                'email' => $user->email,
+            ]
+        );
+
         return $this->showSuccessMessage(
             __('messages.success_messages.register_success')
         );

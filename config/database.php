@@ -113,6 +113,19 @@ return [
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
+        /**
+         *  Custom database connections can be added here
+         */
+
+        // 'log_mysql' => [
+        //     'driver' => 'mysql',
+        //     'host' => env('LOG_HOST', '127.0.0.1'),
+        //     'port' => env('LOG_PORT', '3306'),
+        //     'database' => env('LOG_DATABASE'),
+        //     'username' => env('LOG_USERNAME'),
+        //     'password' => env('LOG_PASSWORD'),
+        // ],
+
     ],
 
     /*
@@ -148,7 +161,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-database-'),
+            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')) . '-database-'),
             'persistent' => env('REDIS_PERSISTENT', false),
         ],
 

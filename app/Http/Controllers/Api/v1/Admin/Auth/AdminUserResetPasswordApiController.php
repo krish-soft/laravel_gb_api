@@ -95,6 +95,18 @@ class AdminUserResetPasswordApiController extends ApiResponseController
             'password' => bcrypt($request->password),
         ]);
 
+        // Log activity
+        logActivity(
+            'user_reset_password',
+            $user->user_code,
+            get_class($user),
+            $user->id,
+            [
+                'user_code' => $user->user_code,
+                'email' => $user->email,
+            ]
+        );
+
         // return $this->showSuccessMessage('Password reset successfully');
         return $this->showSuccessMessage(__('messages.success_messages.password_reset_successfully'));
     }

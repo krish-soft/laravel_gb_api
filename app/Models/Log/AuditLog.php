@@ -3,6 +3,7 @@
 namespace App\Models\Log;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 
 class AuditLog extends Model
 {
@@ -10,7 +11,7 @@ class AuditLog extends Model
 
 
     protected $fillable = [
-        'user_id',
+        'user_code',
         'auditable_type',
         'auditable_id',
         'action',
@@ -34,19 +35,27 @@ class AuditLog extends Model
         Model $model,
         array $oldValues = [],
         array $newValues = [],
-        ?int $userId = null,
+        ?string $userCode = null,
         ?string $reason = null
-    ): self {
-        return self::create([
-            'user_id'        => $userId,
-            'auditable_type' => get_class($model),
-            'auditable_id'   => $model->getKey(),
-            'action'         => $action,
-            'old_values'     => $oldValues,
-            'new_values'     => $newValues,
-            'reason'         => $reason,
-            'ip_address'     => request()->ip(),
-            'user_agent'     => request()->userAgent(),
-        ]);
+    ): ?self {
+        try {
+            return self::create([
+                'user_code'        => $userCode ? substr($userCode, 0, 20) : null,
+                'auditable_type'   => substr(get_class($model), 0, 100),
+                'auditable_id'     => $model->getKey(),
+                'action'           => substr($action, 0, 20),
+                'old_values'       => $oldValues ?: null,
+                'new_values'       => $newValues ?: null,
+                'reason'           => $reason ? substr($reason, 0, 255) : null,
+                'ip_address'       => substr(request()?->ip() ?? '', 0, 45),
+                'user_agent'       => substr(request()?->userAgent() ?? '', 0, 255),
+            ]);
+        } catch (\Throwable $e) {
+            // NEVER break main flow
+            Log::error('Audit log failed', [
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
     }
 }

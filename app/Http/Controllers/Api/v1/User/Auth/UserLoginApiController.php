@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\v1\User\Auth;
 use App\Enum\User\UserRoleEnum;
 use App\Http\Controllers\ApiResponseController;
 use App\Http\Controllers\Controller;
+use App\Models\Log\ActivityLog;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -78,6 +79,18 @@ class UserLoginApiController extends ApiResponseController
             'expires_in_minutes' => $expiryMinutes,
             'device_id' => $deviceId,
         ];
+
+        // Activity Log can be added here     
+        logActivity(
+            'user_login',
+            $user->user_code,
+            User::class,
+            $user->id,
+            [
+                'login_via' => 'password',
+                'platform'  => 'API',
+            ]
+        );
 
 
         return $this->successResponse(__('messages.success_messages.success_login'), $userData, 200);

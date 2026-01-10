@@ -38,7 +38,7 @@ class BaseModel extends Model
     protected static function audit($action, $model, $old, $new)
     {
         AuditLog::create([
-            'user_id'        => request()->user()?->id,
+            'user_code'        => request()->user()?->user_code,
             'auditable_type' => get_class($model),
             'auditable_id'   => $model->getKey(),
             'action'         => $action,

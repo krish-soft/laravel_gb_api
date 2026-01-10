@@ -2,11 +2,12 @@
 
 namespace App\Models\User\Legal;
 
+use App\Models\BaseModel;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class UserBank extends Model
+class UserBank extends BaseModel
 {
     use SoftDeletes;
     //

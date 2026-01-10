@@ -80,6 +80,20 @@ class AdminUserLoginApiController extends ApiResponseController
             'device_id' => $deviceId,
         ];
 
+        // Activity Log can be added here     
+        logActivity(
+            'user_login',
+            $user->user_code,
+            User::class,
+            $user->id,
+            [
+                'login_via' => 'password',
+                'platform'  => 'API',
+            ]
+        );
+
+
+
 
         return $this->successResponse(__('messages.success_messages.success_login'), $userData, 200);
 

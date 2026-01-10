@@ -9,6 +9,7 @@ use App\Enum\User\UserRoleEnum;
 use App\Enum\User\UserTypeEnum;
 use App\Models\User\Legal\UserKyc;
 use App\Models\User\Legal\UserLegalDocument;
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -20,6 +21,8 @@ class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens, SoftDeletes;
+    use Auditable;
+
 
     protected static function booted(): void
     {
