@@ -23,13 +23,17 @@ class UserLegalDocument extends BaseModel
         'legal_doc_code',
         'document_type',
 
+        'name', // Optional name field
+        'document_number', // Optional unencrypted number for searching
+
         'document_number_encrypted',
         'document_number_last4',
 
         'issued_at',
         'expires_at',
 
-        'document_path',
+        'document_path_front',
+        'document_path_back',
 
         'status',
         'review_comment',

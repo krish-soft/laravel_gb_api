@@ -8,14 +8,21 @@ use Illuminate\Support\Facades\Log;
 
 class ActivityLog extends Model
 {
-    //
-
 
     protected $fillable = [
-        'user_code',
         'event',
+
+        // ACTOR (who did it)
+        'actor_type',
+        'actor_id',
+        'actor_code',
+
+        // SUBJECT (what / whose data)
         'subject_type',
         'subject_id',
+        'subject_code',
+
+        // Extra context
         'meta',
         'ip_address',
         'user_agent',
@@ -26,60 +33,79 @@ class ActivityLog extends Model
         'meta' => 'array',
     ];
 
-    /**
-     * Quick log helper
-     */
+    /* =========================================================
+       ===================== QUICK LOGGER ======================
+       ========================================================= */
+
     public static function log(
         string $event,
-        ?string $userCode = null,
+
+        // ACTOR
+        ?User $actor = null,
+
+        // SUBJECT
         ?string $subjectType = null,
         ?int $subjectId = null,
+        ?string $subjectCode = null,
+
+        // META
         array $meta = []
     ): ?self {
         try {
 
-            // 🔥 AUTO IDENTIFY USER GROUP
+            // ---------- ACTOR INFO ----------
+            $actorType = 'system';
+            $actorId   = null;
+            $actorCode = null;
             $userGroup = 'system';
 
-            if ($userCode) {
-                $user = User::where('user_code', $userCode)->first();
-
-                if ($user) {
-                    $userGroup = $user->isAdminManagement() ? 'admin' : 'user';
-                }
+            if ($actor) {
+                $actorType = $actor->isAdminManagement() ? 'admin' : 'user';
+                $actorId   = $actor->id;
+                $actorCode = substr($actor->user_code, 0, 100);
+                $userGroup = $actorType;
             }
 
             return self::create([
-                'user_code'      => $userCode ? substr($userCode, 0, 20) : null,
-                'event'          => substr($event, 0, 50),
-                'subject_type'   => $subjectType ? substr($subjectType, 0, 100) : null,
-                'subject_id'     => $subjectId,
-                'meta'           => $meta ?: null,
-                'ip_address'     => request()?->ip() ? substr(request()->ip(), 0, 45) : null,
-                'user_agent'     => request()?->userAgent() ? substr(request()->userAgent(), 0, 255) : null,
-                'user_group' =>    $userGroup,
+                'event'        => substr($event, 0, 100),
+
+                // ACTOR
+                'actor_type'   => $actorType,
+                'actor_id'     => $actorId,
+                'actor_code'   => $actorCode,
+
+                // SUBJECT
+                'subject_type' => $subjectType ? substr($subjectType, 0, 100) : null,
+                'subject_id'   => $subjectId,
+                'subject_code' => $subjectCode ? substr($subjectCode, 0, 100) : null,
+
+                // META
+                'meta'         => $meta ?: null,
+
+                // REQUEST INFO
+                'ip_address'   => request()?->ip() ? substr(request()->ip(), 0, 45) : null,
+                'user_agent'   => request()?->userAgent()
+                    ? substr(request()->userAgent(), 0, 255)
+                    : null,
+
+                'user_group'   => $userGroup,
             ]);
         } catch (\Throwable $e) {
             // NEVER break main app
             Log::error('Activity log failed', [
+                'event' => $event,
                 'error' => $e->getMessage(),
             ]);
             return null;
         }
     }
 
-    // User relationship
+    /* =========================================================
+       ===================== RELATIONS =========================
+       ========================================================= */
 
-    public function userData($userCode)
+    public function actor()
     {
-        return $this->belongsTo(User::class, 'user_code', 'user_code');
+        return $this->belongsTo(User::class, 'actor_id');
     }
-
-
-    public function user()
-    {
-        return $this->belongsTo(User::class, 'user_code', 'user_code');
-    }
-
-    // 
 }

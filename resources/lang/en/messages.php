@@ -35,6 +35,15 @@ return [
         // OTP / Password
         'otp_sent_successfully'       => 'OTP sent successfully.',
         'password_reset_successfully' => 'Password reset successfully.',
+
+        // KYC
+        'kyc_submitted' => 'KYC submitted successfully',
+        'kyc_updated'   => 'KYC updated successfully',
+        'kyc_approved'  => 'KYC approved successfully',
+        'kyc_rejected'  => 'KYC rejected successfully',
+        'kyc_deleted'   => 'KYC deleted successfully',
+
+
     ],
 
     /*
@@ -55,6 +64,8 @@ return [
         'already_exists'       => 'The resource you are trying to create already exists.',
         'cannot_delete_used_in_transactions' => 'Cannot delete this resource as it is used in existing transactions.',
         'maintenance_mode' => 'The application is currently under maintenance. Please try again later.',
+        'unauthorized_action' => 'You are not authorized to perform this action',
+
 
         'missing_configuration_ms_api_key' => 'Missing configuration MS-API key',
         'invalid_configuration_ms_api_key' => 'Invalid configuration MS-API key',
@@ -69,16 +80,29 @@ return [
         'failed_to_send_otp'   => 'Failed to send OTP. Please try again later.',
         'invalid_or_expired_otp' => 'The OTP is invalid or has expired.',
 
-        // WorkSite / Business Logic
-        'work_site_exists' => 'A work site already exists for this location.',
-        'address_exists' => 'An address already exists for this location.',
+        // KYC lifecycle
+        'kyc_already_under_review' => 'KYC is already submitted and under review',
+        'kyc_not_found'            => 'KYC record not found',
+        'invalid_kyc_status'       => 'Invalid KYC status',
+        'kyc_cannot_delete_approved' => 'Approved KYC cannot be deleted',
 
-        // Market Listing
-        'item_not_exist_in_list' => 'Product does not exist in this listing.',
-        'package_not_exist_in_list' => 'Package does not exist in this listing.',
-        'package_qty_less_than_sold' => 'Package quantity cannot be less than sold quantity (:sold_qty).',
-        'invalid_stock_update' => 'Invalid stock update operation.',
-        'cannot_delete_listing_with_sold_stock' => 'Cannot delete listing with sold stock.',
+        // Aadhaar
+        'invalid_aadhaar_number'   => 'Invalid Aadhaar number',
+        'aadhaar_images_required'  => 'Aadhaar front and back images are required',
+
+        // PAN
+        'invalid_pan_card_format'  => 'Invalid PAN card format',
+        'pan_card_image_required'  => 'PAN card image is required',
+
+        // Uniqueness / conflicts
+        'account_already_registered' => 'Account already registered with this document',
+
+        // Generic
+        'unauthorized_action'      => 'You are not authorized to perform this action',
+
+
+
+
     ],
 
 ];

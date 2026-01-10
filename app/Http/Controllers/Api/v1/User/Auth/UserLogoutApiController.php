@@ -21,9 +21,10 @@ class UserLogoutApiController extends ApiResponseWithAuthController
         // Log activity
         logActivity(
             'user_logout',
-            $user->user_code,
-            get_class($user),
-            $user->id,
+            $user,                 // ACTOR (who did it)
+            get_class($user), // SUBJECT TYPE (what was affected)
+            $user->id,              // SUBJECT ID
+            $user->user_code,       // SUBJECT CODE (human readable)
             [
                 'logout_type' => 'single_device',
             ]
@@ -44,9 +45,10 @@ class UserLogoutApiController extends ApiResponseWithAuthController
         // Log activity
         logActivity(
             'user_logout',
-            $user->user_code,
-            get_class($user),
-            $user->id,
+            $user,                 // ACTOR (who did it)
+            get_class($user), // SUBJECT TYPE (what was affected)
+            $user->id,              // SUBJECT ID
+            $user->user_code,       // SUBJECT CODE (human readable)
             [
                 'logout_type' => 'all_devices',
             ]

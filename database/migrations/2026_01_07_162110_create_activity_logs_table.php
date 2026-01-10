@@ -11,18 +11,25 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('activity_logs', function (Blueprint $table) { // org
-            // Schema::connection('log_mysql')->create('activity_logs', function (Blueprint $table) {
+        Schema::create('activity_logs', function (Blueprint $table) {
             $table->id();
 
-            $table->string('user_code', 20)->nullable();
-
+            // What happened
             $table->string('event', 100);
-            // login | logout | place_order | cancel_order | upload_document
 
-            $table->string('subject_type', 100)->nullable();
+            /* ===================== ACTOR ===================== */
+            // Who performed the action
+            $table->string('actor_type', 50)->nullable();  // user | admin | system
+            $table->unsignedBigInteger('actor_id')->nullable();
+            $table->string('actor_code', 100)->nullable();
+
+            /* ===================== SUBJECT ===================== */
+            // What / whose data was affected
+            $table->string('subject_type')->nullable(); // User | UserKyc | Order | Wallet
             $table->unsignedBigInteger('subject_id')->nullable();
+            $table->string('subject_code', 100)->nullable();
 
+            /* ===================== EXTRA CONTEXT ===================== */
             $table->json('meta')->nullable();
 
             $table->string('ip_address', 45)->nullable();
@@ -31,6 +38,11 @@ return new class extends Migration
 
             $table->timestamps();
             $table->softDeletes();
+
+            // Indexes for performance
+            $table->index(['event']);
+            $table->index(['actor_type', 'actor_id']);
+            $table->index(['subject_type', 'subject_id']);
         });
     }
 

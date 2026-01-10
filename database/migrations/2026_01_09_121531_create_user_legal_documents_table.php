@@ -20,17 +20,23 @@ return new class extends Migration
                 ->constrained()
                 ->nullOnDelete();
 
+            $table->string('user_code', 20)->nullable();
+
             // Optional link to KYC
             $table->foreignId('user_kyc_id')
                 ->nullable()
                 ->constrained('user_kycs')
                 ->nullOnDelete();
 
+
             $table->string('legal_doc_code', 20)->unique();
             // Document type
             $table->string('document_type', 50); // pan | aadhaar | driving_license | rc_book | gst | shop_license | other
 
             // Document number (ENCRYPTED + MASKED)
+            $table->string('name', 150)->nullable(); // without encryption for searching
+
+            $table->string('document_number')->nullable(); // without encryption for searching
             $table->text('document_number_encrypted')->nullable();
             $table->string('document_number_last4', 4);
 
@@ -39,7 +45,8 @@ return new class extends Migration
             $table->date('expires_at')->nullable();
 
             // Storage (private path / object key)
-            $table->text('document_path');
+            $table->text('document_path_front')->nullable();
+            $table->text('document_path_back')->nullable();
 
             // Review status
             $table->string('status', 20)->default('pending')->nullable(); // pending | needs_update | approved | rejected
@@ -59,6 +66,7 @@ return new class extends Migration
             $table->softDeletes();
 
             $table->index(['user_id', 'document_type']);
+            $table->index('user_code');
         });
     }
 

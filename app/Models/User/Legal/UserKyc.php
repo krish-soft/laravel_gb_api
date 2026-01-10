@@ -20,10 +20,15 @@ class UserKyc extends BaseModel
 
         'legal_name',
         'other_legal_name',
+        'father_name',
+        'mother_name',
 
-        'pan_card',
+        'pan_card_no',
         'aadhaar_last4',
         'aadhaar_vid_last4',
+
+        'dob',
+        'gender',
 
         'status',
 

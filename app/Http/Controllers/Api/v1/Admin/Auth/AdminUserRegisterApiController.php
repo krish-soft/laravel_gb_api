@@ -43,9 +43,10 @@ class AdminUserRegisterApiController extends ApiResponseController
         // Log activity
         logActivity(
             'user_registration',
-            $user->user_code,
-            get_class($user),
-            $user->id,
+            $user,                 // ACTOR (who did it)
+            get_class($user), // SUBJECT TYPE (what was affected)
+            $user->id,              // SUBJECT ID
+            $user->user_code,       // SUBJECT CODE (human readable)
             [
                 'user_code' => $user->user_code,
                 'email' => $user->email,

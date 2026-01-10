@@ -29,10 +29,18 @@ return new class extends Migration
             $table->string('legal_name');
             $table->string('other_legal_name')->nullable();
 
+            // Parental names
+            $table->string('father_name', 100)->nullable();
+            $table->string('mother_name', 100)->nullable();
+            $table->string('other_name', 100)->nullable();
+
             // Masked identifiers
-            $table->string('pan_card', 15)->nullable();
+            $table->string('pan_card_no', 15)->nullable();
             $table->string('aadhaar_last4', 4)->nullable();
             $table->string('aadhaar_vid_last4', 4)->nullable();
+
+            $table->date('dob')->nullable();
+            $table->string('gender', 20)->nullable();
 
             // Status
             $table->string('status', 20)->default('pending')->nullable();    // pending | needs_update | verified | expired

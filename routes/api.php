@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\v1\User\Auth\UserLoginApiController;
 use App\Http\Controllers\Api\v1\User\Auth\UserLogoutApiController;
 use App\Http\Controllers\Api\v1\User\Auth\UserRegisterApiController;
 use App\Http\Controllers\Api\v1\User\Auth\UserResetPasswordApiController;
+use App\Http\Controllers\Api\v1\User\Legal\UserKycApiController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -53,6 +54,10 @@ Route::group([
             return $request->user();
         });
 
+
+        // KYC Routes
+        Route::post('/kyc', [UserKycApiController::class, 'storeKyc']); // Add KYC
+        Route::post('/kyc/update', [UserKycApiController::class, 'updateKyc']); // Update / Re-KYC
 
         //
     });
