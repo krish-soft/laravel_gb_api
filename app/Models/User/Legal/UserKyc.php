@@ -66,10 +66,10 @@ class UserKyc extends BaseModel
 
     protected $hidden = [
         'pan_card_no',
+        'picture',
 
         // Verification fields
         'status',
-
         'verification_mode',
         'verified_at',
         'verified_by',

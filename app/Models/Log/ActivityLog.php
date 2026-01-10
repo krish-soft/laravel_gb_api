@@ -6,6 +6,8 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 
+// Do not extend BaseModel to avoid logging loops
+
 class ActivityLog extends Model
 {
 

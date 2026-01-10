@@ -5,10 +5,12 @@ namespace App\Models\Log;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 
+
+// Do not extend BaseModel to avoid logging loops
+
 class AuditLog extends Model
 {
     //
-
 
     protected $fillable = [
         'user_code',

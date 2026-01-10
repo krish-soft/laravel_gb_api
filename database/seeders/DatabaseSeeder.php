@@ -26,6 +26,19 @@ class DatabaseSeeder extends Seeder
             \Database\Seeders\User\UserSeeder::class,
 
             // Other seeders can be added here
+
+            // Master Data Seeders
+            \Database\Seeders\Master\MstUnitSeeder::class,
+            \Database\Seeders\Master\MstPackTypeSeeder::class,
+
+
+            \Database\Seeders\Master\MstStateSeeder::class,
+            \Database\Seeders\Master\Depot\MstZoneSeeder::class,
+            \Database\Seeders\Master\Depot\MstDepotSeeder::class,
+
+            \Database\Seeders\Master\MstVehicleSeeder::class,
+
+
         ]);
     }
 }

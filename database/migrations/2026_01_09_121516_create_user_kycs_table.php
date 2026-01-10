@@ -21,7 +21,8 @@ return new class extends Migration
                 ->nullOnDelete();
 
             $table->string('user_code', 20)->nullable();
-
+            $table->string('picture')->nullable();
+            
             // Reference
             $table->string('kyc_code', 20)->unique();
 

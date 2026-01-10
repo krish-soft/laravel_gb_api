@@ -4,6 +4,12 @@ use App\Http\Controllers\Api\v1\Admin\Auth\AdminUserLoginApiController;
 use App\Http\Controllers\Api\v1\Admin\Auth\AdminUserLogoutApiController;
 use App\Http\Controllers\Api\v1\Admin\Auth\AdminUserRegisterApiController;
 use App\Http\Controllers\Api\v1\Admin\Auth\AdminUserResetPasswordApiController;
+use App\Http\Controllers\Api\v1\Admin\Master\Depot\MstDepotApiController;
+use App\Http\Controllers\Api\v1\Admin\Master\Depot\MstZoneApiController;
+use App\Http\Controllers\Api\v1\Admin\Master\MstPackTypeApiController;
+use App\Http\Controllers\Api\v1\Admin\Master\MstStateApiController;
+use App\Http\Controllers\Api\v1\Admin\Master\MstUnitApiController;
+use App\Http\Controllers\Api\v1\Admin\Master\Vehicle\MstVehicleApiController;
 use App\Http\Controllers\Api\v1\User\Auth\UserLoginApiController;
 use App\Http\Controllers\Api\v1\User\Auth\UserLogoutApiController;
 use App\Http\Controllers\Api\v1\User\Auth\UserRegisterApiController;
@@ -108,6 +114,25 @@ Route::group([
             Route::get('user', function (Request $request) {
                 return $request->user();
             });
+
+
+            // Master  Routes
+            Route::apiResource('mstUnit', MstUnitApiController::class);
+            Route::apiResource('mstPackType', MstPackTypeApiController::class);
+
+            Route::apiResource('mstVehicle', MstVehicleApiController::class);
+
+            Route::apiResource('mstState', MstStateApiController::class);
+            Route::apiResource('mstZone', MstZoneApiController::class);
+
+            // Depot Routes
+            Route::apiResource('mstDepot', MstDepotApiController::class);
+            Route::post('mstDepot/addAddress', [MstDepotApiController::class, 'addAddress']);
+            Route::put('mstDepot/{mstDepot}/updateAddress', [MstDepotApiController::class, 'updateAddress']);
+
+
+
+
             //
         });
 
