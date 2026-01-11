@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\v1\User\Auth\UserLoginApiController;
 use App\Http\Controllers\Api\v1\User\Auth\UserLogoutApiController;
 use App\Http\Controllers\Api\v1\User\Auth\UserRegisterApiController;
 use App\Http\Controllers\Api\v1\User\Auth\UserResetPasswordApiController;
+use App\Http\Controllers\Api\v1\User\Fulfillment\FulfillmentLocationApiController;
 use App\Http\Controllers\Api\v1\User\Legal\UserBankApiController;
 use App\Http\Controllers\Api\v1\User\Legal\UserKycApiController;
 use Illuminate\Http\Request;
@@ -81,12 +82,14 @@ Route::group([
             ]
         ], function () {
 
-
-
             Route::get('user', function (Request $request) {
                 return $request->user();
             });
 
+            // Fulfillment Location Routes
+            Route::apiResource('fulfillmentLocation', FulfillmentLocationApiController::class);
+            Route::post('fulfillmentLocation/address', [FulfillmentLocationApiController::class, 'addAddress']);
+            Route::put('fulfillmentLocation/{fulfillmentLocation}/updateAddress', [FulfillmentLocationApiController::class, 'updateAddress']);
 
 
             //
@@ -125,7 +128,7 @@ Route::group([
             });
 
             // Settings
-            
+
             Route::get('setting/app', [AppSettingApiController::class, 'getSettings']);
             Route::put('setting/app', [AppSettingApiController::class, 'updateSettings']);
 

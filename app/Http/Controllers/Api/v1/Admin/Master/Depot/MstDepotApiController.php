@@ -146,6 +146,11 @@ class MstDepotApiController extends ApiResponseWithAdminAuthController
     {
         //
 
+        // Already Exist then give error
+        if (!empty($mstDepot->addr_code)) {
+            return $this->errorResponse(__('messages.error_messages.address_exists'), 422);
+        }
+
         $address = Address::create($request->all());
         $mstDepot->addr_code = $address->addr_code;
 

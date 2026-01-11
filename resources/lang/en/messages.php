@@ -67,7 +67,7 @@ return [
         'not_adult'            => 'You must be at least 18 years of age to perform this action.',
         'force_app_update'    => 'A new version of the app (version :version) is available. Please update to continue using the app.',
         'invalid_locale'     => 'The specified locale is not supported.',
-        
+
         // Generic Errors
         'something_went_wrong' => 'An unexpected error occurred. Please try again later.',
         'already_exists'       => 'The requested resource already exists.',
@@ -116,6 +116,8 @@ return [
         'unauthorized_action' => 'You are not authorized to perform this action.',
 
         'bank_already_exists' => 'Bank details already exists. Only one bank account is allowed.',
+
+        'address_exists' => 'Address already exists for this resource.',
     ],
 
 ];
