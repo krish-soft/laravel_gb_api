@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductCategoryApiContro
 use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductPackagingApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductVariantApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Vehicle\MstVehicleApiController;
+use App\Http\Controllers\Api\v1\Admin\Setting\AppSettingApiController;
 use App\Http\Controllers\Api\v1\User\Auth\UserLoginApiController;
 use App\Http\Controllers\Api\v1\User\Auth\UserLogoutApiController;
 use App\Http\Controllers\Api\v1\User\Auth\UserRegisterApiController;
@@ -122,6 +123,11 @@ Route::group([
             Route::get('user', function (Request $request) {
                 return $request->user();
             });
+
+            // Settings
+            
+            Route::get('setting/app', [AppSettingApiController::class, 'getSettings']);
+            Route::put('setting/app', [AppSettingApiController::class, 'updateSettings']);
 
 
             // Master  Routes
