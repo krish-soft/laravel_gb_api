@@ -1,8 +1,11 @@
 <?php
 
+use App\Helpers\FileUploadHelper;
 use App\Models\Log\ActivityLog;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
+use App\Helpers\PrivateFileUploadHelper;
+use Laravel\Pail\File;
 
 // Global helper for activity logging
 if (!function_exists('logActivity')) {
@@ -43,7 +46,32 @@ if (!function_exists('logActivity')) {
 |--------------------------------------------------------------------------
 */
 
-use App\Helpers\PrivateFileUploadHelper;
+
+if (!function_exists('uploadPublicFile')) {
+    function uploadPublicFile(
+        ?\Illuminate\Http\UploadedFile $file,
+        string $path,
+        ?string $oldFile = null,
+        bool $deleteOldFile = true,
+    ): ?string {
+
+        return FileUploadHelper::upload(
+            $file,
+            $path,
+            $oldFile,
+            $deleteOldFile,
+            'public',
+        );
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Private File Upload Helper (PAN / Aadhaar / KYC)
+|--------------------------------------------------------------------------
+*/
+
 
 if (!function_exists('uploadPrivateFile')) {
     function uploadPrivateFile(

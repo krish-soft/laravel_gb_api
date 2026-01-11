@@ -9,6 +9,10 @@ use App\Http\Controllers\Api\v1\Admin\Master\Depot\MstZoneApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\MstPackTypeApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\MstStateApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\MstUnitApiController;
+use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductApiController;
+use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductCategoryApiController;
+use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductPackagingApiController;
+use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductVariantApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Vehicle\MstVehicleApiController;
 use App\Http\Controllers\Api\v1\User\Auth\UserLoginApiController;
 use App\Http\Controllers\Api\v1\User\Auth\UserLogoutApiController;
@@ -130,7 +134,11 @@ Route::group([
             Route::post('mstDepot/addAddress', [MstDepotApiController::class, 'addAddress']);
             Route::put('mstDepot/{mstDepot}/updateAddress', [MstDepotApiController::class, 'updateAddress']);
 
-
+            // Product
+            Route::apiResource('mstProductCategory', MstProductCategoryApiController::class);
+            Route::apiResource('mstProduct', MstProductApiController::class);
+            Route::apiResource('mstProductVariant', MstProductVariantApiController::class);
+            Route::apiResource('mstProductPackaging', MstProductPackagingApiController::class);
 
 
             //
