@@ -4,6 +4,10 @@ use App\Http\Controllers\Api\v1\Admin\Auth\AdminUserLoginApiController;
 use App\Http\Controllers\Api\v1\Admin\Auth\AdminUserLogoutApiController;
 use App\Http\Controllers\Api\v1\Admin\Auth\AdminUserRegisterApiController;
 use App\Http\Controllers\Api\v1\Admin\Auth\AdminUserResetPasswordApiController;
+use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeApiController;
+use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeLevelApiController;
+use App\Http\Controllers\Api\v1\Admin\Master\Charge\Rule\MstDeliveryChargeRuleApiController;
+use App\Http\Controllers\Api\v1\Admin\Master\Charge\Rule\MstMinimumOrderChargeRuleApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Depot\MstDepotApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Depot\MstZoneApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\MstPackTypeApiController;
@@ -140,6 +144,11 @@ Route::group([
             Route::apiResource('mstProductVariant', MstProductVariantApiController::class);
             Route::apiResource('mstProductPackaging', MstProductPackagingApiController::class);
 
+            // Charges
+            Route::apiResource('mstCharge', MstChargeApiController::class);
+            Route::apiResource('mstChargeLevel', MstChargeLevelApiController::class);
+            Route::apiResource('mstDeliveryChargeRule', MstDeliveryChargeRuleApiController::class);
+            Route::apiResource('mstMinimumOrderChargeRule', MstMinimumOrderChargeRuleApiController::class);
 
             //
         });

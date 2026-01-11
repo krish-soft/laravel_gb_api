@@ -32,7 +32,7 @@ return new class extends Migration
             $table->string('upc', 20)->nullable();
             $table->string('hsn', 20)->nullable();
 
-            $$table->string('grade', 50)->nullable();         // A, B, Export
+            $table->string('grade', 50)->nullable();         // A, B, Export
             $table->string('size', 50)->nullable();          // small, medium
             $table->string('origin', 100)->nullable();       // farm/region
 
@@ -40,8 +40,6 @@ return new class extends Migration
             $table->string('custchar2', 100)->nullable();
 
             $table->boolean('is_active')->default(true)->nullable();
-
-
 
             $table->timestamps();
             $table->softDeletes();

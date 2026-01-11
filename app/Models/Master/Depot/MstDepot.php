@@ -82,4 +82,9 @@ class MstDepot extends BaseModel
     {
         return $this->morphOne(Address::class, 'addr_code');
     }
+
+    public function zone()
+    {
+        return $this->belongsTo(MstZone::class, 'zone_id');
+    }
 }

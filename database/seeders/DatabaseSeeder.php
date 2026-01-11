@@ -31,12 +31,26 @@ class DatabaseSeeder extends Seeder
             \Database\Seeders\Master\MstUnitSeeder::class,
             \Database\Seeders\Master\MstPackTypeSeeder::class,
 
-
+            // Depot
             \Database\Seeders\Master\MstStateSeeder::class,
             \Database\Seeders\Master\Depot\MstZoneSeeder::class,
             \Database\Seeders\Master\Depot\MstDepotSeeder::class,
 
+            // Vehicle
             \Database\Seeders\Master\MstVehicleSeeder::class,
+
+            // Products
+            \Database\Seeders\Master\Product\MstCategorySeeder::class,
+            \Database\Seeders\Master\Product\MstProductSeeder::class,
+            // \Database\Seeders\Master\Product\MstProductVariantSeeder::class,
+            \Database\Seeders\Master\Product\MstProductPackagingSeeder::class,
+
+
+            // Charge Seeders
+            \Database\Seeders\Master\Charge\MstChargeSeeder::class,
+            \Database\Seeders\Master\Charge\MstChargeLevelSeeder::class,
+            \Database\Seeders\Master\Charge\MstMinimumOrderChargeRuleSeeder::class,
+            \Database\Seeders\Master\Charge\MstDeliveryChargeRuleSeeder::class,
 
 
         ]);
