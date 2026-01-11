@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Enum\Action\ActionCodeEnum;
+use App\Enum\Setting\LocaleEnum;
 use App\Models\Setting\AppSetting;
 use App\Traits\ApiResponserTrait;
 use Closure;
@@ -13,37 +15,74 @@ class AppChecker
 {
     use ApiResponserTrait;
 
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
     public function handle(Request $request, Closure $next): Response
     {
 
-        //
         if ($request->hasHeader('Accept-Language')) {
-            App::setLocale($request->header('Accept-Language'));
+
+            $locale = strtolower(trim($request->header('Accept-Language')));
+
+            if (!in_array($locale, LocaleEnum::casesAsValues(), true)) {
+                return $this->showErrorMessage(
+                    __('messages.error_messages.invalid_locale'),
+                    400
+                );
+                // $locale = config('app.fallback_locale');
+            }
+
+            App::setLocale($locale);
         }
 
-        // Check From env variable if app on maintance or live 
-        $appStatus = env('APP_ENV', 'production');
+        $appSetting = cache()->rememberForever('app_settings', function () {
+            return AppSetting::first();
+        });
 
-        $appSetting = app(AppSetting::class)->first();
-        if ($appSetting && $appSetting->maintenance_mode) {
-            $appStatus = 'maintenance';
+        if (!$appSetting) {
+            return $this->showErrorMessageWithAction(
+                'Service unavailable',
+                503,
+                ActionCodeEnum::FORCE_MAINTENANCE,
+
+            );
         }
 
-        if ($appStatus === 'maintenance') {
-            return $this->showErrorMessage(__('messages.error_messages.maintenance_mode'), 503);
+        if ($appSetting->isMaintenanceMode()) {
+            return $this->showErrorMessageWithAction(
+                $appSetting->getMaintenanceMessage() ?? __('messages.error_messages.maintenance_mode'),
+                503,
+                ActionCodeEnum::FORCE_MAINTENANCE,
+
+            );
         }
 
-        // Keep Pending to check Version code to check (optional)
-        $appVersion = $request->header('X-APP-VERSION') ?? '';
+        $platform   = strtolower((string) $request->header('X-Platform'));
+        $appVersion = (string) $request->header('X-App-Version');
 
+        if ($platform === 'android' && $appSetting->isForceAndroidUpdate()) {
+            $latestVersion = $appSetting->getAndroidAppVersion();
 
-        //
+            if ($latestVersion && version_compare($appVersion, $latestVersion, '<')) {
+                return $this->showErrorMessageWithAction(
+                    __('messages.error_messages.force_app_update', ['version' => $latestVersion]),
+                    426,
+                    ActionCodeEnum::FORCE_APP_UPDATE,
 
+                );
+            }
+        }
+
+        if ($platform === 'ios' && $appSetting->isForceIosUpdate()) {
+            $latestVersion = $appSetting->getIosAppVersion();
+
+            if ($latestVersion && version_compare($appVersion, $latestVersion, '<')) {
+                return $this->showErrorMessageWithAction(
+                    __('messages.error_messages.force_app_update', ['version' => $latestVersion]),
+                    426,
+                    ActionCodeEnum::FORCE_APP_UPDATE,
+
+                );
+            }
+        }
 
         return $next($request);
     }

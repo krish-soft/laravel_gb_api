@@ -42,14 +42,14 @@ class AppSettingServiceProvider extends ServiceProvider
         Config::set('app.name', $settings->app_name);
 
         // Localization
-        Config::set('app.locale', $settings->locale);
-        Config::set('app.fallback_locale', $settings->fallback_locale);
-        Config::set('app.timezone', $settings->timezone);
+        Config::set('app.locale', $settings->locale ?? 'en');
+        Config::set('app.fallback_locale', $settings->fallback_locale ?? 'en');
+        Config::set('app.timezone', $settings->timezone ??  'Asia/Kolkata');
 
         // Debug (SAFE override)
-        Config::set('app.debug', $settings->debug_enabled);
+        Config::set('app.debug', false);
 
         // Runtime timezone
-        date_default_timezone_set($settings->timezone);
+        date_default_timezone_set($settings->timezone ?? 'Asia/Kolkata');
     }
 }

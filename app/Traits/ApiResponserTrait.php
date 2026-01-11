@@ -2,6 +2,8 @@
 
 namespace App\Traits;
 
+use App\Enum\Action\ActionCodeEnum;
+
 trait ApiResponserTrait
 {
 
@@ -11,23 +13,29 @@ trait ApiResponserTrait
         return self::successResponse($message, [], $statusCode);
     }
 
-    protected static function showErrorMessage($message, $statusCode = 200): \Illuminate\Http\JsonResponse
+    protected static function showErrorMessage($message, $statusCode = 400): \Illuminate\Http\JsonResponse
     {
         return self::errorResponse($message, $statusCode);
+    }
+
+
+    protected static function showErrorMessageWithAction($message, $statusCode, ?ActionCodeEnum $actionCode = null): \Illuminate\Http\JsonResponse
+    {
+        return self::errorResponse($message, $statusCode, $actionCode);
     }
 
 
     protected static function successResponse($message, $data, $statusCode = 200): \Illuminate\Http\JsonResponse
     {
         return response()->json(
-            ['isSuccess' => true, 'message' => $message, 'statusCode' => $statusCode, 'data' => $data],
+            ['isSuccess' => true, 'message' => $message, 'statusCode' => $statusCode, 'actionCode' => null, 'data' => $data],
             $statusCode,
             ['Content-Type' => 'application/json;charset=UTF-8', 'Charset' => 'utf-8'],
             JSON_UNESCAPED_UNICODE
         );
     }
 
-    protected static function errorResponse($message, $statusCode): \Illuminate\Http\JsonResponse
+    protected static function errorResponse($message, $statusCode, $actionCode = null): \Illuminate\Http\JsonResponse
     {
         if (is_array($message)) {
             // If $message is an array, convert it to a string representation
@@ -44,6 +52,7 @@ trait ApiResponserTrait
             'isSuccess' => false,
             'message' => $message,
             'statusCode' => $statusCode,
+            'actionCode' => $actionCode,
             'data' => []
         ], 200, [
             'Content-Type' => 'application/json;charset=UTF-8',

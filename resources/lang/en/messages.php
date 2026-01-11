@@ -63,13 +63,18 @@ return [
         'unauthorized_access'       => 'You are not authorized to access this resource.',
         'unauthorized_access_admin' => 'You are not authorized to access this administrative resource.',
 
+        //
+        'not_adult'            => 'You must be at least 18 years of age to perform this action.',
+        'force_app_update'    => 'A new version of the app (version :version) is available. Please update to continue using the app.',
+        'invalid_locale'     => 'The specified locale is not supported.',
+        
         // Generic Errors
         'something_went_wrong' => 'An unexpected error occurred. Please try again later.',
         'already_exists'       => 'The requested resource already exists.',
         'cannot_delete_used_in_transactions' => 'This resource cannot be deleted because it is associated with existing transactions.',
         'maintenance_mode'     => 'The application is currently under maintenance. Please try again later.',
         'unauthorized_action'  => 'You are not authorized to perform this action.',
-        'not_adult'            => 'You must be at least 18 years of age to perform this action.',
+
 
         // Configuration
         'missing_configuration_ms_api_key' => 'Required MS API key configuration is missing.',

@@ -24,20 +24,27 @@ return new class extends Migration
 
             // Formatting
             $table->string('currency')->default('INR')->nullable();
+            $table->string('currency_symbol', 10)->default('₹')->nullable();
+
             $table->string('date_format')->default('Y-m-d')->nullable();
             $table->string('time_format')->default('H:i')->nullable();
 
             // App behavior
-            $table->boolean('maintenance_mode')->default(false);
+            $table->boolean('is_maintenance_mode')->default(false);
             $table->text('maintenance_message')->nullable();
 
             // UI / frontend
-            $table->boolean('registration_enabled')->default(true);
-            $table->boolean('debug_enabled')->default(false);
+            $table->boolean('is_registration_enabled')->default(true);
 
             // Meta
             $table->string('app_version', 10)->nullable();
-            $table->string('mobile_app_version', 10)->nullable();
+
+            // Mobile app versioning
+            $table->string('mobile_app_android_version', 10)->nullable();
+            $table->boolean('is_force_app_android_update')->default(false);
+
+            $table->string('mobile_app_ios_version', 10)->nullable();
+            $table->boolean('is_force_app_ios_update')->default(false);
 
             $table->timestamps();
             $table->softDeletes();

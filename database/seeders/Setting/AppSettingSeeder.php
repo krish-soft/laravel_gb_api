@@ -26,20 +26,26 @@ class AppSettingSeeder extends Seeder
 
             // Formatting
             'currency' => 'INR',
+            'currency_symbol' => '₹',
             'date_format' => 'Y-m-d',
             'time_format' => 'H:i',
 
             // App behavior
-            'maintenance_mode' => false,
+            'is_maintenance_mode' => false,
             'maintenance_message' => null,
 
             // UI / frontend
-            'registration_enabled' => true,
-            'debug_enabled' => false,
+            'is_registration_enabled' => true,
+
 
             // Meta
             'app_version' => '1.0.0',
-            'mobile_app_version' => '1.0.0',
+            // Mobile app versioning
+            'mobile_app_android_version' => '1.0.0',
+            'is_force_app_android_update' => false,
+
+            'mobile_app_ios_version' => '1.0.0',
+            'is_force_app_ios_update' => false,
         ]);
     }
 }
