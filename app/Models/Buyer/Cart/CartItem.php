@@ -8,11 +8,13 @@ use App\Models\Seller\Product\ProductListingItem;
 use App\Models\Seller\Product\ProductListingPackage;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class CartItem extends BaseModel
 {
     //
+    use SoftDeletes;
 
     protected $fillable = [
         'cart_id',
