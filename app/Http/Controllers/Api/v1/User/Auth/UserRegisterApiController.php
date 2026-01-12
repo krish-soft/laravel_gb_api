@@ -66,11 +66,11 @@ class UserRegisterApiController extends ApiResponseController
         OneTimePasswordService $otpService
     ) {
         $request->validate([
-            'phone_number' => 'required|string',
+            'phone_number'  => 'required|string|unique:users,phone_number',
             'request_id'    => 'required|string',
             'otp'           => 'required|string|size:6',
             'name'          => 'required|string|max:100',
-            'email'         => 'nullable|email|max:255|unique:users,email',
+            // 'email'         => 'nullable|email|max:255|unique:users,email', // Optional email
             'password'      => 'required|string|min:6|confirmed',
             'role'          => 'required|string|in:' . implode(',', array_map(fn($case) => $case->value, UserRoleEnum::cases())),
             'user_type'     => 'nullable|string|in:' . implode(',', array_map(fn($case) => $case->value, UserTypeEnum::cases())),
@@ -98,12 +98,16 @@ class UserRegisterApiController extends ApiResponseController
             default => null,
         };
 
-        $userType = match ($request->role) {
-            UserRoleEnum::SELLER->value => 'farmer',
-            UserRoleEnum::BUYER->value => 'trader',
-            UserRoleEnum::DELIVERY->value => 'delivery',
-            default => $request->user_type ?? null,
-        };
+        if (empty($request->user_type)) {
+            $userType = match ($request->role) {
+                UserRoleEnum::SELLER->value => UserTypeEnum::FARMER->value,
+                UserRoleEnum::BUYER->value => UserTypeEnum::TRADER->value,
+                UserRoleEnum::DELIVERY->value => UserTypeEnum::DELIVERY->value,
+                default => null,
+            };
+        } else {
+            $userType = $request->user_type;
+        }
 
 
         // Create User
@@ -128,7 +132,8 @@ class UserRegisterApiController extends ApiResponseController
             $user->user_code,       // SUBJECT CODE (human readable)
             [
                 'user_code' => $user->user_code,
-                'email' => $user->email,
+                'role' => $user->role,
+                'user_type' => $user->user_type,
             ]
         );
 

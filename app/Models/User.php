@@ -12,6 +12,7 @@ use App\Enum\User\UserTypeEnum;
 use App\Models\User\Legal\UserBank;
 use App\Models\User\Legal\UserKyc;
 use App\Models\User\Legal\UserLegalDocument;
+use App\Models\User\UserDepot;
 use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -195,6 +196,11 @@ class User extends Authenticatable
     public function address()
     {
         return $this->belongsTo(Address::class, 'addr_code', 'addr_code');
+    }
+
+    public function depots()
+    {
+        return $this->hasMany(UserDepot::class);
     }
 
 

@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductPackagingApiContr
 use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductVariantApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Vehicle\MstVehicleApiController;
 use App\Http\Controllers\Api\v1\Admin\Setting\AppSettingApiController;
+use App\Http\Controllers\Api\v1\Admin\User\AdminRegularUserApiController;
 use App\Http\Controllers\Api\v1\User\Auth\UserLoginApiController;
 use App\Http\Controllers\Api\v1\User\Auth\UserLogoutApiController;
 use App\Http\Controllers\Api\v1\User\Auth\UserRegisterApiController;
@@ -82,7 +83,7 @@ Route::group([
             ]
         ], function () {
 
-            Route::get('user', function (Request $request) {
+            Route::get('user-profile', function (Request $request) {
                 return $request->user();
             });
 
@@ -123,9 +124,16 @@ Route::group([
             Route::post('/signout', [AdminUserLogoutApiController::class, 'logout']); // Admin User Logout
 
 
-            Route::get('user', function (Request $request) {
+            Route::get('user-profile', function (Request $request) {
                 return $request->user();
             });
+
+
+            // Regular User Management
+            Route::apiResource('regular-user', AdminRegularUserApiController::class); // Manage Regular user 
+            Route::post('regular-user/{user}/addDepot', [AdminRegularUserApiController::class, 'addDepot']);
+            Route::delete('regular-user/{user}/removeDepot', [AdminRegularUserApiController::class, 'removeDepot']);
+
 
             // Settings
 
