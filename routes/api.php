@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductCategoryApiContro
 use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductPackagingApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductVariantApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Vehicle\MstVehicleApiController;
+use App\Http\Controllers\Api\v1\Admin\Seller\Product\AdminProductListingApiController;
 use App\Http\Controllers\Api\v1\Admin\Setting\AppSettingApiController;
 use App\Http\Controllers\Api\v1\Admin\User\AdminRegularUserApiController;
 use App\Http\Controllers\Api\v1\User\Auth\UserLoginApiController;
@@ -27,6 +28,7 @@ use App\Http\Controllers\Api\v1\User\Auth\UserResetPasswordApiController;
 use App\Http\Controllers\Api\v1\User\Fulfillment\FulfillmentLocationApiController;
 use App\Http\Controllers\Api\v1\User\Legal\UserBankApiController;
 use App\Http\Controllers\Api\v1\User\Legal\UserKycApiController;
+use App\Http\Controllers\Api\v1\User\Product\ProductListingApiController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -52,6 +54,9 @@ Route::group([
     Route::post('/forget/otp/send', [UserResetPasswordApiController::class, 'sendForgotPasswordOtp']);
     Route::post('/forget/reset', [UserResetPasswordApiController::class, 'resetPassword']);
 
+    /**
+     *  Regular User Auth Protected Routes
+     */
 
     ## Auth Protected Routes
     ## Regular User Auth Protected Routes
@@ -78,8 +83,7 @@ Route::group([
         // Whihc Required KYC Approved User Only
         Route::group([
             'middleware' => [
-                'user-legal-checker' // Custom Middleware to check user legal (KYC) status
-
+                // 'user-legal-checker' // Custom Middleware to check user legal (KYC) status // Testing Removed
             ]
         ], function () {
 
@@ -92,6 +96,13 @@ Route::group([
             Route::post('fulfillmentLocation/address', [FulfillmentLocationApiController::class, 'addAddress']);
             Route::put('fulfillmentLocation/{fulfillmentLocation}/updateAddress', [FulfillmentLocationApiController::class, 'updateAddress']);
 
+
+            // Product Listing Routes
+            Route::post('/product-listing', [ProductListingApiController::class, 'store']);
+            Route::post('/product-listing/{listingId}/cancel', [ProductListingApiController::class, 'cancelListing']);
+
+            Route::put('/product-listing/packages/{packageId}', [ProductListingApiController::class, 'updatePackage']);
+            Route::post('/product-listing/packages/{packageId}/cancel', [ProductListingApiController::class, 'deletePackage']);
 
             //
         });
@@ -129,6 +140,12 @@ Route::group([
             });
 
 
+            // Product Listing Routes
+            Route::post('/product-listing', [AdminProductListingApiController::class, 'store']);
+            Route::post('/product-listing/{listingId}/cancel', [AdminProductListingApiController::class, 'cancelListing']);
+            Route::put('/product-listing-packages/{packageId}', [AdminProductListingApiController::class, 'updatePackage']);
+            Route::post('/product-listing-packages/{packageId}/cancel', [AdminProductListingApiController::class, 'deletePackage']);
+
             // Regular User Management
             Route::apiResource('regular-user', AdminRegularUserApiController::class); // Manage Regular user 
             Route::post('regular-user/{user}/addDepot', [AdminRegularUserApiController::class, 'addDepot']);
@@ -136,12 +153,11 @@ Route::group([
 
 
             // Settings
-
             Route::get('setting/app', [AppSettingApiController::class, 'getSettings']);
             Route::put('setting/app', [AppSettingApiController::class, 'updateSettings']);
 
 
-            // Master  Routes
+            ##  Master  Routes
             Route::apiResource('mstUnit', MstUnitApiController::class);
             Route::apiResource('mstPackType', MstPackTypeApiController::class);
 

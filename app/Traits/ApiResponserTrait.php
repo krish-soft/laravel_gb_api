@@ -19,7 +19,7 @@ trait ApiResponserTrait
     }
 
 
-    protected static function showErrorMessageWithAction($message, $statusCode, ?ActionCodeEnum $actionCode = null): \Illuminate\Http\JsonResponse
+    protected static function showErrorMessageWithAction($message, $statusCode, $actionCode = null): \Illuminate\Http\JsonResponse
     {
         return self::errorResponse($message, $statusCode, $actionCode);
     }

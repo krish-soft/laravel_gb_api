@@ -1,0 +1,111 @@
+<?php
+
+namespace App\Models\Seller\Product;
+
+use App\Models\BaseModel;
+use App\Models\Fulfillment\FulfillmentLocation;
+use App\Models\Master\Unique\MstSeqCodeGenerator;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+
+class ProductListing extends BaseModel
+{
+    //
+
+    protected static function booted()
+    {
+        parent::booted();
+
+        static::creating(function ($model) {
+
+            if (is_null($model->listing_code)) {
+
+                $date = now()->format('Ymd');
+
+                do {
+                    $next = DB::table('product_listings')
+                        ->whereDate('created_at', now()->toDateString())
+                        ->lockForUpdate()
+                        ->max(DB::raw("CAST(SUBSTRING_INDEX(listing_code, '-', -1) AS UNSIGNED)")) + 1;
+
+                    $code = 'PL-' . $date . '-' . str_pad($next, 6, '0', STR_PAD_LEFT);
+
+                    $exists = DB::table('product_listings')
+                        ->where('listing_code', $code)
+                        ->exists();
+                } while ($exists);
+
+                $model->listing_code = $code;
+            }
+
+            if (is_null($model->expires_at)) {
+                $model->expires_at = now()->addHours(24);
+            }
+
+            // Check alrady exists doc_no for today
+            do {
+                $docNo = MstSeqCodeGenerator::getNextDocNo();
+            } while (
+                self::where('doc_no', $docNo)->exists()
+            );
+
+            $model->doc_no = $docNo;
+        });
+    }
+
+    protected $fillable = [
+        'seller_id',
+        'fulfillment_location_id',
+        'listing_code',
+        'doc_no',
+        'doc_date',
+        'is_sell_to_market',
+        'is_seller_delivery',
+        'is_buyer_pickup',
+        'is_active',
+        'inactive_reason',
+        'is_partial',
+        'is_sold',
+        'is_locked',
+        'is_expired',
+        'expires_at',
+    ];
+
+    // casts
+    protected $casts = [
+        'doc_date' => 'date',
+        'expires_at' => 'datetime',
+        'is_sell_to_market' => 'boolean',
+        'is_seller_delivery' => 'boolean',
+        'is_buyer_pickup' => 'boolean',
+        'is_active' => 'boolean',
+        'is_partial' => 'boolean',
+        'is_sold' => 'boolean',
+        'is_locked' => 'boolean',
+        'is_expired' => 'boolean',
+    ];
+
+    // scope    
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+
+    // Relationships
+    public function listingItems()
+    {
+        return $this->hasMany(ProductListingItem::class, 'product_listing_id');
+    }
+
+    public function seller()
+    {
+        return $this->belongsTo(User::class, 'seller_id');
+    }
+
+    public function pickupFulfillmentLocation()
+    {
+        return $this->belongsTo(FulfillmentLocation::class, 'fulfillment_location_id');
+    }
+}

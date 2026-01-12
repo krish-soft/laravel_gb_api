@@ -52,6 +52,9 @@ class DatabaseSeeder extends Seeder
             \Database\Seeders\Master\Charge\MstMinimumOrderChargeRuleSeeder::class,
             \Database\Seeders\Master\Charge\MstDeliveryChargeRuleSeeder::class,
 
+            // Fulfillment Location Seeder
+            \Database\Seeders\Fulfillment\FulfillmentLocationSeeder::class,
+
 
         ]);
     }
