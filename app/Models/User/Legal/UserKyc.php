@@ -23,7 +23,7 @@ class UserKyc extends BaseModel
         'father_name',
         'mother_name',
 
-        'pan_card_no',
+        'pan_card_number',
         'aadhaar_last4',
         'aadhaar_vid_last4',
 
@@ -58,14 +58,14 @@ class UserKyc extends BaseModel
      * Attribute casting
      */
     protected $casts = [
-        'pan_card'    => 'encrypted',   // PAN encrypted
+        'pan_card_number'    => 'encrypted',   // PAN encrypted
         'verified_at' => 'datetime',
         'expired_at'  => 'datetime',
         'is_expired'  => 'boolean',
     ];
 
     protected $hidden = [
-        'pan_card_no',
+        'pan_card_number',
         'picture',
 
         // Verification fields

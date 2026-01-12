@@ -37,8 +37,8 @@ class KycService
                 ? preg_replace('/\D/', '', $data['aadhaar_number'])
                 : null;
 
-            $pan = array_key_exists('pan_card_no', $data)
-                ? strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $data['pan_card_no']))
+            $pan = array_key_exists('pan_card_number', $data)
+                ? strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $data['pan_card_number']))
                 : null;
 
             // ---------- VALIDATION ----------
@@ -59,7 +59,7 @@ class KycService
             $kyc->user_code = $user->user_code;
             $kyc->status = KycStatusEnum::PENDING->value;
             $kyc->is_expired = false;
-            $kyc->pan_card_no = $pan;
+            $kyc->pan_card_number = $pan;
             $kyc->aadhaar_last4 = substr($aadhaar, -4);
 
             $kyc->save();
@@ -117,8 +117,8 @@ class KycService
                 ? preg_replace('/\D/', '', $data['aadhaar_number'])
                 : null;
 
-            $pan = array_key_exists('pan_card_no', $data)
-                ? strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $data['pan_card_no']))
+            $pan = array_key_exists('pan_card_number', $data)
+                ? strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $data['pan_card_number']))
                 : null;
 
             // ---------- AUTO-FILL ALL FIELDS ----------
@@ -137,7 +137,7 @@ class KycService
             // ---------- PAN ----------
             if ($pan !== null) {
                 $this->assertValidPan($pan, $files, $user->id);
-                $kyc->pan_card_no = $pan;
+                $kyc->pan_card_number = $pan;
                 $this->storePanDoc($user, $kyc, $pan, $files);
             }
 
@@ -317,8 +317,8 @@ class KycService
             ? preg_replace('/\D/', '', $data['aadhaar_number'])
             : null;
 
-        $pan = array_key_exists('pan_card_no', $data)
-            ? strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $data['pan_card_no']))
+        $pan = array_key_exists('pan_card_number', $data)
+            ? strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $data['pan_card_number']))
             : null;
 
         return [$aadhaar, $pan];
@@ -367,7 +367,7 @@ class KycService
             );
         }
 
-        $query = UserKyc::where('pan_card_no', $pan);
+        $query = UserKyc::where('pan_card_number', $pan);
         if ($ignoreUserId) {
             $query->where('user_id', '!=', $ignoreUserId);
         }

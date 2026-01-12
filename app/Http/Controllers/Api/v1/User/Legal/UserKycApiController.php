@@ -21,7 +21,7 @@ class UserKycApiController extends ApiResponseWithAuthController
             'aadhaar_front_image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
             'aadhaar_back_image'  => 'required|image|mimes:jpg,jpeg,png|max:2048',
 
-            'pan_card_no' => 'nullable|string|max:15',
+            'pan_card_number' => 'nullable|string|max:15',
             'pan_card_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
 
             'dob' => 'required|date_format:Y-m-d|before:today',
@@ -65,7 +65,7 @@ class UserKycApiController extends ApiResponseWithAuthController
             'aadhaar_front_image' => 'sometimes|image|mimes:jpg,jpeg,png|max:2048',
             'aadhaar_back_image'  => 'sometimes|image|mimes:jpg,jpeg,png|max:2048',
 
-            'pan_card_no' => 'sometimes|string|max:15',
+            'pan_card_number' => 'sometimes|string|max:15',
             'pan_card_image' => 'sometimes|image|mimes:jpg,jpeg,png|max:2048',
 
             'dob' => 'nullable|date_format:Y-m-d|before:today',
