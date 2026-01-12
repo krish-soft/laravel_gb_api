@@ -29,7 +29,7 @@ use App\Http\Controllers\Api\v1\User\Buyer\CartApiController;
 use App\Http\Controllers\Api\v1\User\Fulfillment\FulfillmentLocationApiController;
 use App\Http\Controllers\Api\v1\User\Legal\UserBankApiController;
 use App\Http\Controllers\Api\v1\User\Legal\UserKycApiController;
-use App\Http\Controllers\Api\v1\User\Product\ProductListingApiController;
+use App\Http\Controllers\Api\v1\User\Seller\Product\ProductListingApiController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 

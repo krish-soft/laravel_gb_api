@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\v1\User\Product;
+namespace App\Http\Controllers\Api\v1\User\Seller\Product;
 
 use App\Http\Controllers\ApiResponseWithAuthController;
 use App\Services\Seller\Product\ProductListingService;
