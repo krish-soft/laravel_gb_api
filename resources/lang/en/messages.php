@@ -49,6 +49,13 @@ return [
         'bank_reviewed'    => 'Bank account reviewed successfully.',
         'bank_deleted'     => 'Bank account deleted successfully.',
         'bank_primary_set' => 'Primary bank account updated successfully.',
+
+        /* Cart */
+        'cart_fetched' => 'Cart fetched successfully',
+        'cart_item_added' => 'Item added to cart',
+        'cart_item_updated' => 'Cart item updated',
+        'cart_item_removed' => 'Item removed from cart',
+        'cart_cleared' => 'Cart cleared successfully',
     ],
 
     /*
@@ -127,6 +134,10 @@ return [
         'nothing_to_update'        => 'Nothing to update.',
         'listing_terminal_state'   => 'Listing is completed or inactive and cannot be modified.',
         'listing_has_sales'        => 'Listing has completed sales and cannot be cancelled.',
+
+        // CArt
+        'cart_locked' => 'Cart is locked due to checkout in progress',
+        'package_already_sold' => 'Selected package is already sold out',
     ],
 
 ];

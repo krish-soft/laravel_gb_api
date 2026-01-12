@@ -9,6 +9,8 @@ use App\Enum\Legal\KycStatusEnum;
 use App\Enum\User\AdminRoleEnum;
 use App\Enum\User\UserRoleEnum;
 use App\Enum\User\UserTypeEnum;
+use App\Models\Buyer\Cart\Cart;
+use App\Models\Seller\Product\ProductListing;
 use App\Models\User\Legal\UserBank;
 use App\Models\User\Legal\UserKyc;
 use App\Models\User\Legal\UserLegalDocument;
@@ -201,6 +203,16 @@ class User extends Authenticatable
     public function depots()
     {
         return $this->hasMany(UserDepot::class);
+    }
+
+    public function buyerCart()
+    {
+        return $this->hasMany(Cart::class, 'buyer_id', 'id');
+    }
+
+    public function sellerProductListings()
+    {
+        return $this->hasMany(ProductListing::class, 'seller_id', 'id');
     }
 
 

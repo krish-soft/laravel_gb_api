@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\v1\User\Auth\UserLoginApiController;
 use App\Http\Controllers\Api\v1\User\Auth\UserLogoutApiController;
 use App\Http\Controllers\Api\v1\User\Auth\UserRegisterApiController;
 use App\Http\Controllers\Api\v1\User\Auth\UserResetPasswordApiController;
+use App\Http\Controllers\Api\v1\User\Buyer\CartApiController;
 use App\Http\Controllers\Api\v1\User\Fulfillment\FulfillmentLocationApiController;
 use App\Http\Controllers\Api\v1\User\Legal\UserBankApiController;
 use App\Http\Controllers\Api\v1\User\Legal\UserKycApiController;
@@ -98,11 +99,21 @@ Route::group([
 
 
             // Product Listing Routes
-            Route::post('/product-listing', [ProductListingApiController::class, 'store']);
-            Route::post('/product-listing/{listingId}/cancel', [ProductListingApiController::class, 'cancelListing']);
+            Route::prefix('product-listing')->group(function () {
+                Route::post('listing/add', [ProductListingApiController::class, 'store']);
+                Route::post('listing/{listingId}/cancel', [ProductListingApiController::class, 'cancelListing']);
+                Route::put('packages/{packageId}', [ProductListingApiController::class, 'updatePackage']);
+                Route::post('packages/{packageId}/cancel', [ProductListingApiController::class, 'deletePackage']);
+            });
 
-            Route::put('/product-listing/packages/{packageId}', [ProductListingApiController::class, 'updatePackage']);
-            Route::post('/product-listing/packages/{packageId}/cancel', [ProductListingApiController::class, 'deletePackage']);
+            // Cart Routes
+            Route::prefix('cart')->group(function () {
+                Route::get('active', [CartApiController::class, 'getActiveCart']);
+                Route::post('item', [CartApiController::class, 'addItem']);
+                Route::put('item/{cartItemId}', [CartApiController::class, 'updateItem']);
+                Route::delete('item/{cartItemId}', [CartApiController::class, 'removeItem']);
+                Route::delete('clear', [CartApiController::class, 'clearCart']);
+            });
 
             //
         });
