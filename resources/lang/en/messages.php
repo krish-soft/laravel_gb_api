@@ -155,6 +155,8 @@ return [
         'package_locked'        => 'Package is locked.',
         'no_packages_left'      => 'No packages available.',
         'package_already_sold'  => 'Package is already sold.',
+        'no_packages_provided' => 'No packages provided for charge calculation.',
+        'invalid_package_data' => 'Invalid package data provided for charge calculation.',
 
         /* Stock */
         'insufficient_stock' => 'Insufficient stock available.',

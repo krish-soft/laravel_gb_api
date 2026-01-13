@@ -100,8 +100,10 @@ Route::group([
 
             // Product Listing Routes
             Route::prefix('product-listing')->group(function () {
-                Route::post('listing/add', [ProductListingApiController::class, 'store']);
+                Route::post('listing/preview', [ProductListingApiController::class, 'previewWithCharges']);
+                Route::post('listing/confirm', [ProductListingApiController::class, 'confirmListing']);
                 Route::post('listing/{listingId}/cancel', [ProductListingApiController::class, 'cancelListing']);
+
                 Route::put('packages/{packageId}', [ProductListingApiController::class, 'updatePackage']);
                 Route::post('packages/{packageId}/cancel', [ProductListingApiController::class, 'deletePackage']);
             });

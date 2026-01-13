@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\v1\User\Seller\Product;
 
 use App\Http\Controllers\ApiResponseWithAuthController;
 use App\Services\Seller\Product\ProductListingService;
+use App\Services\Seller\Product\SellerListingChargePreviewService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -19,10 +20,48 @@ class ProductListingApiController extends ApiResponseWithAuthController
     }
 
 
-    public function store(Request $request)
+    public function previewWithCharges(Request $request, SellerListingChargePreviewService $service)
+    {
+        try {
+            $data = $request->validate([
+
+                'packages' => 'required|array|min:1',
+
+                'packages.*.order_qty' => 'required|numeric|min:1',
+                'packages.*.pack_size' => 'required|numeric|min:0.01',
+                'packages.*.pack_unit' => 'required|string|max:20',
+                'packages.*.pack_type_unit' => 'nullable|string|max:50',
+                'packages.*.pack_price' => 'required|numeric|min:0',
+            ]);
+
+            $chargeLevelcode = $request->user()->charge_level_code;
+
+            if (empty($chargeLevelcode)) {
+                throw new RuntimeException(
+                    __('messages.error_messages.invalid_charge_level'),
+                    422
+                );
+            }
+
+            $result = $service->preview(
+                $data['packages'],
+                $chargeLevelcode
+            );
+
+            return $this->successResponse(
+                $result,
+                __('messages.success_messages.success_preview')
+            );
+        } catch (\Exception $e) {
+            return $this->showErrorMessage($e->getMessage(), $e->getCode());
+        }
+    }
+
+
+    public function confirmListing(Request $request)
     {
 
-    
+
         try {
             $data = $request->validate($this->createRules());
 

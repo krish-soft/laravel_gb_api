@@ -62,6 +62,7 @@ class ProductListingService
                 }
             }
 
+            //
             logActivity(
                 'product_listing_created',
                 $user,
