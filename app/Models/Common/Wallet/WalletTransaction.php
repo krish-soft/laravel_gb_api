@@ -1,0 +1,66 @@
+<?php
+
+namespace App\Models\Common\Wallet;
+
+use App\Models\BaseModel;
+use Illuminate\Support\Str;
+
+class WalletTransaction extends BaseModel
+{
+
+    protected $fillable = [
+        'wallet_id',
+        'user_code',
+        'wallet_txn_code',
+
+        'amount',
+        'type',
+        'status',
+        'description',
+
+        'source_type',
+        'source_id',
+        'source_code',
+
+        'reference',
+        'payment_reference',
+        'gateway',
+        'remark',
+    ];
+
+    protected $casts = [
+        'amount' => 'decimal:2',
+    ];
+
+    /* =========================
+     | Relationships
+     =========================*/
+
+    public function wallet()
+    {
+        return $this->belongsTo(Wallet::class);
+    }
+
+    public function ledgers()
+    {
+        return $this->hasMany(WalletLedger::class);
+    }
+
+    /* =========================
+     | Boot
+     =========================*/
+
+    protected static function booted()
+    {
+        static::creating(function ($txn) {
+            if (empty($txn->wallet_txn_code)) {
+                $txn->wallet_txn_code = self::generateTxnCode();
+            }
+        });
+    }
+
+    public static function generateTxnCode(): string
+    {
+        return 'WTX-' . now()->format('YmdHis') . '-' . strtoupper(Str::random(4));
+    }
+}

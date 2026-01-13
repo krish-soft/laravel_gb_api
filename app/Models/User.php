@@ -14,6 +14,7 @@ use App\Models\Common\User\Legal\UserBank;
 use App\Models\Common\User\Legal\UserKyc;
 use App\Models\Common\User\Legal\UserLegalDocument;
 use App\Models\Common\User\UserDepot;
+use App\Models\Common\Wallet\Wallet;
 use App\Models\Seller\Product\ProductListing;
 use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -166,7 +167,6 @@ class User extends Authenticatable
     }
 
 
-
     // scopes
     public function scopeActive($query)
     {
@@ -215,6 +215,18 @@ class User extends Authenticatable
         return $this->hasMany(ProductListing::class, 'seller_id', 'id');
     }
 
+    public function wallet()
+    {
+        return $this->hasOne(Wallet::class, 'user_id', 'id');
+    }
+
+    public function getOrCreateWallet(): Wallet
+    {
+        return $this->wallet()->firstOrCreate([
+            'currency' => 'INR',
+            'is_active' => true,
+        ]);
+    }
 
     /* ---------------- BOOLEAN METHODS (AUTH / LOGIC) ---------------- */
 
@@ -254,12 +266,12 @@ class User extends Authenticatable
 
     public function isKycApproved(): bool
     {
-        return $this->kyc && $this->kyc->status ===  KycStatusEnum::APPROVED->value;
+        return $this->kyc && $this->kyc->status === KycStatusEnum::APPROVED->value;
     }
 
     public function isBankVerified(): bool
     {
-        return  $this->bank && $this->bank->status ===  BankStatusEnum::VERIFIED->value;
+        return $this->bank && $this->bank->status === BankStatusEnum::VERIFIED->value;
     }
 
     //
