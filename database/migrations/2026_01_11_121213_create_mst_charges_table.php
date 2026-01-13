@@ -29,7 +29,7 @@ return new class extends Migration
             $table->decimal('igst_percent', 8, 2)->default(0);
 
             // State rule (NULL = applicable for all states)
-            $table->string('applicable_state_code', 10)->nullable(); // e.g. GJ, MH
+            $table->json('applicable_state_code')->nullable(); // e.g. GJ, MH
 
             $table->boolean('is_active')->default(true)->nullable();
 

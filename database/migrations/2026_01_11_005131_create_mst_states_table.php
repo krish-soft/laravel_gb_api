@@ -18,7 +18,9 @@ return new class extends Migration
             $table->string('iso_code', 10)->unique();
             $table->string('language', 10)->nullable();
             $table->string('type', 10)->nullable();        // Legal necessity
+
             $table->boolean('is_active')->default(true)->nullable();
+            $table->boolean('is_ut')->default(false)->nullable();
 
             $table->timestamps();
             $table->softDeletes();
