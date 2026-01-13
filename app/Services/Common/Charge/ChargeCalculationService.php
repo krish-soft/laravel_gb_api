@@ -13,8 +13,7 @@ class ChargeCalculationService
         string $chargeLevelCode,
         float  $orderAmount,
         array  $packages
-    ): array
-    {
+    ): array {
 
         if ($orderAmount < 0) {
             throw new RuntimeException(__('messages.error_messages.invalid_order_amount'), 422);
@@ -81,12 +80,12 @@ class ChargeCalculationService
                         'rule_no' => $rule['rule_no'],
                         'rule_desc' => $rule['description'],
                         'taxable_amount' => round($rule['amount'], 2),
-                        'tax_amount' => round($taxArr['total_tax'], 2),
-                        'total_amount' => round($rule['amount'] + $taxArr['total_tax'], 2),
+                        'tax_amount' => round($taxArr['charge_tax'], 2),
+                        'total_amount' => round($rule['amount'] + $taxArr['charge_tax'], 2),
                     ];
 
                     $totalCharge += $rule['amount'];
-                    $totalTax += $taxArr['total_tax'];
+                    $totalTax += $taxArr['charge_tax'];
                 }
             }
 
@@ -131,9 +130,9 @@ class ChargeCalculationService
 
         return [
             'charges' => $charges,
-            'total_charge' => round($totalCharge, 2),
-            'total_tax' => round($totalTax, 2),
-            'total_amount' => round($totalCharge + $totalTax, 2),
+            'charge_taxable' => round($totalCharge, 2),
+            'charge_tax' => round($totalTax, 2),
+            'total_charge_amount' => round($totalCharge + $totalTax, 2),
         ];
     }
 
@@ -146,8 +145,7 @@ class ChargeCalculationService
         float $orderAmount,
         float $totalQty,
         float $totalWeight
-    ): ?array
-    {
+    ): ?array {
 
         foreach ($rules as $rule) {
 
@@ -155,26 +153,26 @@ class ChargeCalculationService
 
             if (!is_null($rule->min_order_price)) {
                 $matched = $matched && $this->compare(
-                        $orderAmount,
-                        $rule->calc_condition,
-                        $rule->min_order_price
-                    );
+                    $orderAmount,
+                    $rule->calc_condition,
+                    $rule->min_order_price
+                );
             }
 
             if (!is_null($rule->min_order_qty)) {
                 $matched = $matched && $this->compare(
-                        $totalQty,
-                        $rule->calc_condition,
-                        $rule->min_order_qty
-                    );
+                    $totalQty,
+                    $rule->calc_condition,
+                    $rule->min_order_qty
+                );
             }
 
             if (!is_null($rule->min_order_weight)) {
                 $matched = $matched && $this->compare(
-                        $totalWeight,
-                        $rule->calc_condition,
-                        $rule->min_order_weight
-                    );
+                    $totalWeight,
+                    $rule->calc_condition,
+                    $rule->min_order_weight
+                );
             }
 
             if (!$matched) {
@@ -228,8 +226,7 @@ class ChargeCalculationService
         string    $buyerStateCode = 'GJ',
         string    $supplierStateCode = 'GJ',
         bool      $isUnionTerritory = false
-    ): array
-    {
+    ): array {
 
         if (!$charge->is_taxable || $amount <= 0) {
             return [
@@ -237,7 +234,7 @@ class ChargeCalculationService
                 'sgst' => 0,
                 'utgst' => 0,
                 'igst' => 0,
-                'total_tax' => 0,
+                'charge_tax' => 0,
             ];
         }
 
@@ -254,7 +251,7 @@ class ChargeCalculationService
                     'sgst' => 0,
                     'utgst' => $utgst,
                     'igst' => 0,
-                    'total_tax' => $cgst + $utgst,
+                    'charge_tax' => $cgst + $utgst,
                 ];
             }
 
@@ -267,7 +264,7 @@ class ChargeCalculationService
                 'sgst' => $sgst,
                 'utgst' => 0,
                 'igst' => 0,
-                'total_tax' => $cgst + $sgst,
+                'charge_tax' => $cgst + $sgst,
             ];
         }
 
@@ -279,19 +276,19 @@ class ChargeCalculationService
             'sgst' => 0,
             'utgst' => 0,
             'igst' => $igst,
-            'total_tax' => $igst,
+            'charge_tax' => $igst,
         ];
     }
 
 
-//    protected function calculateTax(MstCharge $charge, float $amount): float
-//    {
-//        if (!($charge->igst_percent ?? 0)) {
-//            return 0;
-//        }
-//
-//        return round(($amount * $charge->igst_percent) / 100, 2);
-//    }
+    //    protected function calculateTax(MstCharge $charge, float $amount): float
+    //    {
+    //        if (!($charge->igst_percent ?? 0)) {
+    //            return 0;
+    //        }
+    //
+    //        return round(($amount * $charge->igst_percent) / 100, 2);
+    //    }
 
     // =========================================================
     // COMPARE HELPER

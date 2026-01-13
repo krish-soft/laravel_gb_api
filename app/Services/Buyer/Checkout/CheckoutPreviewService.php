@@ -4,6 +4,7 @@ namespace App\Services\Buyer\Checkout;
 
 use App\Enum\Common\Cart\CartStatusEnum;
 use App\Models\Buyer\Cart\Cart;
+use App\Models\Setting\AppSetting;
 use App\Services\Common\Charge\ChargeCalculationService;
 use RuntimeException;
 
@@ -110,9 +111,9 @@ class CheckoutPreviewService
 
         $chargeSummary = [
             'charges' => [],
-            'total_charge' => 0,
-            'total_tax' => 0,
-            'total_amount' => 0,
+            'charge_taxable' => 0,
+            'charge_tax' => 0,
+            'total_charge_amount' => 0,
         ];
 
         if (!$hasInvalidItems && $subtotal > 0) {
@@ -125,18 +126,19 @@ class CheckoutPreviewService
 
         return [
             'cart_id' => $cart->id,
-            'currency' => 'INR',
+            'currency' => AppSetting::first()?->currency_code ?? 'INR',
 
             'items' => $items,
 
             'subtotal' => round($subtotal, 2),
 
             'charges' => $chargeSummary['charges'],
-            'total_charge' => $chargeSummary['total_charge'],
-            'total_tax' => $chargeSummary['total_tax'],
+            'charge_taxable' => $chargeSummary['charge_taxable'],
+            'charge_tax' => $chargeSummary['charge_tax'],
+            'total_charge_amount' => $chargeSummary['total_charge_amount'],
 
             'total_amount' => round(
-                $subtotal + $chargeSummary['total_amount'],
+                $subtotal + $chargeSummary['total_charge_amount'],
                 2
             ),
 

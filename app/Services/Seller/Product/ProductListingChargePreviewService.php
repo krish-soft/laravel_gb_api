@@ -58,12 +58,13 @@ class ProductListingChargePreviewService
             'gross_amount' => round($grossAmount, 2),
 
             'charges' => $chargeSummary['charges'],
-            'total_charge' => $chargeSummary['total_charge'],
-            'total_tax' => $chargeSummary['total_tax'],
+            'charge_taxable' => $chargeSummary['charge_taxable'],
+            'charge_tax' => $chargeSummary['charge_tax'],
+            'total_charge_amount' => $chargeSummary['total_charge_amount'],
 
             // Seller payout = gross - charges
             'net_receivable' => round(
-                $grossAmount - $chargeSummary['total_amount'],
+                $grossAmount - $chargeSummary['total_charge_amount'],
                 2
             ),
         ];
