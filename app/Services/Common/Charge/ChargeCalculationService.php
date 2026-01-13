@@ -11,9 +11,10 @@ class ChargeCalculationService
 {
     public function calculate(
         string $chargeLevelCode,
-        float $orderAmount,
-        array $packages
-    ): array {
+        float  $orderAmount,
+        array  $packages
+    ): array
+    {
 
         if ($orderAmount < 0) {
             throw new RuntimeException(__('messages.error_messages.invalid_order_amount'), 422);
@@ -34,8 +35,8 @@ class ChargeCalculationService
         $totalWeight = 0;
 
         foreach ($packages as $pkg) {
-            $qty = (float) ($pkg['order_qty'] ?? 0);
-            $size = (float) ($pkg['pack_size'] ?? 0);
+            $qty = (float)($pkg['order_qty'] ?? 0);
+            $size = (float)($pkg['pack_size'] ?? 0);
 
             $totalQty += $qty;
             $totalWeight += ($qty * $size);
@@ -71,21 +72,21 @@ class ChargeCalculationService
                 );
 
                 if ($rule) {
-                    $tax = $this->calculateTax($charge, $rule['amount']);
+                    $taxArr = $this->calculateTax($charge, $rule['amount']);
 
                     $charges[] = [
-                        'charge_code'     => $charge->code,
-                        'charge_name'     => $charge->name,
-                        'rule_type'       => 'minimum_order',
-                        'rule_no'         => $rule['rule_no'],
-                        'rule_desc'       => $rule['description'],
-                        'taxable_amount'  => round($rule['amount'], 2),
-                        'tax_amount'      => round($tax, 2),
-                        'total_amount'    => round($rule['amount'] + $tax, 2),
+                        'charge_code' => $charge->code,
+                        'charge_name' => $charge->name,
+                        'rule_type' => 'minimum_order',
+                        'rule_no' => $rule['rule_no'],
+                        'rule_desc' => $rule['description'],
+                        'taxable_amount' => round($rule['amount'], 2),
+                        'tax_amount' => round($taxArr['total_tax'], 2),
+                        'total_amount' => round($rule['amount'] + $taxArr['total_tax'], 2),
                     ];
 
                     $totalCharge += $rule['amount'];
-                    $totalTax += $tax;
+                    $totalTax += $taxArr['total_tax'];
                 }
             }
 
@@ -108,30 +109,30 @@ class ChargeCalculationService
                         continue;
                     }
 
-                    $lineAmount = $rule['amount'] * (float) $pkg['order_qty'];
-                    $tax = $this->calculateTax($charge, $lineAmount);
+                    $lineAmount = $rule['amount'] * (float)$pkg['order_qty'];
+                    $taxArr = $this->calculateTax($charge, $lineAmount);
 
                     $charges[] = [
-                        'charge_code'     => $charge->code,
-                        'charge_name'     => $charge->name,
-                        'rule_type'       => 'delivery',
-                        'rule_no'         => $rule['rule_no'],
-                        'rule_desc'       => $rule['description'],
-                        'taxable_amount'  => round($lineAmount, 2),
-                        'tax_amount'      => round($tax, 2),
-                        'total_amount'    => round($lineAmount + $tax, 2),
+                        'charge_code' => $charge->code,
+                        'charge_name' => $charge->name,
+                        'rule_type' => 'delivery',
+                        'rule_no' => $rule['rule_no'],
+                        'rule_desc' => $rule['description'],
+                        'taxable_amount' => round($lineAmount, 2),
+                        'tax_amount' => round($taxArr['tax_amount'], 2),
+                        'total_amount' => round((float)$lineAmount + $taxArr['tax_amount'], 2),
                     ];
 
                     $totalCharge += $lineAmount;
-                    $totalTax += $tax;
+                    $totalTax += $taxArr['tax_amount'];
                 }
             }
         }
 
         return [
-            'charges'      => $charges,
+            'charges' => $charges,
             'total_charge' => round($totalCharge, 2),
-            'total_tax'    => round($totalTax, 2),
+            'total_tax' => round($totalTax, 2),
             'total_amount' => round($totalCharge + $totalTax, 2),
         ];
     }
@@ -145,7 +146,8 @@ class ChargeCalculationService
         float $orderAmount,
         float $totalQty,
         float $totalWeight
-    ): ?array {
+    ): ?array
+    {
 
         foreach ($rules as $rule) {
 
@@ -153,26 +155,26 @@ class ChargeCalculationService
 
             if (!is_null($rule->min_order_price)) {
                 $matched = $matched && $this->compare(
-                    $orderAmount,
-                    $rule->calc_condition,
-                    $rule->min_order_price
-                );
+                        $orderAmount,
+                        $rule->calc_condition,
+                        $rule->min_order_price
+                    );
             }
 
             if (!is_null($rule->min_order_qty)) {
                 $matched = $matched && $this->compare(
-                    $totalQty,
-                    $rule->calc_condition,
-                    $rule->min_order_qty
-                );
+                        $totalQty,
+                        $rule->calc_condition,
+                        $rule->min_order_qty
+                    );
             }
 
             if (!is_null($rule->min_order_weight)) {
                 $matched = $matched && $this->compare(
-                    $totalWeight,
-                    $rule->calc_condition,
-                    $rule->min_order_weight
-                );
+                        $totalWeight,
+                        $rule->calc_condition,
+                        $rule->min_order_weight
+                    );
             }
 
             if (!$matched) {
@@ -203,7 +205,7 @@ class ChargeCalculationService
 
             if (
                 $rule->measure_unit === $pkg['pack_unit'] &&
-                (float) $rule->measure_value === (float) $pkg['pack_size'] &&
+                (float)$rule->measure_value === (float)$pkg['pack_size'] &&
                 (!$rule->pack_type_unit || $rule->pack_type_unit === ($pkg['pack_type_unit'] ?? null))
             ) {
                 return [
@@ -220,15 +222,76 @@ class ChargeCalculationService
     // =========================================================
     // TAX
     // =========================================================
-
-    protected function calculateTax(MstCharge $charge, float $amount): float
+    protected function calculateTax(
+        MstCharge $charge,
+        float     $amount,
+        string    $buyerStateCode = 'GJ',
+        string    $supplierStateCode = 'GJ',
+        bool      $isUnionTerritory = false
+    ): array
     {
-        if (!($charge->igst_percent ?? 0)) {
-            return 0;
+
+        if (!$charge->is_taxable || $amount <= 0) {
+            return [
+                'cgst' => 0,
+                'sgst' => 0,
+                'utgst' => 0,
+                'igst' => 0,
+                'total_tax' => 0,
+            ];
         }
 
-        return round(($amount * $charge->igst_percent) / 100, 2);
+        // 🟢 Intra-state
+        if ($buyerStateCode === $supplierStateCode) {
+
+            // UT case
+            if ($isUnionTerritory && ($charge->utgst_percent ?? 0) > 0) {
+                $cgst = round($amount * ($charge->cgst_percent ?? 0) / 100, 2);
+                $utgst = round($amount * ($charge->utgst_percent ?? 0) / 100, 2);
+
+                return [
+                    'cgst' => $cgst,
+                    'sgst' => 0,
+                    'utgst' => $utgst,
+                    'igst' => 0,
+                    'total_tax' => $cgst + $utgst,
+                ];
+            }
+
+            // Normal State
+            $cgst = round($amount * ($charge->cgst_percent ?? 0) / 100, 2);
+            $sgst = round($amount * ($charge->sgst_percent ?? 0) / 100, 2);
+
+            return [
+                'cgst' => $cgst,
+                'sgst' => $sgst,
+                'utgst' => 0,
+                'igst' => 0,
+                'total_tax' => $cgst + $sgst,
+            ];
+        }
+
+        // 🔵 Inter-state → IGST
+        $igst = round($amount * ($charge->igst_percent ?? 0) / 100, 2);
+
+        return [
+            'cgst' => 0,
+            'sgst' => 0,
+            'utgst' => 0,
+            'igst' => $igst,
+            'total_tax' => $igst,
+        ];
     }
+
+
+//    protected function calculateTax(MstCharge $charge, float $amount): float
+//    {
+//        if (!($charge->igst_percent ?? 0)) {
+//            return 0;
+//        }
+//
+//        return round(($amount * $charge->igst_percent) / 100, 2);
+//    }
 
     // =========================================================
     // COMPARE HELPER
@@ -239,9 +302,9 @@ class ChargeCalculationService
         return match ($operator) {
             '<=' => $left <= $right,
             '>=' => $left >= $right,
-            '<'  => $left <  $right,
-            '>'  => $left >  $right,
-            '='  => $left == $right,
+            '<' => $left < $right,
+            '>' => $left > $right,
+            '=' => $left == $right,
             default => false,
         };
     }

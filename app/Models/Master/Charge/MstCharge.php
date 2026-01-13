@@ -19,6 +19,13 @@ class MstCharge extends BaseModel
         'name',
         'description',
         'is_active',
+        'is_taxable',
+        'cgst_percent',
+        'sgst_percent',
+        'utgst_percent',
+        'igst_percent',
+//        'applicable_state_code',
+
     ];
 
 
