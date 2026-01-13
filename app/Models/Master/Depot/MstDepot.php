@@ -2,9 +2,8 @@
 
 namespace App\Models\Master\Depot;
 
-use App\Models\Address;
 use App\Models\BaseModel;
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Common\Address;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MstDepot extends BaseModel
@@ -76,7 +75,7 @@ class MstDepot extends BaseModel
         return $query->where('is_active', true);
     }
 
-    // Relationships 
+    // Relationships
 
     public function address()
     {

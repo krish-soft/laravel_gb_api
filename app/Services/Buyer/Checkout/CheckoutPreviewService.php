@@ -2,9 +2,9 @@
 
 namespace App\Services\Buyer\Checkout;
 
-use App\Enum\Cart\CartStatusEnum;
+use App\Enum\Common\Cart\CartStatusEnum;
 use App\Models\Buyer\Cart\Cart;
-use App\Services\Charge\ChargeCalculationService;
+use App\Services\Common\Charge\ChargeCalculationService;
 use RuntimeException;
 
 class CheckoutPreviewService

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\v1\User\Seller\Product;
 
 use App\Http\Controllers\ApiResponseWithAuthController;
 use App\Services\Seller\Product\ProductListingService;
-use App\Services\Seller\Product\SellerListingChargePreviewService;
+use App\Services\Seller\Product\ProductListingChargePreviewService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -20,7 +20,7 @@ class ProductListingApiController extends ApiResponseWithAuthController
     }
 
 
-    public function previewWithCharges(Request $request, SellerListingChargePreviewService $service)
+    public function previewWithCharges(Request $request, ProductListingChargePreviewService $service)
     {
         try {
             $data = $request->validate([

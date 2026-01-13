@@ -19,9 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'app-checker' => \App\Http\Middleware\AppChecker::class,
             'ms-api-key-checker' => \App\Http\Middleware\MsApiKeyChecker::class,
-            'user-checker' => \App\Http\Middleware\UserChecker::class,
-            'admin-user-checker' => \App\Http\Middleware\AdminUserChecker::class, // Added Admin User Checker Middleware
-            'user-legal-checker' => \App\Http\Middleware\UserLegalChecker::class,
+            'user-checker' => \App\Http\Middleware\User\UserChecker::class,
+            'admin-user-checker' => \App\Http\Middleware\Admin\AdminUserChecker::class, // Added Admin User Checker Middleware
+            'user-legal-checker' => \App\Http\Middleware\User\UserLegalChecker::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

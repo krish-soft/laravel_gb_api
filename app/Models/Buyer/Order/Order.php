@@ -2,13 +2,12 @@
 
 namespace App\Models\Buyer\Order;
 
-use App\Models\Address;
 use App\Models\BaseModel;
 use App\Models\Buyer\Cart\Cart;
-use App\Models\Fulfillment\FulfillmentLocation;
+use App\Models\Common\Address;
+use App\Models\Common\Fulfillment\FulfillmentLocation;
 use App\Models\Master\Unique\MstSeqCodeGenerator;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Order extends BaseModel

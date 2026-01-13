@@ -1,9 +1,11 @@
 <?php
 
-use App\Http\Controllers\Api\v1\Admin\Auth\AdminUserLoginApiController;
-use App\Http\Controllers\Api\v1\Admin\Auth\AdminUserLogoutApiController;
-use App\Http\Controllers\Api\v1\Admin\Auth\AdminUserRegisterApiController;
-use App\Http\Controllers\Api\v1\Admin\Auth\AdminUserResetPasswordApiController;
+use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserLoginApiController;
+use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserLogoutApiController;
+use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserRegisterApiController;
+use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserResetPasswordApiController;
+use App\Http\Controllers\Api\v1\Admin\Common\Setting\AppSettingApiController;
+use App\Http\Controllers\Api\v1\Admin\Common\User\AdminRegularUserApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeLevelApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\Rule\MstDeliveryChargeRuleApiController;
@@ -19,16 +21,14 @@ use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductPackagingApiContr
 use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductVariantApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Vehicle\MstVehicleApiController;
 use App\Http\Controllers\Api\v1\Admin\Seller\Product\AdminProductListingApiController;
-use App\Http\Controllers\Api\v1\Admin\Setting\AppSettingApiController;
-use App\Http\Controllers\Api\v1\Admin\User\AdminRegularUserApiController;
-use App\Http\Controllers\Api\v1\User\Auth\UserLoginApiController;
-use App\Http\Controllers\Api\v1\User\Auth\UserLogoutApiController;
-use App\Http\Controllers\Api\v1\User\Auth\UserRegisterApiController;
-use App\Http\Controllers\Api\v1\User\Auth\UserResetPasswordApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\CartApiController;
-use App\Http\Controllers\Api\v1\User\Fulfillment\FulfillmentLocationApiController;
-use App\Http\Controllers\Api\v1\User\Legal\UserBankApiController;
-use App\Http\Controllers\Api\v1\User\Legal\UserKycApiController;
+use App\Http\Controllers\Api\v1\User\Common\Auth\UserLoginApiController;
+use App\Http\Controllers\Api\v1\User\Common\Auth\UserLogoutApiController;
+use App\Http\Controllers\Api\v1\User\Common\Auth\UserRegisterApiController;
+use App\Http\Controllers\Api\v1\User\Common\Auth\UserResetPasswordApiController;
+use App\Http\Controllers\Api\v1\User\Common\Fulfillment\FulfillmentLocationApiController;
+use App\Http\Controllers\Api\v1\User\Common\Legal\UserBankApiController;
+use App\Http\Controllers\Api\v1\User\Common\Legal\UserKycApiController;
 use App\Http\Controllers\Api\v1\User\Seller\Product\ProductListingApiController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -38,7 +38,7 @@ Route::group([
     'prefix' => 'v1',
     'middleware' => [
         'ms-api-key-checker', // Custom Middleware to check microservice API key
-        'app-checker', // Custom Middleware to check app status     
+        'app-checker', // Custom Middleware to check app status
     ]
 ], function () {
 
@@ -160,7 +160,7 @@ Route::group([
             Route::post('/product-listing-packages/{packageId}/cancel', [AdminProductListingApiController::class, 'deletePackage']);
 
             // Regular User Management
-            Route::apiResource('regular-user', AdminRegularUserApiController::class); // Manage Regular user 
+            Route::apiResource('regular-user', AdminRegularUserApiController::class); // Manage Regular user
             Route::post('regular-user/{user}/addDepot', [AdminRegularUserApiController::class, 'addDepot']);
             Route::delete('regular-user/{user}/removeDepot', [AdminRegularUserApiController::class, 'removeDepot']);
 

@@ -2,13 +2,13 @@
 
 namespace App\Services\Buyer\Checkout;
 
-use App\Enum\Cart\CartStatusEnum;
-use App\Enum\Order\OrderChargeTypeEnum;
-use App\Enum\Order\OrderStatusEnum;
+use App\Enum\Common\Cart\CartStatusEnum;
+use App\Enum\Common\Order\OrderChargeTypeEnum;
+use App\Enum\Common\Order\OrderStatusEnum;
 use App\Models\Buyer\Cart\Cart;
 use App\Models\Buyer\Order\Order;
-use App\Models\Buyer\Order\OrderItem;
 use App\Models\Buyer\Order\OrderCharge;
+use App\Models\Buyer\Order\OrderItem;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 

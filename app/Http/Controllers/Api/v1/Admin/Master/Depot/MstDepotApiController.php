@@ -3,9 +3,8 @@
 namespace App\Http\Controllers\Api\v1\Admin\Master\Depot;
 
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
-use App\Http\Controllers\Controller;
 use App\Http\Requests\AddressRequest;
-use App\Models\Address;
+use App\Models\Common\Address;
 use App\Models\Master\Depot\MstDepot;
 use App\Models\Master\Depot\MstZone;
 use Illuminate\Http\Request;

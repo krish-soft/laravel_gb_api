@@ -2,11 +2,10 @@
 
 namespace Database\Seeders\User;
 
-use App\Enum\User\AdminRoleEnum;
+use App\Enum\Admin\AdminRoleEnum;
 use App\Enum\User\UserRoleEnum;
 use App\Enum\User\UserTypeEnum;
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class UserSeeder extends Seeder

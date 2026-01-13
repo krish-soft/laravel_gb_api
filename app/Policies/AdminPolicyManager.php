@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Enum\Access\AdminActionEnum;
-use App\Enum\User\AdminRoleEnum;
+use App\Enum\Admin\AdminActionEnum;
+use App\Enum\Admin\AdminRoleEnum;
 use App\Enum\User\UserRoleEnum;
 use App\Models\User;
 

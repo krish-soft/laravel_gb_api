@@ -2,8 +2,8 @@
 
 namespace App\Http\Middleware;
 
-use App\Enum\Action\ActionCodeEnum;
-use App\Enum\Setting\LocaleEnum;
+use App\Enum\Common\ActionCodeEnum;
+use App\Enum\Common\Setting\LocaleEnum;
 use App\Models\Setting\AppSetting;
 use App\Traits\ApiResponserTrait;
 use Closure;

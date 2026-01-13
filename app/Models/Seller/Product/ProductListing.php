@@ -3,10 +3,9 @@
 namespace App\Models\Seller\Product;
 
 use App\Models\BaseModel;
-use App\Models\Fulfillment\FulfillmentLocation;
+use App\Models\Common\Fulfillment\FulfillmentLocation;
 use App\Models\Master\Unique\MstSeqCodeGenerator;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 class ProductListing extends BaseModel
@@ -86,7 +85,7 @@ class ProductListing extends BaseModel
         'is_expired' => 'boolean',
     ];
 
-    // scope    
+    // scope
     public function scopeActive($query)
     {
         return $query->where('is_active', true);

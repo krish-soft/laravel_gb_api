@@ -2,7 +2,7 @@
 
 namespace App\Traits;
 
-use App\Models\Log\AuditLog;
+use App\Models\Common\Log\AuditLog;
 use Illuminate\Database\Eloquent\Model;
 
 trait Auditable

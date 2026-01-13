@@ -2,7 +2,7 @@
 
 namespace App\Services\Buyer\Checkout;
 
-use App\Enum\Order\OrderStatusEnum;
+use App\Enum\Common\Order\OrderStatusEnum;
 use App\Models\Buyer\Order\Order;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;

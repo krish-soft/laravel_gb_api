@@ -4,17 +4,17 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
-use App\Enum\Legal\BankStatusEnum;
-use App\Enum\Legal\KycStatusEnum;
-use App\Enum\User\AdminRoleEnum;
+use App\Enum\Admin\AdminRoleEnum;
+use App\Enum\Common\Legal\BankStatusEnum;
+use App\Enum\Common\Legal\KycStatusEnum;
 use App\Enum\User\UserRoleEnum;
-use App\Enum\User\UserTypeEnum;
 use App\Models\Buyer\Cart\Cart;
+use App\Models\Common\Address;
+use App\Models\Common\User\Legal\UserBank;
+use App\Models\Common\User\Legal\UserKyc;
+use App\Models\Common\User\Legal\UserLegalDocument;
+use App\Models\Common\User\UserDepot;
 use App\Models\Seller\Product\ProductListing;
-use App\Models\User\Legal\UserBank;
-use App\Models\User\Legal\UserKyc;
-use App\Models\User\Legal\UserLegalDocument;
-use App\Models\User\UserDepot;
 use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;

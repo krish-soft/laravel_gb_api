@@ -2,7 +2,7 @@
 
 namespace App\Policies\User;
 
-use App\Enum\Module\AppModuleEnum;
+use App\Enum\Common\Module\AppModuleEnum;
 use App\Models\User;
 use App\Policies\AdminPolicyManager;
 

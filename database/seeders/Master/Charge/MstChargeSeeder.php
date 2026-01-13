@@ -2,8 +2,7 @@
 
 namespace Database\Seeders\Master\Charge;
 
-use App\Enum\Charge\ChargesEnum;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Enum\Common\Charge\ChargesEnum;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 

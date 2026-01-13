@@ -2,8 +2,6 @@
 
 namespace App\Traits;
 
-use App\Enum\Action\ActionCodeEnum;
-
 trait ApiResponserTrait
 {
 

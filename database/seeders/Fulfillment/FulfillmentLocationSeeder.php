@@ -2,9 +2,8 @@
 
 namespace Database\Seeders\Fulfillment;
 
-use App\Enum\Fulfillment\FulfillmentLocationTypeEnum;
-use App\Models\Fulfillment\FulfillmentLocation;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Enum\Common\Fulfillment\FulfillmentLocationTypeEnum;
+use App\Models\Common\Fulfillment\FulfillmentLocation;
 use Illuminate\Database\Seeder;
 
 class FulfillmentLocationSeeder extends Seeder
@@ -16,7 +15,7 @@ class FulfillmentLocationSeeder extends Seeder
     {
         //
 
-        // add for Seller user where test 
+        // add for Seller user where test
         FulfillmentLocation::create([
             'user_id' => 4, // Seller User ID
             'name' => 'Farm Warehouse',
