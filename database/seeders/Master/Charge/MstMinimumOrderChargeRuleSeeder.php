@@ -2,6 +2,7 @@
 
 namespace Database\Seeders\Master\Charge;
 
+use App\Enum\Charge\ChargesEnum;
 use App\Models\Master\Unique\MstSeqCodeGenerator;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -15,7 +16,7 @@ class MstMinimumOrderChargeRuleSeeder extends Seeder
     public function run(): void
     {
         //
-        $platformFeeCharge = DB::table('mst_charges')->where('code', 'PLATFORM')->first();
+        $platformFeeCharge = DB::table('mst_charges')->where('code', ChargesEnum::PLATFORM_FEE->value)->first();
 
         $standardPriceLevelBuyer = DB::table('mst_charge_levels')->where('code', 'B-STD')->first();
         $standardPriceLevelSeller = DB::table('mst_charge_levels')->where('code', 'S-STD')->first();

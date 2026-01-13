@@ -20,9 +20,12 @@ return new class extends Migration
 
             $table->string('order_number', 20)->nullable();
 
-            // tax | delivery | platform | surge | misc
-            $table->string('charge_type', 30);
+            $table->string('charge_code', 50)->nullable();
             $table->string('charge_name', 100);
+
+            $table->string('rule_type', 50)->nullable();
+            $table->string('rule_no', 30)->nullable();
+            $table->string('rule_desc', 150)->nullable();
 
             $table->decimal('taxable_amount', 15, 2);
             $table->decimal('tax_amount', 15, 2)->default(0)->nullable();
@@ -32,7 +35,7 @@ return new class extends Migration
             $table->softDeletes();
 
             // indexes
-            $table->index(['order_id', 'charge_type']);
+            $table->index(['order_id', 'charge_code']);
         });
     }
 

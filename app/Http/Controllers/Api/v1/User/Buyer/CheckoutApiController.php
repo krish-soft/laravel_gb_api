@@ -6,6 +6,7 @@ use App\Http\Controllers\ApiResponseWithAuthController;
 use App\Models\Buyer\Cart\Cart;
 use App\Services\Buyer\Checkout\CheckoutPreviewService;
 use App\Services\Buyer\Checkout\CheckoutConfirmService;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
@@ -30,11 +31,12 @@ class CheckoutApiController extends ApiResponseWithAuthController
                 ->firstOrFail();
 
             return $this->successResponse(
+                __('messages.success_messages.checkout_preview'),
                 $service->preview($cart),
-                __('messages.success_messages.checkout_preview')
+                200
             );
-        } catch (RuntimeException $e) {
-            return $this->showErrorMessage($e->getMessage());
+        } catch (Exception $e) {
+            return $this->showErrorMessage($e->getMessage(), $e->getCode());
         }
     }
 
@@ -74,13 +76,12 @@ class CheckoutApiController extends ApiResponseWithAuthController
             );
 
             return $this->successResponse(
+                __('messages.success_messages.order_created'),
                 $order,
-                __('messages.success_messages.order_created')
+                201
             );
-        } catch (ValidationException $e) {
-            return $this->validationErrorResponse($e->errors());
-        } catch (RuntimeException $e) {
-            return $this->showErrorMessage($e->getMessage());
+        } catch (Exception $e) {
+            return $this->showErrorMessage($e->getMessage(), $e->getCode());
         }
     }
 }

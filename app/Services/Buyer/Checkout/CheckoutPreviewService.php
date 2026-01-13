@@ -4,10 +4,18 @@ namespace App\Services\Buyer\Checkout;
 
 use App\Enum\Cart\CartStatusEnum;
 use App\Models\Buyer\Cart\Cart;
+use App\Services\Charge\ChargeCalculationService;
 use RuntimeException;
 
 class CheckoutPreviewService
 {
+    protected ChargeCalculationService $chargeService;
+
+    public function __construct(ChargeCalculationService $chargeService)
+    {
+        $this->chargeService = $chargeService;
+    }
+
     public function preview(Cart $cart): array
     {
         if ($cart->status !== CartStatusEnum::ACTIVE->value) {
@@ -19,7 +27,12 @@ class CheckoutPreviewService
         }
 
         $items = [];
+        $packages = [];
+
         $subtotal = 0;
+        $totalQty = 0;
+        $totalWeight = 0;
+
         $hasInvalidItems = false;
 
         foreach ($cart->cartItems as $cartItem) {
@@ -56,6 +69,16 @@ class CheckoutPreviewService
 
             if ($isAvailable) {
                 $subtotal += $cartItem->total_price;
+
+                $totalQty += $cartItem->order_qty;
+                $totalWeight += ($cartItem->order_qty * $package->pack_size);
+
+                $packages[] = [
+                    'order_qty'      => $cartItem->order_qty,
+                    'pack_size'      => $package->pack_size,
+                    'pack_unit'      => $package->pack_unit,
+                    'pack_type_unit' => $package->pack_type_unit,
+                ];
             } else {
                 $hasInvalidItems = true;
             }
@@ -63,20 +86,17 @@ class CheckoutPreviewService
             $items[] = [
                 'cart_item_id' => $cartItem->id,
 
-                // 🔥 LIVE DATA (SOURCE OF TRUTH)
                 'listing_id' => $listing?->id,
                 'listing_item_id' => $listingItem?->id,
                 'package_id' => $package?->id,
 
                 'product_name' => $listingItem?->product_name,
                 'variant_name' => $listingItem?->variant_name,
-                'unit' => $listingItem?->unit,
 
                 'order_qty' => $cartItem->order_qty,
                 'unit_price' => $cartItem->pack_price,
                 'total_price' => $cartItem->total_price,
 
-                // UI FLAGS
                 'is_available' => $isAvailable,
                 'available_qty' => $availableQty,
                 'invalid_reason_code' => $reasonCode,
@@ -84,17 +104,44 @@ class CheckoutPreviewService
             ];
         }
 
+        // ======================================================
+        // CHARGES (ONLY IF CART IS VALID)
+        // ======================================================
+
+        $chargeSummary = [
+            'charges' => [],
+            'total_charge' => 0,
+            'total_tax' => 0,
+            'total_amount' => 0,
+        ];
+
+        if (!$hasInvalidItems && $subtotal > 0) {
+            $chargeSummary = $this->chargeService->calculate(
+                $cart->buyer->charge_level_code,
+                $subtotal,
+                $packages
+            );
+        }
+
         return [
             'cart_id' => $cart->id,
             'currency' => 'INR',
+
             'items' => $items,
-            'subtotal' => $subtotal,
-            'charges' => [],
-            'total_amount' => $subtotal,
+
+            'subtotal' => round($subtotal, 2),
+
+            'charges' => $chargeSummary['charges'],
+            'total_charge' => $chargeSummary['total_charge'],
+            'total_tax' => $chargeSummary['total_tax'],
+
+            'total_amount' => round(
+                $subtotal + $chargeSummary['total_amount'],
+                2
+            ),
+
             'has_invalid_items' => $hasInvalidItems,
             'can_checkout' => !$hasInvalidItems,
         ];
     }
 }
-
-

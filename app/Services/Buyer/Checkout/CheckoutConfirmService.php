@@ -139,8 +139,13 @@ class CheckoutConfirmService
                     'order_id' => $order->id,
                     'order_number' => $order->order_number,
 
-                    'charge_type' => $charge['charge_type'],
+
+                    'charge_code' => $charge['charge_code'],
                     'charge_name' => $charge['charge_name'],
+
+                    'rule_type' => $charge['rule_type'] ?? null,
+                    'rule_no' => $charge['rule_no'] ?? null,
+                    'rule_desc' => $charge['rule_desc'] ?? null,
 
                     'taxable_amount' => $charge['taxable_amount'],
                     'tax_amount' => $charge['tax_amount'],

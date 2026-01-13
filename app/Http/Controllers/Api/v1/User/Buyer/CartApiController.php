@@ -66,9 +66,13 @@ class CartApiController extends ApiResponseWithAuthController
             'productListingItem.productListing'
         )->findOrFail($data['product_listing_package_id']);
 
-        // ❌ Cannot add sold-out package
+        // Cannot add sold-out package
         if ($package->sold_qty >= $package->qty) {
             return $this->showErrorMessage(__('messages.error_messages.package_already_sold'), 400);
+        }
+
+        if ($package->qty - $package->sold_qty < $data['order_qty']) {
+            return $this->showErrorMessage(__('messages.error_messages.insufficient_stock'), 400);
         }
 
         $item = CartItem::where('cart_id', $cart->id)

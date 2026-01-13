@@ -149,11 +149,12 @@ return [
         'listing_terminal'      => 'Listing cannot be modified.',
         'listing_has_sales'     => 'Listing with sales cannot be cancelled.',
         'listing_not_available' => 'Listing is not available.',
-        
+
         'package_not_found'     => 'Package not found.',
         'package_sold_out'      => 'Package is already sold out.',
         'package_locked'        => 'Package is locked.',
         'no_packages_left'      => 'No packages available.',
+        'package_already_sold'  => 'Package is already sold.',
 
         /* Stock */
         'insufficient_stock' => 'Insufficient stock available.',
@@ -173,6 +174,9 @@ return [
         /* Common */
         'reason_required'   => 'A valid reason is required.',
         'nothing_to_update' => 'Nothing to update.',
+
+        'invalid_order_amount' => 'Invalid order amount.',
+        'invalid_charge_level' => 'Invalid charge level.',
     ],
 
 ];
