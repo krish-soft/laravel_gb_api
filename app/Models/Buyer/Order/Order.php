@@ -6,6 +6,7 @@ use App\Models\BaseModel;
 use App\Models\Buyer\Cart\Cart;
 use App\Models\Common\Address;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
+use App\Models\Common\Wallet\WalletTransaction;
 use App\Models\Master\Unique\MstSeqCodeGenerator;
 use App\Models\User;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -33,7 +34,6 @@ class Order extends BaseModel
         'pickup_fulfillment_location_id',
         'shipping_fulfillment_location_id',
 
-
         'order_number',
         'order_status',
         'order_date',
@@ -44,16 +44,20 @@ class Order extends BaseModel
         'total_amount',
         'currency',
 
-        'payment_method',
-        'payment_status',
+        'payment_method', // payment method
+        'payment_status', // payment status
 
         'is_partial',
         'is_paid',
+        'is_locked',
+
+        'wallet_txn_code', // For Refrence
 
         'bill_addr_code',
         'ship_addr_code',
         'pick_addr_code',
 
+        // 
     ];
 
     // Casts
@@ -63,6 +67,7 @@ class Order extends BaseModel
         'expected_ship_date' => 'date',
         'is_partial' => 'boolean',
         'is_paid' => 'boolean',
+        'is_locked' => 'boolean',
     ];
 
     // Relationships
@@ -112,6 +117,10 @@ class Order extends BaseModel
         return $this->belongsTo(Address::class, 'pick_addr_code', 'address_code');
     }
 
+    public function walletTransaction()
+    {
+        return $this->belongsTo(WalletTransaction::class, 'wallet_txn_code', 'wallet_txn_code');
+    }
 
     //
 }

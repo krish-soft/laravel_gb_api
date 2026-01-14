@@ -58,6 +58,9 @@ return new class extends Migration
 
             $table->boolean('is_partial')->default(false)->nullable();
             $table->boolean('is_paid')->default(false)->nullable();
+            $table->boolean('is_locked')->default(false)->nullable(); // No one can modify after this
+
+            $table->string('wallet_txn_code', 100)->nullable();
 
             $table->timestamps();
             $table->softDeletes();

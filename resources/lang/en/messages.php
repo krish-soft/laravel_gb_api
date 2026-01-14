@@ -64,6 +64,7 @@ return [
         'order_created'    => 'Order placed successfully.',
 
         /* Payment */
+        'proceed_to_payment' => 'Please proceed to payment.',
         'payment_initiated' => 'Payment initiated successfully.',
         'payment_completed' => 'Payment completed successfully.',
 

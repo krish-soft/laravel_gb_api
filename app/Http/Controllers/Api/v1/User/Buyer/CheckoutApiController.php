@@ -51,7 +51,7 @@ class CheckoutApiController extends ApiResponseWithAuthController
     ) {
         try {
             $data = $request->validate([
-                'payment_method' => 'required|in:cod,razorpay,manual',
+                'payment_method' => 'required|in:razorpay,manual',
 
                 // ✅ charges must come from preview
                 'charges' => 'required|array|min:1',
@@ -61,6 +61,8 @@ class CheckoutApiController extends ApiResponseWithAuthController
                 'charges.*.tax_amount' => 'required|numeric',
                 'charges.*.total_amount' => 'required|numeric',
             ]);
+
+            $paymentMethod = $data['payment_method'];
 
             $cart = Cart::where('buyer_id', $request->user()->id)
                 ->where('status', 'active')
@@ -72,11 +74,12 @@ class CheckoutApiController extends ApiResponseWithAuthController
             // ✅ CORRECT service call
             $order = $service->confirm(
                 $cart,
-                $data['charges']
+                $data['charges'],
+                $paymentMethod
             );
 
             return $this->successResponse(
-                __('messages.success_messages.order_created'),
+                __('messages.success_messages.order_created') . "\n" . __('messages.success_messages.proceed_to_payment'),
                 $order,
                 201
             );

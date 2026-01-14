@@ -5,16 +5,30 @@ namespace App\Services\Buyer\Checkout;
 use App\Enum\Common\Cart\CartStatusEnum;
 use App\Enum\Common\Order\OrderChargeTypeEnum;
 use App\Enum\Common\Order\OrderStatusEnum;
+use App\Enum\Common\Wallet\WalletStatusEnum;
+use App\Enum\Common\Wallet\WalletTypeEnum;
 use App\Models\Buyer\Cart\Cart;
 use App\Models\Buyer\Order\Order;
 use App\Models\Buyer\Order\OrderCharge;
 use App\Models\Buyer\Order\OrderItem;
+use App\Models\Setting\AppSetting;
+use App\Services\Common\Wallet\WalletService;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 class CheckoutConfirmService
 {
-    public function confirm(Cart $cart, array $charges): Order
+
+    protected WalletService $walletService;
+
+    public function __construct(WalletService $walletService)
+    {
+        $this->walletService = $walletService;
+    }
+
+
+
+    public function confirm(Cart $cart, array $charges,  $paymentMethod): Order
     {
         /* -------------------------------------------------
          | Cart validations
@@ -31,7 +45,7 @@ class CheckoutConfirmService
             throw new RuntimeException(__('messages.error_messages.checkout_failed'));
         }
 
-        return DB::transaction(function () use ($cart, $charges) {
+        return DB::transaction(function () use ($cart, $charges, $paymentMethod) {
             /* -------------------------------------------------
              | 0️⃣ Lock cart (prevent double checkout)
              -------------------------------------------------*/
@@ -45,7 +59,7 @@ class CheckoutConfirmService
             $order = Order::create([
                 'buyer_id' => $cart->buyer_id,
                 'cart_id' => $cart->id,
-                'currency' => 'INR',
+                'currency' => AppSetting::first()?->currency_code ?? 'INR',
                 'subtotal' => 0,
                 'total_amount' => 0,
                 'status' => OrderStatusEnum::PENDING->value,
@@ -126,6 +140,7 @@ class CheckoutConfirmService
             /* -------------------------------------------------
              | 3️⃣ Persist Order Charges (FROM CART)
              -------------------------------------------------*/
+            $taxAmount = 0;
             $chargesTotal = 0;
 
             foreach ($charges as $charge) {
@@ -152,6 +167,7 @@ class CheckoutConfirmService
                     'total_amount' => $charge['total_amount'],
                 ]);
 
+                $taxAmount += $charge['tax_amount'];
                 $chargesTotal += $charge['total_amount'];
             }
 
@@ -160,6 +176,7 @@ class CheckoutConfirmService
              -------------------------------------------------*/
             $order->update([
                 'subtotal' => $subtotal,
+                'tax_amount' => $taxAmount, // from charges only 
                 'total_amount' => $subtotal + $chargesTotal,
             ]);
 
@@ -171,11 +188,40 @@ class CheckoutConfirmService
             ]);
 
             // Everything okay then mark order as processing
+
             $order->update([
                 'status' => OrderStatusEnum::PROCESSING->value,
             ]);
 
-            // again so payment will check by other service
+
+
+            ### Wallet Service start
+            $meta = [
+                'description' => 'Order #' . $order->order_number . ' created',
+                'source_type' => Order::class,
+                'source_id'   => $order->id,
+                'source_code' => $order->order_number,
+                'reference'   => $order->order_number,
+                'payment_reference' => null,
+                'gateway'     => $paymentMethod,
+            ];
+
+            $txn = $this->walletService->createTransaction(
+                $order->buyer->wallet,
+                $order->total_amount - $order->tax_amount, // tax stays separate ✔
+                WalletTypeEnum::DEBIT,
+                WalletStatusEnum::HOLD, // $walletStatus,
+                $meta
+            );
+
+            $order->updateQuietly([
+                'wallet_txn_code' => $txn->wallet_txn_code,
+            ]);
+            ## Wallet Service end
+
+            ## Hold to be finalized upon payment completion
+            ## Cancellation apply from observer if order cancelled/refunded
+
 
             return $order;
         });

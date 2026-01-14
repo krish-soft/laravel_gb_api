@@ -20,8 +20,8 @@ class WalletService
     public function createTransaction(
         Wallet $wallet,
         float $amount,
-        WalletTypeEnum $type,
-        WalletStatusEnum $status,
+        WalletTypeEnum $type, // WalletTypeEnum
+        WalletStatusEnum $status, // WalletStatusEnum
         array $meta = []
     ): WalletTransaction {
 
@@ -41,6 +41,7 @@ class WalletService
                 'source_code'    => $meta['source_code'] ?? null,
 
                 'reference'      => $meta['reference'] ?? null,
+
                 'payment_reference' => $meta['payment_reference'] ?? null,
                 'gateway'        => $meta['gateway'] ?? null,
                 'remark'         => $meta['remark'] ?? null,
@@ -116,47 +117,48 @@ class WalletService
      | Release HOLD → move to available
      =====================================================*/
 
-    public function releaseHold(WalletTransaction $txn): void
-    {
-        DB::transaction(function () use ($txn) {
+    // public function releaseHold(WalletTransaction $txn): void
+    // {
+    //     DB::transaction(function () use ($txn) {
 
-            if ($txn->status !== WalletStatusEnum::HOLD->value) {
-                throw new RuntimeException('Transaction is not in HOLD state');
-            }
+    //         if ($txn->status !== WalletStatusEnum::HOLD->value) {
+    //             throw new RuntimeException('Transaction is not in HOLD state');
+    //         }
 
-            $wallet = $txn->wallet;
-            $amount = $txn->amount;
+    //         $wallet = $txn->wallet;
+    //         $amount = $txn->amount;
 
-            WalletLedger::create([
-                'wallet_id' => $wallet->id,
-                'wallet_transaction_id' => $txn->id,
-                'credit' => $amount,
-                'debit'  => 0,
-                'action' => 'release',
-                'description' => 'Hold released',
-            ]);
+    //         WalletLedger::create([
+    //             'wallet_id' => $wallet->id,
+    //             'wallet_transaction_id' => $txn->id,
+    //             'credit' => $amount,
+    //             'debit'  => 0,
+    //             'action' => 'release',
+    //             'description' => 'Hold released',
+    //         ]);
 
-            $wallet->decrement('hold_balance', $amount);
-            $wallet->increment('available_balance', $amount);
+    //         $wallet->decrement('hold_balance', $amount);
+    //         $wallet->increment('available_balance', $amount);
 
-            $txn->updateQuietly([
-                'status' => WalletStatusEnum::RELEASED->value,
-            ]);
+    //         $txn->updateQuietly([
+    //             'status' => WalletStatusEnum::RELEASED->value,
+    //         ]);
 
-            $wallet->updateQuietly([
-                'last_ledger_at' => now(),
-            ]);
-        });
-    }
+    //         $wallet->updateQuietly([
+    //             'last_ledger_at' => now(),
+    //         ]);
+    //     });
+    // }
 
     /* =====================================================
      | Cancel Transaction (NO BALANCE CHANGE)
      =====================================================*/
 
-    public function cancelTransaction(WalletTransaction $txn): void
+    public function cancelTransaction(WalletTransaction $txn, String $reason = ''): void
     {
         $txn->updateQuietly([
             'status' => WalletStatusEnum::CANCELLED->value,
+            'remark' => $reason,
         ]);
     }
 
