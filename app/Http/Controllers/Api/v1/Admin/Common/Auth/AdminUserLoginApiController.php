@@ -80,7 +80,18 @@ class AdminUserLoginApiController extends ApiResponseController
             'access_token' => $token,
             'token_type' => 'Bearer',
             'expires_in_minutes' => $expiryMinutes,
+            'expires_at' => now()->addMinutes($expiryMinutes)->toDateTimeString(),
             'device_id' => $deviceId,
+            'meta_data' => [
+                'user_id' => $user->id,
+                'user_code' => $user->user_code,
+                'name' => $user->name,
+                'nickname' => $user->nickname,
+                'email' => $user->email,
+                'role' => $user->role,
+                'user_type' => $user->user_type,
+                'access_modules' => $user->access_modules,
+            ],
         ];
 
         // Log activity
