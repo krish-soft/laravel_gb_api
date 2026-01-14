@@ -19,14 +19,14 @@ return [
     */
     'success_messages' => [
 
-        /* CRUD */
+        /* Generic CRUD */
         'success_get'    => 'Data retrieved successfully.',
         'success_create' => 'Resource created successfully.',
         'success_update' => 'Resource updated successfully.',
         'success_delete' => 'Resource deleted successfully.',
         'success_cancel' => 'Resource cancelled successfully.',
 
-        /* Auth */
+        /* Authentication */
         'success_login'      => 'Login completed successfully.',
         'success_logout'     => 'Logout completed successfully.',
         'success_logout_all' => 'You have been logged out from all devices successfully.',
@@ -60,10 +60,12 @@ return [
         /* Checkout & Order */
         'checkout_preview' => 'Checkout preview generated successfully.',
         'order_created'    => 'Order placed successfully.',
+        'proceed_to_payment' => 'Please proceed to payment to complete your order.',
+        'success_preview'   => 'Preview generated successfully.',
 
         /* Payment */
-        'payment_initiated'  => 'Payment initiated successfully.',
-        'payment_completed'  => 'Payment completed successfully.',
+        'payment_initiated' => 'Payment initiated successfully.',
+        'payment_completed' => 'Payment completed successfully.',
 
         /* Listing */
         'listing_created'   => 'Listing created successfully.',
@@ -73,9 +75,6 @@ return [
         /* Package */
         'package_updated'   => 'Package updated successfully.',
         'package_cancelled' => 'Package cancelled successfully.',
-        'proceed_to_payment' => 'Please proceed to payment to complete your order.',
-        'success_preview'   => 'Preview generated successfully.',
-
     ],
 
     /*
@@ -85,7 +84,7 @@ return [
     */
     'error_messages' => [
 
-        /* Auth */
+        /* Authentication */
         'unauthenticated'           => 'Authentication required. Your session or token has expired. Please log in again.',
         'unauthorized_access'       => 'You are not authorized to access this resource.',
         'unauthorized_access_admin' => 'You are not authorized to access this administrative resource.',
@@ -140,19 +139,32 @@ return [
         'primary_bank_delete_forbidden' => 'Primary bank account cannot be deleted.',
         'bank_already_exists'           => 'Bank details already exist. Only one bank account is allowed.',
 
-        /* Cart */
-        'cart_locked' => 'Cart is locked due to checkout in progress.',
+        /* Address */
+        'address_exists' => 'Address already exists for this user.',
 
-        /* Product & Listing */
-        'package_locked'         => 'Package is locked.',
-        'package_already_sold'   => 'Selected package is already sold out.',
-        'qty_less_than_sold'     => 'Quantity cannot be less than sold quantity.',
-        'reason_required'        => 'A valid reason is required.',
-        'no_packages_left'       => 'No active packages remaining.',
+        /* Cart */
+        'cart_locked'     => 'Cart is locked due to checkout in progress.',
+        'cart_not_active' => 'No active cart found for the user.',
+        'cart_empty'      => 'Cart is empty. Please add items to proceed.',
+
+        /* Listing */
         'listing_locked'         => 'Listing is locked or expired.',
-        'nothing_to_update'      => 'Nothing to update.',
+        'listing_not_available'  => 'The requested listing is not available.',
         'listing_terminal_state' => 'Listing is completed or inactive and cannot be modified.',
         'listing_has_sales'      => 'Listing has completed sales and cannot be cancelled.',
+
+        /* Package */
+        'package_locked'        => 'Package is locked.',
+        'package_already_sold'  => 'Selected package is already sold out.',
+        'package_sold_out'      => 'The selected package is sold out.',
+        'no_packages_left'      => 'No active packages remaining.',
+        'no_packages_provided'  => 'No packages provided.',
+        'invalid_package_data'  => 'Invalid package data provided.',
+        'sold_qty_not_editable' => 'Sold quantity cannot be edited.',
+
+        /* Stock */
+        'insufficient_stock' => 'Insufficient stock for the requested quantity.',
+        'qty_less_than_sold' => 'Quantity cannot be less than sold quantity.',
 
         /* Checkout & Payment */
         'checkout_failed'        => 'Checkout failed. Please try again.',
@@ -168,20 +180,6 @@ return [
         /* Pricing */
         'invalid_order_amount' => 'Invalid order amount.',
         'invalid_charge_level' => 'Invalid charge level.',
-
-        'address_exists' => 'Address already exists for this user.',
-        'insufficient_stock' => 'Insufficient stock for the requested quantity.',
-
-        'cart_not_active' => 'No active cart found for the user.',
-        'cart_empty' => 'Cart is empty. Please add items to proceed.',
-        'checkout_failed' => 'Checkout failed. Please try again.',
-        'listing_not_available' => 'The requested listing is not available.',
-        'listing_locked' => 'The requested listing is locked or unavailable.',
-        'package_sold_out' => 'The selected package is sold out.',
-        'no_packages_provided' => 'No packages provided.',
-        'invalid_package_data' => 'Invalid package data provided.',
-        'sold_qty_not_editable' => 'Sold quantity cannot be edited.',
-
     ],
 
 ];
