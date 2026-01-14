@@ -37,6 +37,11 @@ class AdminUserLoginApiController extends ApiResponseController
             return $this->showErrorMessage(__('messages.error_messages.invalid_credentials'), 401);
         }
 
+        // Check if user is active
+        if (!$user->is_active) {
+            return $this->showErrorMessage(__('messages.error_messages.account_inactive'), 403);
+        }
+
 
         // Determine expiry based on relogin
 

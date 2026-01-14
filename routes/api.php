@@ -37,8 +37,9 @@ use Illuminate\Support\Facades\Route;
 Route::group([
     'prefix' => 'v1',
     'middleware' => [
-        'ms-api-key-checker', // Custom Middleware to check microservice API key
         'app-checker', // Custom Middleware to check app status
+        'ms-api-key-checker', // Custom Middleware to check microservice API key
+
     ]
 ], function () {
 
