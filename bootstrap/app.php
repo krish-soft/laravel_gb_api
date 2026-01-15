@@ -17,6 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
         //
 
         $middleware->alias([
+            'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
+
             'app-checker' => \App\Http\Middleware\AppChecker::class,
             'ms-api-key-checker' => \App\Http\Middleware\MsApiKeyChecker::class,
             'user-checker' => \App\Http\Middleware\User\UserChecker::class,

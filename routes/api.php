@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserLoginApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserLogoutApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserRegisterApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserResetPasswordApiController;
+use App\Http\Controllers\Api\v1\Admin\Common\Payment\PaymentReconcileApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Setting\AppSettingApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\User\AdminRegularUserApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeApiController;
@@ -30,8 +31,13 @@ use App\Http\Controllers\Api\v1\User\Common\Fulfillment\FulfillmentLocationApiCo
 use App\Http\Controllers\Api\v1\User\Common\Legal\UserBankApiController;
 use App\Http\Controllers\Api\v1\User\Common\Legal\UserKycApiController;
 use App\Http\Controllers\Api\v1\User\Seller\Product\ProductListingApiController;
+use App\Http\Controllers\Web\Payment\RazorpayWebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+
+// Public Paymnent Route
+Route::post('/webhooks/razorpay', [RazorpayWebhookController::class, 'handle']);
 
 
 Route::group([
@@ -160,6 +166,11 @@ Route::group([
             Route::put('/product-listing-packages/{packageId}', [AdminProductListingApiController::class, 'updatePackage']);
             Route::post('/product-listing-packages/{packageId}/cancel', [AdminProductListingApiController::class, 'deletePackage']);
 
+
+            // Payments
+            Route::post('/payments/{payment_code}/reconcile', [PaymentReconcileApiController::class, 'reconcile']);
+
+
             // Regular User Management
             Route::apiResource('regular-user', AdminRegularUserApiController::class); // Manage Regular user
             Route::post('regular-user/{user}/addDepot', [AdminRegularUserApiController::class, 'addDepot']);
@@ -203,8 +214,6 @@ Route::group([
 
         //
     });
-
-
 
 
     //

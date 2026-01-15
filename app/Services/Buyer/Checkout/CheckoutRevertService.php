@@ -73,11 +73,13 @@ class CheckoutRevertService
             }
 
             /* -------------------------------------------------
-             | 4️⃣ Mark order as SUSPENDED
+             | 4️⃣ Mark order as CANCELLED
              -------------------------------------------------*/
-            $order->update([
-                'status' => OrderStatusEnum::SUSPENDED->value, // or FAILED
-            ]);
+            if (!in_array($order->status, [OrderStatusEnum::CANCELLED->value, OrderStatusEnum::SUSPENDED->value])) {
+                $order->update([
+                    'status' => OrderStatusEnum::CANCELLED->value, // or FAILED
+                ]);
+            }
 
             return $order;
         });

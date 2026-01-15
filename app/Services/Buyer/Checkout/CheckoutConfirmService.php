@@ -5,8 +5,6 @@ namespace App\Services\Buyer\Checkout;
 use App\Enum\Common\Cart\CartStatusEnum;
 use App\Enum\Common\Order\OrderChargeTypeEnum;
 use App\Enum\Common\Order\OrderStatusEnum;
-use App\Enum\Common\Wallet\WalletStatusEnum;
-use App\Enum\Common\Wallet\WalletTypeEnum;
 use App\Models\Buyer\Cart\Cart;
 use App\Models\Buyer\Order\Order;
 use App\Models\Buyer\Order\OrderCharge;
@@ -154,7 +152,6 @@ class CheckoutConfirmService
                     'order_id' => $order->id,
                     'order_number' => $order->order_number,
 
-
                     'charge_code' => $charge['charge_code'],
                     'charge_name' => $charge['charge_name'],
 
@@ -194,35 +191,8 @@ class CheckoutConfirmService
             ]);
 
 
-
-            ### Wallet Service start
-            $meta = [
-                'description' => 'Order #' . $order->order_number . ' created',
-                'source_type' => Order::class,
-                'source_id'   => $order->id,
-                'source_code' => $order->order_number,
-                'reference'   => $order->order_number,
-                'payment_reference' => null,
-                'gateway'     => $paymentMethod,
-            ];
-
-            $txn = $this->walletService->createTransaction(
-                $order->buyer->wallet,
-                $order->total_amount - $order->tax_amount, // tax stays separate ✔
-                WalletTypeEnum::DEBIT,
-                WalletStatusEnum::HOLD, // $walletStatus,
-                $meta
-            );
-
-            $order->updateQuietly([
-                'wallet_txn_code' => $txn->wallet_txn_code,
-            ]);
-            ## Wallet Service end
-
-            ## Hold to be finalized upon payment completion
-            ## Cancellation apply from observer if order cancelled/refunded
-
-
+            // Trigger razorpay from cotnroller to frontend
+            
             return $order;
         });
     }

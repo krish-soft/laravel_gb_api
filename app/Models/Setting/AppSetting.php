@@ -68,45 +68,38 @@ class AppSetting extends BaseModel
 
 
     // Create functiosn to check all
-
-    public function isMaintenanceMode(): bool
+    public function getOrCreate(): Model|null
     {
-        return $this->is_maintenance_mode;
-    }
+        return self::firstOrCreate([
+            'app_name' => 'Green Bazar',
 
-    public function getMaintenanceMessage(): ?string
-    {
-        return $this->maintenance_message;
-    }
+            // Localization
+            'timezone' => 'Asia/Kolkata',
+            'locale' => 'en',
+            'fallback_locale' => 'en',
 
-    public function getAndroidAppVersion(): ?string
-    {
-        return $this->mobile_app_android_version;
-    }
+            // Formatting
+            'currency' => 'INR',
+            'currency_symbol' => '₹',
+            'date_format' => 'Y-m-d',
+            'time_format' => 'H:i',
 
-    public function isForceAndroidUpdate(): bool
-    {
-        // Null or empty means no force update
-        if (!$this->is_force_app_android_update || $this->mobile_app_android_version === null || $this->mobile_app_android_version === '') {
-            return false;
-        }
+            // App behavior
+            'is_maintenance_mode' => false,
+            'maintenance_message' => null,
 
-        return $this->is_force_app_android_update;
-    }
+            // UI / frontend
+            'is_registration_enabled' => true,
 
 
-    public function getIosAppVersion(): ?string
-    {
-        return $this->mobile_app_ios_version;
-    }
+            // Meta
+            'app_version' => '1.0.0',
+            // Mobile app versioning
+            'mobile_app_android_version' => '1.0.0',
+            'is_force_app_android_update' => false,
 
-    public function isForceIosUpdate(): bool
-    {
-        // Null or empty means no force update
-        if (!$this->is_force_app_ios_update || $this->mobile_app_ios_version === null || $this->mobile_app_ios_version === '') {
-            return false;
-        }
-
-        return $this->is_force_app_ios_update;
+            'mobile_app_ios_version' => '1.0.0',
+            'is_force_app_ios_update' => false,
+        ]);
     }
 }
