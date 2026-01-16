@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Web\Payment;
+namespace App\Http\Controllers\Web\Webhooks;
 
 use App\Enum\Common\Payment\PaymentStatusEnum;
 use App\Http\Controllers\Controller;
@@ -18,8 +18,7 @@ class RazorpayWebhookController extends Controller
         RazorpayService         $razorpay,
         PaymentService          $paymentService,
         PaymentFinalizerService $finalizer
-    )
-    {
+    ) {
         // 1️⃣ Verify webhook signature (MUST)
         $razorpay->verifyWebhook(
             $request->getContent(),
@@ -84,7 +83,7 @@ class RazorpayWebhookController extends Controller
         // 9️⃣ Log Activity
         logActivity(
             'razorpay_webhook_received',
-            $payment->user() ?? null,
+            $payment?->user() ?? null,
             get_class($payment),
             $payment->id,
             $payment->payment_code,
@@ -101,45 +100,45 @@ class RazorpayWebhookController extends Controller
     }
 
 
-//    public function handle(
-//        Request $request,
-//        RazorpayService $razorpay,
-//        PaymentService $paymentService,
-//        PaymentFinalizerService $finalizer
-//    ) {
-//        $razorpay->verifyWebhook(
-//            $request->getContent(),
-//            $request->header('X-Razorpay-Signature')
-//        );
-//
-//        if ($request->input('event') === 'payment.captured') {
-//
-//            $gatewayOrderId = data_get(
-//                $request->all(),
-//                'payload.payment.entity.order_id'
-//            );
-//
-//            $gatewayPaymentId = data_get(
-//                $request->all(),
-//                'payload.payment.entity.id'
-//            );
-//
-//            $payment = $paymentService->findByGatewayOrder($gatewayOrderId);
-//
-//            if ($payment->is_final) {
-//                return response()->json(['ok' => true]);
-//            }
-//
-//            DB::transaction(function () use (
-//                $payment,
-//                $gatewayPaymentId,
-//                $finalizer
-//            ) {
-//                $payment->markPaid($gatewayPaymentId);
-//                $finalizer->handleSuccess($payment);
-//            });
-//        }
-//
-//        return response()->json(['ok' => true]);
-//    }
+    //    public function handle(
+    //        Request $request,
+    //        RazorpayService $razorpay,
+    //        PaymentService $paymentService,
+    //        PaymentFinalizerService $finalizer
+    //    ) {
+    //        $razorpay->verifyWebhook(
+    //            $request->getContent(),
+    //            $request->header('X-Razorpay-Signature')
+    //        );
+    //
+    //        if ($request->input('event') === 'payment.captured') {
+    //
+    //            $gatewayOrderId = data_get(
+    //                $request->all(),
+    //                'payload.payment.entity.order_id'
+    //            );
+    //
+    //            $gatewayPaymentId = data_get(
+    //                $request->all(),
+    //                'payload.payment.entity.id'
+    //            );
+    //
+    //            $payment = $paymentService->findByGatewayOrder($gatewayOrderId);
+    //
+    //            if ($payment->is_final) {
+    //                return response()->json(['ok' => true]);
+    //            }
+    //
+    //            DB::transaction(function () use (
+    //                $payment,
+    //                $gatewayPaymentId,
+    //                $finalizer
+    //            ) {
+    //                $payment->markPaid($gatewayPaymentId);
+    //                $finalizer->handleSuccess($payment);
+    //            });
+    //        }
+    //
+    //        return response()->json(['ok' => true]);
+    //    }
 }

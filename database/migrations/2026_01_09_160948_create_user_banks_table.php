@@ -26,6 +26,10 @@ return new class extends Migration
             // Bank details
             $table->string('account_holder_name', 120);
 
+            $table->string('razorpay_contact_id')->nullable();
+            $table->string('razorpay_fund_account_id')->nullable();
+
+
             // Sensitive (ENCRYPTED)
             $table->text('account_number_encrypted');
             $table->string('account_number_last4', 4);

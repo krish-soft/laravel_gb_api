@@ -1,7 +1,10 @@
 <?php
 
 use App\Enum\Common\Payment\PaymentStatusEnum;
+use App\Enum\Common\Payment\PayoutStatusEnum;
 use App\Models\Common\Payment;
+use App\Models\Common\Wallet\WalletPayout;
+use App\Services\Common\Payment\Handlers\WalletPayoutHandler;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 
@@ -47,6 +50,28 @@ Schedule::call(function () {
             }
 
             $reconciler->reconcile($payment);
+        });
+
+})->everyFiveMinutes();
+
+// Payout timeout handler
+Schedule::call(function () {
+
+    $handler = app(WalletPayoutHandler::class);
+
+    WalletPayout::whereIn('status', [PayoutStatusEnum::REQUESTED->value, PayoutStatusEnum::PROCESSING->value])
+        ->where('created_at', '<', now()->subMinutes(30))
+        ->each(function (WalletPayout $payout) use ($handler) {
+
+            // 🔒 Idempotency guard
+            if (in_array($payout->status, [PayoutStatusEnum::PAID->value, PayoutStatusEnum::FAILED->value])) {
+                return;
+            }
+
+            $handler->onFailure(
+                $payout,
+                'Payout timeout (no response from Razorpay)'
+            );
         });
 
 })->everyFiveMinutes();

@@ -18,6 +18,9 @@ class UserBank extends BaseModel
         'user_id',
         'bank_code',
 
+        'razorpay_contact_id',
+        'razorpay_fund_account_id',
+
         'account_holder_name',
 
         'account_number_encrypted',

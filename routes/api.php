@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserLogoutApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserRegisterApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserResetPasswordApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Payment\PaymentReconcileApiController;
+use App\Http\Controllers\Api\v1\Admin\Common\Payment\WalletPayoutApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Setting\AppSettingApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\User\AdminRegularUserApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeApiController;
@@ -31,13 +32,15 @@ use App\Http\Controllers\Api\v1\User\Common\Fulfillment\FulfillmentLocationApiCo
 use App\Http\Controllers\Api\v1\User\Common\Legal\UserBankApiController;
 use App\Http\Controllers\Api\v1\User\Common\Legal\UserKycApiController;
 use App\Http\Controllers\Api\v1\User\Seller\Product\ProductListingApiController;
-use App\Http\Controllers\Web\Payment\RazorpayWebhookController;
+use App\Http\Controllers\Web\Webhooks\RazorpayPayoutWebhookController;
+use App\Http\Controllers\Web\Webhooks\RazorpayWebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 
 // Public Paymnent Route
-Route::post('/webhooks/razorpay', [RazorpayWebhookController::class, 'handle']);
+Route::post('/webhooks/razorpay/payments', [RazorpayWebhookController::class, 'handle']);
+Route::post('/webhooks/razorpay/payouts', [RazorpayPayoutWebhookController::class, 'handle']);
 
 
 Route::group([
@@ -170,6 +173,13 @@ Route::group([
             // Payments
             Route::post('/payments/{payment_code}/reconcile', [PaymentReconcileApiController::class, 'reconcile']);
 
+            Route::prefix('wallet-payouts')->group(function () {
+                Route::post('{payout}/approve', [WalletPayoutApiController::class, 'approve']);
+                Route::post('{payout}/force-success', [WalletPayoutApiController::class, 'forceSuccess']);
+                Route::post('{payout}/force-fail', [WalletPayoutApiController::class, 'forceFail']);
+                Route::post('{payout}/reconcile', [WalletPayoutApiController::class, 'reconcile']);
+            });
+
 
             // Regular User Management
             Route::apiResource('regular-user', AdminRegularUserApiController::class); // Manage Regular user
@@ -178,8 +188,8 @@ Route::group([
 
 
             // Settings
-            Route::get('setting/app', [AppSettingApiController::class, 'getSettings']);
-            Route::put('setting/app', [AppSettingApiController::class, 'updateSettings']);
+            Route::get('setting/app', [AppSettingApiController::class, 'getSetting']);
+            Route::put('setting/app', [AppSettingApiController::class, 'updateSetting']);
 
 
             ##  Master  Routes
