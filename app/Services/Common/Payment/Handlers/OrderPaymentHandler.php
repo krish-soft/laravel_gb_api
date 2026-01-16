@@ -41,6 +41,9 @@ class OrderPaymentHandler
             ]);
 
             // 2️⃣ Finalize wallet HOLD (ONLY ONCE)
+            /**
+             *  Buyer Side 
+             */
             $walletTxn = WalletTransaction::where(
                 'payment_reference',
                 $payment->payment_code

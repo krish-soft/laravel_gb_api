@@ -43,9 +43,9 @@ return new class extends Migration
      ===================================================== */
             $table->string('currency', 3)->default('INR');
             $table->decimal('amount', 12, 2);                    // total amount
-            $table->decimal('tax_amount', 12, 2)->default(0);
-            $table->decimal('fee_amount', 12, 2)->default(0);    // gateway/platform fee
-            $table->decimal('net_amount', 12, 2);                // amount - fees
+            $table->decimal('tax_amount', 12, 2)->default(0)->nullable();
+            $table->decimal('fee_amount', 12, 2)->default(0)->nullable();      // gateway/platform fee
+            $table->decimal('net_amount', 12, 2)->nullable();                // amount - fees
 
             /* =====================================================
      | PAYMENT CONTEXT
