@@ -49,7 +49,7 @@ class UserRegisterApiController extends ApiResponseController
             );
         }
 
-        return $this->showSuccessMessage(
+        return $this->successResponse(
             __('messages.success_messages.otp_sent_successfully'),
             [
                 'request_id' => $otpService->requestId(),

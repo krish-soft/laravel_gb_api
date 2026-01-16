@@ -47,7 +47,7 @@ class UserResetPasswordApiController extends ApiResponseController
             );
         }
 
-        return $this->showSuccessMessage(
+        return $this->successResponse(
             'OTP sent successfully',
             ['request_id' => $otpService->requestId()]
         );
