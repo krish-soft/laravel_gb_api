@@ -182,6 +182,7 @@ return [
         /* Pricing */
         'invalid_order_amount' => 'Invalid order amount.',
         'invalid_charge_level' => 'Invalid charge level.',
+        'missing_charge_level_pricing_config'=> 'Missing charge level pricing configuration.',
     ],
 
 ];

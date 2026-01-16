@@ -165,7 +165,7 @@ class BankService
 
     public function deleteBank(UserBank $bank, User $actor, ?string $reason = null): void
     {
-        if ($bank->is_primary) {
+        if ($bank->is_primary && $bank->is_verified) {
             throw new RuntimeException(__('messages.error_messages.primary_bank_delete_forbidden'));
         }
 

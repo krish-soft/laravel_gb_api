@@ -26,8 +26,10 @@ return new class extends Migration
             // Bank details
             $table->string('account_holder_name', 120);
 
+            // Razorpay Integration
             $table->string('razorpay_contact_id')->nullable();
             $table->string('razorpay_fund_account_id')->nullable();
+            $table->boolean('is_razorpay_fund_account_status')->nullable();
 
 
             // Sensitive (ENCRYPTED)

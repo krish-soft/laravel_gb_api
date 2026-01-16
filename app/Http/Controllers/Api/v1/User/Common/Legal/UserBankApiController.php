@@ -20,6 +20,7 @@ class UserBankApiController extends ApiResponseWithAuthController
     {
         try {
             $banks = $this->bankService->listBanks($request->user());
+
         } catch (\Exception $e) {
             return $this->showErrorMessage(
                 $e->getMessage(),
@@ -39,11 +40,11 @@ class UserBankApiController extends ApiResponseWithAuthController
 
         $validated = $request->validate([
             'account_holder_name' => 'required|string|max:150',
-            'account_number'      => 'required|string|max:20',
-            'ifsc_code'           => 'required|string|max:20',
-            'bank_name'           => 'required|string|max:100',
-            'branch_name'         => 'required|string|max:100',
-            'account_type'        => 'required|string|max:50',
+            'account_number' => 'required|string|max:20',
+            'ifsc_code' => 'required|string|max:20',
+            'bank_name' => 'required|string|max:100',
+            'branch_name' => 'required|string|max:100',
+            'account_type' => 'required|string|max:50',
         ]);
 
         // Only one allowed per user with same last 4 digits
@@ -53,6 +54,12 @@ class UserBankApiController extends ApiResponseWithAuthController
                 $request->user(),
                 $validated
             );
+
+
+//            // Start verification for unverified banks
+//            app(RazorpayBankVerificationService::class)
+//                ->startVerification($bank, $user);
+
         } catch (\Exception $e) {
             return $this->showErrorMessage(
                 $e->getMessage(),
@@ -94,10 +101,10 @@ class UserBankApiController extends ApiResponseWithAuthController
 
         $validated = $request->validate([
             'account_holder_name' => 'required|string|max:150',
-            'ifsc_code'           => 'required|string|max:20',
-            'bank_name'           => 'required|string|max:100',
-            'branch_name'         => 'required|string|max:100',
-            'account_type'        => 'required|string|max:50',
+            'ifsc_code' => 'required|string|max:20',
+            'bank_name' => 'required|string|max:100',
+            'branch_name' => 'required|string|max:100',
+            'account_type' => 'required|string|max:50',
         ]);
 
         try {

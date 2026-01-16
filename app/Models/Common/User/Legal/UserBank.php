@@ -20,6 +20,7 @@ class UserBank extends BaseModel
 
         'razorpay_contact_id',
         'razorpay_fund_account_id',
+        'is_razorpay_fund_account_status',
 
         'account_holder_name',
 
@@ -56,6 +57,7 @@ class UserBank extends BaseModel
         'account_number_encrypted' => 'encrypted', // auto encrypt/decrypt
         'verified_at'              => 'datetime',
         'is_primary'               => 'boolean',
+        'is_razorpay_fund_account_status'               => 'boolean',
     ];
 
     protected $hidden = [

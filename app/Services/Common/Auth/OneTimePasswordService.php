@@ -47,7 +47,7 @@ class OneTimePasswordService
             'dial_code'    => $data['dial_code'] ?? null,
             'phone_number' => $data['phone_number'] ?? null,
             'email'        => $data['email'] ?? null,
-            'otp_code'     => $this->generateOtpCode(),
+            'otp_code'     => $this->generateOtpCode(), // TODO:: Pending to Add Hash when API is ready
             'expires_at'   => now()->addMinutes(self::EXPIRY_MINUTES),
             'request_id'   => (string) Str::uuid(),
             'ip_address'   => request()->ip(),

@@ -13,7 +13,8 @@ class ChargeCalculationService
         string $chargeLevelCode,
         float  $orderAmount,
         array  $packages
-    ): array {
+    ): array
+    {
 
         if ($orderAmount < 0) {
             throw new RuntimeException(__('messages.error_messages.invalid_order_amount'), 422);
@@ -23,9 +24,26 @@ class ChargeCalculationService
             ->where('code', $chargeLevelCode)
             ->first();
 
+        // We can Take Default Level
+
         if (!$level) {
             throw new RuntimeException(__('messages.error_messages.invalid_charge_level'), 422);
         }
+
+
+        $chargeMasters = MstCharge::active()
+            ->where('charge_level_id', $level->id)
+            ->with([
+                'minimumRuleCharges' => fn($q) => $q->active()->orderBy('rule_no'),
+                'deliveryRuleCharges' => fn($q) => $q->active()->orderBy('rule_no'),
+            ])
+            ->get();
+
+        // IF that level pricing not found then give error
+        if ($chargeMasters->isEmpty()) {
+            throw new RuntimeException(__('messages.error_messages.missing_charge_level_pricing_config'), 422);
+        }
+
 
         // --------------------------------------------------
         // DERIVED TOTALS FROM PACKAGES (SINGLE SOURCE)
@@ -44,14 +62,6 @@ class ChargeCalculationService
         $charges = [];
         $totalCharge = 0;
         $totalTax = 0;
-
-        $chargeMasters = MstCharge::active()
-            ->where('charge_level_id', $level->id)
-            ->with([
-                'minimumRuleCharges' => fn($q) => $q->active()->orderBy('rule_no'),
-                'deliveryRuleCharges' => fn($q) => $q->active()->orderBy('rule_no'),
-            ])
-            ->get();
 
         foreach ($chargeMasters as $charge) {
 
@@ -76,9 +86,11 @@ class ChargeCalculationService
                     $charges[] = [
                         'charge_code' => $charge->code,
                         'charge_name' => $charge->name,
+
                         'rule_type' => 'minimum_order',
                         'rule_no' => $rule['rule_no'],
                         'rule_desc' => $rule['description'],
+
                         'taxable_amount' => round($rule['amount'], 2),
                         'tax_amount' => round($taxArr['charge_tax'], 2),
                         'total_amount' => round($rule['amount'] + $taxArr['charge_tax'], 2),
@@ -114,9 +126,11 @@ class ChargeCalculationService
                     $charges[] = [
                         'charge_code' => $charge->code,
                         'charge_name' => $charge->name,
+
                         'rule_type' => 'delivery',
                         'rule_no' => $rule['rule_no'],
                         'rule_desc' => $rule['description'],
+
                         'taxable_amount' => round($lineAmount, 2),
                         'tax_amount' => round($taxArr['tax_amount'], 2),
                         'total_amount' => round((float)$lineAmount + $taxArr['tax_amount'], 2),
@@ -145,7 +159,8 @@ class ChargeCalculationService
         float $orderAmount,
         float $totalQty,
         float $totalWeight
-    ): ?array {
+    ): ?array
+    {
 
         foreach ($rules as $rule) {
 
@@ -153,26 +168,26 @@ class ChargeCalculationService
 
             if (!is_null($rule->min_order_price)) {
                 $matched = $matched && $this->compare(
-                    $orderAmount,
-                    $rule->calc_condition,
-                    $rule->min_order_price
-                );
+                        $orderAmount,
+                        $rule->calc_condition,
+                        $rule->min_order_price
+                    );
             }
 
             if (!is_null($rule->min_order_qty)) {
                 $matched = $matched && $this->compare(
-                    $totalQty,
-                    $rule->calc_condition,
-                    $rule->min_order_qty
-                );
+                        $totalQty,
+                        $rule->calc_condition,
+                        $rule->min_order_qty
+                    );
             }
 
             if (!is_null($rule->min_order_weight)) {
                 $matched = $matched && $this->compare(
-                    $totalWeight,
-                    $rule->calc_condition,
-                    $rule->min_order_weight
-                );
+                        $totalWeight,
+                        $rule->calc_condition,
+                        $rule->min_order_weight
+                    );
             }
 
             if (!$matched) {
@@ -226,7 +241,8 @@ class ChargeCalculationService
         string    $buyerStateCode = 'GJ',
         string    $supplierStateCode = 'GJ',
         bool      $isUnionTerritory = false
-    ): array {
+    ): array
+    {
 
         if (!$charge->is_taxable || $amount <= 0) {
             return [
