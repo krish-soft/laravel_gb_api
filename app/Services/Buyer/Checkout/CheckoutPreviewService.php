@@ -75,9 +75,9 @@ class CheckoutPreviewService
                 $totalWeight += ($cartItem->order_qty * $package->pack_size);
 
                 $packages[] = [
-                    'order_qty'      => $cartItem->order_qty,
-                    'pack_size'      => $package->pack_size,
-                    'pack_unit'      => $package->pack_unit,
+                    'order_qty' => $cartItem->order_qty,
+                    'pack_size' => $package->pack_size,
+                    'pack_unit' => $package->pack_unit,
                     'pack_type_unit' => $package->pack_type_unit,
                 ];
             } else {
@@ -87,19 +87,27 @@ class CheckoutPreviewService
             $items[] = [
                 'cart_item_id' => $cartItem->id,
 
-                'listing_id' => $listing?->id,
-                'listing_item_id' => $listingItem?->id,
-                'package_id' => $package?->id,
+                'listing_code' => $listing->listing_code,
+                'product_listing_item_id' => $listingItem->id,
+                'product_listing_package_id' => $package->id,
 
-                'product_name' => $listingItem?->product_name,
-                'variant_name' => $listingItem?->variant_name,
+                'product_name' => $listingItem->product_name,
+                'variant_name' => $listingItem->variant_name,
+
+                'pack_size' => $package->pack_size,
+                'pack_unit' => $package->pack_unit,
+                'pack_type_unit' => $package->pack_type_unit,
 
                 'order_qty' => $cartItem->order_qty,
-                'unit_price' => $cartItem->pack_price,
-                'total_price' => $cartItem->total_price,
+
+                'taxable_amount' => $cartItem->total_price,
+                'tax_amount' => 0, // tax calculation not implemented yet
+                'total_amount' => $cartItem->total_price,
+
 
                 'is_available' => $isAvailable,
                 'available_qty' => $availableQty,
+
                 'invalid_reason_code' => $reasonCode,
                 'invalid_reason_message' => $reasonMessage,
             ];

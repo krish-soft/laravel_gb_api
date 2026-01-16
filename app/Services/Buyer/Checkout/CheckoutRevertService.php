@@ -11,8 +11,9 @@ class CheckoutRevertService
 {
     public function revert(Order $order): Order
     {
-        if (!in_array($order->status, [OrderStatusEnum::PENDING->value, OrderStatusEnum::PROCESSING->value])) {
-            throw new RuntimeException('Order cannot be reverted');
+//        if (!in_array($order->order_status, [OrderStatusEnum::PENDING->value, OrderStatusEnum::PROCESSING->value])) {
+        if (!in_array($order->order_status, [OrderStatusEnum::FAILED_PAYMENT->value])) {
+            throw new RuntimeException(__('messages.error_messages.order_cannot_be_reverted'));
         }
 
         return DB::transaction(function () use ($order) {
@@ -51,7 +52,7 @@ class CheckoutRevertService
                     continue;
                 }
 
-                $totalQty  = $listing->packages()->sum('qty');
+                $totalQty = $listing->packages()->sum('qty');
                 $totalSold = $listing->packages()->sum('sold_qty');
 
                 if ($totalSold <= 0) {
@@ -75,9 +76,9 @@ class CheckoutRevertService
             /* -------------------------------------------------
              | 4️⃣ Mark order as CANCELLED
              -------------------------------------------------*/
-            if (!in_array($order->status, [OrderStatusEnum::CANCELLED->value, OrderStatusEnum::SUSPENDED->value])) {
+            if (!in_array($order->order_status, [OrderStatusEnum::CANCELLED->value])) {
                 $order->update([
-                    'status' => OrderStatusEnum::CANCELLED->value, // or FAILED
+                    'order_status' => OrderStatusEnum::CANCELLED->value, // Finally Cancelled
                 ]);
             }
 

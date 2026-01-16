@@ -25,10 +25,6 @@ return new class extends Migration
                 ->constrained('users')
                 ->restrictOnDelete();
 
-            $table->foreignId('pickup_fulfillment_location_id')
-                ->nullable()
-                ->constrained('fulfillment_locations')
-                ->restrictOnDelete();
 
             $table->foreignId('shipping_fulfillment_location_id')
                 ->nullable()

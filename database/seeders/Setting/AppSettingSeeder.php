@@ -14,38 +14,38 @@ class AppSettingSeeder extends Seeder
     public function run(): void
     {
         //
-        AppSetting::getOrCreate();
-//        AppSetting::create([
-//            // App identity
-//            'app_name' => 'Green Bazar',
-//
-//            // Localization
-//            'timezone' => 'Asia/Kolkata',
-//            'locale' => 'en',
-//            'fallback_locale' => 'en',
-//
-//            // Formatting
-//            'currency' => 'INR',
-//            'currency_symbol' => '₹',
-//            'date_format' => 'Y-m-d',
-//            'time_format' => 'H:i',
-//
-//            // App behavior
-//            'is_maintenance_mode' => false,
-//            'maintenance_message' => null,
-//
-//            // UI / frontend
-//            'is_registration_enabled' => true,
-//
-//
-//            // Meta
-//            'app_version' => '1.0.0',
-//            // Mobile app versioning
-//            'mobile_app_android_version' => '1.0.0',
-//            'is_force_app_android_update' => false,
-//
-//            'mobile_app_ios_version' => '1.0.0',
-//            'is_force_app_ios_update' => false,
-//        ]);
+//        AppSetting::getOrCreate();
+        AppSetting::create([
+            // App identity
+            'app_name' => 'Green Bazar',
+
+            // Localization
+            'timezone' => 'Asia/Kolkata',
+            'locale' => 'en',
+            'fallback_locale' => 'en',
+
+            // Formatting
+            'currency' => 'INR',
+            'currency_symbol' => '₹',
+            'date_format' => 'Y-m-d',
+            'time_format' => 'H:i',
+
+            // App behavior
+            'is_maintenance_mode' => false,
+            'maintenance_message' => null,
+
+            // UI / frontend
+            'is_registration_enabled' => true,
+
+
+            // Meta
+            'app_version' => '1.0.0',
+            // Mobile app versioning
+            'mobile_app_android_version' => '1.0.0',
+            'is_force_app_android_update' => false,
+
+            'mobile_app_ios_version' => '1.0.0',
+            'is_force_app_ios_update' => false,
+        ]);
     }
 }

@@ -42,7 +42,7 @@ class ProductListing extends BaseModel
                 $model->expires_at = now()->addHours(24);
             }
 
-            // Check alrady exists doc_no for today
+            // Check already exists doc_no for today
             do {
                 $docNo = MstSeqCodeGenerator::getNextDocNo();
             } while (
@@ -55,18 +55,24 @@ class ProductListing extends BaseModel
 
     protected $fillable = [
         'seller_id',
+        
         'fulfillment_location_id',
         'listing_code',
+
         'doc_no',
         'doc_date',
+
         'is_sell_to_market',
         'is_seller_delivery',
         'is_buyer_pickup',
+
         'is_active',
         'inactive_reason',
+
         'is_partial',
         'is_sold',
         'is_locked',
+
         'is_expired',
         'expires_at',
     ];

@@ -10,23 +10,14 @@ use App\Models\Buyer\Order\Order;
 use App\Models\Buyer\Order\OrderCharge;
 use App\Models\Buyer\Order\OrderItem;
 use App\Models\Setting\AppSetting;
-use App\Services\Common\Wallet\WalletService;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 class CheckoutConfirmService
 {
 
-    protected WalletService $walletService;
 
-    public function __construct(WalletService $walletService)
-    {
-        $this->walletService = $walletService;
-    }
-
-
-
-    public function confirm(Cart $cart, array $charges,  $paymentMethod): Order
+    public function confirm(Cart $cart, array $charges, $paymentMethod): Order
     {
         /* -------------------------------------------------
          | Cart validations
@@ -60,7 +51,9 @@ class CheckoutConfirmService
                 'currency' => AppSetting::first()?->currency_code ?? 'INR',
                 'subtotal' => 0,
                 'total_amount' => 0,
-                'status' => OrderStatusEnum::PENDING->value,
+                'order_status' => OrderStatusEnum::PENDING->value,
+
+                'shipping_fulfillment_location_id' => $cart->fulfillment_location_id // shipping location from cart
             ]);
 
             $subtotal = 0;
@@ -118,20 +111,26 @@ class CheckoutConfirmService
                     'order_id' => $order->id,
                     'order_number' => $order->order_number,
 
-                    'listing_id' => $listing->id,
-                    'listing_item_id' => $listingItem->id,
-                    'package_id' => $package->id,
+                    'pickup_fulfillment_location_id' => $listing->fulfillment_location_id, // seller location
+
+                    'listing_code' => $listing->listing_code,
+                    'product_listing_item_id' => $listingItem->id,
+                    'product_listing_package_id' => $package->id,
 
                     'product_name' => $listingItem->product_name,
                     'variant_name' => $listingItem->variant_name,
-                    'unit' => $listingItem->unit,
+
+                    'pack_size' => $package->pack_size,
+                    'pack_unit' => $package->pack_unit,
+                    'pack_type_unit' => $package->pack_type_unit,
 
                     'order_qty' => $cartItem->order_qty,
-                    'unit_price' => $cartItem->pack_price,
-                    'total_price' => $lineTotal,
+                    'pack_price' => $cartItem->pack_price,
 
-                    'seller_id' => $listing->seller_id,
-                    'fulfillment_location_id' => $package->fulfillment_location_id,
+                    'taxable_amount' => $lineTotal,
+                    'tax_amount' => 0, // tax from charges only
+                    'total_amount' => $lineTotal,
+
                 ]);
             }
 
@@ -173,7 +172,7 @@ class CheckoutConfirmService
              -------------------------------------------------*/
             $order->update([
                 'subtotal' => $subtotal,
-                'tax_amount' => $taxAmount, // from charges only 
+                'tax_amount' => $taxAmount, // from charges only
                 'total_amount' => $subtotal + $chargesTotal,
             ]);
 
@@ -182,17 +181,18 @@ class CheckoutConfirmService
              -------------------------------------------------*/
             $cart->update([
                 'status' => CartStatusEnum::CONVERTED->value,
+                'converted_at' => now(),
             ]);
 
             // Everything okay then mark order as processing
 
             $order->update([
-                'status' => OrderStatusEnum::PROCESSING->value,
+                'order_status' => OrderStatusEnum::PROCESSING->value,
             ]);
 
 
-            // Trigger razorpay from cotnroller to frontend
-            
+            // Trigger razorpay from controller to frontend
+
             return $order;
         });
     }

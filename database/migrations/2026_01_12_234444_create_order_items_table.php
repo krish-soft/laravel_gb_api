@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -32,6 +31,13 @@ return new class extends Migration
                 ->constrained('product_listing_packages')
                 ->nullOnDelete();
 
+            // Per fulfillment location (if multiple locations are used)
+            $table->foreignId('pickup_fulfillment_location_id')
+                ->nullable()
+                ->constrained('fulfillment_locations')
+                ->restrictOnDelete();
+
+
             $table->string('listing_code', 50)->nullable(); // To Trace all way back to listing
 
             $table->string('product_code', 20)->nullable();
@@ -42,6 +48,10 @@ return new class extends Migration
 
             $table->unsignedInteger('order_qty');
             $table->unsignedInteger('ship_qty')->default(0);
+
+            $table->decimal('pack_size', 10, 2);
+            $table->string('pack_unit', 20);
+            $table->string('pack_type_unit', 50)->nullable();
 
             $table->decimal('pack_price', 15, 2);
             $table->decimal('per_unit_price', 15, 2);

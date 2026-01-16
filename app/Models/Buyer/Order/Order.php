@@ -31,7 +31,6 @@ class Order extends BaseModel
         'cart_id',
         'buyer_id',
 
-        'pickup_fulfillment_location_id',
         'shipping_fulfillment_location_id',
 
         'order_number',
@@ -57,7 +56,7 @@ class Order extends BaseModel
         'ship_addr_code',
         'pick_addr_code',
 
-        // 
+        //
     ];
 
     // Casts
@@ -87,10 +86,7 @@ class Order extends BaseModel
         return $this->belongsTo(User::class, 'buyer_id', 'id');
     }
 
-    public function pickupFulfillmentLocation()
-    {
-        return $this->belongsTo(FulfillmentLocation::class, 'pickup_fulfillment_location_id', 'id');
-    }
+
 
     public function shippingFulfillmentLocation()
     {

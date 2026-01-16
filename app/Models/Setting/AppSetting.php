@@ -58,6 +58,13 @@ class AppSetting extends BaseModel
         'is_force_app_ios_update',
     ];
 
+    protected $guarded = [
+        'timezone',
+        'locale',
+        'fallback_locale',
+        'currency',
+        'currency_symbol',
+    ];
 
     protected $casts = [
         'is_maintenance_mode' => 'boolean',

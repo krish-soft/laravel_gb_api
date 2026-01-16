@@ -31,6 +31,7 @@ class ProductListingService
             $listing->is_active = true;
             $listing->is_sold = false;
             $listing->is_partial = false;
+            $listing->is_locked = false;
             $listing->save();
 
             foreach ($data['productListingItems'] as $itemData) {
@@ -96,13 +97,21 @@ class ProductListingService
             'is_seller_delivery',
             'is_buyer_pickup',
         ];
+        // If Sold qty value have then seller can not change locations or flags
+        $hasSold = ProductListingPackage::whereHas(
+            'productListingItem',
+            fn($q) => $q->where('product_listing_id', $listing->id)
+        )->where('sold_qty', '>', 0)->exists();
+
+        if ($hasSold) {
+            throw new RuntimeException(__('messages.error_messages.listing_flags_locked'));
+
+        }
 
         $updateData = array_intersect_key($data, array_flip($allowed));
 
         if (empty($updateData)) {
-            throw new RuntimeException(
-                __('messages.error_messages.nothing_to_update')
-            );
+            throw new RuntimeException(__('messages.error_messages.nothing_to_update'));
         }
 
         $listing->update($updateData);
@@ -225,8 +234,9 @@ class ProductListingService
 
         $listing->update([
             'is_active' => false,
-            'is_expired' => true,
             'inactive_reason' => $reason,
+            'is_expired' => true,
+
             'expires_at' => now(),
         ]);
     }
@@ -250,8 +260,9 @@ class ProductListingService
 
     protected function recalculateListingState(
         ProductListing $listing,
-        ?string $reason = null
-    ): void {
+        ?string        $reason = null
+    ): void
+    {
 
         // 🔒 TERMINAL STATES → DO NOTHING
         if ($listing->is_sold || !$listing->is_active || $listing->is_expired) {
@@ -309,11 +320,11 @@ class ProductListingService
        ================= AUTH / HELPERS ========================
        ========================================================= */
 
-    protected function authorize(User $actor, ProductListing $listing): void
+    protected function authorize(User $user, ProductListing $listing): void
     {
         if (
-            !$actor->isAdminManagement() &&
-            $listing->seller_id !== $actor->id
+            !$user->isAdminManagement() &&
+            $listing->seller_id !== $user->id
         ) {
             throw new RuntimeException(
                 __('messages.error_messages.unauthorized_action')

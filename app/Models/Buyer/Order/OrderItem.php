@@ -3,6 +3,7 @@
 namespace App\Models\Buyer\Order;
 
 use App\Models\BaseModel;
+use App\Models\Common\Fulfillment\FulfillmentLocation;
 use App\Models\Seller\Product\ProductListingItem;
 use App\Models\Seller\Product\ProductListingPackage;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +15,8 @@ class OrderItem extends BaseModel
     protected $fillable = [
         'order_id',
         'order_number',
+
+        'pickup_fulfillment_location_id',
 
         'product_listing_item_id',
         'product_listing_package_id',
@@ -29,6 +32,10 @@ class OrderItem extends BaseModel
         'order_qty',
         'ship_qty',
 
+        'pack_size',
+        'pack_unit',
+        'pack_type_unit',
+
         'pack_price',
         'per_unit_price',
 
@@ -40,7 +47,7 @@ class OrderItem extends BaseModel
         'total_amount',
     ];
 
-    // casts    
+    // casts
     protected $casts = [
         'order_qty' => 'integer',
         'ship_qty' => 'integer',
@@ -61,5 +68,10 @@ class OrderItem extends BaseModel
     public function productListingPackage()
     {
         return $this->belongsTo(ProductListingPackage::class, 'product_listing_package_id', 'id');
+    }
+
+    public function pickupFulfillmentLocation()
+    {
+        return $this->belongsTo(FulfillmentLocation::class, 'pickup_fulfillment_location_id', 'id');
     }
 }

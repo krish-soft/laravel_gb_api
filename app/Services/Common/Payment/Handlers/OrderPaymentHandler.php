@@ -42,7 +42,7 @@ class OrderPaymentHandler
 
             // 2️⃣ Finalize wallet HOLD (ONLY ONCE)
             /**
-             *  Buyer Side 
+             *  Buyer Side
              */
             $walletTxn = WalletTransaction::where(
                 'payment_reference',
@@ -124,7 +124,7 @@ class OrderPaymentHandler
                 !$order ||
                 in_array($order->order_status, [
                     OrderStatusEnum::CANCELLED->value,
-                    OrderStatusEnum::SUSPENDED->value,
+                    OrderStatusEnum::FAILED_PAYMENT->value,
                 ])
             ) {
                 return;
@@ -132,7 +132,7 @@ class OrderPaymentHandler
 
             // ❌ Cancel order
             $order->update([
-                'order_status' => OrderStatusEnum::CANCELLED->value,
+                'order_status' => OrderStatusEnum::FAILED_PAYMENT->value,
                 'payment_status' => PaymentStatusEnum::FAILED->value,
             ]);
 

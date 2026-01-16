@@ -152,6 +152,7 @@ return [
         'listing_not_available'  => 'The requested listing is not available.',
         'listing_terminal_state' => 'Listing is completed or inactive and cannot be modified.',
         'listing_has_sales'      => 'Listing has completed sales and cannot be cancelled.',
+        'listing_flags_locked'   => 'Listing is locked due to multiple flags.',
 
         /* Package */
         'package_locked'        => 'Package is locked.',
@@ -176,6 +177,7 @@ return [
         'order_not_found'   => 'Order not found.',
         'order_not_pending' => 'Order cannot be processed.',
         'order_cancelled'   => 'Order is already cancelled.',
+        'order_cannot_be_reverted' => 'Order cannot be reverted.',
 
         /* Pricing */
         'invalid_order_amount' => 'Invalid order amount.',
