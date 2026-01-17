@@ -10,6 +10,7 @@ class WalletLedger extends BaseModel
     protected $fillable = [
         'wallet_id',
         'wallet_transaction_id',
+        'settlement_id ',
 
         'credit',
         'debit',
@@ -18,6 +19,7 @@ class WalletLedger extends BaseModel
         'description',
 
         'ref_type',
+
     ];
 
     protected $casts = [

@@ -23,11 +23,13 @@ return new class extends Migration {
                 ->constrained('wallet_transactions')
                 ->restrictOnDelete();
 
+            $table->unsignedBigInteger('settlement_id')->nullable(); // future use
+
             $table->decimal('credit', 15, 2)->default(0);
             $table->decimal('debit', 15, 2)->default(0);
 
             $table->string('action', 50); // hold, release, payout, refund, commission
-            $table->string('description',150)->nullable();
+            $table->string('description', 150)->nullable();
 
             $table->string('ref_type', 50)->nullable(); // order, settlement
 
@@ -36,7 +38,6 @@ return new class extends Migration {
             $table->softDeletes();
 
             $table->index(['wallet_id', 'created_at']);
-
         });
     }
 

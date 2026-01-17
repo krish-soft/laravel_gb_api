@@ -2,9 +2,9 @@
 
 namespace App\Services\Common\Accounting;
 
+use App\Enum\Common\Settlement\SettlementTypeEnum;
 use App\Models\Common\Accounting\Settlement;
 use App\Models\Common\Wallet\Wallet;
-use App\Models\Common\Wallet\WalletTransaction;
 use App\Services\Common\Wallet\WalletService;
 use App\Enum\Common\Wallet\WalletTypeEnum;
 use App\Enum\Common\Wallet\WalletStatusEnum;
@@ -16,6 +16,8 @@ class SettlementService
 {
     /* =====================================================
      | CREATE SETTLEMENT (ADMIN ONLY)
+     | - No wallet mutation
+     | - Pure accounting decision
      ===================================================== */
     public function create(
         User $admin,
@@ -31,6 +33,10 @@ class SettlementService
 
         if (!$admin->isAdminManagement()) {
             throw new RuntimeException('Unauthorized settlement creation');
+        }
+
+        if ($amount <= 0) {
+            throw new RuntimeException('Invalid settlement amount');
         }
 
         return DB::transaction(function () use (
@@ -54,7 +60,7 @@ class SettlementService
                 'reason'           => $reason,
                 'source_type'      => $sourceType,
                 'source_id'        => $sourceId,
-                'status'           => 'pending',
+                'status'           => SettlementTypeEnum::PENDING->value,
             ]);
 
             logActivity(
@@ -76,35 +82,30 @@ class SettlementService
     }
 
     /* =====================================================
-     | SETTLE → PLATFORM → USER
-     | (Manual / NEFT / Razorpay already done)
+     | SETTLE: PLATFORM → USER
+     | - Money already paid outside (NEFT / Cash / Razorpay)
+     | - Wallet reflects accounting
      ===================================================== */
     public function settleToUser(
         User $admin,
         Settlement $settlement,
-        Wallet $wallet,
-        string $reference
+        Wallet $userWallet,
+        string $externalReference
     ): void {
 
-        if (!$admin->isAdminManagement()) {
-            throw new RuntimeException('Unauthorized settlement');
-        }
+        $this->assertAdminAndPending($admin, $settlement);
 
-        if ($settlement->status !== 'pending') {
-            return;
-        }
-
-        DB::transaction(function () use ($admin, $settlement, $wallet, $reference) {
+        DB::transaction(function () use ($admin, $settlement, $userWallet, $externalReference) {
 
             $txn = app(WalletService::class)->createTransaction(
-                $wallet,
+                $userWallet,
                 $settlement->amount,
                 WalletTypeEnum::CREDIT,
                 WalletStatusEnum::COMPLETED,
                 [
                     'description' => $settlement->reason,
                     'reference' => 'SETTLEMENT-' . $settlement->id,
-                    'payment_reference' => $reference,
+                    'payment_reference' => $externalReference,
                     'remark' => 'platform_to_user',
                     'source_type' => Settlement::class,
                     'source_id' => $settlement->id,
@@ -113,11 +114,7 @@ class SettlementService
 
             app(WalletService::class)->finalizeTransaction($txn);
 
-            $settlement->update([
-                'status' => 'settled',
-                'wallet_transaction_id' => $txn->id,
-                'settled_at' => now(),
-            ]);
+            $this->markSettled($settlement, $txn->id);
 
             logActivity(
                 'settlement_paid_to_user',
@@ -126,36 +123,31 @@ class SettlementService
                 $settlement->id,
                 null,
                 [
-                    'wallet_id' => $wallet->id,
+                    'wallet_id' => $userWallet->id,
                     'amount' => $settlement->amount,
-                    'reference' => $reference,
+                    'reference' => $externalReference,
                 ]
             );
         });
     }
 
     /* =====================================================
-     | SETTLE → USER → PLATFORM
-     | (Penalty / Recovery / Commission)
+     | SETTLE: USER → PLATFORM
+     | - Penalty / Commission / Recovery
+     | - Wallet reflects deduction
      ===================================================== */
     public function settleFromUser(
         User $admin,
         Settlement $settlement,
-        Wallet $wallet
+        Wallet $userWallet
     ): void {
 
-        if (!$admin->isAdminManagement()) {
-            throw new RuntimeException('Unauthorized settlement');
-        }
+        $this->assertAdminAndPending($admin, $settlement);
 
-        if ($settlement->status !== 'pending') {
-            return;
-        }
-
-        DB::transaction(function () use ($admin, $settlement, $wallet) {
+        DB::transaction(function () use ($admin, $settlement, $userWallet) {
 
             $txn = app(WalletService::class)->createTransaction(
-                $wallet,
+                $userWallet,
                 $settlement->amount,
                 WalletTypeEnum::DEBIT,
                 WalletStatusEnum::COMPLETED,
@@ -170,11 +162,7 @@ class SettlementService
 
             app(WalletService::class)->finalizeTransaction($txn);
 
-            $settlement->update([
-                'status' => 'settled',
-                'wallet_transaction_id' => $txn->id,
-                'settled_at' => now(),
-            ]);
+            $this->markSettled($settlement, $txn->id);
 
             logActivity(
                 'settlement_recovered_from_user',
@@ -183,7 +171,7 @@ class SettlementService
                 $settlement->id,
                 null,
                 [
-                    'wallet_id' => $wallet->id,
+                    'wallet_id' => $userWallet->id,
                     'amount' => $settlement->amount,
                 ]
             );
@@ -191,7 +179,8 @@ class SettlementService
     }
 
     /* =====================================================
-     | USER → USER SETTLEMENT (OPTIONAL)
+     | SETTLE: USER → USER
+     | - Dispute / Adjustment / Compensation
      ===================================================== */
     public function settleBetweenUsers(
         User $admin,
@@ -200,13 +189,7 @@ class SettlementService
         Wallet $toWallet
     ): void {
 
-        if (!$admin->isAdminManagement()) {
-            throw new RuntimeException('Unauthorized settlement');
-        }
-
-        if ($settlement->status !== 'pending') {
-            return;
-        }
+        $this->assertAdminAndPending($admin, $settlement);
 
         DB::transaction(function () use ($admin, $settlement, $fromWallet, $toWallet) {
 
@@ -221,11 +204,7 @@ class SettlementService
                 ]
             );
 
-            $settlement->update([
-                'status' => 'settled',
-                'wallet_transaction_id' => $creditTxn->id,
-                'settled_at' => now(),
-            ]);
+            $this->markSettled($settlement, $creditTxn->id);
 
             logActivity(
                 'settlement_user_to_user',
@@ -243,7 +222,7 @@ class SettlementService
     }
 
     /* =====================================================
-     | CANCEL SETTLEMENT
+     | CANCEL SETTLEMENT (NO WALLET EFFECT)
      ===================================================== */
     public function cancel(
         User $admin,
@@ -255,12 +234,12 @@ class SettlementService
             throw new RuntimeException('Unauthorized');
         }
 
-        if ($settlement->status !== 'pending') {
+        if ($settlement->status !== SettlementTypeEnum::PENDING->value) {
             return;
         }
 
         $settlement->update([
-            'status' => 'cancelled',
+            'status' => SettlementTypeEnum::CANCELLED->value,
         ]);
 
         logActivity(
@@ -271,5 +250,28 @@ class SettlementService
             null,
             ['reason' => $reason]
         );
+    }
+
+    /* =====================================================
+     | INTERNAL HELPERS
+     ===================================================== */
+    private function assertAdminAndPending(User $admin, Settlement $settlement): void
+    {
+        if (!$admin->isAdminManagement()) {
+            throw new RuntimeException('Unauthorized settlement');
+        }
+
+        if ($settlement->status !== SettlementTypeEnum::PENDING->value) {
+            throw new RuntimeException('Settlement already processed');
+        }
+    }
+
+    private function markSettled(Settlement $settlement, int $walletTxnId): void
+    {
+        $settlement->update([
+            'status' => 'settled',
+            'wallet_transaction_id' => $walletTxnId,
+            'settled_at' => now(),
+        ]);
     }
 }
