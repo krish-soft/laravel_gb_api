@@ -2,18 +2,24 @@
 
 namespace App\Http\Controllers\Api\v1\User\Buyer;
 
+use App\Enum\Common\ActionCodeEnum;
 use App\Enum\Common\Payment\PaymentMethodEnum;
 use App\Http\Controllers\ApiResponseWithAuthController;
 use App\Models\Buyer\Cart\Cart;
 use App\Models\Buyer\Order\Order;
+use App\Models\Common\Payment;
 use App\Models\Setting\AppSetting;
 use App\Services\Buyer\Checkout\CheckoutConfirmService;
 use App\Services\Buyer\Checkout\CheckoutPreviewService;
 use App\Services\Common\Payment\Gateways\RazorpayService;
+use App\Services\Common\Payment\Handlers\OrderPaymentHandler;
 use App\Services\Common\Payment\PaymentService;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\Action;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
+use RuntimeException;
 
 class CheckoutApiController extends ApiResponseWithAuthController
 {
@@ -25,8 +31,7 @@ class CheckoutApiController extends ApiResponseWithAuthController
     public function preview(
         Request                $request,
         CheckoutPreviewService $service
-    )
-    {
+    ) {
         try {
             $cart = Cart::where('buyer_id', $request->user()->id)
                 ->where('status', 'active')
@@ -54,75 +59,218 @@ class CheckoutApiController extends ApiResponseWithAuthController
         Request                $request,
         CheckoutConfirmService $checkoutService,
         PaymentService         $paymentService,
-        RazorpayService        $razorpayService
-    )
-    {
+        RazorpayService        $razorpayService,
+        OrderPaymentHandler   $orderPaymentHandler
+    ) {
+        $user = $request->user();
+
+        if (!$user->isBuyer()) {
+            return $this->showErrorMessage(
+                __('messages.error_messages.unauthorized_action'),
+                403
+            );
+        }
+
         $data = $request->validate([
-            'payment_method' => 'required|in:razorpay',
-            'charges' => 'required|array|min:1',
+            'payment_method' => 'required|in:razorpay,wallet', // manual only via admin
+            'charges'        => 'required|array|min:1',
         ]);
 
-        $cart = Cart::latest()->where('buyer_id', $request->user()->id)
+        $cart = Cart::where('buyer_id', $user->id)
             ->where('status', 'active')
             ->with(['cartItems.productListingPackage.productListingItem.productListing'])
+            ->latest()
             ->firstOrFail();
 
-        // 1️⃣ Create order (lock stock)
-        $order = $checkoutService->confirm($cart, $data['charges'], $request->payment_method);
+        $wallet = $user->wallet;
 
-        // 2️⃣ Create payment record
-        $payment = $paymentService->initiate([
-            'source_type' => Order::class,
-            'source_id' => $order->id,
-            'source_code' => $order->order_number,
-            'user_id' => $request->user()->id,
-            'amount' => $order->total_amount,
-            'net_amount' => $order->total_amount,
-            'payment_type' => 'checkout',
-            'payment_method' => $request->payment_method,
-        ]);
+        // 🔢 Calculate total
+        $totalAmount = $cart->getTotalCartItemAmount();
+        foreach ($data['charges'] as $charge) {
+            $totalAmount += $charge['total_amount'];
+        }
 
-        // 3️⃣ Create Razorpay order
-        $gateway = $razorpayService->createRazorpayOrder(
-            $payment->payment_code,
-            $payment->amount,
-            AppSetting::getOrCreate()?->currency ?? 'INR'
-        );
+        // 🔒 Wallet pre-check ONLY if wallet selected
+        if (
+            $data['payment_method'] === PaymentMethodEnum::WALLET->value
+            && !$wallet->canDebit($totalAmount)
+        ) {
+            logActivity(
+                'checkout_wallet_insufficient_balance',
+                $user,
+                Cart::class,
+                $cart->id,
+                null,
+                ['amount_required' => $totalAmount]
+            );
 
-        $paymentService->attachGatewayOrder($payment, $gateway);
+            return $this->showErrorMessage(
+                __('messages.error_messages.insufficient_wallet_balance'),
+                400,
+                ActionCodeEnum::WALLET_INSUFFICIENT_BALANCE
+            );
+        }
 
-        // 4️⃣ Generate SIGNED payment URL (STANDARD)
-        $paymentUrl = URL::temporarySignedRoute(
-            'payment.page',
-            now()->addMinutes(15),
-            ['payment_code' => $payment->payment_code]
-        );
+        DB::beginTransaction();
 
+        try {
 
-        //  Log Activity
-        logActivity(
-            'checkout_payment_initiated',
-            request()->user() ?? null,
-            get_class($payment),
-            $payment->id,
-            $payment->payment_code,
-            [
-                'payment_code' => $payment->payment_code,
-                'gateway_order_id' => $payment->gateway_order_id,
-                'amount' => $payment->amount,
-                'currency' => $payment->currency,
-            ]
-        );
+            /**
+             * 1️⃣ Create Order
+             */
+            $order = $checkoutService->confirm(
+                $cart,
+                $data['charges'],
+                $data['payment_method']
+            );
 
+            logActivity(
+                'checkout_order_created',
+                $user,
+                Order::class,
+                $order->id,
+                $order->order_number,
+                ['amount' => $order->total_amount]
+            );
 
-        return $this->successResponse(
-            'Proceed to payment',
-            [
-                'payment_code' => $payment->payment_code,
-                'payment_url' => $paymentUrl,
-            ],
-            201
-        );
+            /**
+             * 2️⃣ Create Payment (INITIATED)
+             */
+            $payment = $paymentService->initiate([
+                'source_type'   => Order::class,
+                'source_id'     => $order->id,
+                'source_code'   => $order->order_number,
+                'user_id'       => $user->id,
+                'amount'        => $order->total_amount,
+                'tax_amount'    => $order->tax_amount,
+                'net_amount'    => $order->total_amount,
+                'payment_type'  => 'checkout',
+                'payment_method' => $data['payment_method'],
+            ]);
+
+            logActivity(
+                'payment_initiated',
+                $user,
+                Payment::class,
+                $payment->id,
+                $payment->payment_code,
+                [
+                    'method' => $payment->payment_method,
+                    'amount' => $payment->amount,
+                ]
+            );
+
+            /**
+             * ------------------------------------
+             * WALLET / MANUAL (SYNC)
+             * ------------------------------------
+             */
+            if (
+                AppSetting::getOrCreate()?->payment_in_mode === PaymentMethodEnum::MANUAL
+                || $data['payment_method'] === PaymentMethodEnum::WALLET->value
+            ) {
+
+                $payment->markPaid('WALLET_OR_MANUAL');
+
+                $orderPaymentHandler->onSuccess($payment);
+
+                logActivity(
+                    'payment_completed_wallet_or_manual',
+                    $user,
+                    Payment::class,
+                    $payment->id,
+                    $payment->payment_code,
+                    ['amount' => $payment->amount]
+                );
+
+                DB::commit();
+
+                return $this->successResponse(
+                    __('messages.success_messages.order_created'),
+                    ['order_code' => $order->order_number],
+                    201
+                );
+            }
+
+            /**
+             * ------------------------------------
+             * RAZORPAY (ASYNC)
+             * ------------------------------------
+             */
+            if ($data['payment_method'] !== PaymentMethodEnum::RAZORPAY->value) {
+                throw new RuntimeException(__('messages.error_messages.invalid_payment_method'));
+            }
+
+            $gateway = $razorpayService->createRazorpayOrder(
+                $payment->payment_code,
+                $payment->amount,
+                AppSetting::getOrCreate()?->currency ?? 'INR'
+            );
+
+            $paymentService->attachGatewayOrder($payment, $gateway);
+
+            $paymentUrl = URL::temporarySignedRoute(
+                'payment.page',
+                now()->addMinutes(15),
+                ['payment_code' => $payment->payment_code]
+            );
+
+            logActivity(
+                'razorpay_payment_initiated',
+                $user,
+                Payment::class,
+                $payment->id,
+                $payment->payment_code,
+                [
+                    'gateway_order_id' => $payment->gateway_order_id,
+                    'amount' => $payment->amount,
+                ]
+            );
+
+            DB::commit();
+
+            return $this->successResponse(
+                __('messages.success_messages.proceed_to_payment'),
+                [
+                    'payment_code' => $payment->payment_code,
+                    'payment_url'  => $paymentUrl,
+                ],
+                201,
+                ActionCodeEnum::PAYMENT_RAZORPAY
+            );
+        } catch (\Throwable $e) {
+
+            DB::rollBack();
+
+            if (isset($payment)) {
+                $payment->markFailed('checkout_error', $e->getMessage());
+
+                logActivity(
+                    'payment_failed',
+                    $user,
+                    Payment::class,
+                    $payment->id,
+                    $payment->payment_code,
+                    ['reason' => $e->getMessage()]
+                );
+            }
+
+            if (isset($order)) {
+                app(\App\Services\Buyer\Checkout\CheckoutRevertService::class)
+                    ->revert($order);
+
+                logActivity(
+                    'checkout_reverted',
+                    $user,
+                    Order::class,
+                    $order->id,
+                    $order->order_number,
+                    []
+                );
+            }
+
+            throw $e;
+        }
     }
 
 

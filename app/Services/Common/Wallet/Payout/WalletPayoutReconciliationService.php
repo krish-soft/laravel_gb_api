@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Common\Wallet;
+namespace App\Services\Common\Wallet\Payout;
 
 use App\Enum\Common\Payment\PayoutStatusEnum;
 use App\Models\Common\Wallet\WalletPayout;
@@ -35,7 +35,7 @@ class WalletPayoutReconciliationService
             );
         }
 
-        if ($razorpayPayout['status'] === 'failed') {
+        if ($razorpayPayout['status'] === PayoutStatusEnum::FAILED->value) {
             $handler->onFailure(
                 $payout,
                 $razorpayPayout['failure_reason'] ?? 'Razorpay payout failed'

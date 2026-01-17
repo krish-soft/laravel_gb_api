@@ -117,38 +117,38 @@ class WalletService
      | Release HOLD → move to available
      =====================================================*/
 
-    // public function releaseHold(WalletTransaction $txn): void
-    // {
-    //     DB::transaction(function () use ($txn) {
+    public function releaseHold(WalletTransaction $txn): void
+    {
+        DB::transaction(function () use ($txn) {
 
-    //         if ($txn->status !== WalletStatusEnum::HOLD->value) {
-    //             throw new RuntimeException('Transaction is not in HOLD state');
-    //         }
+            if ($txn->status !== WalletStatusEnum::HOLD->value) {
+                throw new RuntimeException('Transaction is not in HOLD state');
+            }
 
-    //         $wallet = $txn->wallet;
-    //         $amount = $txn->amount;
+            $wallet = $txn->wallet;
+            $amount = $txn->amount;
 
-    //         WalletLedger::create([
-    //             'wallet_id' => $wallet->id,
-    //             'wallet_transaction_id' => $txn->id,
-    //             'credit' => $amount,
-    //             'debit'  => 0,
-    //             'action' => 'release',
-    //             'description' => 'Hold released',
-    //         ]);
+            WalletLedger::create([
+                'wallet_id' => $wallet->id,
+                'wallet_transaction_id' => $txn->id,
+                'credit' => $amount,
+                'debit'  => 0,
+                'action' => 'release',
+                'description' => 'Hold released',
+            ]);
 
-    //         $wallet->decrement('hold_balance', $amount);
-    //         $wallet->increment('available_balance', $amount);
+            $wallet->decrement('hold_balance', $amount);
+            $wallet->increment('available_balance', $amount);
 
-    //         $txn->updateQuietly([
-    //             'status' => WalletStatusEnum::RELEASED->value,
-    //         ]);
+            $txn->updateQuietly([
+                'status' => WalletStatusEnum::COMPLETED->value,
+            ]);
 
-    //         $wallet->updateQuietly([
-    //             'last_ledger_at' => now(),
-    //         ]);
-    //     });
-    // }
+            $wallet->updateQuietly([
+                'last_ledger_at' => now(),
+            ]);
+        });
+    }
 
     /* =====================================================
      | Cancel Transaction (NO BALANCE CHANGE)

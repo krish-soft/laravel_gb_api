@@ -1,5 +1,6 @@
 <?php
 
+use App\Enum\Common\Payment\PaymentMethodEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -25,6 +26,11 @@ return new class extends Migration
             // Formatting
             $table->string('currency')->default('INR')->nullable();
             $table->string('currency_symbol', 10)->default('₹')->nullable();
+
+            // Payment modes
+            $table->string('payment_in_mode', 30)->default(PaymentMethodEnum::RAZORPAY->value)->nullable();
+            $table->string('payment_out_mode', 30)->default(PaymentMethodEnum::MANUAL->value)->nullable();
+            $table->decimal('min_payout', 10, 2)->default('100')->nullable();
 
             $table->string('date_format')->default('Y-m-d')->nullable();
             $table->string('time_format')->default('H:i')->nullable();

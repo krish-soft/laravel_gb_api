@@ -1,7 +1,7 @@
 <?php
 
 
-namespace App\Services\Common\Wallet;
+namespace App\Services\Common\Wallet\Payout;
 
 use App\Enum\Common\Payment\PayoutStatusEnum;
 use App\Models\Common\User\Legal\UserBank;

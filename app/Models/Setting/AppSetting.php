@@ -2,6 +2,7 @@
 
 namespace App\Models\Setting;
 
+use App\Enum\Common\Payment\PaymentMethodEnum;
 use App\Models\BaseModel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
@@ -37,6 +38,12 @@ class AppSetting extends BaseModel
         'currency',
         'currency_symbol',
 
+        // Payment modes
+        'payment_in_mode',
+        'payment_out_mode',
+        'min_payout',
+
+        // Time and date formats
         'date_format',
         'time_format',
 
@@ -88,6 +95,12 @@ class AppSetting extends BaseModel
             // Formatting
             'currency' => 'INR',
             'currency_symbol' => '₹',
+
+            // Payment modes
+            'payment_in_mode' => PaymentMethodEnum::RAZORPAY->value,
+            'payment_out_mode' => PaymentMethodEnum::MANUAL->value,
+            'min_payout' => 100,
+
             'date_format' => 'Y-m-d',
             'time_format' => 'H:i',
 

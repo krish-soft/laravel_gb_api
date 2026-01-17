@@ -3,11 +3,10 @@
 namespace App\Http\Controllers\Api\v1\Admin\Common\Payment;
 
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
-use App\Http\Controllers\Controller;
 use App\Models\Common\Wallet\WalletPayout;
 use App\Services\Common\Payment\Handlers\WalletPayoutHandler;
-use App\Services\Common\Wallet\WalletPayoutReconciliationService;
-use App\Services\Common\Wallet\WalletPayoutService;
+use App\Services\Common\Wallet\Payout\WalletPayoutReconciliationService;
+use App\Services\Common\Wallet\Payout\WalletPayoutService;
 use Illuminate\Http\Request;
 
 class WalletPayoutApiController extends ApiResponseWithAdminAuthController

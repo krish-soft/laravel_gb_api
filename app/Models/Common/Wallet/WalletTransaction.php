@@ -22,9 +22,10 @@ class WalletTransaction extends BaseModel
         'source_id',
         'source_code',
 
-        'reference',
-        'payment_reference',
-        'gateway',
+        'reference', // Internal reference
+        'gateway', // Payment gateway used
+        'payment_reference', // Payment gateway reference
+
         'remark',
     ];
 

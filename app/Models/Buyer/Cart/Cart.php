@@ -54,4 +54,18 @@ class Cart extends BaseModel
     {
         return $this->hasMany(CartItem::class, 'cart_id');
     }
+
+
+    // Calculated Attributes
+    // total cart amount
+    public function getTotalCartItemAmount()
+    {
+        // Charges for all cart items
+        return $this->cartItems->sum(function ($item) {
+            return $item->total_price;
+        });
+    }
+
+
+    //
 }

@@ -2,6 +2,8 @@
 
 namespace App\Traits;
 
+use App\Enum\Common\ActionCodeEnum;
+
 trait ApiResponserTrait
 {
 
@@ -23,10 +25,10 @@ trait ApiResponserTrait
     }
 
 
-    protected static function successResponse($message, $data, $statusCode = 200): \Illuminate\Http\JsonResponse
+    protected static function successResponse($message, $data, $statusCode = 200, ?ActionCodeEnum $actionCode = null): \Illuminate\Http\JsonResponse
     {
         return response()->json(
-            ['isSuccess' => true, 'message' => $message, 'statusCode' => $statusCode, 'actionCode' => null, 'data' => $data],
+            ['isSuccess' => true, 'message' => $message, 'statusCode' => $statusCode, 'actionCode' => $actionCode, 'data' => $data],
             $statusCode,
             ['Content-Type' => 'application/json;charset=UTF-8', 'Charset' => 'utf-8'],
             JSON_UNESCAPED_UNICODE
