@@ -22,6 +22,14 @@ return new class extends Migration
 
             $table->string('wallet_txn_code', 50)->unique();
 
+
+            // Who is doing to whom to get how mcuh remain lastly
+            $table->string('from_entity', 50)->nullable();
+            $table->unsignedBigInteger('from_entity_id')->nullable();
+            $table->string('to_entity', 50)->nullable();
+            $table->unsignedBigInteger('to_entity_id')->nullable();
+
+
             $table->decimal('amount', 15, 2); //
 
             $table->string('type', 50); // e.g., 'credit', 'debit' / in,out

@@ -1,7 +1,10 @@
+
+
 <?php
 
 namespace App\Services\Common\Wallet;
 
+use App\Enum\Common\EntityTypeEnum;
 use App\Enum\Common\Wallet\WalletStatusEnum;
 use App\Enum\Common\Wallet\WalletTypeEnum;
 use App\Models\Buyer\Order\Order;
@@ -45,6 +48,13 @@ class WalletOrderService
                         'source_code' => $order->order_number,
                         'reference' => $payment->payment_code,
                         'description' => 'Order payment for #' . $order->order_number,
+
+                        // need to from to 
+                        'from_entity' => EntityTypeEnum::BUYER->value,
+                        'from_entity_id' => $order->buyer_id,
+
+                        'to_entity' => EntityTypeEnum::PLATFORM->value,
+                        'to_entity_id' => null,
                     ]
                 );
 
@@ -85,6 +95,13 @@ class WalletOrderService
                         //  LINK BUYER ↔ SELLER
                         'related_wallet_txn_id' => $buyerTxn->id,
                         'related_wallet_txn_code' => $buyerTxn->reference,
+
+                        // need to from to 
+                        'to_entity' => EntityTypeEnum::SELLER->value,
+                        'to_entity_id' => $seller->id,
+
+                        'from_entity' => EntityTypeEnum::PLATFORM->value,
+                        'from_entity_id' => null,
                     ]
                 );
 

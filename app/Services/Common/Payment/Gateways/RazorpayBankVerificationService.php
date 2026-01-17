@@ -2,6 +2,7 @@
 
 namespace App\Services\Common\Payment\Gateways;
 
+use App\Enum\Common\EntityTypeEnum;
 use App\Enum\Common\Wallet\WalletStatusEnum;
 use App\Enum\Common\Wallet\WalletTypeEnum;
 use App\Models\Common\User\Legal\UserBank;
@@ -155,7 +156,10 @@ class RazorpayBankVerificationService
             ]);
 
             /**
-             * 🔹 RECORD PLATFORM COST (NON-FINANCIAL WALLET ENTRY)
+             * 🔹 RECORD PLATFORM COST (₹1 Razorpay bank verification)
+             * - Audit only
+             * - No wallet balance impact
+             * - No ledger entry
              */
             app(WalletService::class)->createTransaction(
                 $bank->user->wallet,
@@ -167,9 +171,19 @@ class RazorpayBankVerificationService
                     'description' => '₹1 bank verification (platform cost)',
                     'gateway' => 'razorpay',
                     'payment_reference' => $payout['id'],
-                    'is_affecting_balance' => false, // 🔥 KEY
+
+                    // 🔥 KEY: audit only
+                    'is_affecting_balance' => false,
+
+                    // 🔥 WHO PAID WHOM
+                    'from_entity' => EntityTypeEnum::PLATFORM->value,
+                    'from_entity_id' => null,
+
+                    'to_entity' => EntityTypeEnum::GATEWAY->value,
+                    'to_entity_id' => null,
                 ]
             );
+
 
             // ❌ DO NOT finalize this transaction
 

@@ -3,6 +3,7 @@
 
 namespace App\Services\Common\Wallet\Payout;
 
+use App\Enum\Common\EntityTypeEnum;
 use App\Enum\Common\Payment\PaymentMethodEnum;
 use App\Enum\Common\Payment\PayoutStatusEnum;
 use App\Enum\Common\Wallet\WalletStatusEnum;
@@ -184,7 +185,7 @@ class WalletPayoutService
 
         // 🔒 Safety check
         if ($wallet->available_balance < $payout->amount) {
-            throw new RuntimeException('Wallet balance insufficient during payout finalize');
+            throw new RuntimeException('Wallet balance insufficient during payout finalize.');
         }
 
         // 1️⃣ Create wallet transaction
@@ -197,6 +198,17 @@ class WalletPayoutService
                 'reference' => $payout->payout_code,
                 'payment_reference' => $ref,
                 'remark' => 'Wallet payout',
+
+                'source_type' => WalletPayout::class,
+                'source_id' => $payout->id,
+                'source_code' => $payout->payout_code,
+
+                // need to from to 
+                'from_entity' => EntityTypeEnum::USER->value,
+                'from_entity_id' => $wallet->user_id,
+
+                'to_entity' => EntityTypeEnum::BANK->value,
+                'to_entity_id' => $payout->userBank->id ?? null,
             ]
         );
 

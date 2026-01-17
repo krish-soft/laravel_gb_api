@@ -13,6 +13,13 @@ class WalletTransaction extends BaseModel
         'user_code',
         'wallet_txn_code',
 
+        // Who is doing to whom to get how mcuh remain lastly
+        'from_entity',
+        'from_entity_id',
+
+        'to_entity',
+        'to_entity_id',
+
         'amount',
         'type',
         'status',

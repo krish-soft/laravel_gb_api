@@ -54,6 +54,13 @@ class WalletService
                 // Double-entry linkage
                 'related_wallet_txn_id' => $meta['related_wallet_txn_id'] ?? null,
                 'related_wallet_txn_code' => $meta['related_wallet_txn_code'] ?? null,
+
+                //  Whether this txn affects balance
+                'from_entity' => $meta['from_entity'] ?? null,
+                'from_entity_id' => $meta['from_entity_id'] ?? null,
+
+                'to_entity' => $meta['to_entity'] ?? null,
+                'to_entity_id' => $meta['to_entity_id'] ?? null,
             ]);
 
             $wallet->updateQuietly([
