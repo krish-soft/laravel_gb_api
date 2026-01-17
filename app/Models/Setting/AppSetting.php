@@ -144,7 +144,7 @@ class AppSetting extends BaseModel
         );
     }
 
-    public static function isMaintenance(): bool
+    public static function isMaintenanceMode(): bool
     {
         return (bool) (
             self::getOrCreate()->is_maintenance_mode
