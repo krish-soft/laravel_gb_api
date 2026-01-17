@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductCategoryApiContro
 use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductPackagingApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductVariantApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Vehicle\MstVehicleApiController;
+use App\Http\Controllers\Api\v1\Admin\Report\AdminWalletReportApiController;
 use App\Http\Controllers\Api\v1\Admin\Seller\Product\AdminProductListingApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\CartApiController;
 use App\Http\Controllers\Api\v1\User\Common\Auth\UserLoginApiController;
@@ -166,16 +167,20 @@ Route::group([
             });
 
 
-            // Product Listing Routes
-            Route::post('/product-listing', [AdminProductListingApiController::class, 'store']);
-            Route::post('/product-listing/{listingId}/cancel', [AdminProductListingApiController::class, 'cancelListing']);
-            Route::put('/product-listing-packages/{packageId}', [AdminProductListingApiController::class, 'updatePackage']);
-            Route::post('/product-listing-packages/{packageId}/cancel', [AdminProductListingApiController::class, 'deletePackage']);
+            // Product Listing Routes   
+            Route::prefix('product-listing')->group(function () {
+                Route::post('listing/preview', [AdminProductListingApiController::class, 'previewWithCharges']);
+                Route::post('listing/confirm', [AdminProductListingApiController::class, 'confirmListing']);
+                Route::post('listing/{listingId}/cancel', [AdminProductListingApiController::class, 'cancelListing']);
+
+                Route::put('packages/{packageId}', [AdminProductListingApiController::class, 'updatePackage']);
+                Route::post('packages/{packageId}/cancel', [AdminProductListingApiController::class, 'deletePackage']);
+            });
+
 
 
             // Payments
             Route::post('/payments/{payment_code}/reconcile', [PaymentReconcileApiController::class, 'reconcile']);
-
             Route::prefix('wallet-payouts')->group(function () {
                 Route::get('/', [WalletPayoutApiController::class, 'index']);
                 Route::post('{payout}/approve', [WalletPayoutApiController::class, 'approve']);
@@ -195,8 +200,8 @@ Route::group([
             Route::get('setting/app', [AppSettingApiController::class, 'getSetting']);
             Route::put('setting/app', [AppSettingApiController::class, 'updateSetting']);
 
-
-            ##  Master  Routes
+            ###
+            ##### Master  Routes
             Route::apiResource('mstUnit', MstUnitApiController::class);
             Route::apiResource('mstPackType', MstPackTypeApiController::class);
 
@@ -223,6 +228,23 @@ Route::group([
             Route::apiResource('mstMinimumOrderChargeRule', MstMinimumOrderChargeRuleApiController::class);
 
             //
+
+
+
+            #### Reports ###
+
+            Route::prefix('wallet')->group(function () {
+                Route::get('dashboard', [AdminWalletReportApiController::class, 'dashboard']);
+
+                Route::get('wallets', [AdminWalletReportApiController::class, 'wallets']);
+                Route::get('wallets/{wallet}/balance', [AdminWalletReportApiController::class, 'walletBalance']);
+                Route::get('wallets/{wallet}/ledger', [AdminWalletReportApiController::class, 'walletLedger']);
+                Route::get('transactions', [AdminWalletReportApiController::class, 'transactions']);
+                Route::get('transactions/{transaction}/verify', [AdminWalletReportApiController::class, 'verifyTransaction']);
+
+                Route::post('owes-summary', [AdminWalletReportApiController::class, 'owesSummary']);
+                Route::get('platform-exposure', [AdminWalletReportApiController::class, 'platformExposure']);
+            });
         });
 
 

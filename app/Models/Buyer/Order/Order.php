@@ -49,6 +49,7 @@ class Order extends BaseModel
         'is_partial',
         'is_paid',
         'is_locked',
+        'is_manual', // Manually created order
 
         'wallet_txn_code', // For Refrence
 
@@ -67,6 +68,7 @@ class Order extends BaseModel
         'is_partial' => 'boolean',
         'is_paid' => 'boolean',
         'is_locked' => 'boolean',
+        'is_manual' => 'boolean',
     ];
 
     // Relationships

@@ -55,7 +55,8 @@ return new class extends Migration
             $table->boolean('is_partial')->default(false)->nullable();
             $table->boolean('is_paid')->default(false)->nullable();
             $table->boolean('is_locked')->default(false)->nullable(); // No one can modify after this
-
+            $table->boolean('is_manual')->default(false)->nullable(); // when send to market and then we have to create order manually
+            
             $table->string('wallet_txn_code', 100)->nullable();
 
             $table->timestamps();

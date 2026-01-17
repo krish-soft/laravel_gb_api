@@ -2,6 +2,7 @@
 
 namespace App\Models\Common\Wallet;
 
+use App\Enum\Common\Wallet\WalletStatusEnum;
 use App\Models\BaseModel;
 use Illuminate\Support\Str;
 
@@ -79,5 +80,88 @@ class WalletTransaction extends BaseModel
     public static function generateTxnCode(): string
     {
         return 'WTX-' . now()->format('YmdHis') . '-' . strtoupper(Str::random(4));
+    }
+
+
+
+
+    /* =====================================================
+     | TOTAL AMOUNT OWED TO AN ENTITY
+     | Example: How much PLATFORM owes SELLERS
+     =====================================================*/
+    public static function totalOwedTo(
+        string $toEntity,
+        ?int $toEntityId = null
+    ): float {
+        return (float) self::where('to_entity', $toEntity)
+            ->when(
+                $toEntityId,
+                fn($q) =>
+                $q->where('to_entity_id', $toEntityId)
+            )
+            ->where('status', '!=', WalletStatusEnum::COMPLETED->value)
+            ->sum('amount');
+    }
+
+    /* =====================================================
+     | TOTAL AMOUNT AN ENTITY OWES
+     | Example: How much SELLER owes PLATFORM
+     =====================================================*/
+    public static function totalOwedBy(
+        string $fromEntity,
+        ?int $fromEntityId = null
+    ): float {
+        return (float) self::where('from_entity', $fromEntity)
+            ->when(
+                $fromEntityId,
+                fn($q) =>
+                $q->where('from_entity_id', $fromEntityId)
+            )
+            ->where('status', '!=', WalletStatusEnum::COMPLETED->value)
+            ->sum('amount');
+    }
+
+    /* =====================================================
+     | NET POSITION (MOST IMPORTANT)
+     | +ve → platform owes user
+     | -ve → user owes platform
+     =====================================================*/
+    public static function netAmountFor(
+        string $entity,
+        int $entityId
+    ): float {
+
+        $owedTo = self::totalOwedTo($entity, $entityId);
+        $owedBy = self::totalOwedBy($entity, $entityId);
+
+        return round($owedTo - $owedBy, 2);
+    }
+
+    /* =====================================================
+     | TOTAL UNSETTLED AMOUNT (SYSTEM LEVEL)
+     | Example: Finance dashboard number
+     =====================================================*/
+    public static function totalUnsettledAmount(): float
+    {
+        return (float) self::where('status', '!=', WalletStatusEnum::COMPLETED->value)
+            ->sum('amount');
+    }
+
+    /* =====================================================
+     | TOTAL SETTLED AMOUNT
+     =====================================================*/
+    public static function totalSettledAmount(): float
+    {
+        return (float) self::where('status', WalletStatusEnum::COMPLETED->value)
+            ->sum('amount');
+    }
+
+    /* =====================================================
+     | CHECK IF SINGLE TRANSACTION IS SETTLED
+     =====================================================*/
+    public function isSettled(): bool
+    {
+        return $this->status === WalletStatusEnum::COMPLETED->value
+            && $this->ledgers()->exists();
     }
 }
