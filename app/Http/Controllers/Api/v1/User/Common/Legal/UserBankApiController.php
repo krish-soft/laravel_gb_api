@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\v1\User\Common\Legal;
 use App\Http\Controllers\ApiResponseWithAuthController;
 use App\Models\Common\User\Legal\UserBank;
 use App\Services\Common\Legal\BankService;
+use App\Services\Common\Payment\Gateways\RazorpayBankVerificationService;
 use Illuminate\Http\Request;
 
 class UserBankApiController extends ApiResponseWithAuthController
@@ -20,7 +21,6 @@ class UserBankApiController extends ApiResponseWithAuthController
     {
         try {
             $banks = $this->bankService->listBanks($request->user());
-
         } catch (\Exception $e) {
             return $this->showErrorMessage(
                 $e->getMessage(),
@@ -56,9 +56,10 @@ class UserBankApiController extends ApiResponseWithAuthController
             );
 
 
-//            // Start verification for unverified banks
-//            app(RazorpayBankVerificationService::class)
-//                ->startVerification($bank, $user);
+            // Start verification for unverified banks
+            // app(RazorpayBankVerificationService::class)
+            //     ->startVerification($bank, $bank->user); // 
+
 
         } catch (\Exception $e) {
             return $this->showErrorMessage(

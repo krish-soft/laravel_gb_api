@@ -46,6 +46,9 @@ return new class extends Migration
             $table->string('related_wallet_txn_id')->nullable();
             $table->string('related_wallet_txn_code')->nullable();
 
+            $table->boolean('is_affecting_balance')->default(true)->nullable(); // whether this txn affects balance
+
+
             $table->timestamps();
             $table->softDeletes();
 

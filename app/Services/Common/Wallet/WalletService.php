@@ -88,6 +88,11 @@ class WalletService
     {
         DB::transaction(function () use ($txn) {
 
+            // 🔒 Non-financial txn → skip ledger & balance
+            if (!$txn->is_affecting_balance) {
+                return;
+            }
+
             if ($txn->status === WalletStatusEnum::CANCELLED->value) {
                 return;
             }

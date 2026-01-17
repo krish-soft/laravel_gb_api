@@ -32,10 +32,14 @@ class WalletTransaction extends BaseModel
         'related_wallet_txn_id',
         'related_wallet_txn_code',
 
+        'is_affecting_balance',
+
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'is_affecting_balance' => 'boolean',
+
     ];
 
     /* =========================

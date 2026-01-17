@@ -2,8 +2,11 @@
 
 namespace App\Services\Common\Payment\Gateways;
 
+use App\Enum\Common\Wallet\WalletStatusEnum;
+use App\Enum\Common\Wallet\WalletTypeEnum;
 use App\Models\Common\User\Legal\UserBank;
 use App\Models\User;
+use App\Services\Common\Wallet\WalletService;
 use Razorpay\Api\Api;
 use Razorpay\Api\Errors\Error as RazorpayError;
 use RuntimeException;
@@ -56,7 +59,6 @@ class RazorpayBankVerificationService
             );
 
             return $contact['id'];
-
         } catch (RazorpayError $e) {
 
             logActivity(
@@ -114,7 +116,6 @@ class RazorpayBankVerificationService
             );
 
             return $fund['id'];
-
         } catch (RazorpayError $e) {
 
             logActivity(
@@ -142,66 +143,130 @@ class RazorpayBankVerificationService
             return;
         }
 
-        if (!$bank->razorpay_fund_account_id) {
-            throw new RuntimeException('Fund account missing');
-        }
-
         try {
             $payout = $this->api->payout->create([
                 'account_number' => config('razorpay.payout_account'),
                 'fund_account_id' => $bank->razorpay_fund_account_id,
-                'amount' => 100,
+                'amount' => 100, // ₹1
                 'currency' => 'INR',
                 'mode' => 'IMPS',
                 'purpose' => 'payout',
                 'queue_if_low_balance' => false,
-                'notes' => [
-                    'verify' => 'bank',
-                    'bank_code' => $bank->bank_code,
-                ],
             ]);
+
+            /**
+             * 🔹 RECORD PLATFORM COST (NON-FINANCIAL WALLET ENTRY)
+             */
+            app(WalletService::class)->createTransaction(
+                $bank->user->wallet,
+                1,
+                WalletTypeEnum::DEBIT,
+                WalletStatusEnum::COMPLETED,
+                [
+                    'reference' => 'BANK_VERIFY_' . $bank->bank_code,
+                    'description' => '₹1 bank verification (platform cost)',
+                    'gateway' => 'razorpay',
+                    'payment_reference' => $payout['id'],
+                    'is_affecting_balance' => false, // 🔥 KEY
+                ]
+            );
+
+            // ❌ DO NOT finalize this transaction
 
             $bank->update([
                 'status' => 'verified',
                 'verification_mode' => 'razorpay_test_deposit',
                 'verified_at' => now(),
                 'verified_by' => 'system',
-                'test_deposit_verified_at' => now(),
                 'test_deposit_amount' => 1,
                 'test_deposit_ref' => $payout['id'],
             ]);
 
             logActivity(
-                'bank_verified',
+                'bank_verified_via_razorpay',
                 request()?->user() ?? null,
                 UserBank::class,
                 $bank->id,
                 $bank->bank_code,
                 ['razorpay_payout_id' => $payout['id']]
             );
-
-        } catch (RazorpayError $e) {
+        } catch (\Exception $e) {
 
             $bank->update([
                 'status' => 'failed',
                 'review_comment' => $e->getMessage(),
             ]);
 
-            logActivity(
-                'bank_verification_failed',
-                request()?->user() ?? null,
-                UserBank::class,
-                $bank->id,
-                $bank->bank_code,
-                [
-                    'error' => $e->getMessage(),
-                    'code' => $e->getCode(),
-                ]
-            );
-
             throw new RuntimeException('Bank verification failed');
         }
     }
+
+    // public function verifyBank(UserBank $bank): void
+    // {
+    //     if ($bank->verified_at) {
+    //         return;
+    //     }
+
+    //     if (!$bank->razorpay_fund_account_id) {
+    //         throw new RuntimeException('Fund account missing');
+    //     }
+
+    //     try {
+    //         $payout = $this->api->payout->create([
+    //             'account_number' => config('razorpay.payout_account'),
+    //             'fund_account_id' => $bank->razorpay_fund_account_id,
+    //             'amount' => 100,
+    //             'currency' => 'INR',
+    //             'mode' => 'IMPS',
+    //             'purpose' => 'payout',
+    //             'queue_if_low_balance' => false,
+    //             'notes' => [
+    //                 'verify' => 'bank',
+    //                 'bank_code' => $bank->bank_code,
+    //             ],
+    //         ]);
+
+    //         $bank->update([
+    //             'status' => 'verified',
+    //             'verification_mode' => 'razorpay_test_deposit',
+    //             'verified_at' => now(),
+    //             'verified_by' => 'system',
+    //             'test_deposit_verified_at' => now(),
+    //             'test_deposit_amount' => 1,
+    //             'test_deposit_ref' => $payout['id'],
+    //         ]);
+
+    //         logActivity(
+    //             'bank_verified',
+    //             request()?->user() ?? null,
+    //             UserBank::class,
+    //             $bank->id,
+    //             $bank->bank_code,
+    //             ['razorpay_payout_id' => $payout['id']]
+    //         );
+
+    //     } catch (RazorpayError $e) {
+
+    //         $bank->update([
+    //             'status' => 'failed',
+    //             'review_comment' => $e->getMessage(),
+    //         ]);
+
+    //         logActivity(
+    //             'bank_verification_failed',
+    //             request()?->user() ?? null,
+    //             UserBank::class,
+    //             $bank->id,
+    //             $bank->bank_code,
+    //             [
+    //                 'error' => $e->getMessage(),
+    //                 'code' => $e->getCode(),
+    //             ]
+    //         );
+
+    //         throw new RuntimeException('Bank verification failed');
+    //     }
+    // }
 
     /* =====================================================
      | DEACTIVATE FUND ACCOUNT (SAFE)
@@ -225,7 +290,6 @@ class RazorpayBankVerificationService
                 $bank->bank_code,
                 []
             );
-
         } catch (\Exception $e) {
             // Silent fail – non-blocking
         }
@@ -252,5 +316,4 @@ class RazorpayBankVerificationService
         // 3️⃣ Send ₹1 IMPS verification (NO WEBHOOK WAIT)
         $this->verifyBank($bank);
     }
-
 }
