@@ -8,73 +8,126 @@ use App\Models\Common\Wallet\WalletTransaction;
 use App\Services\Common\Wallet\WalletService;
 use App\Enum\Common\Wallet\WalletTypeEnum;
 use App\Enum\Common\Wallet\WalletStatusEnum;
+use App\Services\Common\Wallet\Payout\WalletPayoutService;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 class WalletPayoutHandler
 {
+    // public function onSuccess(WalletPayout $payout, string $gatewayRef): void
+    // {
+    //     DB::transaction(function () use ($payout, $gatewayRef) {
+
+    //         // 🔒 Idempotency #1: payout already finalized
+    //         if ($payout->status === PayoutStatusEnum::PAID->value) {
+    //             return;
+    //         }
+
+    //         $wallet = $payout->wallet;
+
+    //         // 🔒 Idempotency #2: wallet transaction already exists
+    //         $existingTxn = WalletTransaction::where('wallet_id', $wallet->id)
+    //             ->where('reference', $payout->payout_code)
+    //             ->lockForUpdate()
+    //             ->first();
+
+    //         if ($existingTxn) {
+    //             // Ensure payout status is consistent
+    //             $payout->update(['status' => PayoutStatusEnum::PAID->value]);
+    //             return;
+    //         }
+
+    //         // 🔒 Safety check
+    //         if ($wallet->available_balance < $payout->amount) {
+    //             throw new RuntimeException('Wallet balance insufficient during payout finalize');
+    //         }
+
+    //         // 1️⃣ Create wallet transaction (record only)
+    //         $txn = app(WalletService::class)->createTransaction(
+    //             $wallet,
+    //             $payout->amount,
+    //             WalletTypeEnum::DEBIT,
+    //             WalletStatusEnum::COMPLETED,
+    //             [
+    //                 'reference' => $payout->payout_code,
+    //                 'payment_reference' => $gatewayRef,
+    //                 'remark' => 'Wallet payout to bank',
+    //             ]
+    //         );
+
+    //         // 2️⃣ FINALIZE → ledger + balance update
+    //         app(WalletService::class)->finalizeTransaction($txn);
+
+    //         // 3️⃣ Mark payout as paid
+    //         $payout->update([
+    //             'status' => PayoutStatusEnum::PAID->value,
+    //         ]);
+
+    //         logActivity(
+    //             'wallet_payout_success',
+    //             request()?->user() ?? null,
+    //             WalletPayout::class,
+    //             $payout->id,
+    //             $payout->payout_code,
+    //             [
+    //                 'amount' => $payout->amount,
+    //                 'gateway_ref' => $gatewayRef,
+    //             ]
+    //         );
+    //     });
+    // }
+
     public function onSuccess(WalletPayout $payout, string $gatewayRef): void
     {
         DB::transaction(function () use ($payout, $gatewayRef) {
 
-            // 🔒 Idempotency #1: payout already finalized
             if ($payout->status === PayoutStatusEnum::PAID->value) {
                 return;
             }
 
-            $wallet = $payout->wallet;
+            app(WalletPayoutService::class)->createWalletPayoutDebitTransaction($payout, $gatewayRef);
 
-            // 🔒 Idempotency #2: wallet transaction already exists
-            $existingTxn = WalletTransaction::where('wallet_id', $wallet->id)
-                ->where('reference', $payout->payout_code)
-                ->lockForUpdate()
-                ->first();
-
-            if ($existingTxn) {
-                // Ensure payout status is consistent
-                $payout->update(['status' => PayoutStatusEnum::PAID->value]);
-                return;
-            }
-
-            // 🔒 Safety check
-            if ($wallet->available_balance < $payout->amount) {
-                throw new RuntimeException('Wallet balance insufficient during payout finalize');
-            }
-
-            // 1️⃣ Create wallet transaction (record only)
-            $txn = app(WalletService::class)->createTransaction(
-                $wallet,
-                $payout->amount,
-                WalletTypeEnum::DEBIT,
-                WalletStatusEnum::COMPLETED,
-                [
-                    'reference' => $payout->payout_code,
-                    'payment_reference' => $gatewayRef,
-                    'remark' => 'Wallet payout to bank',
-                ]
-            );
-
-            // 2️⃣ FINALIZE → ledger + balance update
-            app(WalletService::class)->finalizeTransaction($txn);
-
-            // 3️⃣ Mark payout as paid
             $payout->update([
-                'status' =>PayoutStatusEnum::PAID->value,
+                'status' => PayoutStatusEnum::PAID->value,
             ]);
 
             logActivity(
-                'wallet_payout_success',
-                request()?->user() ?? null,
+                'wallet_payout_razorpay_success',
+                request()?->user(),
                 WalletPayout::class,
                 $payout->id,
                 $payout->payout_code,
-                [
-                    'amount' => $payout->amount,
-                    'gateway_ref' => $gatewayRef,
-                ]
+                ['gateway_ref' => $gatewayRef]
             );
         });
     }
+
+
+    public function onManualSuccess(WalletPayout $payout, string $reference): void
+    {
+        DB::transaction(function () use ($payout, $reference) {
+
+            if ($payout->status === PayoutStatusEnum::PAID->value) {
+                return;
+            }
+
+            app(WalletPayoutService::class)->createWalletPayoutDebitTransaction($payout, $reference);
+
+            $payout->update([
+                'status' => PayoutStatusEnum::PAID->value,
+            ]);
+
+            logActivity(
+                'wallet_payout_manual_success',
+                request()?->user(),
+                WalletPayout::class,
+                $payout->id,
+                $payout->payout_code,
+                ['reference' => $reference]
+            );
+        });
+    }
+
 
     public function onFailure(WalletPayout $payout, string $reason): void
     {

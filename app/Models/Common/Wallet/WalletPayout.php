@@ -16,13 +16,21 @@ class WalletPayout extends BaseModel
         'wallet_id',
         'user_id',
         'user_bank_id',
+
         'amount',
+
         'razorpay_payout_id',
         'status',
+
         'requested_by',
         'requested_ip',
         'approved_by',
         'approved_at',
+
+        'payout_mode', // manual or razorpay
+        'paid_at',
+        'reference',
+
         'remark',
     ];
 
@@ -47,8 +55,4 @@ class WalletPayout extends BaseModel
     {
         return $this->belongsTo(UserBank::class, 'user_bank_id');
     }
-
-    
-
-
 }

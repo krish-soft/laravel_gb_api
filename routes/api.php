@@ -177,11 +177,12 @@ Route::group([
             Route::post('/payments/{payment_code}/reconcile', [PaymentReconcileApiController::class, 'reconcile']);
 
             Route::prefix('wallet-payouts')->group(function () {
+                Route::get('/', [WalletPayoutApiController::class, 'index']);
                 Route::post('{payout}/approve', [WalletPayoutApiController::class, 'approve']);
-                Route::post('{payout}/force-success', [WalletPayoutApiController::class, 'forceSuccess']);
-                Route::post('{payout}/force-fail', [WalletPayoutApiController::class, 'forceFail']);
+                Route::post('{payout}/fail', [WalletPayoutApiController::class, 'fail']);
                 Route::post('{payout}/reconcile', [WalletPayoutApiController::class, 'reconcile']);
             });
+
 
 
             // Regular User Management

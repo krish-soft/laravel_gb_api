@@ -3,11 +3,17 @@
 
 namespace App\Services\Common\Wallet\Payout;
 
+use App\Enum\Common\Payment\PaymentMethodEnum;
 use App\Enum\Common\Payment\PayoutStatusEnum;
+use App\Enum\Common\Wallet\WalletStatusEnum;
+use App\Enum\Common\Wallet\WalletTypeEnum;
 use App\Models\Common\User\Legal\UserBank;
 use App\Models\Common\Wallet\Wallet;
 use App\Models\Common\Wallet\WalletPayout;
+use App\Models\Common\Wallet\WalletTransaction;
 use App\Services\Common\Payment\Gateways\RazorpayPayoutService;
+use App\Services\Common\Payment\Handlers\WalletPayoutHandler;
+use App\Services\Common\Wallet\WalletService;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -59,6 +65,47 @@ class WalletPayoutService
         ]);
     }
 
+    public function approveManual(
+        WalletPayout $payout,
+        string $reference // NEFT / UTR / BATCH ID
+    ): void {
+        DB::transaction(function () use ($payout, $reference) {
+
+            if ($payout->status !== PayoutStatusEnum::REQUESTED->value) {
+                return;
+            }
+
+            if (!$reference) {
+                throw new RuntimeException('Manual payout reference required');
+            }
+
+            $payout->update([
+                'payout_mode' => PaymentMethodEnum::MANUAL->value,
+                'manual_reference' => $reference,
+                'status' => PayoutStatusEnum::PAID->value,
+                'approved_by' => request()->user()?->user_code,
+                'approved_at' => now(),
+            ]);
+
+            // 🔥 Wallet debit happens HERE
+            app(WalletPayoutHandler::class)
+                ->onManualSuccess($payout, $reference);
+
+            logActivity(
+                'wallet_payout_manual_approved',
+                request()->user(),
+                WalletPayout::class,
+                $payout->id,
+                $payout->payout_code,
+                [
+                    'reference' => $reference,
+                    'amount' => $payout->amount,
+                ]
+            );
+        });
+    }
+
+
     public function approveAndProcess(WalletPayout $payout): void
     {
         DB::transaction(function () use ($payout) {
@@ -108,5 +155,52 @@ class WalletPayoutService
         );
 
         return $code;
+    }
+
+
+
+
+    /// 
+
+    public function createWalletPayoutDebitTransaction(WalletPayout $payout, string $ref): void
+    {
+        $wallet = $payout->wallet;
+
+        // 🔒 Idempotency: wallet transaction already exists
+        $existingTxn = WalletTransaction::where('wallet_id', $wallet->id)
+            ->where('reference', $payout->payout_code)
+            ->lockForUpdate()
+            ->first();
+
+        if ($existingTxn) {
+            // Keep payout status consistent
+            if ($payout->status !== PayoutStatusEnum::PAID->value) {
+                $payout->updateQuietly([
+                    'status' => PayoutStatusEnum::PAID->value,
+                ]);
+            }
+            return;
+        }
+
+        // 🔒 Safety check
+        if ($wallet->available_balance < $payout->amount) {
+            throw new RuntimeException('Wallet balance insufficient during payout finalize');
+        }
+
+        // 1️⃣ Create wallet transaction
+        $txn = app(WalletService::class)->createTransaction(
+            $wallet,
+            $payout->amount,
+            WalletTypeEnum::DEBIT,
+            WalletStatusEnum::COMPLETED,
+            [
+                'reference' => $payout->payout_code,
+                'payment_reference' => $ref,
+                'remark' => 'Wallet payout',
+            ]
+        );
+
+        // 2️⃣ Finalize → ledger + wallet balance
+        app(WalletService::class)->finalizeTransaction($txn);
     }
 }
