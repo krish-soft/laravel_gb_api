@@ -27,6 +27,11 @@ class WalletTransaction extends BaseModel
         'payment_reference', // Payment gateway reference
 
         'remark',
+
+        // Wallet own id in case we have to deduc from seller and give to buyer or vice versa
+        'related_wallet_txn_id',
+        'related_wallet_txn_code',
+
     ];
 
     protected $casts = [

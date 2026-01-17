@@ -9,10 +9,8 @@ use Illuminate\Support\Facades\Cache;
 
 class AppSetting extends BaseModel
 {
-    //
-
     /**
-     * Auto clear cache when settings change
+     * Prevent deletion + auto clear cache
      */
     protected static function booted()
     {
@@ -21,7 +19,6 @@ class AppSetting extends BaseModel
         });
 
         static::saved(fn() => Cache::forget('app_settings'));
-        static::deleted(fn() => Cache::forget('app_settings'));
     }
 
     protected $fillable = [
@@ -43,7 +40,7 @@ class AppSetting extends BaseModel
         'payment_out_mode',
         'min_payout',
 
-        // Time and date formats
+        // Date & time
         'date_format',
         'time_format',
 
@@ -51,26 +48,15 @@ class AppSetting extends BaseModel
         'is_maintenance_mode',
         'maintenance_message',
 
-        // UI / frontend
+        // UI
         'is_registration_enabled',
 
-        // Meta
-        'app_version', // Web app version
-
-        // Mobile app versioning
+        // Versioning
+        'app_version',
         'mobile_app_android_version',
         'is_force_app_android_update',
-
         'mobile_app_ios_version',
         'is_force_app_ios_update',
-    ];
-
-    protected $guarded = [
-        'timezone',
-        'locale',
-        'fallback_locale',
-        'currency',
-        'currency_symbol',
     ];
 
     protected $casts = [
@@ -78,48 +64,91 @@ class AppSetting extends BaseModel
         'is_registration_enabled' => 'boolean',
         'is_force_app_android_update' => 'boolean',
         'is_force_app_ios_update' => 'boolean',
+        'min_payout' => 'float',
     ];
 
-
-    // Create functiosn to check all
-    public function getOrCreate(): Model|null
+    /* =====================================================
+     | SINGLE SOURCE OF TRUTH
+     =====================================================*/
+    public static function getOrCreate(): Model
     {
-        return self::firstOrCreate([
-            'app_name' => 'Green Bazar',
+        return Cache::rememberForever('app_settings', function () {
+            return self::firstOrCreate(
+                ['app_name' => 'Green Bazar'],
+                [
+                    'timezone' => 'Asia/Kolkata',
+                    'locale' => 'en',
+                    'fallback_locale' => 'en',
 
-            // Localization
-            'timezone' => 'Asia/Kolkata',
-            'locale' => 'en',
-            'fallback_locale' => 'en',
+                    'currency' => 'INR',
+                    'currency_symbol' => '₹',
 
-            // Formatting
-            'currency' => 'INR',
-            'currency_symbol' => '₹',
+                    'payment_in_mode' => PaymentMethodEnum::RAZORPAY->value,
+                    'payment_out_mode' => PaymentMethodEnum::MANUAL->value,
+                    'min_payout' => 100,
 
-            // Payment modes
-            'payment_in_mode' => PaymentMethodEnum::RAZORPAY->value,
-            'payment_out_mode' => PaymentMethodEnum::MANUAL->value,
-            'min_payout' => 100,
+                    'date_format' => 'Y-m-d',
+                    'time_format' => 'H:i',
 
-            'date_format' => 'Y-m-d',
-            'time_format' => 'H:i',
+                    'is_maintenance_mode' => false,
+                    'maintenance_message' => null,
+                    'is_registration_enabled' => true,
 
-            // App behavior
-            'is_maintenance_mode' => false,
-            'maintenance_message' => null,
+                    'app_version' => '1.0.0',
+                    'mobile_app_android_version' => '1.0.0',
+                    'is_force_app_android_update' => false,
+                    'mobile_app_ios_version' => '1.0.0',
+                    'is_force_app_ios_update' => false,
+                ]
+            );
+        });
+    }
 
-            // UI / frontend
-            'is_registration_enabled' => true,
+    /* =====================================================
+     | CONVENIENCE GETTERS (SAFE EVERYWHERE)
+     =====================================================*/
 
+    /* =====================================================
+ | SAFE GETTERS (NEVER RETURN NULL)
+ =====================================================*/
 
-            // Meta
-            'app_version' => '1.0.0',
-            // Mobile app versioning
-            'mobile_app_android_version' => '1.0.0',
-            'is_force_app_android_update' => false,
+    public static function currency(): string
+    {
+        return self::getOrCreate()->currency
+            ?? 'INR';
+    }
 
-            'mobile_app_ios_version' => '1.0.0',
-            'is_force_app_ios_update' => false,
-        ]);
+    public static function currencySymbol(): string
+    {
+        return self::getOrCreate()->currency_symbol
+            ?? '₹';
+    }
+
+    public static function payInMode(): string
+    {
+        return self::getOrCreate()->payment_in_mode
+            ?? PaymentMethodEnum::RAZORPAY->value;
+    }
+
+    public static function payOutMode(): string
+    {
+        return self::getOrCreate()->payment_out_mode
+            ?? PaymentMethodEnum::MANUAL->value;
+    }
+
+    public static function minPayoutAmount(): float
+    {
+        return (float) (
+            self::getOrCreate()->min_payout
+            ?? 100
+        );
+    }
+
+    public static function isMaintenance(): bool
+    {
+        return (bool) (
+            self::getOrCreate()->is_maintenance_mode
+            ?? false
+        );
     }
 }

@@ -14,7 +14,6 @@ class AppSettingSeeder extends Seeder
     public function run(): void
     {
         //
-//        AppSetting::getOrCreate();
         AppSetting::create([
             // App identity
             'app_name' => 'Green Bazar',

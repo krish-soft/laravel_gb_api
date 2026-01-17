@@ -26,7 +26,7 @@ return new class extends Migration
 
             $table->string('type', 50); // e.g., 'credit', 'debit' / in,out
             $table->string('status', 50); // eg., 'pending', 'completed', 'cancelled','hold'
-            $table->string('description',150)->nullable();
+            $table->string('description', 150)->nullable();
 
             // Reference class
             $table->string('source_type', 30);
@@ -34,15 +34,17 @@ return new class extends Migration
             $table->string('source_code', 50)->nullable();
 
             // Internal like order or other reference
-            $table->string('reference',150)->nullable();
-
+            $table->string('reference', 150)->nullable();
 
             // Payment Gateway Related or any ref number to store
-            $table->string('payment_reference',150)->nullable();
+            $table->string('payment_reference', 150)->nullable();
             $table->string('gateway', 50)->nullable();
 
+            $table->string('remark')->nullable(); // optional remark
 
-            $table->string('remark')->nullable();
+            // Wallet own id in case we have to deduc from seller and give to buyer or vice versa
+            $table->string('related_wallet_txn_id')->nullable();
+            $table->string('related_wallet_txn_code')->nullable();
 
             $table->timestamps();
             $table->softDeletes();
@@ -50,7 +52,6 @@ return new class extends Migration
             $table->index(['source_type', 'source_id']);
             $table->index(['wallet_id', 'status']);
             $table->index('wallet_txn_code');
-
         });
     }
 

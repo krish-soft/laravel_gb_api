@@ -19,7 +19,7 @@ Artisan::command('inspire', function () {
 // Schedule a task to finalize pending payments
 // Its only for razorpay payments where gateway_order_id is not yet attached
 
-if (AppSetting::getOrCreate()?->payment_in_mode == PaymentMethodEnum::RAZORPAY->value) {
+if (AppSetting::payInMode() == PaymentMethodEnum::RAZORPAY->value) {
 
 
     Schedule::call(function () {
@@ -61,7 +61,7 @@ if (AppSetting::getOrCreate()?->payment_in_mode == PaymentMethodEnum::RAZORPAY->
     })->everyFiveMinutes();
 }
 
-if (AppSetting::getOrCreate()?->payment_out_mode == PaymentMethodEnum::RAZORPAY->value) {
+if (AppSetting::payOutMode() == PaymentMethodEnum::RAZORPAY->value) {
 
     // Payout timeout handler
     Schedule::call(function () {

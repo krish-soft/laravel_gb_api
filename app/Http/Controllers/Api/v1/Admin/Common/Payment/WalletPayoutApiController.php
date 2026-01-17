@@ -54,7 +54,7 @@ class WalletPayoutApiController extends ApiResponseWithAdminAuthController
         $mode = $data['mode'];
         $reference = $data['reference'] ?? null;
 
-        $appMode = AppSetting::getOrCreate()?->payment_out_mode;
+        $appMode = AppSetting::payOutMode();
 
         // 🔒 Hard safety: app setting must match request
         if ($mode !== $appMode) {

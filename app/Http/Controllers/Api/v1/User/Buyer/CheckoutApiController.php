@@ -166,7 +166,7 @@ class CheckoutApiController extends ApiResponseWithAuthController
              * ------------------------------------
              */
             if (
-                AppSetting::getOrCreate()?->payment_in_mode === PaymentMethodEnum::MANUAL
+                AppSetting::payInMode() === PaymentMethodEnum::MANUAL
                 || $data['payment_method'] === PaymentMethodEnum::WALLET->value
             ) {
 
@@ -204,7 +204,7 @@ class CheckoutApiController extends ApiResponseWithAuthController
             $gateway = $razorpayService->createRazorpayOrder(
                 $payment->payment_code,
                 $payment->amount,
-                AppSetting::getOrCreate()?->currency ?? 'INR'
+                AppSetting::currency()
             );
 
             $paymentService->attachGatewayOrder($payment, $gateway);
