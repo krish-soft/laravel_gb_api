@@ -5,7 +5,7 @@ namespace App\Services\Common\Payment;
 
 use App\Enum\Common\Payment\PaymentGatewayEnum;
 use App\Enum\Common\Payment\PaymentStatusEnum;
-use App\Models\Common\Payment;
+use App\Models\Common\Payment\Payment;
 use App\Services\Common\Payment\Gateways\RazorpayService;
 use Illuminate\Support\Facades\DB;
 

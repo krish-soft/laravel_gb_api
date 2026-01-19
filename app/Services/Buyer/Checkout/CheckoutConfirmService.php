@@ -9,7 +9,9 @@ use App\Models\Buyer\Cart\Cart;
 use App\Models\Buyer\Order\Order;
 use App\Models\Buyer\Order\OrderCharge;
 use App\Models\Buyer\Order\OrderItem;
-use App\Models\Setting\AppSetting;
+use App\Models\Master\Setting\MstAppSetting;
+use App\Models\Master\Setting\MstFinanceSetting;
+use App\Models\Master\Setting\MstPaymentSetting;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -19,6 +21,7 @@ class CheckoutConfirmService
 
     public function confirm(Cart $cart, array $charges, $paymentMethod): Order
     {
+
         /* -------------------------------------------------
          | Cart validations
          -------------------------------------------------*/
@@ -34,12 +37,23 @@ class CheckoutConfirmService
             throw new RuntimeException(__('messages.error_messages.checkout_failed'));
         }
 
+        // Check cart is expiry base on updated_at + expiry minutes
+        $expiryMinutes = MstPaymentSetting::cartExpiryMinutes();
+        if ($cart->updated_at->addMinutes($expiryMinutes) < now()) {
+            // Mark cart as expired
+            $cart->update([
+                'status' => CartStatusEnum::EXPIRED->value,
+            ]);
+            throw new RuntimeException(__('messages.error_messages.cart_expired'));
+        }
+
         return DB::transaction(function () use ($cart, $charges, $paymentMethod) {
             /* -------------------------------------------------
              | 0️⃣ Lock cart (prevent double checkout)
              -------------------------------------------------*/
             $cart->update([
                 'status' => CartStatusEnum::LOCKED->value,
+                'locked_at'=> now(),
             ]);
 
             /* -------------------------------------------------
@@ -48,7 +62,7 @@ class CheckoutConfirmService
             $order = Order::create([
                 'buyer_id' => $cart->buyer_id,
                 'cart_id' => $cart->id,
-                'currency' => AppSetting::first()?->currency_code ?? 'INR',
+                'currency' => MstFinanceSetting::currency() ?? 'INR',
                 'subtotal' => 0,
                 'total_amount' => 0,
                 'order_status' => OrderStatusEnum::PENDING->value,

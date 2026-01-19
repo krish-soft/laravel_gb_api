@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Models\Setting\AppSetting;
+use App\Models\Master\Setting\MstAppSetting;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Schema;
@@ -26,13 +26,16 @@ class AppSettingServiceProvider extends ServiceProvider
         //
 
         // Avoid crash during migrate / fresh install
-        if (!Schema::hasTable('app_settings')) {
+        if (!Schema::hasTable('mst_app_settings')) {
             return;
         }
+        $settings = null;
+//        $settings = Cache::rememberForever('mst_app_settings', function () {
+//            return MstAppSetting::whereNull('deleted_at')->first() ?? null;
+//        });
 
-        $settings = Cache::rememberForever('app_settings', function () {
-            return AppSetting::whereNull('deleted_at')->first();
-        });
+        $settings = MstAppSetting::getOrCreate();
+
 
         if (!$settings) {
             return;

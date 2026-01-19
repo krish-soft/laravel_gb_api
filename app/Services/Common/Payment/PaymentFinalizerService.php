@@ -2,7 +2,7 @@
 
 namespace App\Services\Common\Payment;
 
-use App\Models\Common\Payment;
+use App\Models\Common\Payment\Payment;
 use App\Services\Common\Payment\Handlers\OrderPaymentHandler;
 use RuntimeException;
 

@@ -39,6 +39,7 @@ class ProductListingService
                 $item = $listing->listingItems()->create([
                     'product_id' => $itemData['product_id'],
                     'product_variant_id' => $itemData['product_variant_id'] ?? null,
+                    'is_organic' => $itemData['is_organic'] ?? false,
                     'listing_code' => $listing->listing_code,
                 ]);
 

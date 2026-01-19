@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Enum\Common\ActionCodeEnum;
 use App\Enum\Common\Setting\LocaleEnum;
+use App\Models\Master\Setting\MstAppSetting;
 use App\Models\Setting\AppSetting;
 use App\Traits\ApiResponserTrait;
 use Closure;
@@ -33,18 +34,18 @@ class AppChecker
             App::setLocale($locale);
         }
 
-        $appSetting = cache()->rememberForever('app_settings', function () {
-            return AppSetting::first();
-        });
+        $appSetting = null;
 
-        if (!$appSetting) {
-            return $this->showErrorMessageWithAction(
-                'Service unavailable',
-                503,
-                ActionCodeEnum::FORCE_MAINTENANCE,
+        $appSetting = MstAppSetting::getOrCreate();
 
-            );
-        }
+//        if (!$appSetting) {
+//            return $this->showErrorMessageWithAction(
+//                'Service unavailable',
+//                503,
+//                ActionCodeEnum::FORCE_MAINTENANCE,
+//
+//            );
+//        }
 
         if ($appSetting->isMaintenanceMode()) {
             return $this->showErrorMessageWithAction(

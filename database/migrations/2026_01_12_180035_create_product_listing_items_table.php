@@ -33,6 +33,7 @@ return new class extends Migration
                 ->constrained('mst_product_variants')
                 ->restrictOnDelete();
 
+            $table->boolean('is_organic')->default(false)->nullable()->index();
 
 
             $table->timestamps();

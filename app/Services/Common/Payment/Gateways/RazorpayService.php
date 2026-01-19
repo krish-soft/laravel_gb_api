@@ -4,7 +4,6 @@ namespace App\Services\Common\Payment\Gateways;
 
 use App\Enum\Common\Payment\PaymentCurrencyEnum;
 use App\Enum\Common\Payment\PaymentStatusEnum;
-use App\Models\Setting\AppSetting;
 use Illuminate\Support\Facades\Log;
 use Razorpay\Api\Api;
 use Razorpay\Api\Errors\SignatureVerificationError;

@@ -5,7 +5,7 @@ namespace App\Services\Common\Payment;
 use App\Enum\Common\Payment\PaymentCurrencyEnum;
 use App\Enum\Common\Payment\PaymentGatewayEnum;
 use App\Enum\Common\Payment\PaymentStatusEnum;
-use App\Models\Common\Payment;
+use App\Models\Common\Payment\Payment;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use RuntimeException;

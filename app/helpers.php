@@ -11,21 +11,22 @@ if (!function_exists('logActivity')) {
     /**
      * Global activity logger (future-proof)
      *
-     * @param string      $event        Event name
-     * @param User|null   $actor        Who performed the action (user/admin/system)
-     * @param string|null $subjectType  Affected model class
-     * @param int|null    $subjectId    Affected record ID
-     * @param string|null $subjectCode  Human-readable code (optional)
-     * @param array       $meta         Extra metadata
+     * @param string $event Event name
+     * @param User|null $actor Who performed the action (user/admin/system)
+     * @param string|null $subjectType Affected model class
+     * @param int|null $subjectId Affected record ID
+     * @param string|null $subjectCode Human-readable code (optional)
+     * @param array $meta Extra metadata
      */
     function logActivity(
-        string $event,
-        ?User $actor = null,
+        string  $event,
+        ?User   $actor = null,
         ?string $subjectType = null,
-        ?int $subjectId = null,
+        ?int    $subjectId = null,
         ?string $subjectCode = null,
-        array $meta = []
-    ): void {
+        array   $meta = []
+    ): void
+    {
 
         ActivityLog::log(
             event: $event,
@@ -48,10 +49,11 @@ if (!function_exists('logActivity')) {
 if (!function_exists('uploadPublicFile')) {
     function uploadPublicFile(
         ?\Illuminate\Http\UploadedFile $file,
-        string $path,
-        ?string $oldFile = null,
-        bool $deleteOldFile = true,
-    ): ?string {
+        string                         $path,
+        ?string                        $oldFile = null,
+        bool                           $deleteOldFile = true,
+    ): ?string
+    {
 
         return FileUploadHelper::upload(
             $file,
@@ -74,10 +76,11 @@ if (!function_exists('uploadPublicFile')) {
 if (!function_exists('uploadPrivateFile')) {
     function uploadPrivateFile(
         ?\Illuminate\Http\UploadedFile $file,
-        string $path,
-        ?string $oldFile = null,
-        bool $deleteOldFile = true,
-    ): ?string {
+        string                         $path,
+        ?string                        $oldFile = null,
+        bool                           $deleteOldFile = true,
+    ): ?string
+    {
 
         return PrivateFileUploadHelper::upload(
             $file,
@@ -85,5 +88,29 @@ if (!function_exists('uploadPrivateFile')) {
             $oldFile,
             $deleteOldFile,
         );
+    }
+}
+
+
+if (!function_exists('currentFy')) {
+    function currentFy()
+    {
+        return Cache::rememberForever('current_fy', function () {
+            return \App\Models\Master\MstFinancialYear::where('is_active', 1)->first();
+        });
+    }
+
+}
+if (!function_exists('currentFyStart')) {
+    function currentFyStart()
+    {
+        return currentFy()->start_date;
+    }
+}
+
+if (!function_exists('currentFyEnd')) {
+    function currentFyEnd()
+    {
+        return currentFy()->end_date;
     }
 }

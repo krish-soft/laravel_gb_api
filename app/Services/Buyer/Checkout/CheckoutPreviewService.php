@@ -4,7 +4,9 @@ namespace App\Services\Buyer\Checkout;
 
 use App\Enum\Common\Cart\CartStatusEnum;
 use App\Models\Buyer\Cart\Cart;
-use App\Models\Setting\AppSetting;
+use App\Models\Master\Setting\MstAppSetting;
+use App\Models\Master\Setting\MstFinanceSetting;
+use App\Models\Master\Setting\MstPaymentSetting;
 use App\Services\Common\Charge\ChargeCalculationService;
 use RuntimeException;
 
@@ -25,6 +27,16 @@ class CheckoutPreviewService
 
         if ($cart->cartItems()->count() === 0) {
             throw new RuntimeException(__('messages.error_messages.cart_empty'));
+        }
+
+        // Check cart is expiry base on updated_at + expiry minutes
+        $expiryMinutes = MstPaymentSetting::cartExpiryMinutes();
+        if ($cart->updated_at->addMinutes($expiryMinutes) < now()) {
+            // Mark cart as expired
+            $cart->update([
+                'status' => CartStatusEnum::EXPIRED->value,
+            ]);
+            throw new RuntimeException(__('messages.error_messages.cart_expired'));
         }
 
         $items = [];
@@ -134,7 +146,7 @@ class CheckoutPreviewService
 
         return [
             'cart_id' => $cart->id,
-            'currency' => AppSetting::first()?->currency_code ?? 'INR',
+            'currency' => MstFinanceSetting::currency() ?? 'INR',
 
             'items' => $items,
 

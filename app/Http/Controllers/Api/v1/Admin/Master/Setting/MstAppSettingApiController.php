@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Http\Controllers\Api\v1\Admin\Common\Setting;
+namespace App\Http\Controllers\Api\v1\Admin\Master\Setting;
 
 use App\Enum\Admin\AdminRoleEnum;
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
-use App\Models\Setting\AppSetting;
+use App\Models\Master\Setting\MstAppSetting;
 use Illuminate\Http\Request;
 
-class AppSettingApiController extends ApiResponseWithAdminAuthController
+class MstAppSettingApiController extends ApiResponseWithAdminAuthController
 {
     //
 
@@ -15,9 +15,9 @@ class AppSettingApiController extends ApiResponseWithAdminAuthController
     {
         //
 
-        $appSettting = AppSetting::first();
+        $appSetting = MstAppSetting::first();
 
-        return $this->successResponse(__('messages.success_messages.success_get'), $appSettting, 200);
+        return $this->successResponse(__('messages.success_messages.success_get'), $appSetting, 200);
     }
 
     public function updateSetting(Request $request)
@@ -50,7 +50,7 @@ class AppSettingApiController extends ApiResponseWithAdminAuthController
             'is_force_app_ios_update'     => 'sometimes|boolean',
         ]);
 
-        $appSetting = AppSetting::first() ?? new AppSetting();
+        $appSetting = MstAppSetting::first() ?? new MstAppSetting();
 
         $appSetting->fill($validated);
 

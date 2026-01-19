@@ -31,6 +31,7 @@ return new class extends Migration
 
             $table->timestamp('locked_at')->nullable();
             $table->timestamp('converted_at')->nullable();
+            $table->timestamp('expired_at')->nullable();
 
             $table->timestamps();
             $table->softDeletes();

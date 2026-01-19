@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Web\Webhooks;
 
-use App\Models\Common\Wallet\WalletPayout;
-use App\Services\Common\Payment\Handlers\WalletPayoutHandler;
+use App\Models\Common\Payment\Payout;
+use App\Services\Common\Payment\Handlers\PayoutHandler;
 use Illuminate\Http\Request;
 
 class RazorpayPayoutWebhookController
@@ -21,7 +21,7 @@ class RazorpayPayoutWebhookController
             return response()->json(['ok' => true]);
         }
 
-        $payout = WalletPayout::where(
+        $payout = Payout::where(
             'razorpay_payout_id',
             $razorpayPayoutId
         )->first();
@@ -30,7 +30,7 @@ class RazorpayPayoutWebhookController
             return response()->json(['ok' => true]);
         }
 
-        $handler = app(WalletPayoutHandler::class);
+        $handler = app(PayoutHandler::class);
 
         if ($event === 'payout.processed') {
             $handler->onSuccess($payout, $razorpayPayoutId);

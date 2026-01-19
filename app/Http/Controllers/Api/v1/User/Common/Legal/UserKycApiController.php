@@ -27,6 +27,8 @@ class UserKycApiController extends ApiResponseWithAuthController
             'dob' => 'required|date_format:Y-m-d|before:today',
         ]);
 
+        // Selfie Pending
+
         // Check DOB is adult base on india
 
         $dob = $request->input('dob');

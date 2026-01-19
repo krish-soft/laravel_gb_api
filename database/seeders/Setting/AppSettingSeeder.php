@@ -2,8 +2,7 @@
 
 namespace Database\Seeders\Setting;
 
-use App\Models\Setting\AppSetting;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Master\Setting\MstAppSetting;
 use Illuminate\Database\Seeder;
 
 class AppSettingSeeder extends Seeder
@@ -14,7 +13,7 @@ class AppSettingSeeder extends Seeder
     public function run(): void
     {
         //
-        AppSetting::create([
+        MstAppSetting::create([
             // App identity
             'app_name' => 'Green Bazar',
 
@@ -23,9 +22,6 @@ class AppSettingSeeder extends Seeder
             'locale' => 'en',
             'fallback_locale' => 'en',
 
-            // Formatting
-            'currency' => 'INR',
-            'currency_symbol' => '₹',
             'date_format' => 'Y-m-d',
             'time_format' => 'H:i',
 

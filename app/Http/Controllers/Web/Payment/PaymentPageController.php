@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Web\Payment;
 
 use App\Enum\Common\Payment\PaymentStatusEnum;
 use App\Http\Controllers\Controller;
-use App\Models\Common\Payment;
+use App\Models\Common\Payment\Payment;
 use App\Services\Common\Payment\Gateways\RazorpayService;
 use Illuminate\Http\Request;
 

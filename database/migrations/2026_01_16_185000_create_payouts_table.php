@@ -11,12 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('wallet_payouts', function (Blueprint $table) {
+        Schema::create('payouts', function (Blueprint $table) {
             $table->id();
 
             $table->string('payout_code')->unique(); // PTO-2024-00001
 
-            $table->unsignedBigInteger('wallet_id');
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('user_bank_id');
 

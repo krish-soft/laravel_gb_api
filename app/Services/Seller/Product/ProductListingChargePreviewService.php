@@ -55,9 +55,15 @@ class ProductListingChargePreviewService
         );
 
         return [
-            'gross_amount' => round($grossAmount, 2),
 
-            'charges' => $chargeSummary['charges'],
+
+            'total_quantity' => $totalQty,
+            'total_weight' => $totalWeight,
+
+            'gross_amount' => round($grossAmount, 2), //  taxable amount
+
+            // Charge details
+            'charges' => $chargeSummary['charges'], // detailed charges
             'charge_taxable' => $chargeSummary['charge_taxable'],
             'charge_tax' => $chargeSummary['charge_tax'],
             'total_charge_amount' => $chargeSummary['total_charge_amount'],

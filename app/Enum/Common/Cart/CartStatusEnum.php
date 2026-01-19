@@ -9,4 +9,5 @@ enum CartStatusEnum: string
     case LOCKED = 'locked';
     case CONVERTED = 'converted';
     case ABANDONED = 'abandoned';
+    case EXPIRED = 'expired';
 }

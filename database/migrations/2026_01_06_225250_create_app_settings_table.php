@@ -12,7 +12,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('app_settings', function (Blueprint $table) {
+        Schema::create('mst_app_settings', function (Blueprint $table) {
             $table->id();
 
             // App identity
@@ -23,14 +23,7 @@ return new class extends Migration
             $table->string('locale')->default('en');
             $table->string('fallback_locale')->default('en')->nullable();
 
-            // Formatting
-            $table->string('currency')->default('INR')->nullable();
-            $table->string('currency_symbol', 10)->default('₹')->nullable();
 
-            // Payment modes
-            $table->string('payment_in_mode', 30)->default(PaymentMethodEnum::RAZORPAY->value)->nullable();
-            $table->string('payment_out_mode', 30)->default(PaymentMethodEnum::MANUAL->value)->nullable();
-            $table->decimal('min_payout', 10, 2)->default('100')->nullable();
 
             $table->string('date_format')->default('Y-m-d')->nullable();
             $table->string('time_format')->default('H:i')->nullable();
@@ -62,6 +55,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('app_settings');
+        Schema::dropIfExists('mst_app_settings');
     }
 };

@@ -28,6 +28,7 @@ class Cart extends BaseModel
         'status',
         'locked_at',
         'converted_at',
+        'expired_at',
 
     ];
 
@@ -36,6 +37,7 @@ class Cart extends BaseModel
     protected $casts = [
         'locked_at' => 'datetime',
         'converted_at' => 'datetime',
+        'expired_at' => 'datetime',
     ];
 
     // Relationships

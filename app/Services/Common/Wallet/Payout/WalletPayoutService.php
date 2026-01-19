@@ -8,12 +8,12 @@ use App\Enum\Common\Payment\PaymentMethodEnum;
 use App\Enum\Common\Payment\PayoutStatusEnum;
 use App\Enum\Common\Wallet\WalletStatusEnum;
 use App\Enum\Common\Wallet\WalletTypeEnum;
+use App\Models\Common\Payment\Payout;
 use App\Models\Common\User\Legal\UserBank;
 use App\Models\Common\Wallet\Wallet;
-use App\Models\Common\Wallet\WalletPayout;
 use App\Models\Common\Wallet\WalletTransaction;
 use App\Services\Common\Payment\Gateways\RazorpayPayoutService;
-use App\Services\Common\Payment\Handlers\WalletPayoutHandler;
+use App\Services\Common\Payment\Handlers\PayoutHandler;
 use App\Services\Common\Wallet\WalletService;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -24,7 +24,7 @@ class WalletPayoutService
         Wallet $wallet,
         UserBank $bank,
         float $amount
-    ): WalletPayout {
+    ): Payout {
 
         if ($wallet->user_id !== $bank->user_id) {
             throw new RuntimeException('Bank does not belong to wallet owner');
@@ -46,7 +46,7 @@ class WalletPayoutService
             throw new RuntimeException('Minimum payout is ₹100');
         }
 
-        $exists = WalletPayout::where('wallet_id', $wallet->id)
+        $exists = Payout::where('wallet_id', $wallet->id)
             ->whereIn('status', [PayoutStatusEnum::REQUESTED->value, PayoutStatusEnum::PROCESSING->value])
             ->exists();
 
@@ -54,7 +54,7 @@ class WalletPayoutService
             throw new RuntimeException('Another payout is already in progress');
         }
 
-        return WalletPayout::create([
+        return Payout::create([
             'payout_code' => self::generateCode('PTO'),
             'wallet_id' => $wallet->id,
             'user_id' => $wallet->user_id,
@@ -67,7 +67,7 @@ class WalletPayoutService
     }
 
     public function approveManual(
-        WalletPayout $payout,
+        Payout $payout,
         string $reference // NEFT / UTR / BATCH ID
     ): void {
         DB::transaction(function () use ($payout, $reference) {
@@ -89,13 +89,13 @@ class WalletPayoutService
             ]);
 
             // 🔥 Wallet debit happens HERE
-            app(WalletPayoutHandler::class)
+            app(PayoutHandler::class)
                 ->onManualSuccess($payout, $reference);
 
             logActivity(
                 'wallet_payout_manual_approved',
                 request()->user(),
-                WalletPayout::class,
+                Payout::class,
                 $payout->id,
                 $payout->payout_code,
                 [
@@ -107,7 +107,7 @@ class WalletPayoutService
     }
 
 
-    public function approveAndProcess(WalletPayout $payout): void
+    public function approveAndProcess(Payout $payout): void
     {
         DB::transaction(function () use ($payout) {
 
@@ -139,7 +139,7 @@ class WalletPayoutService
             logActivity(
                 'wallet_payout_initiated',
                 request()->user() ?? null,
-                WalletPayout::class,
+                Payout::class,
                 $payout->id,
                 $payout->payout_code,
                 ['amount' => $payout->amount]
@@ -152,7 +152,7 @@ class WalletPayoutService
         do {
             $code = $prefix . '-' . now()->format('Ymd') . '-' . random_int(100000, 999999);
         } while (
-            WalletPayout::where('payout_code', $code)->exists()
+            Payout::where('payout_code', $code)->exists()
         );
 
         return $code;
@@ -161,9 +161,9 @@ class WalletPayoutService
 
 
 
-    /// 
+    ///
 
-    public function createWalletPayoutDebitTransaction(WalletPayout $payout, string $ref): void
+    public function createWalletPayoutDebitTransaction(Payout $payout, string $ref): void
     {
         $wallet = $payout->wallet;
 
@@ -199,11 +199,11 @@ class WalletPayoutService
                 'payment_reference' => $ref,
                 'remark' => 'Wallet payout',
 
-                'source_type' => WalletPayout::class,
+                'source_type' => Payout::class,
                 'source_id' => $payout->id,
                 'source_code' => $payout->payout_code,
 
-                // need to from to 
+                // need to from to
                 'from_entity' => EntityTypeEnum::USER->value,
                 'from_entity_id' => $wallet->user_id,
 

@@ -3,10 +3,10 @@
 use App\Enum\Common\Payment\PaymentMethodEnum;
 use App\Enum\Common\Payment\PaymentStatusEnum;
 use App\Enum\Common\Payment\PayoutStatusEnum;
-use App\Models\Common\Payment;
-use App\Models\Common\Wallet\WalletPayout;
-use App\Models\Setting\AppSetting;
-use App\Services\Common\Payment\Handlers\WalletPayoutHandler;
+use App\Models\Common\Payment\Payment;
+use App\Models\Common\Payment\Payout;
+use App\Models\Master\Setting\MstPaymentSetting;
+use App\Services\Common\Payment\Handlers\PayoutHandler;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -19,7 +19,7 @@ Artisan::command('inspire', function () {
 // Schedule a task to finalize pending payments
 // Its only for razorpay payments where gateway_order_id is not yet attached
 
-if (AppSetting::payInMode() == PaymentMethodEnum::RAZORPAY->value) {
+if (MstPaymentSetting::payInMode() == PaymentMethodEnum::RAZORPAY->value) {
 
 
     Schedule::call(function () {
@@ -61,16 +61,16 @@ if (AppSetting::payInMode() == PaymentMethodEnum::RAZORPAY->value) {
     })->everyFiveMinutes();
 }
 
-if (AppSetting::payOutMode() == PaymentMethodEnum::RAZORPAY->value) {
+if (MstPaymentSetting::payOutMode() == PaymentMethodEnum::RAZORPAY->value) {
 
     // Payout timeout handler
     Schedule::call(function () {
 
-        $handler = app(WalletPayoutHandler::class);
+        $handler = app(PayoutHandler::class);
 
-        WalletPayout::whereIn('status', [PayoutStatusEnum::REQUESTED->value, PayoutStatusEnum::PROCESSING->value])
+        Payout::whereIn('status', [PayoutStatusEnum::REQUESTED->value, PayoutStatusEnum::PROCESSING->value])
             ->where('created_at', '<', now()->subMinutes(30))
-            ->each(function (WalletPayout $payout) use ($handler) {
+            ->each(function (Payout $payout) use ($handler) {
 
                 // 🔒 Idempotency guard
                 if (in_array($payout->status, [PayoutStatusEnum::PAID->value, PayoutStatusEnum::FAILED->value])) {

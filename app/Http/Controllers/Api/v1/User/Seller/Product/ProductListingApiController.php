@@ -154,8 +154,10 @@ class ProductListingApiController extends ApiResponseWithAuthController
             'is_buyer_pickup' => 'nullable|boolean',
 
             'productListingItems' => 'required|array|min:1',
+            'productListingItems.*.is_organic' =>  'required|boolean', // organic
             'productListingItems.*.product_id' =>  'required|integer|exists:mst_products,id',
             'productListingItems.*.product_variant_id' => 'nullable|integer|exists:mst_product_variants,id',
+
 
             'productListingItems.*.productListingPackages' => 'required|array|min:1',
             'productListingItems.*.productListingPackages.*.qty' => 'required|numeric|min:0.01',

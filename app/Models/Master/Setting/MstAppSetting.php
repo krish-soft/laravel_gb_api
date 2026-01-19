@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Models\Setting;
+namespace App\Models\Master\Setting;
 
 use App\Enum\Common\Payment\PaymentMethodEnum;
 use App\Models\BaseModel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
-class AppSetting extends BaseModel
+class MstAppSetting extends BaseModel
 {
     /**
      * Prevent deletion + auto clear cache
@@ -18,7 +18,17 @@ class AppSetting extends BaseModel
             throw new \Exception('App settings cannot be deleted.');
         });
 
-        static::saved(fn() => Cache::forget('app_settings'));
+
+        static::saved(function () {
+            try {
+                if (Cache::has('mst_app_settings')) {
+                    Cache::forget('mst_app_settings');
+                }
+            } catch (\Throwable $e) {
+                // ignore completely
+            }
+        });
+
     }
 
     protected $fillable = [
@@ -30,15 +40,6 @@ class AppSetting extends BaseModel
         'timezone',
         'locale',
         'fallback_locale',
-
-        // Formatting
-        'currency',
-        'currency_symbol',
-
-        // Payment modes
-        'payment_in_mode',
-        'payment_out_mode',
-        'min_payout',
 
         // Date & time
         'date_format',
@@ -72,7 +73,7 @@ class AppSetting extends BaseModel
      =====================================================*/
     public static function getOrCreate(): Model
     {
-        return Cache::rememberForever('app_settings', function () {
+        return Cache::rememberForever('mst_app_settings', function () {
             return self::firstOrCreate(
                 ['app_name' => 'Green Bazar'],
                 [
@@ -80,12 +81,6 @@ class AppSetting extends BaseModel
                     'locale' => 'en',
                     'fallback_locale' => 'en',
 
-                    'currency' => 'INR',
-                    'currency_symbol' => '₹',
-
-                    'payment_in_mode' => PaymentMethodEnum::RAZORPAY->value,
-                    'payment_out_mode' => PaymentMethodEnum::MANUAL->value,
-                    'min_payout' => 100,
 
                     'date_format' => 'Y-m-d',
                     'time_format' => 'H:i',
@@ -104,49 +99,12 @@ class AppSetting extends BaseModel
         });
     }
 
-    /* =====================================================
-     | CONVENIENCE GETTERS (SAFE EVERYWHERE)
-     =====================================================*/
 
-    /* =====================================================
- | SAFE GETTERS (NEVER RETURN NULL)
- =====================================================*/
 
-    public static function currency(): string
-    {
-        return self::getOrCreate()->currency
-            ?? 'INR';
-    }
-
-    public static function currencySymbol(): string
-    {
-        return self::getOrCreate()->currency_symbol
-            ?? '₹';
-    }
-
-    public static function payInMode(): string
-    {
-        return self::getOrCreate()->payment_in_mode
-            ?? PaymentMethodEnum::RAZORPAY->value;
-    }
-
-    public static function payOutMode(): string
-    {
-        return self::getOrCreate()->payment_out_mode
-            ?? PaymentMethodEnum::MANUAL->value;
-    }
-
-    public static function minPayoutAmount(): float
-    {
-        return (float) (
-            self::getOrCreate()->min_payout
-            ?? 100
-        );
-    }
 
     public static function isMaintenanceMode(): bool
     {
-        return (bool) (
+        return (bool)(
             self::getOrCreate()->is_maintenance_mode
             ?? false
         );

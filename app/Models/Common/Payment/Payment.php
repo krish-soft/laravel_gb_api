@@ -1,10 +1,9 @@
 <?php
 
-namespace App\Models\Common;
+namespace App\Models\Common\Payment;
 
 use App\Models\BaseModel;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 

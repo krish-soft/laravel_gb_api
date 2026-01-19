@@ -5,14 +5,14 @@ namespace App\Http\Controllers\Api\v1\Admin\Common\Payment;
 use App\Enum\Common\Payment\PaymentMethodEnum;
 use App\Enum\Common\Payment\PayoutStatusEnum;
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
-use App\Models\Common\Wallet\WalletPayout;
-use App\Models\Setting\AppSetting;
-use App\Services\Common\Payment\Handlers\WalletPayoutHandler;
+use App\Models\Common\Payment\Payout;
+use App\Models\Master\Setting\MstAppSetting;
+use App\Services\Common\Payment\Handlers\PayoutHandler;
 use App\Services\Common\Wallet\Payout\WalletPayoutReconciliationService;
 use App\Services\Common\Wallet\Payout\WalletPayoutService;
 use Illuminate\Http\Request;
 
-class WalletPayoutApiController extends ApiResponseWithAdminAuthController
+class PayoutApiController extends ApiResponseWithAdminAuthController
 {
     /**
      * List payout requests
@@ -21,7 +21,7 @@ class WalletPayoutApiController extends ApiResponseWithAdminAuthController
     {
         $status = $request->query('status', 'requested');
 
-        $payouts = WalletPayout::with(['wallet.user', 'bank'])
+        $payouts = Payout::with(['user', 'userBank'])
             ->whereIn('status', match ($status) {
                 'requested'  => [PayoutStatusEnum::REQUESTED->value],
                 'processing' => [PayoutStatusEnum::PROCESSING->value],
@@ -44,7 +44,7 @@ class WalletPayoutApiController extends ApiResponseWithAdminAuthController
      * ✔ Mode-driven
      * ✔ Wallet debit ONLY when appropriate
      */
-    public function approve(Request $request, WalletPayout $payout)
+    public function approve(Request $request, Payout $payout)
     {
         $data = $request->validate([
             'mode' => 'required|in:razorpay,manual',
@@ -54,15 +54,15 @@ class WalletPayoutApiController extends ApiResponseWithAdminAuthController
         $mode = $data['mode'];
         $reference = $data['reference'] ?? null;
 
-        $appMode = AppSetting::payOutMode();
+        $appMode = MstAppSetting::payOutMode();
 
         // 🔒 Hard safety: app setting must match request
         if ($mode !== $appMode) {
-            // 
+            //
             logActivity(
                 'wallet_payout_approval_rejected_mode_mismatch',
                 request()->user(),
-                WalletPayout::class,
+                Payout::class,
                 $payout->id,
                 $payout->payout_code,
                 [
@@ -100,14 +100,14 @@ class WalletPayoutApiController extends ApiResponseWithAdminAuthController
                 );
             }
 
-            app(WalletPayoutHandler::class)
+            app(PayoutHandler::class)
                 ->onManualSuccess($payout, $reference);
 
             //
             logActivity(
                 'wallet_payout_manual_approved',
                 request()->user(),
-                WalletPayout::class,
+                Payout::class,
                 $payout->id,
                 $payout->payout_code,
                 [
@@ -129,11 +129,11 @@ class WalletPayoutApiController extends ApiResponseWithAdminAuthController
             app(WalletPayoutService::class)
                 ->approveAndProcess($payout);
 
-            // 
+            //
             logActivity(
                 'wallet_payout_razorpay_approved',
                 request()->user(),
-                WalletPayout::class,
+                Payout::class,
                 $payout->id,
                 $payout->payout_code,
                 [
@@ -152,9 +152,9 @@ class WalletPayoutApiController extends ApiResponseWithAdminAuthController
     /**
      * Force fail payout
      */
-    public function fail(Request $request, WalletPayout $payout)
+    public function fail(Request $request, Payout $payout)
     {
-        app(WalletPayoutHandler::class)->onFailure(
+        app(PayoutHandler::class)->onFailure(
             $payout,
             $request->input('reason', 'Admin marked failed')
         );
@@ -165,7 +165,7 @@ class WalletPayoutApiController extends ApiResponseWithAdminAuthController
     /**
      * Reconcile Razorpay payout
      */
-    public function reconcile(WalletPayout $payout)
+    public function reconcile(Payout $payout)
     {
         app(WalletPayoutReconciliationService::class)
             ->reconcile($payout);

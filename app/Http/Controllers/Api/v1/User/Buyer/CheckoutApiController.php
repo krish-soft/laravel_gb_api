@@ -7,8 +7,10 @@ use App\Enum\Common\Payment\PaymentMethodEnum;
 use App\Http\Controllers\ApiResponseWithAuthController;
 use App\Models\Buyer\Cart\Cart;
 use App\Models\Buyer\Order\Order;
-use App\Models\Common\Payment;
-use App\Models\Setting\AppSetting;
+use App\Models\Common\Payment\Payment;
+use App\Models\Master\Setting\MstAppSetting;
+use App\Models\Master\Setting\MstFinanceSetting;
+use App\Models\Master\Setting\MstPaymentSetting;
 use App\Services\Buyer\Checkout\CheckoutConfirmService;
 use App\Services\Buyer\Checkout\CheckoutPreviewService;
 use App\Services\Common\Payment\Gateways\RazorpayService;
@@ -16,7 +18,6 @@ use App\Services\Common\Payment\Handlers\OrderPaymentHandler;
 use App\Services\Common\Payment\PaymentService;
 use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Notifications\Action;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use RuntimeException;
@@ -166,16 +167,16 @@ class CheckoutApiController extends ApiResponseWithAuthController
              * ------------------------------------
              */
             if (
-                AppSetting::payInMode() === PaymentMethodEnum::MANUAL
-                || $data['payment_method'] === PaymentMethodEnum::WALLET->value
+                MstPaymentSetting::payInMode() === PaymentMethodEnum::MANUAL
+//                || $data['payment_method'] === PaymentMethodEnum::WALLET->value
             ) {
 
-                $payment->markPaid('WALLET_OR_MANUAL');
+                $payment->markPaid('MANUAL');
 
                 $orderPaymentHandler->onSuccess($payment);
 
                 logActivity(
-                    'payment_completed_wallet_or_manual',
+                    'payment_completed_manual',
                     $user,
                     Payment::class,
                     $payment->id,
@@ -204,7 +205,7 @@ class CheckoutApiController extends ApiResponseWithAuthController
             $gateway = $razorpayService->createRazorpayOrder(
                 $payment->payment_code,
                 $payment->amount,
-                AppSetting::currency()
+                MstFinanceSetting::currency()
             );
 
             $paymentService->attachGatewayOrder($payment, $gateway);

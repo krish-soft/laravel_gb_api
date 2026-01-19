@@ -5,8 +5,7 @@ use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserLogoutApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserRegisterApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserResetPasswordApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Payment\PaymentReconcileApiController;
-use App\Http\Controllers\Api\v1\Admin\Common\Payment\WalletPayoutApiController;
-use App\Http\Controllers\Api\v1\Admin\Common\Setting\AppSettingApiController;
+use App\Http\Controllers\Api\v1\Admin\Common\Payment\PayoutApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\User\AdminRegularUserApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeLevelApiController;
@@ -21,8 +20,8 @@ use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductCategoryApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductPackagingApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductVariantApiController;
+use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstAppSettingApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Vehicle\MstVehicleApiController;
-use App\Http\Controllers\Api\v1\Admin\Report\AdminWalletReportApiController;
 use App\Http\Controllers\Api\v1\Admin\Seller\Product\AdminProductListingApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\CartApiController;
 use App\Http\Controllers\Api\v1\User\Common\Auth\UserLoginApiController;
@@ -167,7 +166,7 @@ Route::group([
             });
 
 
-            // Product Listing Routes   
+            // Product Listing Routes
             Route::prefix('product-listing')->group(function () {
                 Route::post('listing/preview', [AdminProductListingApiController::class, 'previewWithCharges']);
                 Route::post('listing/confirm', [AdminProductListingApiController::class, 'confirmListing']);
@@ -181,11 +180,12 @@ Route::group([
 
             // Payments
             Route::post('/payments/{payment_code}/reconcile', [PaymentReconcileApiController::class, 'reconcile']);
+
             Route::prefix('wallet-payouts')->group(function () {
-                Route::get('/', [WalletPayoutApiController::class, 'index']);
-                Route::post('{payout}/approve', [WalletPayoutApiController::class, 'approve']);
-                Route::post('{payout}/fail', [WalletPayoutApiController::class, 'fail']);
-                Route::post('{payout}/reconcile', [WalletPayoutApiController::class, 'reconcile']);
+                Route::get('/', [PayoutApiController::class, 'index']);
+                Route::post('{payout}/approve', [PayoutApiController::class, 'approve']);
+                Route::post('{payout}/fail', [PayoutApiController::class, 'fail']);
+                Route::post('{payout}/reconcile', [PayoutApiController::class, 'reconcile']);
             });
 
 
@@ -197,8 +197,8 @@ Route::group([
 
 
             // Settings
-            Route::get('setting/app', [AppSettingApiController::class, 'getSetting']);
-            Route::put('setting/app', [AppSettingApiController::class, 'updateSetting']);
+            Route::get('setting/app', [MstAppSettingApiController::class, 'getSetting']);
+            Route::put('setting/app', [MstAppSettingApiController::class, 'updateSetting']);
 
             ###
             ##### Master  Routes
@@ -231,20 +231,7 @@ Route::group([
 
 
 
-            #### Reports ###
 
-            Route::prefix('wallet')->group(function () {
-                Route::get('dashboard', [AdminWalletReportApiController::class, 'dashboard']);
-
-                Route::get('wallets', [AdminWalletReportApiController::class, 'wallets']);
-                Route::get('wallets/{wallet}/balance', [AdminWalletReportApiController::class, 'walletBalance']);
-                Route::get('wallets/{wallet}/ledger', [AdminWalletReportApiController::class, 'walletLedger']);
-                Route::get('transactions', [AdminWalletReportApiController::class, 'transactions']);
-                Route::get('transactions/{transaction}/verify', [AdminWalletReportApiController::class, 'verifyTransaction']);
-
-                Route::post('owes-summary', [AdminWalletReportApiController::class, 'owesSummary']);
-                Route::get('platform-exposure', [AdminWalletReportApiController::class, 'platformExposure']);
-            });
         });
 
 

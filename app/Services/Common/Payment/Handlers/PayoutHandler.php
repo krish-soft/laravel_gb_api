@@ -3,18 +3,14 @@
 namespace App\Services\Common\Payment\Handlers;
 
 use App\Enum\Common\Payment\PayoutStatusEnum;
-use App\Models\Common\Wallet\WalletPayout;
-use App\Models\Common\Wallet\WalletTransaction;
-use App\Services\Common\Wallet\WalletService;
-use App\Enum\Common\Wallet\WalletTypeEnum;
-use App\Enum\Common\Wallet\WalletStatusEnum;
+use App\Models\Common\Payment\Payout;
 use App\Services\Common\Wallet\Payout\WalletPayoutService;
+use App\Services\Common\Wallet\WalletService;
 use Illuminate\Support\Facades\DB;
-use RuntimeException;
 
-class WalletPayoutHandler
+class PayoutHandler
 {
-    // public function onSuccess(WalletPayout $payout, string $gatewayRef): void
+    // public function onSuccess(Payout $payout, string $gatewayRef): void
     // {
     //     DB::transaction(function () use ($payout, $gatewayRef) {
 
@@ -66,7 +62,7 @@ class WalletPayoutHandler
     //         logActivity(
     //             'wallet_payout_success',
     //             request()?->user() ?? null,
-    //             WalletPayout::class,
+    //             Payout::class,
     //             $payout->id,
     //             $payout->payout_code,
     //             [
@@ -77,7 +73,7 @@ class WalletPayoutHandler
     //     });
     // }
 
-    public function onSuccess(WalletPayout $payout, string $gatewayRef): void
+    public function onSuccess(Payout $payout, string $gatewayRef): void
     {
         DB::transaction(function () use ($payout, $gatewayRef) {
 
@@ -85,16 +81,17 @@ class WalletPayoutHandler
                 return;
             }
 
-            app(WalletPayoutService::class)->createWalletPayoutDebitTransaction($payout, $gatewayRef);
+            // TODO:: LEDGER ENTRY + BALANCE DEDUCTION
+
 
             $payout->update([
                 'status' => PayoutStatusEnum::PAID->value,
             ]);
 
             logActivity(
-                'wallet_payout_razorpay_success',
+                'payout_razorpay_success',
                 request()?->user(),
-                WalletPayout::class,
+                Payout::class,
                 $payout->id,
                 $payout->payout_code,
                 ['gateway_ref' => $gatewayRef]
@@ -103,7 +100,7 @@ class WalletPayoutHandler
     }
 
 
-    public function onManualSuccess(WalletPayout $payout, string $reference): void
+    public function onManualSuccess(Payout $payout, string $reference): void
     {
         DB::transaction(function () use ($payout, $reference) {
 
@@ -111,7 +108,8 @@ class WalletPayoutHandler
                 return;
             }
 
-            app(WalletPayoutService::class)->createWalletPayoutDebitTransaction($payout, $reference);
+            // TODO:: LEDGER ENTRY + BALANCE DEDUCTION
+//            app(WalletPayoutService::class)->createWalletPayoutDebitTransaction($payout, $reference);
 
             $payout->update([
                 'status' => PayoutStatusEnum::PAID->value,
@@ -120,7 +118,7 @@ class WalletPayoutHandler
             logActivity(
                 'wallet_payout_manual_success',
                 request()?->user(),
-                WalletPayout::class,
+                Payout::class,
                 $payout->id,
                 $payout->payout_code,
                 ['reference' => $reference]
@@ -129,7 +127,7 @@ class WalletPayoutHandler
     }
 
 
-    public function onFailure(WalletPayout $payout, string $reason): void
+    public function onFailure(Payout $payout, string $reason): void
     {
         // 🔒 Idempotency
         if (in_array($payout->status, [PayoutStatusEnum::FAILED->value, PayoutStatusEnum::REJECTED->value])) {
@@ -142,9 +140,9 @@ class WalletPayoutHandler
         ]);
 
         logActivity(
-            'wallet_payout_failed',
+            'payout_failed',
             request()?->user() ?? null,
-            WalletPayout::class,
+            Payout::class,
             $payout->id,
             $payout->payout_code,
             ['reason' => $reason]

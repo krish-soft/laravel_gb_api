@@ -3,13 +3,13 @@
 namespace App\Services\Common\Wallet\Payout;
 
 use App\Enum\Common\Payment\PayoutStatusEnum;
-use App\Models\Common\Wallet\WalletPayout;
+use App\Models\Common\Payment\Payout;
 use App\Services\Common\Payment\Gateways\RazorpayPayoutService;
-use App\Services\Common\Payment\Handlers\WalletPayoutHandler;
+use App\Services\Common\Payment\Handlers\PayoutHandler;
 
 class WalletPayoutReconciliationService
 {
-    public function reconcile(WalletPayout $payout): void
+    public function reconcile(Payout $payout): void
     {
         if (!in_array($payout->status, [PayoutStatusEnum::REQUESTED->value, PayoutStatusEnum::PROCESSING->value])) {
             return;
@@ -20,7 +20,7 @@ class WalletPayoutReconciliationService
         }
 
         $gateway = app(RazorpayPayoutService::class);
-        $handler = app(WalletPayoutHandler::class);
+        $handler = app(PayoutHandler::class);
 
         $razorpayPayout = $gateway->fetchPayout($payout->razorpay_payout_id);
 

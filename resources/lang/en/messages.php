@@ -146,6 +146,7 @@ return [
         'cart_locked'     => 'Cart is locked due to checkout in progress.',
         'cart_not_active' => 'No active cart found for the user.',
         'cart_empty'      => 'Cart is empty. Please add items to proceed.',
+        'cart_expired' => 'Your cart has expired. Please continue by starting a new order.',
 
         /* Listing */
         'listing_locked'         => 'Listing is locked or expired.',

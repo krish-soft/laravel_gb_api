@@ -1,19 +1,18 @@
 <?php
 
-namespace App\Models\Common\Wallet;
+namespace App\Models\Common\Payment;
 
 use App\Models\BaseModel;
 use App\Models\Common\User\Legal\UserBank;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Model;
 
-class WalletPayout extends BaseModel
+class Payout extends BaseModel
 {
     //
 
     protected $fillable = [
         'payout_code',
-        'wallet_id',
+
         'user_id',
         'user_bank_id',
 
@@ -34,17 +33,14 @@ class WalletPayout extends BaseModel
         'remark',
     ];
 
-    // casts 
+    // casts
     protected $casts = [
         'approved_at' => 'datetime',
         'amount' => 'decimal:2',
     ];
 
     // relationships
-    public function wallet()
-    {
-        return $this->belongsTo(Wallet::class);
-    }
+
 
     public function user()
     {

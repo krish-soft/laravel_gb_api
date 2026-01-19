@@ -16,6 +16,12 @@ class ProductListingItem extends BaseModel
         'listing_code',
         'product_id',
         'product_variant_id',
+        'is_organic', // organic, inorganic, service
+    ];
+
+    // casts
+    protected $casts = [
+        'is_organic' => 'boolean',
     ];
 
     // Relationships
@@ -38,5 +44,11 @@ class ProductListingItem extends BaseModel
     public function listingPackages()
     {
         return $this->hasMany(ProductListingPackage::class, 'product_listing_item_id');
+    }
+
+    // helpers
+    public function isOrganic()
+    {
+        return $this->is_organic;
     }
 }
