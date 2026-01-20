@@ -21,6 +21,9 @@ class DatabaseSeeder extends Seeder
             // Financial Year Seeder
             Master\MstFinancialSeeder::class,
 
+            // Accounting Seeders
+            \Database\Seeders\Accounting\AccountSeeder::class, 
+
             // App Settings
             \Database\Seeders\Setting\AppSettingSeeder::class,
 
