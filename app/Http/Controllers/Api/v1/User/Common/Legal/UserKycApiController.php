@@ -24,6 +24,8 @@ class UserKycApiController extends ApiResponseWithAuthController
             'pan_card_number' => 'nullable|string|max:15',
             'pan_card_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
 
+            'selfie_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048', // optional selfie image
+
             'dob' => 'required|date_format:Y-m-d|before:today',
         ]);
 

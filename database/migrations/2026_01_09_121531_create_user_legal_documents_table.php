@@ -38,7 +38,7 @@ return new class extends Migration
 
             $table->string('document_number')->nullable(); // without encryption for searching
             $table->text('document_number_encrypted')->nullable();
-            $table->string('document_number_last4', 4);
+            $table->string('document_number_last4', 4)->nullable(); // last 4 digits for quick reference
 
             // Validity (where applicable)
             $table->date('issued_at')->nullable();

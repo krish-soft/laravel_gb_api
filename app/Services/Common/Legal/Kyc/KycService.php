@@ -41,6 +41,10 @@ class KycService
                 ? strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $data['pan_card_number']))
                 : null;
 
+            $selfieImage = array_key_exists('selfie_image', $data)
+                ? $data['selfie_image']
+                : null;
+
             // ---------- VALIDATION ----------
             $this->assertValidAadhaar($aadhaar, $files);
             $this->assertValidPan($pan, $files, null);
@@ -85,6 +89,10 @@ class KycService
 
             if ($pan) {
                 $this->storePanDoc($user, $kyc, $pan, $files);
+            }
+
+            if ($selfieImage) {
+                $this->storeSelfieDoc($user, $kyc, $selfieImage);
             }
 
 
@@ -139,6 +147,11 @@ class KycService
                 $this->assertValidPan($pan, $files, $user->id);
                 $kyc->pan_card_number = $pan;
                 $this->storePanDoc($user, $kyc, $pan, $files);
+            }
+
+            // ---------- SELFIE ----------
+            if (!empty($files['selfie_image'])) {
+                $this->storeSelfieDoc($user, $kyc, $files);
             }
 
             // ---------- RE-KYC ----------
@@ -439,6 +452,33 @@ class KycService
                 // 'document_number' => $pan,
                 'document_number_encrypted' => $pan,
                 'document_number_last4' => substr($pan, -4),
+                'document_path_front' => $path,
+            ]
+        );
+    }
+
+    protected function storeSelfieDoc(
+        User $user,
+        UserKyc $kyc,
+        array $files
+    ): void {
+        $path = uploadPrivateFile(
+            $files['selfie_image'],
+            "user_kyc/{$user->user_code}/selfie"
+        );
+
+        UserLegalDocument::updateOrCreate(
+            [
+                'user_id' => $user->id,
+                'user_code' => $user->user_code,
+                'user_kyc_id' => $kyc->id,
+                'document_type' => LegalDocumentTypeEnum::SELFIE->value
+            ],
+            [
+                'user_id' => $user->id,
+                'user_code' => $user->user_code,
+                'document_number_encrypted' => null,
+                'document_number_last4' => null,
                 'document_path_front' => $path,
             ]
         );
