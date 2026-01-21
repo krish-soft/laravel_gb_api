@@ -7,6 +7,7 @@ enum AccountEntryTypeEnum: string
     // 🔹 Order main amount (taxable base of full order)
     case ORDER_BASE_AMOUNT          = 'order_base_amount';
     case ORDER_TAX_AMOUNT           = 'order_tax_amount';
+    case ORDER_CHARGE_AMOUNT        = 'order_charge_amount';
 
         // 🔹 Platform charges (order-level)
     case ORDER_PLATFORM_FEE_BASE    = 'order_platform_fee_base';

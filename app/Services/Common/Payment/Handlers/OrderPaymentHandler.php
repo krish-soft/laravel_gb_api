@@ -6,6 +6,7 @@ use App\Enum\Common\Order\OrderStatusEnum;
 use App\Enum\Common\Payment\PaymentStatusEnum;
 use App\Models\Buyer\Order\Order;
 use App\Models\Common\Payment\Payment;
+use App\Services\Accounting\OrderAccountingService;
 use App\Services\Buyer\Checkout\CheckoutRevertService;
 use Illuminate\Support\Facades\DB;
 
@@ -38,7 +39,10 @@ class OrderPaymentHandler
                 'payment_status' => PaymentStatusEnum::PAID->value,
             ]);
 
-         //
+            //
+            // 2️⃣ Record accounting entries
+            app(OrderAccountingService::class)
+                ->recordPaidOrder($order, $payment);
 
             //TODO:: Shipment process can be triggered here or via another service/event
         });
@@ -49,8 +53,7 @@ class OrderPaymentHandler
     public function onFailure(
         Payment $payment,
         string  $reason
-    ): void
-    {
+    ): void {
         DB::transaction(function () use ($payment, $reason) {
 
             /** @var Order $order */
