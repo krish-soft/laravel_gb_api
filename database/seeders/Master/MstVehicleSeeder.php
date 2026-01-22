@@ -18,8 +18,9 @@ class MstVehicleSeeder extends Seeder
         DB::table('mst_vehicles')->insert([
             [
                 'vehicle_name' => 'Bicycle Cart',
-                'vehicle_code' => 'CART',
+                'vehicle_code' => 'cart',
                 'body_type' => 'cart',
+                'fuel_type' => 'human_powered',
                 'capacity_class' => 'micro',
                 'max_weight_kg' => 150,
                 'max_volume_cft' => 25,
@@ -32,8 +33,9 @@ class MstVehicleSeeder extends Seeder
             ],
             [
                 'vehicle_name' => 'Auto Rickshaw',
-                'vehicle_code' => 'RICKSHAW',
+                'vehicle_code' => 'rickshaw',
                 'body_type' => 'rickshaw',
+                'fuel_type' => 'petrol/cng',
                 'capacity_class' => 'small',
                 'max_weight_kg' => 500,
                 'max_volume_cft' => 60,
@@ -46,8 +48,9 @@ class MstVehicleSeeder extends Seeder
             ],
             [
                 'vehicle_name' => 'Pickup Van',
-                'vehicle_code' => 'PICKUP_VAN',
+                'vehicle_code' => 'pickup_van',
                 'body_type' => 'van',
+                'fuel_type' => 'diesel',
                 'capacity_class' => 'medium',
                 'max_weight_kg' => 1000,
                 'max_volume_cft' => 120,
@@ -60,8 +63,9 @@ class MstVehicleSeeder extends Seeder
             ],
             [
                 'vehicle_name' => 'Small Tempo',
-                'vehicle_code' => 'SM_TEMPO',
+                'vehicle_code' => 'sm_tempo',
                 'body_type' => 'truck',
+                'fuel_type' => 'diesel',
                 'capacity_class' => 'large',
                 'max_weight_kg' => 2500,
                 'max_volume_cft' => 300,

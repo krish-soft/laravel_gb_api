@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('description')->nullable();
 
             $table->string('body_type', 50)->nullable();
+            $table->string('fuel_type', 50)->nullable();
             $table->string('capacity_class', 30)->nullable();
 
             $table->decimal('max_weight_kg', 8, 2)->nullable();

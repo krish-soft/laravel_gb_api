@@ -19,6 +19,7 @@ class MstVehicle extends BaseModel
 
         'description',
         'body_type',
+        'fuel_type',
 
         'capacity_class',
 
@@ -41,9 +42,20 @@ class MstVehicle extends BaseModel
         'is_active' => 'boolean',
     ];
 
+
     // scope
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
     }
+
+    // Put logic if vehicle code coming keep it lower case repalce with underscore
+    public function setVehicleCodeAttribute($value)
+    {
+        // Will affect validation ?
+        $this->attributes['vehicle_code'] = strtolower(str_replace(' ', '_', $value));
+    }
+
+
+    //
 }

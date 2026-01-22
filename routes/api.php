@@ -181,7 +181,7 @@ Route::group([
             // Payments
             Route::post('/payments/{payment_code}/reconcile', [PaymentReconcileApiController::class, 'reconcile']);
 
-            Route::prefix('wallet-payouts')->group(function () {
+            Route::prefix('payouts')->group(function () {
                 Route::get('/', [PayoutApiController::class, 'index']);
                 Route::post('{payout}/approve', [PayoutApiController::class, 'approve']);
                 Route::post('{payout}/fail', [PayoutApiController::class, 'fail']);
