@@ -13,9 +13,6 @@ class UserObserver
     public function created(User $user): void
     {
         //
-        if (in_array($user->role, UserRoleEnum::casesAsValues())) {
-            $user->getOrCreateWallet(); // Create the wallet
-        }
     }
 
     /**

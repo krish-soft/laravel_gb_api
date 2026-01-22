@@ -215,18 +215,8 @@ class User extends Authenticatable
         return $this->hasMany(ProductListing::class, 'seller_id', 'id');
     }
 
-    public function wallet()
-    {
-        return $this->hasOne(Wallet::class, 'user_id', 'id');
-    }
 
-    public function getOrCreateWallet(): Wallet
-    {
-        return $this->wallet()->firstOrCreate([
-            'currency' => 'INR',
-            'is_active' => true,
-        ]);
-    }
+    
 
     /* ---------------- BOOLEAN METHODS (AUTH / LOGIC) ---------------- */
 

@@ -16,11 +16,13 @@ class MstPackTypeSeeder extends Seeder
         //
 
         $units = [
-            ['created_at' => now(), 'updated_at' => now(), 'is_active' => true, 'name' => 'Bag', 'unit' => 'BAG'],
-            ['created_at' => now(), 'updated_at' => now(), 'is_active' => true, 'name' => 'Crate', 'unit' => 'CRATE'],
-            ['created_at' => now(), 'updated_at' => now(), 'is_active' => false, 'name' => 'Box', 'unit' => 'BOX'],
-            ['created_at' => now(), 'updated_at' => now(), 'is_active' => false, 'name' => 'Packet', 'unit' => 'PACKET'],
-            ['created_at' => now(), 'updated_at' => now(), 'is_active' => false, 'name' => 'Piece', 'unit' => 'PIECE'],
+            ['created_at' => now(), 'updated_at' => now(), 'is_active' => true, 'name' => 'Bag', 'unit' => 'bag'],
+            ['created_at' => now(), 'updated_at' => now(), 'is_active' => true, 'name' => 'Crate', 'unit' => 'crate'],
+            ['created_at' => now(), 'updated_at' => now(), 'is_active' => false, 'name' => 'Box', 'unit' => 'box'],
+            ['created_at' => now(), 'updated_at' => now(), 'is_active' => false, 'name' => 'Packet', 'unit' => 'packet'],
+            ['created_at' => now(), 'updated_at' => now(), 'is_active' => false, 'name' => 'Piece', 'unit' => 'piece'],
+            ['created_at' => now(), 'updated_at' => now(), 'is_active' => false, 'name' => 'Dozen', 'unit' => 'dz'],
+            ['created_at' => now(), 'updated_at' => now(), 'is_active' => false, 'name' => 'Set', 'unit' => 'set'],
 
 
         ];

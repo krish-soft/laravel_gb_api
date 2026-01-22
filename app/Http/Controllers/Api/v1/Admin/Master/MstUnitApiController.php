@@ -96,12 +96,11 @@ class MstUnitApiController extends ApiResponseWithAdminAuthController
     public function destroy(MstUnit $mstUnit)
     {
         //
-        $user = request()->user();
-
+        
         // Log activity
         logActivity(
             'unit_deleted',        // EVENT
-            $user,                 // ACTOR (who did it)
+            request()->user(),             // ACTOR (who did it)
             get_class($mstUnit), // SUBJECT TYPE (what was affected)
             $mstUnit->id,              // SUBJECT ID
             $mstUnit->unit,       // SUBJECT CODE (human readable)

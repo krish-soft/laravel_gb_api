@@ -4,6 +4,7 @@ use App\Helpers\FileUploadHelper;
 use App\Helpers\PrivateFileUploadHelper;
 use App\Models\Common\Log\ActivityLog;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 
 // Global helper for activity logging
 if (!function_exists('logActivity')) {

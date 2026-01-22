@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use App\Enum\Common\ActionCodeEnum;
 use App\Traits\ApiResponserTrait;
 use Exception;
 use BadMethodCallException;
@@ -33,7 +34,7 @@ class ApiExceptions extends Exception
 
         if ($exception instanceof ModelNotFoundException) {
             $modelName = strtolower(class_basename($exception->getModel()));
-            return $this->errorResponse("Does not exist any {$modelName} model", 404);
+            return $this->showErrorMessage("Does not exist any {$modelName} model", 404);
         }
 
         if ($exception instanceof AuthenticationException) {
@@ -41,17 +42,17 @@ class ApiExceptions extends Exception
         }
 
         if ($exception instanceof AuthorizationException) {
-            return $this->errorResponse($exception->getMessage(), 403);
+            return $this->showErrorMessage($exception->getMessage(), 403);
         }
 
         // Sanctum: invalid or missing token (most common case)
         if ($exception instanceof \Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException) {
-            return $this->errorResponse('Unauthorized: missing or invalid authentication token.', 401);
+            return $this->showErrorMessage('Unauthorized: missing or invalid authentication token.', 401);
         }
 
         // Sanctum: missing ability on token
         if ($exception instanceof \Laravel\Sanctum\Exceptions\MissingAbilityException) {
-            return $this->errorResponse('You do not have the required ability to access this resource.', 403);
+            return $this->showErrorMessage('You do not have the required ability to access this resource.', 403);
         }
 
         // Distinguish between "real" 404 and auth failure that throws RouteNotFoundException
@@ -61,50 +62,50 @@ class ApiExceptions extends Exception
                 // If the match succeeds, the route exists and the RouteNotFoundException
                 // likely came from an auth guard — return 401.
                 RouteFacade::getRoutes()->match($request);
-                return $this->errorResponse('Unauthenticated: access token missing or invalid.', 401);
+                return $this->showErrorMessage('Unauthenticated: access token missing or invalid.', 401);
             } catch (SymfonyNotFoundHttpException $e) {
                 // No route matched the request — real 404
-                return $this->errorResponse('The specified route/url was not found.', 404);
+                return $this->showErrorMessage('The specified route/url was not found.', 404);
             } catch (MethodNotAllowedHttpException $e) {
                 // If route matched by path but method not allowed, return 405
-                return $this->errorResponse('Method not allowed for this request.', 405);
+                return $this->showErrorMessage('Method not allowed for this request.', 405);
             } catch (\Exception $e) {
                 // Any unexpected error while matching — fallback to 404 to avoid exposing internals
                 // return $this->errorResponse('The specified route/url was not found.', 404);
-                return $this->errorResponse($e->getMessage(), $e->getCode() ?: 500);
+                return $this->showErrorMessage($e->getMessage(), $e->getCode() ?: 500);
             }
         }
 
         // Standard NotFoundHttpException (fallback)
         if ($exception instanceof NotFoundHttpException) {
-            return $this->errorResponse('The specified route/url was not found.', 404);
+            return $this->showErrorMessage('The specified route/url was not found.', 404);
         }
 
 
 
         // if ($exception instanceof RouteNotFoundException || $exception instanceof NotFoundHttpException) {
-        //     return $this->errorResponse('The specified route/url was not found.', 404);
+        //     return $this->showErrorMessage('The specified route/url was not found.', 404);
         // }
 
         if ($exception instanceof MethodNotAllowedHttpException) {
-            return $this->errorResponse('Method not allowed for this request.', 405);
+            return $this->showErrorMessage('Method not allowed for this request.', 405);
         }
 
         if ($exception instanceof BadMethodCallException) {
-            return $this->errorResponse('Invalid method called for the request.', 405);
+            return $this->showErrorMessage('Invalid method called for the request.', 405);
         }
 
         if ($exception instanceof HttpException) {
-            return $this->errorResponse($exception->getMessage(), $exception->getStatusCode());
+            return $this->showErrorMessage($exception->getMessage(), $exception->getStatusCode());
         }
 
         if ($exception instanceof QueryException) {
             // Handle specific SQL error codes, e.g., foreign key constraint violations
             $errorCode = $exception->errorInfo[1];
             if ($errorCode == 1451) {
-                return $this->errorResponse('Cannot remove this resource permanently. It is related to another resource.', 409);
+                return $this->showErrorMessage('Cannot remove this resource permanently. It is related to another resource.', 409);
             }
-            return $this->errorResponse($exception->getMessage(), 500);
+            return $this->showErrorMessage($exception->getMessage(), 500);
         }
 
         if ($exception instanceof TokenMismatchException) {
@@ -114,7 +115,7 @@ class ApiExceptions extends Exception
 
 
 
-        return $this->errorResponse('Unexpected error occurred. Please try again later.', 500);
+        return $this->showErrorMessage('Unexpected error occurred. Please try again later.', 500);
     }
 
     // Handle unauthenticated exceptions
@@ -124,7 +125,8 @@ class ApiExceptions extends Exception
             return redirect()->guest('login');
         }
 
-        return $this->errorResponse('Unauthenticated.', 401);
+        // return $this->errorResponse('Unauthenticated.', 401, ActionCodeEnum::FORCE_LOGIN);
+        return $this->showErrorMessageWithAction('Unauthenticated.', 401, ActionCodeEnum::FORCE_LOGIN);
     }
 
     // Convert validation exceptions to a response
@@ -136,7 +138,7 @@ class ApiExceptions extends Exception
             return redirect()->back()->withErrors($errors)->withInput($request->input());
         }
 
-        return $this->errorResponse($errors, 422);
+        return $this->showErrorMessage($errors, 422);
     }
 
     // Check if the request is from the frontend (HTML)

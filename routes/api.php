@@ -202,36 +202,37 @@ Route::group([
 
             ###
             ##### Master  Routes
-            Route::apiResource('mstUnit', MstUnitApiController::class);
-            Route::apiResource('mstPackType', MstPackTypeApiController::class);
+            Route::prefix('master')->group(function () {
+                Route::apiResource('mstUnit', MstUnitApiController::class);
+                Route::apiResource('mstPackType', MstPackTypeApiController::class);
 
-            Route::apiResource('mstVehicle', MstVehicleApiController::class);
+                Route::apiResource('mstVehicle', MstVehicleApiController::class);
 
-            Route::apiResource('mstState', MstStateApiController::class);
-            Route::apiResource('mstZone', MstZoneApiController::class);
+                Route::apiResource('mstState', MstStateApiController::class);
+                Route::apiResource('mstZone', MstZoneApiController::class);
 
-            // Depot Routes
-            Route::apiResource('mstDepot', MstDepotApiController::class);
-            Route::post('mstDepot/addAddress', [MstDepotApiController::class, 'addAddress']);
-            Route::put('mstDepot/{mstDepot}/updateAddress', [MstDepotApiController::class, 'updateAddress']);
+                // Depot Routes
+                Route::apiResource('mstDepot', MstDepotApiController::class);
+                Route::post('mstDepot/addAddress', [MstDepotApiController::class, 'addAddress']);
+                Route::put('mstDepot/{mstDepot}/updateAddress', [MstDepotApiController::class, 'updateAddress']);
 
-            // Product
-            Route::apiResource('mstProductCategory', MstProductCategoryApiController::class);
-            Route::apiResource('mstProduct', MstProductApiController::class);
-            Route::apiResource('mstProductVariant', MstProductVariantApiController::class);
-            Route::apiResource('mstProductPackaging', MstProductPackagingApiController::class);
+                // Product
+                Route::apiResource('mstProductCategory', MstProductCategoryApiController::class);
+                Route::apiResource('mstProduct', MstProductApiController::class);
+                Route::apiResource('mstProductVariant', MstProductVariantApiController::class);
+                Route::apiResource('mstProductPackaging', MstProductPackagingApiController::class);
 
-            // Charges
-            Route::apiResource('mstCharge', MstChargeApiController::class);
-            Route::apiResource('mstChargeLevel', MstChargeLevelApiController::class);
-            Route::apiResource('mstDeliveryChargeRule', MstDeliveryChargeRuleApiController::class);
-            Route::apiResource('mstMinimumOrderChargeRule', MstMinimumOrderChargeRuleApiController::class);
+                // Charges
+                Route::apiResource('mstCharge', MstChargeApiController::class);
+                Route::apiResource('mstChargeLevel', MstChargeLevelApiController::class);
+                Route::apiResource('mstDeliveryChargeRule', MstDeliveryChargeRuleApiController::class);
+                Route::apiResource('mstMinimumOrderChargeRule', MstMinimumOrderChargeRuleApiController::class);
+
+                //
+            });
+
 
             //
-
-
-
-
         });
 
 

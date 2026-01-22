@@ -3,10 +3,31 @@
 namespace App\Models\Master;
 
 use App\Models\BaseModel;
+use Illuminate\Support\Facades\Cache;
 
 class MstFinancialYear extends BaseModel
 {
     //
+
+    protected static function booted()
+    {
+        static::deleting(function () {
+            throw new \Exception('Financial settings cannot be deleted.');
+        });
+
+
+        static::saved(function () {
+            try {
+                if (Cache::has('current_fy')) {
+                    Cache::forget('current_fy');
+                }
+            } catch (\Throwable $e) {
+                // ignore completely
+            }
+        });
+    }
+
+
 
     protected $fillable = [
         'code',
@@ -24,6 +45,5 @@ class MstFinancialYear extends BaseModel
     public static function currentYear()
     {
         return self::latest()->where('is_active', true)->first();
-
-        }
+    }
 }

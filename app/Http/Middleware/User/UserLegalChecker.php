@@ -32,13 +32,13 @@ class UserLegalChecker
                 $rviewComment = $kyc->review_comment ?? null;
 
                 if ($rviewComment) {
-                    return $this->showErrorMessageWithAction(__('messages.error_messages.kyc_already_under_review' . ":'\n" . $rviewComment), 403, ActionCodeEnum::FORCE_KYC->value);
+                    return $this->showErrorMessageWithAction(__('messages.error_messages.kyc_already_under_review' . ":'\n" . $rviewComment), 403, ActionCodeEnum::FORCE_KYC);
                 }
 
-                return $this->showErrorMessageWithAction(__('messages.error_messages.kyc_already_under_review'), 403, ActionCodeEnum::FORCE_KYC->value);
+                return $this->showErrorMessageWithAction(__('messages.error_messages.kyc_already_under_review'), 403, ActionCodeEnum::FORCE_KYC);
             }
 
-            return $this->showErrorMessageWithAction(__('messages.error_messages.kyc_not_approved'), 403, ActionCodeEnum::FORCE_KYC->value);
+            return $this->showErrorMessageWithAction(__('messages.error_messages.kyc_not_approved'), 403, ActionCodeEnum::FORCE_KYC);
         }
 
 

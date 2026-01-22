@@ -19,7 +19,7 @@ trait ApiResponserTrait
     }
 
 
-    protected static function showErrorMessageWithAction($message, $statusCode, $actionCode = null): \Illuminate\Http\JsonResponse
+    protected static function showErrorMessageWithAction($message, $statusCode, ?ActionCodeEnum $actionCode = null): \Illuminate\Http\JsonResponse
     {
         return self::errorResponse($message, $statusCode, $actionCode);
     }
@@ -35,7 +35,7 @@ trait ApiResponserTrait
         );
     }
 
-    protected static function errorResponse($message, $statusCode, $actionCode = null): \Illuminate\Http\JsonResponse
+    protected static function errorResponse($message, $statusCode, ?ActionCodeEnum $actionCode = null): \Illuminate\Http\JsonResponse
     {
         if (is_array($message)) {
             // If $message is an array, convert it to a string representation

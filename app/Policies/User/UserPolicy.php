@@ -12,7 +12,7 @@ class UserPolicy
 
     protected const ACCESS_MODULES = AppModuleEnum::USERS->value;
 
-    public function __construct(AdminPo $policy)
+    public function __construct(AdminPolicyManager $policy)
     {
         $this->policy = $policy;
     }
