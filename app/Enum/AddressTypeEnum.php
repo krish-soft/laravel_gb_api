@@ -26,4 +26,12 @@ enum AddressTypeEnum: string
     // case MAIN = 'main';   // Primary address
     // case AUX  = 'aux';    // Secondary / temporary
     //
+
+    public static function casesAsValues(): array
+    {
+        return array_map(
+            fn(self $case) => $case->value,
+            self::cases()
+        );
+    }
 }

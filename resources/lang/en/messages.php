@@ -89,6 +89,7 @@ return [
         'unauthorized_access'       => 'You are not authorized to access this resource.',
         'unauthorized_access_admin' => 'You are not authorized to access this administrative resource.',
         'unauthorized_action'       => 'You are not authorized to perform this action.',
+        'main_resource_cannot_delete'       =>  'Main resource cannot be deleted as it is essential for system operations.',
 
         /* User & Policy */
         'not_adult'               => 'You must be at least 18 years of age to perform this action.',
@@ -183,7 +184,7 @@ return [
         /* Pricing */
         'invalid_order_amount' => 'Invalid order amount.',
         'invalid_charge_level' => 'Invalid charge level.',
-        'missing_charge_level_pricing_config'=> 'Missing charge level pricing configuration.',
+        'missing_charge_level_pricing_config' => 'Missing charge level pricing configuration.',
         'nothing_to_update'    => 'No changes detected to update.',
         'reason_required'      => 'A reason is required for this action.',
 

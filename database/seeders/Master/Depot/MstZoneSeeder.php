@@ -17,7 +17,7 @@ class MstZoneSeeder extends Seeder
 
         // Fetch Gujarat state id
         $gujaratId = DB::table('mst_states')
-            ->where('iso_code', 'IN-GJ')
+            ->where('iso_code', 'GJ')
             ->value('id');
 
         if (!$gujaratId) {

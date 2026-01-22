@@ -12,11 +12,18 @@ class MstZoneApiController extends ApiResponseWithAdminAuthController
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         //
 
-        $mstZones = MstZone::all();
+        $mstQuery = MstZone::with('state');
+        if ($request->has('is_active')) {
+            $mstQuery->where('is_active', filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN));
+        }
+
+        $mstZones = $mstQuery->get();
+
+
         return $this->successResponse(__('messages.success_messages.success_get'), $mstZones);
     }
 

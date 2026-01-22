@@ -17,7 +17,7 @@ class MstDepot extends BaseModel
         static::creating(function ($depot) {
 
             // If code is already set (eg: manual insert), do nothing
-            if (! empty($depot->code)) {
+            if (!empty($depot->code)) {
                 return;
             }
 
@@ -68,6 +68,9 @@ class MstDepot extends BaseModel
         'is_active' => 'boolean',
     ];
 
+    protected $guarded = [
+        'code',
+    ];
     // scoope
 
     public function scopeActive($query)
@@ -79,7 +82,7 @@ class MstDepot extends BaseModel
 
     public function address()
     {
-        return $this->morphOne(Address::class, 'addr_code');
+        return $this->belongsTo(Address::class, 'addr_code',  'addr_code');
     }
 
     public function zone()

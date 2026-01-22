@@ -203,6 +203,7 @@ Route::group([
             ###
             ##### Master  Routes
             Route::prefix('master')->group(function () {
+
                 Route::apiResource('mstUnit', MstUnitApiController::class);
                 Route::apiResource('mstPackType', MstPackTypeApiController::class);
 
@@ -213,8 +214,8 @@ Route::group([
 
                 // Depot Routes
                 Route::apiResource('mstDepot', MstDepotApiController::class);
-                Route::post('mstDepot/addAddress', [MstDepotApiController::class, 'addAddress']);
-                Route::put('mstDepot/{mstDepot}/updateAddress', [MstDepotApiController::class, 'updateAddress']);
+                Route::post('mstDepot/{depot}/address', [MstDepotApiController::class, 'saveAddress']);
+
 
                 // Product
                 Route::apiResource('mstProductCategory', MstProductCategoryApiController::class);

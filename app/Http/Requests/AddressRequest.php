@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enum\AddressTypeEnum;
 use Illuminate\Foundation\Http\FormRequest;
 
 class AddressRequest extends FormRequest
@@ -11,7 +12,7 @@ class AddressRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -30,12 +31,14 @@ class AddressRequest extends FormRequest
             'village' => 'nullable|string|max:100',
             'taluka' => 'nullable|string|max:100',
             'city' => 'required|string|max:100',
-            'state' => 'required|string|max:100',
-            'state_iso' => 'nullable|string|max:10',
-            'postal_code' => 'required|string|max:20',
+            'state' => 'required|string|max:40|exists:mst_states,name',
+            'state_iso' => 'nullable|string|max:2|exists:mst_states,iso_code',
+            'postal_code' => 'required|string|max:6',
 
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
+
+            'addr_type' => 'nullable|string|in:' . implode(',', AddressTypeEnum::casesAsValues()),
         ];
     }
 }

@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Api\v1\Admin\Master\Depot;
 
+use App\Enum\AddressTypeEnum;
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
 use App\Http\Requests\AddressRequest;
 use App\Models\Common\Address;
 use App\Models\Master\Depot\MstDepot;
 use App\Models\Master\Depot\MstZone;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class MstDepotApiController extends ApiResponseWithAdminAuthController
 {
@@ -17,7 +19,7 @@ class MstDepotApiController extends ApiResponseWithAdminAuthController
     public function index()
     {
         //
-        $mstDepots = MstDepot::all();
+        $mstDepots = MstDepot::with('zone', 'zone.state', 'address')->get();
         return $this->successResponse(__('messages.success_messages.success_get'), $mstDepots);
     }
 
@@ -28,9 +30,9 @@ class MstDepotApiController extends ApiResponseWithAdminAuthController
     {
         //
         $request->validate([
-            'zone_id' => 'required|exists:mst_zones,id',
-            'depot_name' => 'required|string|max:255|unique:mst_depots,depot_name',
-            'depot_code' => 'required|string|max:50|unique:mst_depots,depot_code',
+            'zone_id' => 'nullable|exists:mst_zones,id',
+            'name' => 'required|string|max:255|unique:mst_depots,name',
+            'code' => 'nullable|string|max:50|unique:mst_depots,code',
             'contact_name' => 'required|string|max:100',
 
             'buyer_cutoff_time' => 'required|date_format:H:i',
@@ -42,7 +44,7 @@ class MstDepotApiController extends ApiResponseWithAdminAuthController
         ]);
 
         $mstDepot = MstDepot::create($request->all());
-        $mstZone  = MstZone::firstOrFail($request->zone_id);
+        $mstZone = MstZone::findOrFail($request->zone_id);
 
         $user = $request->user();
         // Log activity
@@ -51,11 +53,11 @@ class MstDepotApiController extends ApiResponseWithAdminAuthController
             $user,                 // ACTOR (who did it)
             get_class($mstDepot), // SUBJECT TYPE (what was affected)
             $mstDepot->id,              // SUBJECT ID
-            $mstDepot->depot_code,       // SUBJECT CODE (human readable)
+            $mstDepot->code,       // SUBJECT CODE (human readable)
             [
                 'zone_code' => $mstZone->zone_code,
-                'depot_name' => $mstDepot->depot_name,
-                'depot_code' => $mstDepot->depot_code,
+                'depot_name' => $mstDepot->name,
+                'depot_code' => $mstDepot->code,
             ]
         );
 
@@ -68,6 +70,9 @@ class MstDepotApiController extends ApiResponseWithAdminAuthController
     public function show(MstDepot $mstDepot)
     {
         //
+
+        $mstDepot = MstDepot::with('zone', 'zone.state', 'address')->findOrFail($mstDepot->id);
+
         return $this->successResponse(__('messages.success_messages.success_get'), $mstDepot);
     }
 
@@ -80,8 +85,8 @@ class MstDepotApiController extends ApiResponseWithAdminAuthController
 
         $request->validate([
             'zone_id' => 'required|exists:mst_zones,id',
-            'depot_name' => 'required|string|max:255|unique:mst_depots,depot_name,' . $mstDepot->id,
-            'depot_code' => 'required|string|max:50|unique:mst_depots,depot_code,' . $mstDepot->id,
+            'name' => 'required|string|max:255|unique:mst_depots,name,' . $mstDepot->id,
+            // 'code' => 'required|string|max:50|unique:mst_depots,code,' . $mstDepot->id,
             'contact_name' => 'required|string|max:100',
 
             'buyer_cutoff_time' => 'required|date_format:H:i',
@@ -94,7 +99,7 @@ class MstDepotApiController extends ApiResponseWithAdminAuthController
 
         $mstDepot->update($request->all());
 
-        $mstZone  = MstZone::firstOrFail($request->zone_id);
+        $mstZone = MstZone::findOrFail($request->zone_id);
         $user = $request->user();
         // Log activity
         logActivity(
@@ -102,11 +107,11 @@ class MstDepotApiController extends ApiResponseWithAdminAuthController
             $user,                 // ACTOR (who did it)
             get_class($mstDepot), // SUBJECT TYPE (what was affected)
             $mstDepot->id,              // SUBJECT ID
-            $mstDepot->depot_code,       // SUBJECT CODE (human readable)
+            $mstDepot->code,       // SUBJECT CODE (human readable)
             [
                 'zone_code' => $mstZone->zone_code,
-                'depot_name' => $mstDepot->depot_name,
-                'depot_code' => $mstDepot->depot_code,
+                'depot_name' => $mstDepot->name,
+                'depot_code' => $mstDepot->code,
             ]
         );
 
@@ -119,6 +124,8 @@ class MstDepotApiController extends ApiResponseWithAdminAuthController
     public function destroy(MstDepot $mstDepot)
     {
         //
+        // Not to delete depot anyhow 
+        return $this->errorResponse(__('messages.error_messages.main_resource_cannot_delete'), 403);
 
         // We can not delete depot once added
 
@@ -129,10 +136,10 @@ class MstDepotApiController extends ApiResponseWithAdminAuthController
             $user,                 // ACTOR (who did it)
             get_class($mstDepot), // SUBJECT TYPE (what was affected)
             $mstDepot->id,              // SUBJECT ID
-            $mstDepot->depot_code,       // SUBJECT CODE (human readable)
+            $mstDepot->code,       // SUBJECT CODE (human readable)
             [
-                'depot_name' => $mstDepot->depot_name,
-                'depot_code' => $mstDepot->depot_code,
+                'depot_name' => $mstDepot->name,
+                'depot_code' => $mstDepot->code,
             ]
         );
         $mstDepot->delete();
@@ -141,63 +148,52 @@ class MstDepotApiController extends ApiResponseWithAdminAuthController
 
 
     // Add Address To Depot
-    public function addAddress(AddressRequest $request, MstDepot $mstDepot)
+    public function saveAddress(AddressRequest $request, MstDepot $depot)
     {
-        //
+        // Log::info('Saving address for depot', ['depot_id' => $depot->id]);
 
-        // Already Exist then give error
-        if (!empty($mstDepot->addr_code)) {
-            return $this->errorResponse(__('messages.error_messages.address_exists'), 422);
+        $data = $request->validated();
+
+        $data['addr_type'] = AddressTypeEnum::DEPOT->value;
+
+
+        if ($depot->addr_code) {
+            // UPDATE
+            $address = Address::where('addr_code', $depot->addr_code)
+                ->firstOrFail();
+
+            $address->update($data);
+
+            $event = 'depot_address_updated';
+        } else {
+            // CREATE
+            $address = Address::create($data);
+
+            $depot->update([
+                'addr_code' => $address->addr_code,
+            ]);
+
+            $event = 'depot_address_added';
         }
 
-        $address = Address::create($request->all());
-        $mstDepot->addr_code = $address->addr_code;
-
-        $mstDepot->save();
-
-        $user = $request->user();
-        // Log activity
         logActivity(
-            'depot_address_added',        // EVENT
-            $user,                 // ACTOR (who did it)
-            get_class($mstDepot), // SUBJECT TYPE (what was affected)
-            $mstDepot->id,              // SUBJECT ID
-            $mstDepot->depot_code,       // SUBJECT CODE (human readable)
+            $event,
+            $request->user(),
+            MstDepot::class,
+            $depot->id,
+            $depot->code,
             [
-                'depot_name' => $mstDepot->depot_name,
-                'depot_code' => $mstDepot->depot_code,
+                'depot_name' => $depot->name,
+                'depot_code' => $depot->code,
                 'addr_code' => $address->addr_code,
             ]
         );
 
-        return $this->showSuccessMessage(__('messages.success_messages.success_update'), 200);
-    }
-
-    // update Address of Depot
-    public function updateAddress(AddressRequest $request, MstDepot $mstDepot)
-    {
-        //
-
-        // Check same Address or not
-        $address = Address::where('addr_code', $mstDepot->addr_code)->firstOrFail();
-
-        $address->update($request->all());
-
-        $user = $request->user();
-        // Log activity
-        logActivity(
-            'depot_address_updated',        // EVENT
-            $user,                 // ACTOR (who did it)
-            get_class($mstDepot), // SUBJECT TYPE (what was affected)
-            $mstDepot->id,              // SUBJECT ID
-            $mstDepot->depot_code,       // SUBJECT CODE (human readable)
-            [
-                'depot_name' => $mstDepot->depot_name,
-                'depot_code' => $mstDepot->depot_code,
-                'addr_code' => $address->addr_code,
-            ]
+        return $this->showSuccessMessage(
+            __('messages.success_messages.success_update'),
+            200
         );
-
-        return $this->showSuccessMessage(__('messages.success_messages.success_update'), 200);
     }
+
+    //
 }

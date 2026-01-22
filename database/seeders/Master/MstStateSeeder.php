@@ -24,7 +24,7 @@ class MstStateSeeder extends Seeder
             ['created_at' => now(), 'updated_at' => now(), 'is_ut' => false, 'name' => 'Bihar', 'iso_code' => 'BR', 'language' => 'hi', 'type' => 'ST', 'is_active' => false],
             ['created_at' => now(), 'updated_at' => now(), 'is_ut' => false, 'name' => 'Chhattisgarh', 'iso_code' => 'CG', 'language' => 'hi', 'type' => 'ST', 'is_active' => false],
             ['created_at' => now(), 'updated_at' => now(), 'is_ut' => false, 'name' => 'Goa', 'iso_code' => 'GA', 'language' => 'kok', 'type' => 'ST', 'is_active' => false],
-            ['created_at' => now(), 'updated_at' => now(), 'is_ut' => false, 'name' => 'Gujarat', 'iso_code' => 'GJ', 'language' => 'gu', 'type' => 'ST', 'is_active' => false],
+            ['created_at' => now(), 'updated_at' => now(), 'is_ut' => false, 'name' => 'Gujarat', 'iso_code' => 'GJ', 'language' => 'gu', 'type' => 'ST', 'is_active' => true],
             ['created_at' => now(), 'updated_at' => now(), 'is_ut' => false, 'name' => 'Haryana', 'iso_code' => 'HR', 'language' => 'hi', 'type' => 'ST', 'is_active' => false],
             ['created_at' => now(), 'updated_at' => now(), 'is_ut' => false, 'name' => 'Himachal Pradesh', 'iso_code' => 'HP', 'language' => 'hi', 'type' => 'ST', 'is_active' => false],
             ['created_at' => now(), 'updated_at' => now(), 'is_ut' => false, 'name' => 'Jharkhand', 'iso_code' => 'JH', 'language' => 'hi', 'type' => 'ST', 'is_active' => false],
