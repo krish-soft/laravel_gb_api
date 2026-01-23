@@ -13,10 +13,14 @@ class MstChargeLevelApiController extends ApiResponseWithAdminAuthController
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         //
-        $mstChargeLevels = MstChargeLevel::all();
+        $mstChargeLevelsQuery = MstChargeLevel::latest();
+        if ($request->has('is_active')) {
+            $mstChargeLevelsQuery->where('is_active', filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN));
+        }
+        $mstChargeLevels = $mstChargeLevelsQuery->get();
 
         return $this->successResponse(__('messages.success_messages.success_get'), $mstChargeLevels);
     }
@@ -30,7 +34,7 @@ class MstChargeLevelApiController extends ApiResponseWithAdminAuthController
         $request->validate([
             'code' => 'required|unique:mst_charge_levels,code',
             'name' => 'required|string|max:100|unique:mst_charge_levels,name',
-            'description' => 'required|string|min:10|max:255',
+            'description' => 'required|string|min:5|max:255',
             'user_role_type' => 'required|string|in:' . implode(',', array_map(fn($case) => $case->value, UserRoleEnum::cases())),
         ]);
 
@@ -74,7 +78,7 @@ class MstChargeLevelApiController extends ApiResponseWithAdminAuthController
         $request->validate([
             'code' => 'required|unique:mst_charge_levels,code,' . $mstChargeLevel->id,
             'name' => 'required|string|max:100|unique:mst_charge_levels,name,' . $mstChargeLevel->id,
-            'description' => 'required|string|min:10|max:255',
+            'description' => 'required|string|min:5|max:255',
             'user_role_type' => 'required|string|in:' . implode(',', array_map(fn($case) => $case->value, UserRoleEnum::cases())),
         ]);
 
@@ -103,10 +107,12 @@ class MstChargeLevelApiController extends ApiResponseWithAdminAuthController
     public function destroy(MstChargeLevel $mstChargeLevel)
     {
         //
-        return $this->showErrorMessage(
-            __('messages.error_messages.cannot_delete_used_in_transactions'),
-            409
-        );
+        if ($mstChargeLevel->minimumChargeRules()->exists() || $mstChargeLevel->deliveryChargeRules()->exists()) {
+            return $this->showErrorMessage(
+                __('messages.error_messages.cannot_delete_used_in_transactions'),
+                409
+            );
+        }
 
         // Log activity
         logActivity(

@@ -3,6 +3,7 @@
 namespace App\Models\Master\Charge;
 
 use App\Models\BaseModel;
+use App\Models\Master\Charge\Rule\MstMinimumOrderChargeRule;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -31,9 +32,14 @@ class MstChargeLevel extends BaseModel
     }
 
     // Relationships
-
-    public function charges()
+    public function minimumChargeRules()
     {
-        return $this->hasMany(MstCharge::class, 'charge_level_id');
+        return $this->hasMany(MstMinimumOrderChargeRule::class, 'charge_level_id');
+    }
+
+
+    public function deliveryChargeRules()
+    {
+        return $this->hasMany(MstMinimumOrderChargeRule::class, 'charge_level_id');
     }
 }

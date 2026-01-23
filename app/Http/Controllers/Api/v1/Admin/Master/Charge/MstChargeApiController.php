@@ -12,10 +12,14 @@ class MstChargeApiController extends ApiResponseWithAdminAuthController
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         //
-        $mstCharges = MstCharge::all();
+        $mstChargesQuery = MstCharge::latest();
+        if ($request->has('is_active')) {
+            $mstChargesQuery->where('is_active', filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN));
+        }
+        $mstCharges = $mstChargesQuery->get();
 
         return $this->successResponse(__('messages.success_messages.success_get'), $mstCharges);
     }
