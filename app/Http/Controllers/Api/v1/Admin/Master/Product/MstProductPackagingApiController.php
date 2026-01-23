@@ -16,10 +16,14 @@ class MstProductPackagingApiController extends ApiResponseWithAdminAuthControlle
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         //
-        $mstProductPackagings = MstProductPackaging::all();
+        $mstProductPackagingsQuery = MstProductPackaging::with('product')->latest();
+        if ($request->has('is_active')) {
+            $mstProductPackagingsQuery->where('is_active', filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN));
+        }
+        $mstProductPackagings = $mstProductPackagingsQuery->get();
 
         return $this->successResponse(__('messages.success_messages.success_get'), $mstProductPackagings);
     }

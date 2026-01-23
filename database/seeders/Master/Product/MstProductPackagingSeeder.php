@@ -17,6 +17,7 @@ class MstProductPackagingSeeder extends Seeder
         // Fetch all active products
         $vegetableCategoryId = DB::table('mst_product_categories')
             ->where('category_code', '07C0001')
+            ->where('is_active', true)
             ->value('id');
 
         $products = DB::table('mst_products')

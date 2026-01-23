@@ -12,10 +12,15 @@ class MstUnitApiController extends ApiResponseWithAdminAuthController
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         //
-        $mstUnits = MstUnit::all();
+        $mstUnitsQuery = MstUnit::latest();
+        if ($request->has('is_active')) {
+            $mstUnitsQuery->where('is_active', filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN));
+        }
+        $mstUnits = $mstUnitsQuery->get();
+        
         return $this->successResponse(__('messages.success_messages.success_get'), $mstUnits);
     }
 

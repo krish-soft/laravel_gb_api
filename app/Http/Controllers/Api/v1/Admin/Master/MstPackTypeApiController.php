@@ -12,11 +12,15 @@ class MstPackTypeApiController extends ApiResponseWithAdminAuthController
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         //
+        $mstPackTypesQuery = MstPackType::latest();
+        if ($request->has('is_active')) {
+            $mstPackTypesQuery->where('is_active', filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN));
+        }
+        $mstPackTypes = $mstPackTypesQuery->get();
 
-        $mstPackTypes = MstPackType::all();
         return $this->successResponse(__('messages.success_messages.success_get'), $mstPackTypes);
     }
 
