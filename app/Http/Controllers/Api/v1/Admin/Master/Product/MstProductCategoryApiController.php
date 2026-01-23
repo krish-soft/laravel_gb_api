@@ -34,7 +34,7 @@ class MstProductCategoryApiController extends ApiResponseWithAdminAuthController
             'name' => 'required|string|max:150',
             'description' => 'nullable|string|max:255',
             'hsn_chapter' => 'required|string|max:10',
-            'picture' => 'nullable|image|max:2048|mimes:jpeg,png,jpg',
+            // 'picture' => 'nullable|image|max:2048|mimes:jpeg,png,jpg', // Files.0
         ]);
         // exist check
         $existingCategory = MstProductCategory::where('name', $request->name)->orWhere('hsn_chapter', $request->hsn_chapter)->first();
@@ -83,13 +83,12 @@ class MstProductCategoryApiController extends ApiResponseWithAdminAuthController
             'name' => 'required|string|max:150',
             'description' => 'nullable|string|max:255',
             'hsn_chapter' => 'required|string|max:10',
-            'picture' => 'nullable|image|max:2048|mimes:jpeg,png,jpg',
+            // 'files.0' => 'nullable|image|max:2048|mimes:jpeg,png,jpg',
         ]);
 
         // Check same only hsn not exist
-        $existingCategory = MstProductCategory::where(function ($query) use ($request, $mstProductCategory) {
-            $query->where('hsn_chapter', $request->hsn_chapter);
-        })->where('id', '!=', $mstProductCategory->id)->first();
+        $existingCategory = MstProductCategory::where('hsn_chapter', $request->hsn_chapter)->where('id', '!=', $mstProductCategory->id)->first();
+
         if ($existingCategory) {
             return $this->showErrorMessage(
                 __('messages.error_messages.already_exists'),
@@ -111,6 +110,8 @@ class MstProductCategoryApiController extends ApiResponseWithAdminAuthController
                 'hsn_chapter' => $mstProductCategory->hsn_chapter,
             ]
         );
+
+        return $this->showSuccessMessage(__('messages.success_messages.success_update'), 200);
     }
 
     /**
