@@ -5,6 +5,7 @@ namespace App\Models\Master\Depot;
 use App\Models\BaseModel;
 use App\Models\Common\Address;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class MstDepot extends BaseModel
 {
@@ -88,5 +89,18 @@ class MstDepot extends BaseModel
     public function zone()
     {
         return $this->belongsTo(MstZone::class, 'zone_id');
+    }
+
+
+    protected $appends = ['pictureUrl'];
+
+    // Ssign Picture url in return not picture atrtrilbute as pictureUrl
+
+    public function getPictureUrlAttribute()
+    {
+        if ($this->picture) {
+            return Storage::disk('public')->url($this->picture);
+        }
+        return null;
     }
 }

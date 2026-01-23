@@ -90,6 +90,8 @@ return [
         'unauthorized_access_admin' => 'You are not authorized to access this administrative resource.',
         'unauthorized_action'       => 'You are not authorized to perform this action.',
         'main_resource_cannot_delete'       =>  'Main resource cannot be deleted as it is essential for system operations.',
+        /* File Upload */
+        'file_upload_failed'        => 'File upload failed. Please try again.',
 
         /* User & Policy */
         'not_adult'               => 'You must be at least 18 years of age to perform this action.',

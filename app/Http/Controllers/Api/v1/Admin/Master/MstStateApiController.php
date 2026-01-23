@@ -12,10 +12,14 @@ class MstStateApiController extends ApiResponseWithAdminAuthController
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         //
-        $mstStates = MstState::all();
+        $mstStateQuery = MstState::query();
+        if ($request->has('is_active')) {
+            $mstStateQuery->where('is_active', filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN));
+        }
+        $mstStates = $mstStateQuery->get();
 
         return $this->successResponse(__('messages.success_messages.success_get'), $mstStates);
     }

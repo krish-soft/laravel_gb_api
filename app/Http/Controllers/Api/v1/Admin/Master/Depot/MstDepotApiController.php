@@ -195,5 +195,103 @@ class MstDepotApiController extends ApiResponseWithAdminAuthController
         );
     }
 
+
+    // Upload photo for depot
+    public function uploadPhoto(Request $request, MstDepot $depot)
+    {
+        $request->validate([
+            'files' => 'required|array|max:2048', // Fiels are startnad array from vue
+        ]);
+
+
+        // so we need only first file
+        // Validate image file
+        $request->validate([
+            'files.0' => 'required|image|mimes:jpeg,jpg,png|max:2048', // max 2MB
+        ]);
+
+        $pictureFile = $request->file('files.0');
+
+
+        // Delete old photo if exists
+        if ($depot->picture && \Illuminate\Support\Facades\Storage::disk('public')->exists($depot->picture)) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($depot->picture);
+        }
+
+        try {
+
+            // Handle file upload
+            $path = null;
+            if ($pictureFile) {
+                // $filename = $depot->code . '_' . time() . '.' . $pictureFile->getClientOriginalExtension();
+                $path = $pictureFile->store('depot_photos/' . $depot->code,  'public');
+            }
+        } catch (\Exception $e) {
+            Log::error('Error uploading depot photo', ['error' => $e->getMessage()]);
+            // return $this->errorResponse(__('messages.error_messages.file_upload_failed'), 500);
+        }
+
+        // if no file then error
+        if (!$path) {
+            return $this->errorResponse(__('messages.error_messages.file_upload_failed'), 500);
+        }
+
+        // Update depot with new photo path
+        $depot->update([
+            'picture' => $path,
+        ]);
+
+        logActivity(
+            'depot_photo_uploaded',
+            $request->user(),
+            MstDepot::class,
+            $depot->id,
+            $depot->code,
+            [
+                'depot_name' => $depot->name,
+                'depot_code' => $depot->code,
+                'photo_path' => $path,
+            ]
+        );
+
+        return $this->showSuccessMessage(
+            __('messages.success_messages.success_update'),
+            200
+        );
+    }
+
+
+    // Delete photo for depot
+    public function deletePhoto(Request $request, MstDepot $depot)
+    {
+        // Delete old photo if exists
+        if ($depot->picture && \Illuminate\Support\Facades\Storage::disk('public')->exists($depot->picture)) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($depot->picture);
+        }
+
+        // Update depot to remove photo path
+        $depot->update([
+            'picture' => null,
+        ]);
+
+        // Log activity
+        logActivity(
+            'depot_photo_deleted',
+            $request->user(),
+            MstDepot::class,
+            $depot->id,
+            $depot->code,
+            [
+                'depot_name' => $depot->name,
+                'depot_code' => $depot->code,
+            ]
+        );
+
+        return $this->showSuccessMessage(
+            __('messages.success_messages.success_delete'),
+            200
+        );
+    }
+
     //
 }

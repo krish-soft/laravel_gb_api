@@ -214,7 +214,9 @@ Route::group([
 
                 // Depot Routes
                 Route::apiResource('mstDepot', MstDepotApiController::class);
-                Route::post('mstDepot/{depot}/address', [MstDepotApiController::class, 'saveAddress']);
+                Route::post('mstDepot/{depot}/address', [MstDepotApiController::class, 'saveAddress']); // Save address for depot
+                Route::post('mstDepot/{depot}/uploadPicture', [MstDepotApiController::class, 'uploadPhoto']); // Upload photo for depot
+                Route::delete('mstDepot/{depot}/deletePicture', [MstDepotApiController::class, 'deletePhoto']); // Delete photo for depot
 
 
                 // Product
