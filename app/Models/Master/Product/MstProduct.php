@@ -3,8 +3,11 @@
 namespace App\Models\Master\Product;
 
 use App\Models\BaseModel;
+use App\Models\Seller\Product\ProductListing;
+use App\Models\Seller\Product\ProductListingItem;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class MstProduct extends BaseModel
 {
@@ -103,5 +106,22 @@ class MstProduct extends BaseModel
     public function packages()
     {
         return $this->hasMany(MstProductPackaging::class, 'product_id');
+    }
+
+    public function farmerListingItems()
+    {
+        return $this->hasMany(ProductListingItem::class, 'product_id', 'id');
+    }
+
+
+
+    protected $appends = ['pictureUrl'];
+
+    public function getPictureUrlAttribute()
+    {
+        if ($this->picture) {
+            return Storage::disk('public')->url($this->picture);
+        }
+        return null;
     }
 }

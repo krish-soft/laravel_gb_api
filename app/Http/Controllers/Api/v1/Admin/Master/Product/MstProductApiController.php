@@ -15,10 +15,15 @@ class MstProductApiController extends ApiResponseWithAdminAuthController
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         //
-        $mstProducts = MstProduct::all();
+        $productQuery = MstProduct::with('category')->latest();
+        if ($request->has('is_active')) {
+            $productQuery->where('is_active', filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN));
+        }
+
+        $mstProducts = $productQuery->get();
 
         return $this->successResponse(__('messages.success_messages.success_get'), $mstProducts);
     }
@@ -32,7 +37,7 @@ class MstProductApiController extends ApiResponseWithAdminAuthController
         $request->validate([
             'name' => 'required|string|max:150',
             'category_id' => 'required|exists:mst_product_categories,id',
-            'description' => 'required|string|min:10',
+            'description' => 'required|string|min:5|max:255',
             'hsn' => 'required|string|max:15',
 
             'upc' => 'nullable|string|max:20',
@@ -40,7 +45,7 @@ class MstProductApiController extends ApiResponseWithAdminAuthController
             'grade' => 'nullable|string|max:50',
             'size' => 'nullable|string|max:50',
             'origin' => 'nullable|string|max:50',
-            'picture' => 'nullable|image|max:2048|mimes:jpeg,png,jpg',
+            'files.0' => 'nullable|image|max:2048|mimes:jpeg,png,jpg',
         ]);
 
         // Check Already Exist any of key except name & descriptions
@@ -64,9 +69,9 @@ class MstProductApiController extends ApiResponseWithAdminAuthController
         }
 
         $filePath = null;
-        if ($request->hasFile('picture')) {
+        if ($request->hasFile('files.0')) {
             $filePath =  uploadPublicFile(
-                $request->file('picture'),
+                $request->file('files.0'),
                 self::$FILE_PATH,
             );
         }
@@ -113,7 +118,7 @@ class MstProductApiController extends ApiResponseWithAdminAuthController
         $request->validate([
             'name' => 'required|string|max:150',
             'category_id' => 'required|exists:mst_product_categories,id',
-            'description' => 'required|string|min:10|max:255',
+            'description' => 'required|string|min:5|max:255',
             'hsn' => 'required|string|max:15',
 
             'upc' => 'nullable|string|max:20',
@@ -121,7 +126,7 @@ class MstProductApiController extends ApiResponseWithAdminAuthController
             'grade' => 'nullable|string|max:50',
             'size' => 'nullable|string|max:50',
             'origin' => 'nullable|string|max:50',
-            'picture' => 'nullable|image|max:2048|mimes:jpeg,png,jpg',
+            'files.0' => 'nullable|image|max:2048|mimes:jpeg,png,jpg',
         ]);
 
         // Check Already Exist any of key except name & descriptions
@@ -146,9 +151,9 @@ class MstProductApiController extends ApiResponseWithAdminAuthController
 
 
         $filePath = $mstProduct->picture;
-        if ($request->hasFile('picture')) {
+        if ($request->hasFile('files.0')) {
             $filePath =  uploadPublicFile(
-                $request->file('picture'),
+                $request->file('files.0'),
                 self::$FILE_PATH,
                 $mstProduct->picture,
             );
@@ -181,7 +186,7 @@ class MstProductApiController extends ApiResponseWithAdminAuthController
     {
         //
 
-        if ($mstProduct->variants()->exists() || $mstProduct->packages()->exists() || $mstProduct->marketListings()->exists()) {
+        if ($mstProduct->variants()->exists() || $mstProduct->packages()->exists() || $mstProduct->farmerListingItems()->exists()) {
             return $this->showErrorMessage(
                 __('messages.error_messages.cannot_delete_used_in_transactions'),
                 409

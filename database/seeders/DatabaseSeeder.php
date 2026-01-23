@@ -47,7 +47,7 @@ class DatabaseSeeder extends Seeder
             // Products
             \Database\Seeders\Master\Product\MstCategorySeeder::class,
             \Database\Seeders\Master\Product\MstProductSeeder::class,
-            // \Database\Seeders\Master\Product\MstProductVariantSeeder::class,
+            \Database\Seeders\Master\Product\MstProductVariantSeeder::class,
             \Database\Seeders\Master\Product\MstProductPackagingSeeder::class,
 
 

@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('mst_product_variants', function (Blueprint $table) {
             $table->id();
 
+            $table->string('picture')->nullable();
 
             $table->foreignId('product_id')
                 ->constrained('mst_products')

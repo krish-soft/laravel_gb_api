@@ -15,11 +15,15 @@ class MstProductCategoryApiController extends ApiResponseWithAdminAuthController
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         //
+        $productCategoryQuery = MstProductCategory::latest();
+        if ($request->has('is_active')) {
+            $productCategoryQuery->where('is_active', filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN));
+        }
 
-        $mstProductCategories = MstProductCategory::all();
+        $mstProductCategories = $productCategoryQuery->get();
 
         return $this->successResponse(__('messages.success_messages.success_get'), $mstProductCategories);
     }

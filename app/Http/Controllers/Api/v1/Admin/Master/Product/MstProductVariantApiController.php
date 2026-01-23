@@ -15,11 +15,16 @@ class MstProductVariantApiController extends ApiResponseWithAdminAuthController
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         //
 
-        $mstProductVariants = MstProductVariant::all();
+        $mstProductVariantsQuery = MstProductVariant::with('product')->latest();
+        if ($request->has('is_active')) {
+            $mstProductVariantsQuery->where('is_active', filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN));
+        }
+
+        $mstProductVariants = $mstProductVariantsQuery->get();
 
         return $this->successResponse(__('messages.success_messages.success_get'), $mstProductVariants);
     }
@@ -33,9 +38,9 @@ class MstProductVariantApiController extends ApiResponseWithAdminAuthController
         $request->validate([
             'picture' => 'nullable|image|max:2048|mimes:jpeg,png,jpg',
             'product_id' => 'required|exists:mst_products,id',
-            'variant_name' => 'required|string|max:100',
-            'description' => 'required|string|min:10|max:255',
-            'hsn' => 'required|string|max:20',
+            'name' => 'required|string|max:100',
+            'description' => 'required|string|min:5|max:255',
+            'hsn' => 'nullable|string|max:20',
             'upc' => 'nullable|string|max:20',
 
             'sku' => 'nullable|string|max:20',
@@ -79,7 +84,7 @@ class MstProductVariantApiController extends ApiResponseWithAdminAuthController
             $mstProductVariant->variant_code, // SUBJECT CODE
             [                                       // META
                 'product_id' => $mstProductVariant->product_id,
-                'variant_name' => $mstProductVariant->variant_name,
+                'variant_name' => $mstProductVariant->name,
             ]
         );
 
@@ -105,10 +110,9 @@ class MstProductVariantApiController extends ApiResponseWithAdminAuthController
         $request->validate([
             'picture' => 'nullable|image|max:2048|mimes:jpeg,png,jpg',
             'product_id' => 'required|exists:mst_products,id',
-            'variant_name' => 'required|string|max:100',
-            'description' => 'required|string|min:10|max:255',
-            'hsn' => 'required|string|max:20',
-
+            'name' => 'required|string|max:100',
+            'description' => 'required|string|min:5|max:255',
+            'hsn' => 'nullable|string|max:20',
             'upc' => 'nullable|string|max:20',
             'sku' => 'nullable|string|max:20',
         ]);
@@ -151,7 +155,7 @@ class MstProductVariantApiController extends ApiResponseWithAdminAuthController
             $mstProductVariant->variant_code, // SUBJECT CODE
             [                                       // META
                 'product_id' => $mstProductVariant->product_id,
-                'variant_name' => $mstProductVariant->variant_name,
+                'variant_name' => $mstProductVariant->name,
             ]
         );
 
@@ -165,7 +169,7 @@ class MstProductVariantApiController extends ApiResponseWithAdminAuthController
     {
         //
 
-        if ($mstProductVariant->marketListings()->exists()) {
+        if ($mstProductVariant->farmerListingItems()->exists()) {
             return $this->showErrorMessage(
                 __('messages.error_messages.cannot_delete_used_in_transactions'),
                 409
@@ -181,7 +185,7 @@ class MstProductVariantApiController extends ApiResponseWithAdminAuthController
             $mstProductVariant->variant_code, // SUBJECT CODE
             [                                       // META
                 'product_id' => $mstProductVariant->product_id,
-                'variant_name' => $mstProductVariant->variant_name,
+                'variant_name' => $mstProductVariant->name,
             ]
         );
 
