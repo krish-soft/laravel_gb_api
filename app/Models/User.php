@@ -10,6 +10,7 @@ use App\Enum\Common\Legal\KycStatusEnum;
 use App\Enum\User\UserRoleEnum;
 use App\Models\Buyer\Cart\Cart;
 use App\Models\Common\Address;
+use App\Models\Common\Fulfillment\FulfillmentLocation;
 use App\Models\Common\User\Legal\UserBank;
 use App\Models\Common\User\Legal\UserKyc;
 use App\Models\Common\User\Legal\UserLegalDocument;
@@ -215,7 +216,10 @@ class User extends Authenticatable
         return $this->hasMany(ProductListing::class, 'seller_id', 'id');
     }
 
-
+    public function fulfillmentLocations()
+    {
+        return $this->hasMany(FulfillmentLocation::class, 'user_id', 'id');
+    }
 
 
     /* ---------------- BOOLEAN METHODS (AUTH / LOGIC) ---------------- */
@@ -259,6 +263,43 @@ class User extends Authenticatable
     {
         return $this->bank && $this->bank->status === BankStatusEnum::VERIFIED->value;
     }
+
+
+    // Check That they are ready for transactions
+    public function isUserReadyForOrderManagement(): bool
+    {
+        //
+        return $this->isKycApproved()
+//            && $this->isBankVerified() // Optional when money need they will do
+            && $this->depots()->exists()
+            && $this->fulfillmentLocations()->exists();
+    }
+
+
+    // Appends
+
+
+    protected $appends = [
+        'is_kyc_approved',
+        'is_bank_verified',
+        'is_user_ready_for_order_management',
+    ];
+
+    public function getIsKycApprovedAttribute(): bool
+    {
+        return $this->isKycApproved();
+    }
+
+    public function getIsBankVerifiedAttribute(): bool
+    {
+        return $this->isBankVerified();
+    }
+
+    public function getIsUserReadyForOrderManagementAttribute(): bool
+    {
+        return $this->isUserReadyForOrderManagement();
+    }
+
 
     //
 }
