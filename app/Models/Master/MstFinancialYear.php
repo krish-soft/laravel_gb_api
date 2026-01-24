@@ -42,7 +42,7 @@ class MstFinancialYear extends BaseModel
     ];
 
     // current year
-    public static function currentYear()
+    public static function currentFinancialYear()
     {
         return self::latest()->where('is_active', true)->first();
     }

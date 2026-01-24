@@ -11,5 +11,12 @@ enum AdminRoleEnum: string
     case SUPERVISOR = 'supervisor'; // Supervisor
 
 
+    public static function casesAsValues(): array
+    {
+        return array_map(
+            fn(self $case) => $case->value,
+            self::cases()
+        );
+    }
     //
 }

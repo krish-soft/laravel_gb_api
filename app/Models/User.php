@@ -216,7 +216,7 @@ class User extends Authenticatable
     }
 
 
-    
+
 
     /* ---------------- BOOLEAN METHODS (AUTH / LOGIC) ---------------- */
 
@@ -237,11 +237,7 @@ class User extends Authenticatable
 
     public function isAdminManagement(): bool
     {
-        return in_array(
-            $this->role,
-            array_map(fn($c) => $c->value, AdminRoleEnum::cases()),
-            true
-        );
+        return in_array($this->role, AdminRoleEnum::casesAsValues(), true);
     }
 
     public function hasModuleAccess(int $moduleCode): bool

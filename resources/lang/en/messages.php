@@ -106,6 +106,7 @@ return [
         'something_went_wrong'               => 'An unexpected error occurred. Please try again later.',
         'already_exists'                     => 'The requested resource already exists.',
         'cannot_delete_used_in_transactions' => 'This resource is linked to transactions and cannot be deleted.',
+        'current_financial_year_cannot_inactive' => 'The current active financial year cannot be set to inactive.',
 
         /* Configuration */
         'missing_configuration_ms_api_key' => 'Required MS API key configuration is missing.',

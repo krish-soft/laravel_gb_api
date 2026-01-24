@@ -79,15 +79,29 @@ class MstFinancialYearApiController extends ApiResponseWithAdminAuthController
     {
         //
         $user = $request->user();
-        if (!$user->isAdminManagement() || $user->role !== AdminRoleEnum::SUPERADMIN) {
-            return $this->showErrorMessage(__('messages.error_messages.unauthorized_action'), 403);
+        if (
+            !$user->isAdminManagement() ||
+            $user->role !== AdminRoleEnum::SUPERADMIN->value
+        ) {
+            return $this->showErrorMessage(
+                __('messages.error_messages.unauthorized_action'),
+                403
+            );
         }
+
 
         $request->validate([
             'name' => 'required|string|max:50|unique:mst_financial_years,name,' . $mstFinancialYear->id,
             'start_date' => 'required|date|unique:mst_financial_years,start_date,' . $mstFinancialYear->id,
             'end_date' => 'required|date|after:start_date|unique:mst_financial_years,end_date,' . $mstFinancialYear->id,
         ]);
+
+        // Check if in_active current financial year then give error 
+        // get first current fy idiot then compare ids
+        $currentFy = MstFinancialYear::currentFinancialYear();
+        if ($currentFy && $currentFy->id === $mstFinancialYear->id && !$request->is_active) {
+            return $this->showErrorMessage(__('messages.error_messages.current_financial_year_cannot_inactive'), 422);
+        }
 
         // Old same exist check
         $oldExist = MstFinancialYear::where('id', '!=', $mstFinancialYear->id)

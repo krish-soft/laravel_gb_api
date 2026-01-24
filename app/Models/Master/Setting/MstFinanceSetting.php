@@ -73,7 +73,7 @@ class MstFinanceSetting extends BaseModel
                 'thousand_separator' => ',',
                 'decimal_separator' => '.',
                 'decimal_places' => 2,
-                'financial_year_id' => MstFinancialYear::currentYear()->id ?? null,
+                'financial_year_id' => MstFinancialYear::currentFinancialYear()->id ?? null,
             ]);
         });
 
