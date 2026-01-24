@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Api\v1\User\Common\Fulfillment;
 
+use App\Enum\AddressTypeEnum;
 use App\Enum\Common\Fulfillment\FulfillmentLocationTypeEnum;
 use App\Http\Controllers\ApiResponseWithAuthController;
 use App\Http\Requests\AddressRequest;
 use App\Models\Common\Address;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
+use App\Models\Master\Depot\MstDepot;
 use Illuminate\Http\Request;
 
 class FulfillmentLocationApiController extends ApiResponseWithAuthController
@@ -21,7 +23,7 @@ class FulfillmentLocationApiController extends ApiResponseWithAuthController
 
         $locations = FulfillmentLocation::where('user_id', $user->id)->get();
 
-        return $this->successResponse(__('messages.success_messages.success_get'),  $locations, 200);
+        return $this->successResponse(__('messages.success_messages.success_get'), $locations, 200);
     }
 
     /**
@@ -66,7 +68,7 @@ class FulfillmentLocationApiController extends ApiResponseWithAuthController
     {
         //
 
-        return $this->successResponse(__('messages.success_messages.success_get'),  $fulfillmentLocation, 200);
+        return $this->successResponse(__('messages.success_messages.success_get'), $fulfillmentLocation, 200);
     }
 
     /**
@@ -139,28 +141,45 @@ class FulfillmentLocationApiController extends ApiResponseWithAuthController
     }
 
 
-    // Add Address For Fulfillment Location
-    public function addAddress(AddressRequest $request, FulfillmentLocation $fulfillmentLocation)
+    public function saveAddress(AddressRequest $request, FulfillmentLocation $fulfillmentLocation)
     {
-        //
-        // Already Exist then give error
-        if (!empty($fulfillmentLocation->addr_code)) {
-            return $this->errorResponse(__('messages.error_messages.address_exists'), 422);
+        // Log::info('Saving address for depot', ['depot_id' => $depot->id]);
+
+        $user = $request->user();
+        $data = $request->validated();
+        if ($user->isSeller()) {
+            $data['addr_type'] = AddressTypeEnum::PICK->value;
+        } else if ($user->isBuyer()) {
+            $data['addr_type'] = AddressTypeEnum::SHIP->value;
+        } else if ($user->isDelivery()) {
+            $data['addr_type'] = AddressTypeEnum::DELIVERY_PARTNER_HUB->value;
         }
 
-        $address = Address::create($request->all());
-        $fulfillmentLocation->addr_code = $address->addr_code;
+        if ($fulfillmentLocation->addr_code) {
+            // UPDATE
+            $address = Address::where('addr_code', $fulfillmentLocation->addr_code)
+                ->firstOrFail();
 
-        $fulfillmentLocation->save();
+            $address->update($data);
 
-        $user = $request->user();
-        // Log activity
+            $event = 'fulfillment_location_address_updated';
+        } else {
+            // CREATE
+            $address = Address::create($data);
+
+            $fulfillmentLocation->update([
+                'addr_code' => $address->addr_code,
+            ]);
+
+            $event = 'fulfillment_location_address_added';
+        }
+
         logActivity(
-            'fulfillment_location_address_added',        // EVENT
-            $user,                 // ACTOR (who did it)
-            get_class($fulfillmentLocation), // SUBJECT TYPE (what was affected)
-            $fulfillmentLocation->id,              // SUBJECT ID
-            $fulfillmentLocation->fl_code,       // SUBJECT CODE (human readable)
+            $event,
+            $request->user(),
+            MstDepot::class,
+            $fulfillmentLocation->id,
+            $fulfillmentLocation->fl_code,
             [
                 'name' => $fulfillmentLocation->name,
                 'type' => $fulfillmentLocation->type,
@@ -168,34 +187,10 @@ class FulfillmentLocationApiController extends ApiResponseWithAuthController
             ]
         );
 
-        return $this->showSuccessMessage(__('messages.success_messages.success_update'), 200);
-    }
-
-    // update Address of Depot
-    public function updateAddress(AddressRequest $request, FulfillmentLocation $fulfillmentLocation)
-    {
-        //
-
-        // Check same Address or not
-        $address = Address::where('addr_code', $fulfillmentLocation->addr_code)->firstOrFail();
-
-        $address->update($request->all());
-
-        $user = $request->user();
-        // Log activity
-        logActivity(
-            'fulfillment_location_address_updated',        // EVENT
-            $user,                 // ACTOR (who did it)
-            get_class($fulfillmentLocation), // SUBJECT TYPE (what was affected)
-            $fulfillmentLocation->id,              // SUBJECT ID
-            $fulfillmentLocation->fl_code,       // SUBJECT CODE (human readable)
-            [
-                'name' => $fulfillmentLocation->name,
-                'type' => $fulfillmentLocation->type,
-                'addr_code' => $address->addr_code,
-            ]
+        return $this->showSuccessMessage(
+            __('messages.success_messages.success_update'),
+            200
         );
-
-        return $this->showSuccessMessage(__('messages.success_messages.success_update'), 200);
     }
+
 }

@@ -4,9 +4,10 @@ use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserLoginApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserLogoutApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserRegisterApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserResetPasswordApiController;
+use App\Http\Controllers\Api\v1\Admin\Common\Fulfillment\AdminFulfillmentLocationApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Payment\PaymentReconcileApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Payment\PayoutApiController;
-use App\Http\Controllers\Api\v1\Admin\Common\User\AdminRegularUserApiController;
+use App\Http\Controllers\Api\v1\Admin\Common\User\CustomerApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeLevelApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\Rule\MstDeliveryChargeRuleApiController;
@@ -50,7 +51,6 @@ Route::post('/webhooks/razorpay/payouts', [RazorpayPayoutWebhookController::clas
 Route::post('/webhooks/razorpay/bankAccount', [RazorpayBankVerificationWebhookHandler::class, 'handle']);
 
 
-
 Route::group([
     'prefix' => 'v1',
     'middleware' => [
@@ -74,7 +74,7 @@ Route::group([
     Route::post('/forget/reset', [UserResetPasswordApiController::class, 'resetPassword']);
 
 
-    // Utils 
+    // Utils
     Route::prefix('utils')->group(function () {
         Route::get('states', [UtilsApiController::class, 'getStateList']);
         Route::get('units', [UtilsApiController::class, 'getUnitList']);
@@ -108,7 +108,7 @@ Route::group([
         Route::apiResource('userBank', UserBankApiController::class);
 
 
-        // Whihc Required KYC Approved User Only
+        // Which Required KYC Approved User Only
         Route::group([
             'middleware' => [
                 // 'user-legal-checker' // Custom Middleware to check user legal (KYC) status // Testing Removed
@@ -121,8 +121,7 @@ Route::group([
 
             // Fulfillment Location Routes
             Route::apiResource('fulfillmentLocation', FulfillmentLocationApiController::class);
-            Route::post('fulfillmentLocation/address', [FulfillmentLocationApiController::class, 'addAddress']);
-            Route::put('fulfillmentLocation/{fulfillmentLocation}/updateAddress', [FulfillmentLocationApiController::class, 'updateAddress']);
+            Route::post('fulfillmentLocation/{fulfillmentLocation}/address', [FulfillmentLocationApiController::class, 'saveAddress']);
 
 
             // Product Listing Routes
@@ -191,7 +190,6 @@ Route::group([
             });
 
 
-
             // Payments
             Route::post('/payments/{payment_code}/reconcile', [PaymentReconcileApiController::class, 'reconcile']);
 
@@ -203,14 +201,15 @@ Route::group([
             });
 
 
-
             // Regular User Management
-            Route::apiResource('regular-user', AdminRegularUserApiController::class); // Manage Regular user
-            Route::post('regular-user/{user}/addDepot', [AdminRegularUserApiController::class, 'addDepot']);
-            Route::delete('regular-user/{user}/removeDepot', [AdminRegularUserApiController::class, 'removeDepot']);
+            Route::apiResource('customer', CustomerApiController::class); // Manage Regular user
+            Route::post('customer/{user}/addDepot', [CustomerApiController::class, 'addDepot']);
+            Route::delete('customer/{user}/removeDepot', [CustomerApiController::class, 'removeDepot']);
 
-
-
+            // Fulfillment Location Routes
+            Route::apiResource('fulfillmentLocation', AdminFulfillmentLocationApiController::class);
+            Route::post('fulfillmentLocation/{user}/addDepot', [AdminFulfillmentLocationApiController::class, 'addDepot']);
+            Route::delete('fulfillmentLocation/{user}/removeDepot', [AdminFulfillmentLocationApiController::class, 'removeDepot']);
 
             ###
             ##### Master  Routes
@@ -242,7 +241,6 @@ Route::group([
                 Route::apiResource('mstChargeLevel', MstChargeLevelApiController::class);
                 Route::apiResource('mstDeliveryChargeRule', MstDeliveryChargeRuleApiController::class);
                 Route::apiResource('mstMinimumOrderChargeRule', MstMinimumOrderChargeRuleApiController::class);
-
 
 
                 // Settings

@@ -76,6 +76,11 @@ class FulfillmentLocation extends BaseModel
         return $this->belongsTo(Address::class, 'addr_code', 'addr_code');
     }
 
+    public function depots()
+    {
+        return $this->hasMany(FulfillmentLocationDepot::class, 'fulfillment_location_id', 'id');
+    }
+
 
     // Helper Methods
     public static function generateUniqueFulfillmentLocationCode()

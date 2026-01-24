@@ -9,7 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
-class AdminRegularUserApiController extends ApiResponseWithAdminAuthController
+class CustomerApiController extends ApiResponseWithAdminAuthController
 {
     /**
      * Display a listing of the resource.
@@ -31,10 +31,10 @@ class AdminRegularUserApiController extends ApiResponseWithAdminAuthController
         //
         $request->validate([
             'phone_number' => 'required|string',
-            'name'          => 'required|string|max:100',
+            'name' => 'required|string|max:100',
             // 'email'         => 'nullable|email|max:255|unique:users,email', // Optional email
-            'role'          => 'required|string|in:' . implode(',', array_map(fn($case) => $case->value, UserRoleEnum::cases())),
-            'user_type'     => 'nullable|string|in:' . implode(',', array_map(fn($case) => $case->value, UserTypeEnum::cases())),
+            'role' => 'required|string|in:' . implode(',', array_map(fn($case) => $case->value, UserRoleEnum::cases())),
+            'user_type' => 'nullable|string|in:' . implode(',', array_map(fn($case) => $case->value, UserTypeEnum::cases())),
         ]);
 
 
@@ -59,11 +59,11 @@ class AdminRegularUserApiController extends ApiResponseWithAdminAuthController
 
         $user = User::create([
             'phone_number' => $request->phone_number,
-            'name'          => $request->name,
-            'email'         => $request->email,
-            'password'      => bcrypt(Str::random(12)), // Random password
-            'role'          => $request->role,
-            'user_type'     => $userType,
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => bcrypt(Str::random(12)), // Random password
+            'role' => $request->role,
+            'user_type' => $userType,
             'price_level_code' => $priceLevelCode,
         ]);
 
@@ -82,8 +82,6 @@ class AdminRegularUserApiController extends ApiResponseWithAdminAuthController
         );
 
         return $this->successResponse(__('messages.success_messages.success_create'), $user, 201);
-
-
 
 
         //
@@ -107,11 +105,11 @@ class AdminRegularUserApiController extends ApiResponseWithAdminAuthController
         //
 
         $request->validate([
-            'phone_number'  => 'sometimes|unique:users,phone_number,' . $user->id,
-            'name'          => 'sometimes|string|max:100',
-            'email'         => 'sometimes|email|max:255|unique:users,email,' . $user->id,
-            'role'          => 'sometimes|string|in:' . implode(',', array_map(fn($case) => $case->value, UserRoleEnum::cases())),
-            'user_type'     => 'sometimes|string|in:' . implode(',', array_map(fn($case) => $case->value, UserTypeEnum::cases())),
+            'phone_number' => 'sometimes|unique:users,phone_number,' . $user->id,
+            'name' => 'sometimes|string|max:100',
+            'email' => 'sometimes|email|max:255|unique:users,email,' . $user->id,
+            'role' => 'sometimes|string|in:' . implode(',', array_map(fn($case) => $case->value, UserRoleEnum::cases())),
+            'user_type' => 'sometimes|string|in:' . implode(',', array_map(fn($case) => $case->value, UserTypeEnum::cases())),
         ]);
 
 
@@ -177,58 +175,92 @@ class AdminRegularUserApiController extends ApiResponseWithAdminAuthController
      */
     public function addDepot(Request $request, User $user)
     {
-        //
         $request->validate([
             'depot_id' => 'required|exists:mst_depots,id',
             'is_primary' => 'sometimes|boolean',
         ]);
 
-        $user = $user->depots()->create([
-            'depot_id' => $request->depot_id,
-            'is_primary' => $request->is_primary ?? false,
-        ]);
+        $makePrimary = (bool)$request->input('is_primary', false);
 
+        // Check if user already has a primary depot
+        $hasPrimary = $user->depots()->where('is_primary', true)->exists();
+
+        // If incoming depot should be primary, unset existing primary
+        if ($makePrimary) {
+            $user->depots()->where('is_primary', true)->update([
+                'is_primary' => false,
+            ]);
+        }
+
+        // If no primary exists at all, force this one as primary
+        if (!$makePrimary && !$hasPrimary) {
+            $makePrimary = true;
+        }
+
+        $userDepot = $user->depots()->create([
+            'depot_id' => $request->depot_id,
+            'is_primary' => $makePrimary,
+        ]);
 
         // Log activity
         logActivity(
             'user_depot_added',
-            $request->user(),       // ACTOR (who did it)
-            get_class($user),       // SUBJECT TYPE (what was affected)
-            $user->id,              // SUBJECT ID
-            $user->user_code,       // SUBJECT CODE (human readable)
+            $request->user(),
+            get_class($user),
+            $user->id,
+            $user->user_code,
             [
                 'depot_id' => $request->depot_id,
-                'is_primary' => $request->is_primary ?? false,
+                'is_primary' => $makePrimary,
             ]
         );
 
-
-        return $this->showSuccessMessage(__('messages.success_messages.success_create'), 201);
+        return $this->showSuccessMessage(
+            __('messages.success_messages.success_create'),
+            201
+        );
     }
+
 
     public function removeDepot(Request $request, User $user, $depotId)
     {
+        $userDepot = $user->depots()
+            ->where('depot_id', $depotId)
+            ->firstOrFail();
 
-        $depot = $user->depots()->where('depot_id', $depotId)->firstOrFail();
-        $depot->delete();
+        $wasPrimary = $userDepot->is_primary;
+
+        $userDepot->delete();
+
+        // If primary depot was removed, promote another one
+        if ($wasPrimary) {
+            $nextDepot = $user->depots()->first();
+
+            if ($nextDepot) {
+                $nextDepot->update([
+                    'is_primary' => true,
+                ]);
+            }
+        }
 
         // Log activity
         logActivity(
             'user_depot_removed',
-            $request->user(),       // ACTOR (who did it)
-            get_class($user),       // SUBJECT TYPE (what was affected)
-            $user->id,              // SUBJECT ID
-            $user->user_code,       // SUBJECT CODE (human readable)
+            $request->user(),
+            get_class($user),
+            $user->id,
+            $user->user_code,
             [
-                'depot_id' => $request->depot_id,
-                'is_primary' => $request->is_primary ?? false,
+                'depot_id' => $depotId,
+                'was_primary' => $wasPrimary,
             ]
         );
 
-
-        return $this->showSuccessMessage(__('messages.success_messages.success_delete'), 200);
+        return $this->showSuccessMessage(
+            __('messages.success_messages.success_delete'),
+            200
+        );
     }
-
 
 
     //

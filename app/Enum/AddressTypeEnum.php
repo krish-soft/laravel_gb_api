@@ -18,6 +18,7 @@ enum AddressTypeEnum: string
 
         // Depot / Logistics
     case DEPOT  = 'depot';    // Depot / hub / aggregation
+    case DELIVERY_PARTNER_HUB  = 'delivery_partner_hub';    // Depot / hub / aggregation
     // case HUB  = 'hub';    // Depot / hub / aggregation
     // case XFER = 'xfer';   // Transfer point
     // case SORT = 'sort';   // Sorting / grading center
