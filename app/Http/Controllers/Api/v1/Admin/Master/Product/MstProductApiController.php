@@ -45,7 +45,7 @@ class MstProductApiController extends ApiResponseWithAdminAuthController
             'grade' => 'nullable|string|max:50',
             'size' => 'nullable|string|max:50',
             'origin' => 'nullable|string|max:50',
-            'files.0' => 'nullable|image|max:2048|mimes:jpeg,png,jpg',
+            'picture' => 'nullable|image|max:2048|mimes:jpeg,png,jpg',
         ]);
 
         // Check Already Exist any of key except name & descriptions
@@ -69,9 +69,9 @@ class MstProductApiController extends ApiResponseWithAdminAuthController
         }
 
         $filePath = null;
-        if ($request->hasFile('files.0')) {
+        if ($request->hasFile('picture')) {
             $filePath =  uploadPublicFile(
-                $request->file('files.0'),
+                $request->file('picture'),
                 self::$FILE_PATH,
             );
         }
@@ -126,7 +126,7 @@ class MstProductApiController extends ApiResponseWithAdminAuthController
             'grade' => 'nullable|string|max:50',
             'size' => 'nullable|string|max:50',
             'origin' => 'nullable|string|max:50',
-            'files.0' => 'nullable|image|max:2048|mimes:jpeg,png,jpg',
+            'picture' => 'nullable|image|max:2048|mimes:jpeg,png,jpg',
         ]);
 
         // Check Already Exist any of key except name & descriptions
@@ -151,9 +151,9 @@ class MstProductApiController extends ApiResponseWithAdminAuthController
 
 
         $filePath = $mstProduct->picture;
-        if ($request->hasFile('files.0')) {
+        if ($request->hasFile('picture')) {
             $filePath =  uploadPublicFile(
-                $request->file('files.0'),
+                $request->file('picture'),
                 self::$FILE_PATH,
                 $mstProduct->picture,
             );

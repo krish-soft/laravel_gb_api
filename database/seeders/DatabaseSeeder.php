@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
 
             // App Settings
             \Database\Seeders\Setting\AppSettingSeeder::class,
+            \Database\Seeders\Setting\BusinessSettingSeeder::class,
 
             // User Testing
             \Database\Seeders\User\UserSeeder::class,

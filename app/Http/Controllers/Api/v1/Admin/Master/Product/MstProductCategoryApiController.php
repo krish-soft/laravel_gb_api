@@ -38,7 +38,7 @@ class MstProductCategoryApiController extends ApiResponseWithAdminAuthController
             'name' => 'required|string|max:150',
             'description' => 'nullable|string|max:255',
             'hsn_chapter' => 'required|string|max:10',
-            // 'picture' => 'nullable|image|max:2048|mimes:jpeg,png,jpg', // Files.0
+            // 'picture' => 'nullable|image|max:2048|mimes:jpeg,png,jpg', // picture
         ]);
         // exist check
         $existingCategory = MstProductCategory::where('name', $request->name)->orWhere('hsn_chapter', $request->hsn_chapter)->first();
@@ -87,7 +87,7 @@ class MstProductCategoryApiController extends ApiResponseWithAdminAuthController
             'name' => 'required|string|max:150',
             'description' => 'nullable|string|max:255',
             'hsn_chapter' => 'required|string|max:10',
-            // 'files.0' => 'nullable|image|max:2048|mimes:jpeg,png,jpg',
+            // 'picture' => 'nullable|image|max:2048|mimes:jpeg,png,jpg',
         ]);
 
         // Check same only hsn not exist

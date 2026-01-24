@@ -199,18 +199,13 @@ class MstDepotApiController extends ApiResponseWithAdminAuthController
     // Upload photo for depot
     public function uploadPhoto(Request $request, MstDepot $depot)
     {
-        $request->validate([
-            'files' => 'required|array|max:2048', // Fiels are startnad array from vue
-        ]);
 
-
-        // so we need only first file
         // Validate image file
         $request->validate([
-            'files.0' => 'required|image|mimes:jpeg,jpg,png|max:2048', // max 2MB
+            'picture' => 'required|image|mimes:jpeg,jpg,png|max:2048', // max 2MB
         ]);
 
-        $pictureFile = $request->file('files.0');
+        $pictureFile = $request->file('picture');
 
 
         // Delete old photo if exists

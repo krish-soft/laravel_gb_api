@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductCategoryApiContro
 use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductPackagingApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductVariantApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstAppSettingApiController;
+use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstBusinessSettingApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstFinanceSettingApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstPaymentSettingApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Vehicle\MstVehicleApiController;
@@ -35,6 +36,7 @@ use App\Http\Controllers\Api\v1\User\Common\Fulfillment\FulfillmentLocationApiCo
 use App\Http\Controllers\Api\v1\User\Common\Legal\UserBankApiController;
 use App\Http\Controllers\Api\v1\User\Common\Legal\UserKycApiController;
 use App\Http\Controllers\Api\v1\User\Seller\Product\ProductListingApiController;
+use App\Http\Controllers\Api\v1\Utils\UtilsApiController;
 use App\Http\Controllers\Web\Webhooks\RazorpayBankVerificationWebhookHandler;
 use App\Http\Controllers\Web\Webhooks\RazorpayPayoutWebhookController;
 use App\Http\Controllers\Web\Webhooks\RazorpayWebhookController;
@@ -70,6 +72,15 @@ Route::group([
     // Forget Password
     Route::post('/forget/otp/send', [UserResetPasswordApiController::class, 'sendForgotPasswordOtp']);
     Route::post('/forget/reset', [UserResetPasswordApiController::class, 'resetPassword']);
+
+
+    // Utils 
+    Route::prefix('utils')->group(function () {
+        Route::get('states', [UtilsApiController::class, 'getStateList']);
+        Route::get('units', [UtilsApiController::class, 'getUnitList']);
+        Route::get('pack-type-units', [UtilsApiController::class, 'getPackTypeUnitList']);
+    });
+
 
     /**
      *  Regular User Auth Protected Routes
@@ -213,6 +224,12 @@ Route::group([
                 Route::get('payment', [MstPaymentSettingApiController::class, 'getSetting']);
                 Route::put('payment', [MstPaymentSettingApiController::class, 'updateSetting']);
 
+                // Business Setting
+                Route::get('business', [MstBusinessSettingApiController::class, 'getSetting']);
+                Route::put('business', [MstBusinessSettingApiController::class, 'updateSetting']);
+                Route::post('business/{businessSetting}/billAddress', [MstBusinessSettingApiController::class, 'saveBillAddress']); // Save address for business setting
+                Route::post('business/{businessSetting}/uploadPicture', [MstBusinessSettingApiController::class, 'uploadPhoto']); // Upload photo for business setting
+                Route::delete('business/{businessSetting}/deletePicture', [MstBusinessSettingApiController::class, 'deletePhoto']); // Delete photo for business setting
 
                 // Financial year Setting
                 Route::apiResource('financialYear', MstFinancialYearApiController::class);

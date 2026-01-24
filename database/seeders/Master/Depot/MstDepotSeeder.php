@@ -45,7 +45,7 @@ class MstDepotSeeder extends Seeder
                 'buyer_cutoff_time' => '08:00:00',
                 'seller_cutoff_time' => '09:00:00',
                 'is_active' => true,
-                'contact_name' => 'Ketan Patel',
+                'contact_name' => 'Ketan Chauhan',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
