@@ -15,7 +15,7 @@ class MstDeliveryChargeRuleApiController extends ApiResponseWithAdminAuthControl
     public function index()
     {
         //
-        $mstDeliveryChargeRules = MstDeliveryChargeRule::all();
+        $mstDeliveryChargeRules = MstDeliveryChargeRule::latest()->with(['charge', 'chargeLevel'])->get();
         return $this->successResponse(__('messages.success_messages.success_get'), $mstDeliveryChargeRules);
     }
 
@@ -28,8 +28,8 @@ class MstDeliveryChargeRuleApiController extends ApiResponseWithAdminAuthControl
         $request->validate([
             'charge_id' => 'required|exists:mst_charges,id',
             'charge_level_id' => 'required|exists:mst_charge_levels,id',
-            'description' => 'required|string|min:10|max:255',
-            'calc_type' => 'required|string|in:fixed,percentage,per_unit',
+            'description' => 'required|string|min:5|max:255',
+
             'measure_value' => 'required|numeric|min:0',
             'measure_unit' => 'required|string|exists:mst_units,unit',
             'pack_type_unit' => 'required|string|exists:mst_pack_types,unit',
@@ -39,7 +39,6 @@ class MstDeliveryChargeRuleApiController extends ApiResponseWithAdminAuthControl
         // Check Exist
         $existingRule = MstDeliveryChargeRule::where('charge_id', $request->charge_id)
             ->where('charge_level_id', $request->charge_level_id)
-            ->where('calc_type', $request->calc_type)
             ->where('measure_value', $request->measure_value)
             ->where('measure_unit', $request->measure_unit)
             ->where('pack_type_unit', $request->pack_type_unit)
@@ -95,8 +94,7 @@ class MstDeliveryChargeRuleApiController extends ApiResponseWithAdminAuthControl
         $request->validate([
             'charge_id' => 'required|exists:mst_charges,id',
             'charge_level_id' => 'required|exists:mst_charge_levels,id',
-            'description' => 'required|string|min:10|max:255',
-            'calc_type' => 'required|string|in:fixed,percentage,per_unit',
+            'description' => 'required|string|min:5|max:255',
             'measure_value' => 'required|numeric|min:0',
             'measure_unit' => 'required|string|exists:mst_units,unit',
             'pack_type_unit' => 'required|string|exists:mst_pack_types,unit',
@@ -106,7 +104,6 @@ class MstDeliveryChargeRuleApiController extends ApiResponseWithAdminAuthControl
         // Check Exist
         $existingRule = MstDeliveryChargeRule::where('charge_id', $request->charge_id)
             ->where('charge_level_id', $request->charge_level_id)
-            ->where('calc_type', $request->calc_type)
             ->where('measure_value', $request->measure_value)
             ->where('measure_unit', $request->measure_unit)
             ->where('pack_type_unit', $request->pack_type_unit)
@@ -148,11 +145,12 @@ class MstDeliveryChargeRuleApiController extends ApiResponseWithAdminAuthControl
     public function destroy(MstDeliveryChargeRule $mstDeliveryChargeRule)
     {
         //
-
-        return $this->showErrorMessage(
-            __('messages.error_messages.cannot_delete_used_in_transactions'),
-            409
-        );
+        if($mstDeliveryChargeRule->orderCharges()->exists()) {
+            return $this->showErrorMessage(
+                __('messages.error_messages.cannot_delete_used_in_transactions'),
+                409
+            );
+        }
 
         // Log activity
         logActivity(

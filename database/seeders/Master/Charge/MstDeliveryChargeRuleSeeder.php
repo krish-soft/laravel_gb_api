@@ -30,9 +30,10 @@ class MstDeliveryChargeRuleSeeder extends Seeder
 
                 'rule_no' => MstSeqCodeGenerator::getNextRuleNo(),
                 'description' => 'Delivery Fee for Buyer',
-                'calc_type' => 'fixed',
+              
                 'measure_value' => 20.00,
                 'measure_unit' => 'kg',
+                'pack_type_unit' => 'bag',
                 'charge_amount' => 40.00,
                 'is_active' => true,
                 'created_at' => now(),
@@ -44,9 +45,25 @@ class MstDeliveryChargeRuleSeeder extends Seeder
 
                 'rule_no' => MstSeqCodeGenerator::getNextRuleNo(),
                 'description' => 'Delivery Fee for Buyer',
-                'calc_type' => 'fixed',
+              
+                'measure_value' => 20.00,
+                'measure_unit' => 'kg',
+                'pack_type_unit' => 'crate',
+                'charge_amount' => 40.00,
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'charge_id' => $deliveryFeeCharge->id,
+                'charge_level_id' => $standardPriceLevelBuyer->id,
+
+                'rule_no' => MstSeqCodeGenerator::getNextRuleNo(),
+                'description' => 'Delivery Fee for Buyer',
+              
                 'measure_value' => 10.00,
                 'measure_unit' => 'kg',
+                'pack_type_unit' => 'bag',
                 'charge_amount' => 25.00,
                 'is_active' => true,
                 'created_at' => now(),
@@ -56,12 +73,12 @@ class MstDeliveryChargeRuleSeeder extends Seeder
             [
                 'charge_id' => $deliveryFeeCharge->id,
                 'charge_level_id' => $standardPriceLevelBuyer->id,
-
                 'rule_no' => MstSeqCodeGenerator::getNextRuleNo(),
                 'description' => 'Delivery Fee for Buyer',
-                'calc_type' => 'fixed',
+              
                 'measure_value' => 5.00,
                 'measure_unit' => 'kg',
+                'pack_type_unit' => 'bag',
                 'charge_amount' => 10.00,
                 'is_active' => true,
                 'created_at' => now(),
@@ -75,9 +92,10 @@ class MstDeliveryChargeRuleSeeder extends Seeder
 
                 'rule_no' => MstSeqCodeGenerator::getNextRuleNo(),
                 'description' => 'Delivery Fee for Seller',
-                'calc_type' => 'fixed',
+              
                 'measure_value' => 20.00,
                 'measure_unit' => 'kg',
+                'pack_type_unit' => 'bag',
                 'charge_amount' => 40.00,
                 'is_active' => true,
                 'created_at' => now(),
@@ -89,9 +107,25 @@ class MstDeliveryChargeRuleSeeder extends Seeder
 
                 'rule_no' => MstSeqCodeGenerator::getNextRuleNo(),
                 'description' => 'Delivery Fee for Seller',
-                'calc_type' => 'fixed',
+              
+                'measure_value' => 20.00,
+                'measure_unit' => 'kg',
+                'pack_type_unit' => 'crate',
+                'charge_amount' => 40.00,
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'charge_id' => $deliveryFeeCharge->id,
+                'charge_level_id' => $standardPriceLevelSeller->id,
+
+                'rule_no' => MstSeqCodeGenerator::getNextRuleNo(),
+                'description' => 'Delivery Fee for Seller',
+              
                 'measure_value' => 10.00,
                 'measure_unit' => 'kg',
+                'pack_type_unit' => 'bag',
                 'charge_amount' => 25.00,
                 'is_active' => true,
                 'created_at' => now(),
@@ -104,9 +138,10 @@ class MstDeliveryChargeRuleSeeder extends Seeder
 
                 'rule_no' => MstSeqCodeGenerator::getNextRuleNo(),
                 'description' => 'Delivery Fee for Seller',
-                'calc_type' => 'fixed',
+              
                 'measure_value' => 5.00,
                 'measure_unit' => 'kg',
+                'pack_type_unit' => 'bag',
                 'charge_amount' => 10.00,
                 'is_active' => true,
                 'created_at' => now(),

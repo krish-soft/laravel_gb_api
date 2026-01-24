@@ -27,22 +27,18 @@ return new class extends Migration
             $table->unsignedInteger('rule_no')->unique();
             $table->string('description')->nullable();
 
-            $table->string('calc_type', 50);
-            $table->string('calc_condition', 10)->nullable();    // < or >         
-
             $table->decimal('measure_value', 15, 2)->nullable();
             $table->string('measure_unit', 50)->nullable();
             $table->string('pack_type_unit', 50)->nullable();
 
             $table->decimal('charge_amount', 15, 2);
-
             $table->boolean('is_active')->default(true)->nullable();
 
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index(['charge_level_id', 'calc_type']);
-        });
+            $table->index(['charge_level_id', 'measure_value', 'measure_unit', 'pack_type_unit'], 'idx_charge_level_measure_packtype');
+        }); 
     }
 
     /**

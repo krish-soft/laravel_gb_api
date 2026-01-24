@@ -3,6 +3,7 @@
 namespace App\Models\Master\Charge\Rule;
 
 use App\Models\BaseModel;
+use App\Models\Buyer\Order\OrderCharge;
 use App\Models\Master\Charge\MstCharge;
 use App\Models\Master\Charge\MstChargeLevel;
 use App\Models\Master\Unique\MstSeqCodeGenerator;
@@ -32,10 +33,12 @@ class MstDeliveryChargeRule extends BaseModel
         'charge_level_id',
         'rule_no',
         'description',
-        'calc_type',
+
+
         'measure_value',
         'measure_unit',
         'pack_type_unit',
+
         'charge_amount',
         'is_active',
     ];
@@ -63,5 +66,10 @@ class MstDeliveryChargeRule extends BaseModel
     public function chargeLevel()
     {
         return $this->belongsTo(MstChargeLevel::class, 'charge_level_id');
+    }
+
+    public function orderCharges()
+    {
+        return $this->hasMany(OrderCharge::class, 'rule_no', 'rule_no');
     }
 }
