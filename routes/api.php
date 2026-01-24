@@ -213,26 +213,25 @@ Route::group([
             // Settings
             Route::prefix('setting')->group(function () {
                 // App Settings
-                Route::get('app', [MstAppSettingApiController::class, 'getSetting']);
-                Route::put('app', [MstAppSettingApiController::class, 'updateSetting']);
+                Route::get('mstAppSetting', [MstAppSettingApiController::class, 'getSetting']);
+                Route::put('mstAppSetting', [MstAppSettingApiController::class, 'updateSetting']);
 
                 // Finance Setting
-                Route::get('finance', [MstFinanceSettingApiController::class, 'getSetting']);
-                Route::put('finance', [MstFinanceSettingApiController::class, 'updateSetting']);
+                Route::get('mstFinanceSetting', [MstFinanceSettingApiController::class, 'getSetting']);
+                Route::put('mstFinanceSetting', [MstFinanceSettingApiController::class, 'updateSetting']);
 
                 // Payment Setting
-                Route::get('payment', [MstPaymentSettingApiController::class, 'getSetting']);
-                Route::put('payment', [MstPaymentSettingApiController::class, 'updateSetting']);
+                Route::get('mstPaymentSetting', [MstPaymentSettingApiController::class, 'getSetting']);
+                Route::put('mstPaymentSetting', [MstPaymentSettingApiController::class, 'updateSetting']);
 
                 // Business Setting
-                Route::get('business', [MstBusinessSettingApiController::class, 'getSetting']);
-                Route::put('business', [MstBusinessSettingApiController::class, 'updateSetting']);
-                Route::post('business/{businessSetting}/billAddress', [MstBusinessSettingApiController::class, 'saveBillAddress']); // Save address for business setting
-                Route::post('business/{businessSetting}/uploadPicture', [MstBusinessSettingApiController::class, 'uploadPhoto']); // Upload photo for business setting
-                Route::delete('business/{businessSetting}/deletePicture', [MstBusinessSettingApiController::class, 'deletePhoto']); // Delete photo for business setting
-
+                Route::get('mstBusinessSetting', [MstBusinessSettingApiController::class, 'getSetting']);
+                Route::put('mstBusinessSetting', [MstBusinessSettingApiController::class, 'updateSetting']);
+                Route::post('mstBusinessSetting/{businessSetting}/billAddress', [MstBusinessSettingApiController::class, 'saveBillAddress']); // Save address for business setting
+                Route::post('mstBusinessSetting/{businessSetting}/uploadPicture', [MstBusinessSettingApiController::class, 'uploadPhoto']); // Upload photo for business setting
+                Route::delete('mstBusinessSetting/{businessSetting}/deletePicture', [MstBusinessSettingApiController::class, 'deletePhoto']); // Delete photo for business setting
                 // Financial year Setting
-                Route::apiResource('financialYear', MstFinancialYearApiController::class);
+                Route::apiResource('mstFinancialYear', MstFinancialYearApiController::class);
             });
 
             ###
