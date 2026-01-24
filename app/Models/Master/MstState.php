@@ -17,7 +17,15 @@ class MstState extends BaseModel
         'iso_code',
         'language',
         'type',
+        'country_iso_code',
+        'is_ut',
         'is_active',
+    ];
+
+    // Casts
+    protected $casts = [
+        'is_active' => 'boolean',
+        'is_ut' => 'boolean',
     ];
 
 

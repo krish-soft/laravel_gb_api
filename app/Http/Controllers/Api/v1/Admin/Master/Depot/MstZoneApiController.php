@@ -34,8 +34,9 @@ class MstZoneApiController extends ApiResponseWithAdminAuthController
     {
         //
         $request->validate([
-            'zone_name' => 'required|string|max:255|unique:mst_zones,zone_name',
-            'zone_code' => 'required|string|max:50|unique:mst_zones,zone_code',
+            'state_id' => 'required|exists:mst_states,id',
+            'name' => 'required|string|max:50|unique:mst_zones,name',
+            'code' => 'required|string|max:50|unique:mst_zones,code',
         ]);
 
         $mstZone = MstZone::create($request->all());
@@ -47,10 +48,11 @@ class MstZoneApiController extends ApiResponseWithAdminAuthController
             $user,                 // ACTOR (who did it)
             get_class($mstZone), // SUBJECT TYPE (what was affected)
             $mstZone->id,              // SUBJECT ID
-            $mstZone->zone_code,       // SUBJECT CODE (human readable)
+            $mstZone->code,       // SUBJECT CODE (human readable)
             [
-                'zone_name' => $mstZone->zone_name,
-                'zone_code' => $mstZone->zone_code,
+                'state_id' => $mstZone->state_id,
+                'zone_name' => $mstZone->name,
+                'zone_code' => $mstZone->code,
             ]
         );
 
@@ -75,9 +77,12 @@ class MstZoneApiController extends ApiResponseWithAdminAuthController
         //
 
         $request->validate([
-            'zone_name' => 'required|string|max:255|unique:mst_zones,zone_name,' . $mstZone->id,
-            'zone_code' => 'required|string|max:50|unique:mst_zones,zone_code,' . $mstZone->id,
+            'state_id' => 'required|exists:mst_states,id',
+            'name' => 'required|string|max:50|unique:mst_zones,name,' . $mstZone->id,
+            'code' => 'required|string|max:50|unique:mst_zones,code,' . $mstZone->id,
         ]);
+
+
 
         $mstZone->update($request->all());
 
@@ -89,10 +94,11 @@ class MstZoneApiController extends ApiResponseWithAdminAuthController
             $user,                 // ACTOR (who did it)
             get_class($mstZone), // SUBJECT TYPE (what was affected)
             $mstZone->id,              // SUBJECT ID
-            $mstZone->zone_code,       // SUBJECT CODE (human readable)
+            $mstZone->code,       // SUBJECT CODE (human readable)
             [
-                'zone_name' => $mstZone->zone_name,
-                'zone_code' => $mstZone->zone_code,
+                'state_id' => $mstZone->state_id,
+                'name' => $mstZone->name,
+                'code' => $mstZone->code,
             ]
         );
         return $this->showSuccessMessage(__('messages.success_messages.success_update'), 200);
@@ -105,17 +111,24 @@ class MstZoneApiController extends ApiResponseWithAdminAuthController
     {
         //
 
+        // Check Existing Data Before Delete
+        if ($mstZone->depots()->exists()) {
+            return $this->errorResponse(__('messages.error_messages.cannot_delete_used_in_transactions'), 400);
+        }
+
         $user = request()->user();
+
         // Log activity
         logActivity(
             'zone_deleted',        // EVENT
             $user,                 // ACTOR (who did it)
             get_class($mstZone), // SUBJECT TYPE (what was affected)
             $mstZone->id,              // SUBJECT ID
-            $mstZone->zone_code,       // SUBJECT CODE (human readable)
+            $mstZone->code,       // SUBJECT CODE (human readable)
             [
-                'zone_name' => $mstZone->zone_name,
-                'zone_code' => $mstZone->zone_code,
+                'state_id' => $mstZone->state_id,
+                'name' => $mstZone->name,
+                'code' => $mstZone->code,
             ]
         );
         $mstZone->delete();
