@@ -3,6 +3,8 @@
 namespace Database\Seeders\Master\Charge;
 
 use App\Enum\Common\Charge\ChargesEnum;
+use App\Models\Master\Setting\MstFinanceSetting;
+use App\Models\Master\Setting\MstPaymentSetting;
 use App\Models\Master\Unique\MstSeqCodeGenerator;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -21,16 +23,19 @@ class MstMinimumOrderChargeRuleSeeder extends Seeder
         $standardPriceLevelSeller = DB::table('mst_charge_levels')->where('code', 'S-STD')->first();
         $standardPriceLevelDelivery = DB::table('mst_charge_levels')->where('code', 'D-STD')->first();
 
+        $minCartOrderAmount = MstPaymentSetting::minCartOrderAmount();
+
 
         DB::table('mst_minimum_order_charge_rules')->insert([
             [
                 'charge_id' => $platformFeeCharge->id,
                 'charge_level_id' => $standardPriceLevelBuyer->id,
                 'rule_no' => MstSeqCodeGenerator::getNextRuleNo(),
-                'description' => 'Platform Fee for orders below or equal to 2500 for Buyer',
+                'description' => 'Platform Fee for orders below or equal to ' . $minCartOrderAmount . ' for Buyer',
+                'calc_base' => 'price',
                 'calc_type' => 'fixed',
                 'calc_condition' => '<=',
-                'min_order_price' => 2500.00,
+                'min_order_price' => $minCartOrderAmount,
                 'charge_amount' => 100.00,
                 'is_active' => true,
                 'created_at' => now(),
@@ -40,10 +45,11 @@ class MstMinimumOrderChargeRuleSeeder extends Seeder
                 'charge_id' => $platformFeeCharge->id,
                 'charge_level_id' => $standardPriceLevelBuyer->id,
                 'rule_no' => MstSeqCodeGenerator::getNextRuleNo(),
-                'description' => 'Platform Fee for orders above 2500 for Buyer',
+                'description' => 'Platform Fee for orders above ' . $minCartOrderAmount . ' for Buyer',
+                'calc_base' => 'price',
                 'calc_type' => 'percentage',
                 'calc_condition' => '>',
-                'min_order_price' => 2500.00,
+                'min_order_price' => $minCartOrderAmount,
                 'charge_amount' => 2.00,
                 'is_active' => true,
                 'created_at' => now(),
@@ -53,10 +59,11 @@ class MstMinimumOrderChargeRuleSeeder extends Seeder
                 'charge_id' => $platformFeeCharge->id,
                 'charge_level_id' => $standardPriceLevelSeller->id,
                 'rule_no' => MstSeqCodeGenerator::getNextRuleNo(),
-                'description' => 'Platform Fee for orders below or equal to 2500 for Seller',
+                'description' => 'Platform Fee for orders below or equal to ' . $minCartOrderAmount . ' for Seller',
+                'calc_base' => 'price',
                 'calc_type' => 'fixed',
                 'calc_condition' => '<=',
-                'min_order_price' => 2500.00,
+                'min_order_price' => $minCartOrderAmount,
                 'charge_amount' => 100.00,
                 'is_active' => true,
                 'created_at' => now(),
@@ -66,10 +73,11 @@ class MstMinimumOrderChargeRuleSeeder extends Seeder
                 'charge_id' => $platformFeeCharge->id,
                 'charge_level_id' => $standardPriceLevelSeller->id,
                 'rule_no' => MstSeqCodeGenerator::getNextRuleNo(),
-                'description' => 'Platform Fee for orders above 2500 for Seller',
+                'description' => 'Platform Fee for orders above ' . $minCartOrderAmount . '  for Seller',
+                'calc_base' => 'price',
                 'calc_type' => 'percentage',
                 'calc_condition' => '>',
-                'min_order_price' => 2500.00,
+                'min_order_price' => $minCartOrderAmount,
                 'charge_amount' => 2.00,
                 'is_active' => true,
                 'created_at' => now(),
@@ -79,12 +87,13 @@ class MstMinimumOrderChargeRuleSeeder extends Seeder
                 'charge_id' => $platformFeeCharge->id,
                 'charge_level_id' => $standardPriceLevelDelivery->id,
                 'rule_no' => MstSeqCodeGenerator::getNextRuleNo(),
-                'description' => 'Platform Fee for orders below or equal to 2500 for Delivery',
+                'description' => 'Platform Fee for orders below or equal to ' . $minCartOrderAmount . ' for Delivery',
+                'calc_base' => 'price',
                 'calc_type' => 'fixed',
                 'calc_condition' => '<=',
-                'min_order_price' => 2500.00,
+                'min_order_price' => $minCartOrderAmount,
                 'charge_amount' => 100.00,
-                'is_active' => false,
+                'is_active' => true,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -92,12 +101,13 @@ class MstMinimumOrderChargeRuleSeeder extends Seeder
                 'charge_id' => $platformFeeCharge->id,
                 'charge_level_id' => $standardPriceLevelDelivery->id,
                 'rule_no' => MstSeqCodeGenerator::getNextRuleNo(),
-                'description' => 'Platform Fee for orders above 2500 for Delivery',
+                'description' => 'Platform Fee for orders above ' . $minCartOrderAmount . ' for Delivery',
+                'calc_base' => 'price',
                 'calc_type' => 'percentage',
                 'calc_condition' => '>',
-                'min_order_price' => 2500.00,
+                'min_order_price' => $minCartOrderAmount,
                 'charge_amount' => 2.00,
-                'is_active' => false,
+                'is_active' => true,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],

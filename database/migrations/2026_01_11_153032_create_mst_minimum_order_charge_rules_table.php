@@ -27,6 +27,7 @@ return new class extends Migration
             $table->unsignedInteger('rule_no')->unique();
             $table->string('description')->nullable();
 
+            $table->string('calc_base', 50)->nullable();   // PRICE, QTY, WEIGHT
             $table->string('calc_type', 50);   // FIXED, PERCENTAGE
             $table->string('calc_condition', 10)->nullable();    // < or >         
 

@@ -65,7 +65,7 @@ class MstAppSetting extends BaseModel
         'is_registration_enabled' => 'boolean',
         'is_force_app_android_update' => 'boolean',
         'is_force_app_ios_update' => 'boolean',
-        'min_payout' => 'float',
+        'min_payout_amount' => 'float',
     ];
 
     /* =====================================================

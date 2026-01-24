@@ -18,11 +18,11 @@ return new class extends Migration {
             $table->string('payment_in_mode', 30)->nullable();
             $table->string('payment_out_mode', 30)->nullable();
 
-            $table->decimal('min_payout', 10, 2)->default(100);
-            $table->decimal('max_payout', 10, 2)->default(15000);
+            $table->decimal('min_payout_amount', 10, 2)->default(100);
+            $table->decimal('max_payout_amount', 10, 2)->default(15000);
 
-            $table->decimal('min_cart_order', 10, 2)->default(2500);
-            $table->decimal('max_cart_order', 10, 2)->default(15000);
+            $table->decimal('min_cart_order_amount', 10, 2)->default(2500);
+            $table->decimal('max_cart_order_amount', 10, 2)->default(15000);
 
             $table->string('payout_cycle', 20)->default('weekly')->nullable();
 

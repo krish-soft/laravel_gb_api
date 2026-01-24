@@ -21,28 +21,27 @@ class MstPaymentSetting extends BaseModel
 
         static::saved(function () {
             try {
-                if( Schema::hasTable('mst_payment_settings') && Cache::has('mst_payment_settings')) {
+                if (Schema::hasTable('mst_payment_settings') && Cache::has('mst_payment_settings')) {
                     Cache::forget('mst_payment_settings');
                 }
             } catch (\Throwable $e) {
                 // ignore completely
             }
         });
-
     }
 
     protected $fillable = [
         'payment_in_mode',
         'payment_out_mode',
 
-        'min_payout',
-        'max_payout',
+        'min_payout_amount',
+        'max_payout_amount',
 
-        'min_cart_order',
-        'max_cart_order',
+        'min_cart_order_amount',
+        'max_cart_order_amount',
 
         'payout_cycle',
-        'refund_window_days' .
+        'refund_window_days',
 
         'max_payment_attempts',
         'cart_expiry_minutes',
@@ -51,10 +50,10 @@ class MstPaymentSetting extends BaseModel
 
     // casts
     protected $casts = [
-        'min_payout' => 'decimal:2',
-        'max_payout' => 'decimal:2',
-        'min_cart_order' => 'decimal:2',
-        'max_cart_order' => 'decimal:2',
+        'min_payout_amount' => 'decimal:2',
+        'max_payout_amount' => 'decimal:2',
+        'min_cart_order_amount' => 'decimal:2',
+        'max_cart_order_amount' => 'decimal:2',
         'refund_window_days' => 'integer',
         'max_payment_attempts' => 'integer',
         'cart_expiry_minutes' => 'integer',
@@ -71,11 +70,11 @@ class MstPaymentSetting extends BaseModel
             return self::firstOrCreate([
                 'payment_in_mode' => PaymentMethodEnum::RAZORPAY->value,
                 'payment_out_mode' => PaymentMethodEnum::MANUAL->value,
-                'min_cart_order' => 2500,
-                'max_cart_order' => 15000
+                'min_cart_order_amount' => 2500,
+                'max_cart_order_amount' => 15000
             ], [
-                'min_payout' => 100,
-                'max_payout' => 15000,
+                'min_payout_amount' => 100,
+                'max_payout_amount' => 15000,
                 'payout_cycle' => 'weekly',
                 'refund_window_days' => 7,
                 'max_payment_attempts' => 2,
@@ -100,28 +99,26 @@ class MstPaymentSetting extends BaseModel
     }
 
 
-    public static function minPayOut(): int
+    public static function minPayOutAmount(): int
     {
         $settings = self::getOrCreate();
-        return $settings->min_payout;
+        return $settings->min_payout_amount;
     }
 
-    public static function maxPayOut(): int
+    public static function maxPayOutAmount(): int
     {
         $settings = self::getOrCreate();
-        return $settings->max_payout;
+        return $settings->max_payout_amount;
     }
 
-    public static function minCartOrder(): int
+    public static function minCartOrderAmount(): int
     {
-        $settings = self::getOrCreate();
-        return $settings->min_cart_order;
+        return  self::getOrCreate()?->min_cart_order_amount ?? 2500;
     }
 
-    public static function maxCartOrder(): int
+    public static function maxCartOrderAmount(): int
     {
-        $settings = self::getOrCreate();
-        return $settings->max_cart_order;
+        return  self::getOrCreate()?->max_cart_order_amount ?? 15000;
     }
 
     public static function payoutCycle(): string

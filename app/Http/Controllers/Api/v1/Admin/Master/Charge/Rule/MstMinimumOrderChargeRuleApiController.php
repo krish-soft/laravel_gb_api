@@ -12,10 +12,11 @@ class MstMinimumOrderChargeRuleApiController extends ApiResponseWithAdminAuthCon
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         //
-        $mstMinimumOrderChargeRules = MstMinimumOrderChargeRule::all();
+
+        $mstMinimumOrderChargeRules = MstMinimumOrderChargeRule::with(['charge', 'chargeLevel'])->get();
         return $this->successResponse(__('messages.success_messages.success_get'), $mstMinimumOrderChargeRules);
     }
 
@@ -28,13 +29,19 @@ class MstMinimumOrderChargeRuleApiController extends ApiResponseWithAdminAuthCon
         $request->validate([
             'charge_id' => 'required|exists:mst_charges,id',
             'charge_level_id' => 'required|exists:mst_charge_levels,id',
-            'description' => 'required|string|min:10|max:255',
+            'description' => 'required|string|min:5|max:255',
+
+            'calc_base' => 'required|string|in:price,qty,weight',
+
             'calc_type' => 'required|string|in:fixed,percentage',
             'calc_condition' => 'required|string',
-            'min_order_price' => 'required|numeric|min:0.01',
-            'min_order_qty' => 'nullable|numeric|min:0',
-            'min_order_weight' => 'nullable|numeric|min:0',
+
+            'min_order_price' => 'required_if:calc_base,price|min:0',
+            'min_order_qty' => 'required_if:calc_base,qty|min:0',
+            'min_order_weight' => 'required_if:calc_base,weight|min:0',
+            
             'charge_amount' => 'required|numeric|min:0',
+
         ]);
 
         // Check Exist
@@ -42,7 +49,7 @@ class MstMinimumOrderChargeRuleApiController extends ApiResponseWithAdminAuthCon
             ->where('charge_level_id', $request->charge_level_id)
             ->where('calc_type', $request->calc_type)
             ->where('calc_condition', $request->calc_condition)
-            ->where('min_order_price', $request->min_order_price)
+            // ->where('min_order_price', $request->min_order_price)
             ->first();
 
         if ($existingRule) {
@@ -64,6 +71,7 @@ class MstMinimumOrderChargeRuleApiController extends ApiResponseWithAdminAuthCon
             [
                 'charge_id' => $mstMinimumOrderChargeRule->charge_id,
                 'charge_level_id' => $mstMinimumOrderChargeRule->charge_level_id,
+                'calc_base' => $mstMinimumOrderChargeRule->calc_base,
                 'calc_type' => $mstMinimumOrderChargeRule->calc_type,
                 'calc_condition' => $mstMinimumOrderChargeRule->calc_condition,
                 'min_order_price' => $mstMinimumOrderChargeRule->min_order_price,
@@ -92,20 +100,28 @@ class MstMinimumOrderChargeRuleApiController extends ApiResponseWithAdminAuthCon
         $request->validate([
             'charge_id' => 'required|exists:mst_charges,id',
             'charge_level_id' => 'required|exists:mst_charge_levels,id',
-            'description' => 'required|string|min:10|max:255',
+            'description' => 'required|string|min:5|max:255',
+
+            'calc_base' => 'required|string|in:price,qty,weight',
+
             'calc_type' => 'required|string|in:fixed,percentage',
             'calc_condition' => 'required|string',
-            'min_order_price' => 'required|numeric|min:0.01',
-            'min_order_qty' => 'nullable|numeric|min:0',
-            'min_order_weight' => 'nullable|numeric|min:0',
+
+            // Disable for now
+            'min_order_price' => 'required_if:calc_base,price|min:0',
+            'min_order_qty' => 'required_if:calc_base,qty|min:0',
+            'min_order_weight' => 'required_if:calc_base,weight|min:0',
+
             'charge_amount' => 'required|numeric|min:0',
+
+
         ]);
         // Check Exist
         $existingRule = MstMinimumOrderChargeRule::where('charge_id', $request->charge_id)
             ->where('charge_level_id', $request->charge_level_id)
             ->where('calc_type', $request->calc_type)
-            ->where('calc_condition', $request->calc_condition)
-            ->where('min_order_price', $request->min_order_price)
+            ->where('calc_condition', $request->calc_condition) // Conditions need to same amount can be diffiernt
+            // ->where('min_order_price', $request->min_order_price)
             ->where('id', '!=', $mstMinimumOrderChargeRule->id)
             ->first();
 

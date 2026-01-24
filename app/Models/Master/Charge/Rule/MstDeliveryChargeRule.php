@@ -5,6 +5,7 @@ namespace App\Models\Master\Charge\Rule;
 use App\Models\BaseModel;
 use App\Models\Master\Charge\MstCharge;
 use App\Models\Master\Charge\MstChargeLevel;
+use App\Models\Master\Unique\MstSeqCodeGenerator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -12,6 +13,19 @@ class MstDeliveryChargeRule extends BaseModel
 {
     //
     use SoftDeletes;
+
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            $ruleNo = null;
+
+            do {
+                $ruleNo = MstSeqCodeGenerator::getNextRuleNo();
+            } while (self::where('rule_no', $ruleNo)->exists());
+
+            $model->rule_no = $ruleNo;
+        });
+    }
 
     protected $fillable = [
         'charge_id',
