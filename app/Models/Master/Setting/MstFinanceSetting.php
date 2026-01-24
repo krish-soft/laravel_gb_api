@@ -21,17 +21,18 @@ class MstFinanceSetting extends BaseModel
 
         static::saved(function () {
             try {
-                if ( Schema::hasTable('mst_finance_settings') && Cache::has('mst_finance_settings')) {
+                if (Schema::hasTable('mst_finance_settings') && Cache::has('mst_finance_settings')) {
                     Cache::forget('mst_finance_settings');
                 }
             } catch (\Throwable $e) {
                 // ignore completely
             }
         });
-
     }
 
     protected $fillable = [
+        'setting_code',
+        
         'currency',
         'currency_symbol',
 
@@ -66,9 +67,11 @@ class MstFinanceSetting extends BaseModel
         return Cache::rememberForever('mst_finance_settings', function () {
             return self::firstOrCreate([
                 // Default values
+                'setting_code' => 'SETTING_001',
+
+            ], [
                 'currency' => 'INR',
                 'currency_symbol' => '₹',
-            ], [
                 'currency_position' => 'left',
                 'thousand_separator' => ',',
                 'decimal_separator' => '.',
@@ -76,8 +79,6 @@ class MstFinanceSetting extends BaseModel
                 'financial_year_id' => MstFinancialYear::currentFinancialYear()->id ?? null,
             ]);
         });
-
-
     }
 
     // Create Helper function to clear cache after save
@@ -93,7 +94,8 @@ class MstFinanceSetting extends BaseModel
             ?? '₹';
     }
 
-    public static function currencyPosition(): string  {
+    public static function currencyPosition(): string
+    {
         return self::getOrCreate()->currency_position
             ?? 'left';
     }
@@ -104,24 +106,22 @@ class MstFinanceSetting extends BaseModel
             ?? 2;
     }
 
-    public static function thousandSeparator(): string {
+    public static function thousandSeparator(): string
+    {
         return self::getOrCreate()->thousand_separator
             ?? ',';
     }
 
-    public static function decimalSeparator(): string {
+    public static function decimalSeparator(): string
+    {
         return self::getOrCreate()->decimal_separator
             ?? '.';
     }
 
 
-    public static function appFinancialYearId(): ?int {
+    public static function appFinancialYearId(): ?int
+    {
         return self::getOrCreate()->financial_year_id
             ?? null;
     }
-
-
-
 }
-
-

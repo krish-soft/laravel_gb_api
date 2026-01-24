@@ -24,7 +24,7 @@ class MstFinanceSettingApiController extends ApiResponseWithAdminAuthController
     {
         $user = $request->user();
 
-        if (!$user->isAdminManagement() || $user->role !== AdminRoleEnum::SUPERADMIN) {
+        if (!$user->isAdminManagement() || $user->role !== AdminRoleEnum::SUPERADMIN->value) {
             return $this->showErrorMessage(__('messages.error_messages.unauthorized_action'), 403);
         }
 

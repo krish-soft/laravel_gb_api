@@ -13,6 +13,8 @@ return new class extends Migration {
         Schema::create('mst_finance_settings', function (Blueprint $table) {
             $table->id();
 
+            $table->string('setting_code', 20)->unique(); // To Pick First not base on id 
+
             // Currency & formatting
             $table->string('currency')->default('INR');
             $table->string('currency_symbol', 10)->default('₹');
@@ -39,9 +41,6 @@ return new class extends Migration {
             $table->timestamps();
             $table->softDeletes();
         });
-
-
-
     }
 
     /**

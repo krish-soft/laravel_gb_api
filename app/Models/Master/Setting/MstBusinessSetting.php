@@ -5,11 +5,14 @@ namespace App\Models\Master\Setting;
 use App\Models\BaseModel;
 use App\Models\Common\Address;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Cache;
 
 class MstBusinessSetting extends BaseModel
 {
     //
+
+    use SoftDeletes;
 
     protected static function booted()
     {
@@ -32,6 +35,8 @@ class MstBusinessSetting extends BaseModel
 
 
     protected $fillable = [
+        'setting_code',
+
         'picture',
         'legal_name',
         'trade_name',
@@ -67,10 +72,13 @@ class MstBusinessSetting extends BaseModel
         return Cache::rememberForever('mst_business_settings', function () {
             return self::firstOrCreate(
                 [
+                    'setting_code' => 'SETTING_001',
+
+                ],
+                [
                     'legal_name' => 'Krishna Software Pvt Ltd',
                     'trade_name' => 'Green Bazar'
-                ],
-                []
+                ]
             );
         });
     }

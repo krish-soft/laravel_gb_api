@@ -16,6 +16,9 @@ return new class extends Migration
             $table->id();
 
             // App identity
+
+            $table->string('setting_code', 20)->unique(); // To Pick First not base on id 
+
             $table->string('app_name')->default('Green Bazar')->nullable();
 
             // Localization

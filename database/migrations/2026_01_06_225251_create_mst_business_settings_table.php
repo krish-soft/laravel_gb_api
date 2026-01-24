@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('mst_business_settings', function (Blueprint $table) {
             $table->id();
 
+            $table->string('setting_code', 20)->unique(); // To Pick First not base on id 
+
             $table->string('picture')->nullable();
 
             // Business identity

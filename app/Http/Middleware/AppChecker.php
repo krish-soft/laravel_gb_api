@@ -10,6 +10,7 @@ use App\Traits\ApiResponserTrait;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class AppChecker
@@ -38,18 +39,19 @@ class AppChecker
 
         $appSetting = MstAppSetting::getOrCreate();
 
-//        if (!$appSetting) {
-//            return $this->showErrorMessageWithAction(
-//                'Service unavailable',
-//                503,
-//                ActionCodeEnum::FORCE_MAINTENANCE,
-//
-//            );
-//        }
+
+        //        if (!$appSetting) {
+        //            return $this->showErrorMessageWithAction(
+        //                'Service unavailable',
+        //                503,
+        //                ActionCodeEnum::FORCE_MAINTENANCE,
+        //
+        //            );
+        //        }
 
         if ($appSetting->isMaintenanceMode()) {
             return $this->showErrorMessageWithAction(
-                $appSetting->getMaintenanceMessage() ?? __('messages.error_messages.maintenance_mode'),
+                __('messages.error_messages.maintenance_mode') . "\n\n" . $appSetting->getMaintenanceMessage(),
                 503,
                 ActionCodeEnum::FORCE_MAINTENANCE,
 

@@ -19,6 +19,7 @@ class BusinessSettingSeeder extends Seeder
 
 
         $addr = Address::create([
+           
             'addr_code' => 'HO001',
             'addr_name' => 'Head Office',
             'addr_type' => AddressTypeEnum::BILL->value,
@@ -47,6 +48,7 @@ class BusinessSettingSeeder extends Seeder
 
         MstBusinessSetting::create([
             // App identity
+             'setting_code' => 'SETTING_001',
             'legal_name' => 'Krishna Software Pvt Ltd',
             'trade_name' => 'Green Bazar',
 

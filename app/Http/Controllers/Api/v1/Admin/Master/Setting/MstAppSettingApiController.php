@@ -6,6 +6,7 @@ use App\Enum\Admin\AdminRoleEnum;
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
 use App\Models\Master\Setting\MstAppSetting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class MstAppSettingApiController extends ApiResponseWithAdminAuthController
 {
@@ -22,33 +23,49 @@ class MstAppSettingApiController extends ApiResponseWithAdminAuthController
 
     public function updateSetting(Request $request)
     {
+
+
+
         $user = $request->user();
 
-        if (!$user->isAdminManagement() || $user->role !== AdminRoleEnum::SUPERADMIN) {
-            return $this->showErrorMessage(__('messages.error_messages.unauthorized_action'), 403);
+        if (
+            !$user->isAdminManagement() ||
+            $user->role !== AdminRoleEnum::SUPERADMIN->value
+        ) {
+            return $this->showErrorMessage(
+                __('messages.error_messages.unauthorized_action'),
+                403
+            );
         }
 
         $validated = $request->validate([
-            'app_name'                    => 'required|string|max:30',
+            'app_name' => 'nullable|string|max:30',
 
-            'currency'                    => 'sometimes|string|max:10',
-            'currency_symbol'             => 'sometimes|string|max:5',
-            'date_format'                 => 'sometimes|string|max:50',
-            'time_format'                 => 'sometimes|string|max:50',
+            'currency' => 'nullable|string|max:10',
+            'currency_symbol' => 'nullable|string|max:5',
 
-            'is_maintenance_mode'         => 'sometimes|boolean',
-            'maintenance_message'         => 'nullable|string|max:1000',
+            'timezone' => 'nullable|string|max:50',
+            'locale' => 'nullable|string|max:10',
+            'fallback_locale' => 'nullable|string|max:10',
 
-            'is_registration_enabled'        => 'sometimes|boolean',
+            'date_format' => 'nullable|string|max:50',
+            'time_format' => 'nullable|string|max:50',
 
-            'app_version'                 => 'sometimes|string|max:50',
+            // only from cmd
+            // 'is_maintenance_mode' => 'nullable|boolean',
+            // 'maintenance_message' => 'nullable|string|max:1000',
 
-            'mobile_app_android_version'  => 'required_with:is_force_app_android_update|string|max:50',
-            'is_force_app_android_update' => 'sometimes|boolean',
+            'is_registration_enabled' => 'nullable|boolean',
 
-            'mobile_app_ios_version'      => 'required_with:is_force_app_ios_update|string|max:50',
-            'is_force_app_ios_update'     => 'sometimes|boolean',
+            'app_version' => 'nullable|string|max:50',
+
+            'is_force_app_android_update' => 'nullable|boolean',
+            'mobile_app_android_version' => 'nullable|string|max:50',
+
+            'is_force_app_ios_update' => 'nullable|boolean',
+            'mobile_app_ios_version' => 'nullable|string|max:50',
         ]);
+
 
         $appSetting = MstAppSetting::getOrCreate();
 
@@ -58,6 +75,7 @@ class MstAppSettingApiController extends ApiResponseWithAdminAuthController
         $original = $appSetting->getOriginal();
 
         $appSetting->save();
+
 
         $changes = [];
         foreach ($dirty as $key => $newValue) {

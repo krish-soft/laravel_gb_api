@@ -15,6 +15,8 @@ class AppSettingSeeder extends Seeder
         //
         MstAppSetting::create([
             // App identity
+
+            'setting_code' => 'SETTING_001',
             'app_name' => 'Green Bazar',
 
             // Localization
