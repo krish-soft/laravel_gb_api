@@ -18,8 +18,8 @@ class MstFinancialYear extends BaseModel
 
         static::saved(function () {
             try {
-                if (Cache::has('current_fy')) {
-                    Cache::forget('current_fy');
+                if (Cache::has('current_fy_id')) {
+                    Cache::forget('current_fy_id');
                 }
             } catch (\Throwable $e) {
                 // ignore completely

@@ -17,7 +17,7 @@ return new class extends Migration
 
             // App identity
 
-            $table->string('setting_code', 20)->unique(); // To Pick First not base on id 
+            $table->string('setting_code', 20)->unique(); // To Pick First not base on id
 
             $table->string('app_name')->default('Green Bazar')->nullable();
 
@@ -27,9 +27,10 @@ return new class extends Migration
             $table->string('fallback_locale')->default('en')->nullable();
 
 
-
             $table->string('date_format')->default('Y-m-d')->nullable();
             $table->string('time_format')->default('H:i')->nullable();
+
+            $table->date('db_cut_off_date')->nullable(); //
 
             // App behavior
             $table->boolean('is_maintenance_mode')->default(false);

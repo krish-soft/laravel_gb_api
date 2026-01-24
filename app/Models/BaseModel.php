@@ -11,11 +11,6 @@ class BaseModel extends Model
 {
     //
 
-    protected string $financialDateColumn = 'created_at';
-    public function getFinancialDateColumn(): string
-    {
-        return $this->financialDateColumn;
-    }
 
     protected static function booted()
     {
@@ -43,68 +38,6 @@ class BaseModel extends Model
         });
 
 
-        /*
- |--------------------------------------------------------------------------
- | READ: Financial Year Global Scope
- |--------------------------------------------------------------------------
- */
-        static::addGlobalScope('fy_scope', function (Builder $query) {
-            $model = new static;
-            $column = $model->getFinancialDateColumn();
-
-            $query->whereBetween(
-                $column,
-                [currentFyStart(), currentFyEnd()]
-            );
-        });
-
-        /*
-        |--------------------------------------------------------------------------
-        | CREATE: Block back-dated entries
-        |--------------------------------------------------------------------------
-        */
-        static::creating(function ($model) {
-            $column = $model->getFinancialDateColumn();
-            $date = $model->{$column} ?? now();
-
-            if ($date < currentFyStart() || $date > currentFyEnd()) {
-                throw ValidationException::withMessages([
-                    $column => 'Date must be within the active financial year.',
-                ]);
-            }
-        });
-
-        /*
-        |--------------------------------------------------------------------------
-        | UPDATE: Block past FY modification
-        |--------------------------------------------------------------------------
-        */
-        static::updating(function ($model) {
-            $column = $model->getFinancialDateColumn();
-            $originalDate = $model->getOriginal($column);
-
-            if ($originalDate < currentFyStart() || $originalDate > currentFyEnd()) {
-                throw ValidationException::withMessages([
-                    'financial_year' => 'Past financial year data is locked.',
-                ]);
-            }
-        });
-
-        /*
-        |--------------------------------------------------------------------------
-        | DELETE: Block past FY deletion
-        |--------------------------------------------------------------------------
-        */
-        static::deleting(function ($model) {
-            $column = $model->getFinancialDateColumn();
-            $date = $model->{$column};
-
-            if ($date < currentFyStart() || $date > currentFyEnd()) {
-                throw ValidationException::withMessages([
-                    'financial_year' => 'Past financial year data is locked.',
-                ]);
-            }
-        });
     }
 
     protected static function audit($action, $model, $old, $new)

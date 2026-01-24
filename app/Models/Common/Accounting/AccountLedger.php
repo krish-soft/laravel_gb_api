@@ -1,9 +1,8 @@
 <?php
 
-namespace App\Models\Accounting;
+namespace App\Models\Common\Accounting;
 
 use App\Models\BaseModel;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 

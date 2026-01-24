@@ -3,6 +3,8 @@
 use App\Helpers\FileUploadHelper;
 use App\Helpers\PrivateFileUploadHelper;
 use App\Models\Common\Log\ActivityLog;
+use App\Models\Master\MstFinancialYear;
+use App\Models\Master\Setting\MstFinanceSetting;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 
@@ -94,14 +96,32 @@ if (!function_exists('uploadPrivateFile')) {
 
 
 if (!function_exists('currentFy')) {
-    function currentFy()
+    function currentFy(): ?MstFinancialYear
     {
-        return Cache::rememberForever('current_fy', function () {
-            return \App\Models\Master\MstFinancialYear::where('is_active', 1)->first();
-        });
-    }
+        // Cache ONLY the ID
+        $fyId = Cache::rememberForever('current_fy_id', function () {
 
+            $setting = MstFinanceSetting::withoutGlobalScopes()->first();
+
+            if ($setting && $setting->financial_year_id) {
+                return $setting->financial_year_id;
+            }
+
+            return MstFinancialYear::withoutGlobalScopes()
+                ->where('is_active', 1)
+                ->latest()
+                ->value('id');
+        });
+
+        if (!$fyId) {
+            return null;
+        }
+
+        // ALWAYS return fresh Eloquent model
+        return MstFinancialYear::withoutGlobalScopes()->find($fyId);
+    }
 }
+
 if (!function_exists('currentFyStart')) {
     function currentFyStart()
     {

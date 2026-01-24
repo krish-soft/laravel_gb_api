@@ -2,9 +2,9 @@
 
 namespace App\Services\Accounting;
 
-use App\Models\Accounting\Account;
-use App\Models\Accounting\AccountLedger;
 use App\Enum\Accounting\LedgerStatusEnum;
+use App\Models\Common\Accounting\Account;
+use App\Models\Common\Accounting\AccountLedger;
 use App\Models\Master\Setting\MstFinanceSetting;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;

@@ -1,12 +1,10 @@
 <?php
 
-namespace App\Models\Accounting;
+namespace App\Models\Common\Accounting;
 
 use App\Models\BaseModel;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Str;
 
 class Account extends BaseModel
 {
@@ -43,7 +41,7 @@ class Account extends BaseModel
         'remark',
     ];
 
-    // casts 
+    // casts
     protected $casts = [
         'available_balance' => 'decimal:2',
         'hold_balance' => 'decimal:2',

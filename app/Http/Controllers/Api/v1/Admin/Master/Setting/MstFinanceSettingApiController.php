@@ -29,15 +29,16 @@ class MstFinanceSettingApiController extends ApiResponseWithAdminAuthController
         }
 
         $validated = $request->validate([
-            'currency'                   => 'sometimes|string|max:10',
-            'currency_symbol'            => 'sometimes|string|max:5',
+            'currency' => 'nullable|string|max:10',
+            'currency_symbol' => 'nullable|string|max:5',
 
-            'currency_position'          => 'sometimes|string|max:10',
-            'thousand_separator'         => 'sometimes|string|max:5',
-            'decimal_separator'          => 'sometimes|string|max:5',
-            'decimal_places'             => 'sometimes|integer',
+            'currency_position' => 'nullable|string|max:10',
+            'thousand_separator' => 'nullable|string|max:5',
+            'decimal_separator' => 'nullable|string|max:5',
+            'decimal_places' => 'nullable|integer',
 
-            'financial_year_id'          => 'sometimes|integer|exists:mst_financial_years,id',
+            'financial_year_id' => 'nullable|integer|exists:mst_financial_years,id',
+            'is_financial_year_logic_enabled' => 'sometimes|boolean',
 
         ]);
 
@@ -72,7 +73,6 @@ class MstFinanceSettingApiController extends ApiResponseWithAdminAuthController
             200
         );
     }
-
 
 
     //

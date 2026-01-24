@@ -29,5 +29,13 @@ class MstFinancialSeeder extends Seeder
             'end_date'   => '2025-03-31',
             'is_active'  => false,
         ]);
+
+        MstFinancialYear::create([
+            'code'       => '2023-2024',
+            'name'       => 'Financial Year 2023-2024',
+            'start_date' => '2023-04-01',
+            'end_date'   => '2024-03-31',
+            'is_active'  => false,
+        ]);
     }
 }

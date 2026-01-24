@@ -20,6 +20,8 @@ class MstFinanceSetting extends BaseModel
 
 
         static::saved(function () {
+            Cache::forget('current_fy_id'); //
+
             try {
                 if (Schema::hasTable('mst_finance_settings') && Cache::has('mst_finance_settings')) {
                     Cache::forget('mst_finance_settings');
@@ -32,7 +34,7 @@ class MstFinanceSetting extends BaseModel
 
     protected $fillable = [
         'setting_code',
-        
+
         'currency',
         'currency_symbol',
 
@@ -41,6 +43,7 @@ class MstFinanceSetting extends BaseModel
         'decimal_separator',
         'decimal_places',
 
+        'is_financial_year_logic_enabled',
         'financial_year_id',
     ];
 
@@ -48,6 +51,7 @@ class MstFinanceSetting extends BaseModel
     // Casts
     protected $casts = [
         'decimal_places' => 'integer',
+        'is_financial_year_logic_enabled' => 'boolean',
     ];
 
     // Relationships
@@ -123,5 +127,10 @@ class MstFinanceSetting extends BaseModel
     {
         return self::getOrCreate()->financial_year_id
             ?? null;
+    }
+
+
+    public static function isFinancialYearEnabled(){
+        return self::getOrCreate()->is_financial_year_logic_enabled ?? false;
     }
 }

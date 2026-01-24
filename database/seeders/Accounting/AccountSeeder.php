@@ -4,8 +4,7 @@ namespace Database\Seeders\Accounting;
 
 use App\Enum\Accounting\AccountOwnerTypeEnum;
 use App\Enum\Accounting\PlatformAccountCodeEnum;
-use App\Models\Accounting\Account;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Common\Accounting\Account;
 use Illuminate\Database\Seeder;
 
 class AccountSeeder extends Seeder

@@ -7,6 +7,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Master\MstPackType;
 use App\Models\Master\MstState;
 use App\Models\Master\MstUnit;
+use App\Models\Master\Setting\MstAppSetting;
+use App\Models\Master\Setting\MstFinanceSetting;
+use App\Models\Setting\AppSetting;
 use Illuminate\Http\Request;
 
 class UtilsApiController extends ApiResponseController
@@ -32,13 +35,16 @@ class UtilsApiController extends ApiResponseController
     }
 
 
+    public function getAppMetaInfo()
+    {
+
+        $data = [
+            'app_name' => MstAppSetting::getOrCreate()->app_name,
+            'fy_code' => currentFy()->code,
 
 
-
-
-
-
-
+        ];
+    }
 
 
     //

@@ -6,10 +6,10 @@ use App\Enum\Accounting\AccountEntryTypeEnum;
 use App\Enum\Accounting\AccountOwnerTypeEnum;
 use App\Enum\Accounting\LedgerStatusEnum;
 use App\Enum\Accounting\PlatformAccountCodeEnum;
-use App\Models\Accounting\Account;
-use App\Models\Accounting\AccountLedger;
 use App\Models\Buyer\Order\Order;
 use App\Models\Buyer\Order\OrderItem;
+use App\Models\Common\Accounting\Account;
+use App\Models\Common\Accounting\AccountLedger;
 use App\Models\Common\Payment\Payment;
 use Illuminate\Support\Facades\DB;
 

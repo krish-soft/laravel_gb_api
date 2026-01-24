@@ -20,7 +20,7 @@ class MstProduct extends BaseModel
         static::creating(function ($product) {
 
             // If code already provided (seeder/manual), do nothing
-            if (! empty($product->product_code)) {
+            if (!empty($product->product_code)) {
                 return;
             }
 
@@ -30,7 +30,7 @@ class MstProduct extends BaseModel
 
             $category = MstProductCategory::find($product->category_id);
 
-            if (! $category || empty($category->hsn_chapter)) {
+            if (!$category || empty($category->hsn_chapter)) {
                 throw new \Exception('Invalid category or missing HSN chapter.');
             }
 
@@ -46,7 +46,7 @@ class MstProduct extends BaseModel
             $next = 1;
 
             if ($lastCode) {
-                $next = (int) substr($lastCode, -3) + 1;
+                $next = (int)substr($lastCode, -3) + 1;
             }
 
             $product->product_code =
@@ -112,7 +112,6 @@ class MstProduct extends BaseModel
     {
         return $this->hasMany(ProductListingItem::class, 'product_id', 'id');
     }
-
 
 
     protected $appends = ['pictureUrl'];
