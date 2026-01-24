@@ -15,7 +15,7 @@ class MstAppSettingApiController extends ApiResponseWithAdminAuthController
     {
         //
 
-        $appSetting = MstAppSetting::first();
+        $appSetting = MstAppSetting::getOrCreate();
 
         return $this->successResponse(__('messages.success_messages.success_get'), $appSetting, 200);
     }
@@ -50,7 +50,7 @@ class MstAppSettingApiController extends ApiResponseWithAdminAuthController
             'is_force_app_ios_update'     => 'sometimes|boolean',
         ]);
 
-        $appSetting = MstAppSetting::first() ?? new MstAppSetting();
+        $appSetting = MstAppSetting::getOrCreate();
 
         $appSetting->fill($validated);
 

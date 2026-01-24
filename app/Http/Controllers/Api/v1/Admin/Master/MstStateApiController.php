@@ -101,6 +101,10 @@ class MstStateApiController extends ApiResponseWithAdminAuthController
     public function destroy(MstState $mstState)
     {
         //
+
+        return $this->errorResponse(__('messages.error_messages.main_resource_cannot_delete'), 403);
+
+
         $user = request()->user();
 
         // Log activity

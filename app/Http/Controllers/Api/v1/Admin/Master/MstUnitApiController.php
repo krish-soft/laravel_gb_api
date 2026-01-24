@@ -20,7 +20,7 @@ class MstUnitApiController extends ApiResponseWithAdminAuthController
             $mstUnitsQuery->where('is_active', filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN));
         }
         $mstUnits = $mstUnitsQuery->get();
-        
+
         return $this->successResponse(__('messages.success_messages.success_get'), $mstUnits);
     }
 
@@ -101,7 +101,11 @@ class MstUnitApiController extends ApiResponseWithAdminAuthController
     public function destroy(MstUnit $mstUnit)
     {
         //
-        
+
+        if ($mstUnit->packTypes()->exists() || $mstUnit->deliveryChargeRules()->exists()) {
+            return $this->errorResponse(__('messages.error_messages.main_resource_cannot_delete'), 403);
+        }
+
         // Log activity
         logActivity(
             'unit_deleted',        // EVENT

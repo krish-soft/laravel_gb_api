@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\v1\Admin\Master\Charge\Rule\MstDeliveryChargeRuleAp
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\Rule\MstMinimumOrderChargeRuleApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Depot\MstDepotApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Depot\MstZoneApiController;
+use App\Http\Controllers\Api\v1\Admin\Master\MstFinancialYearApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\MstPackTypeApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\MstStateApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\MstUnitApiController;
@@ -21,6 +22,8 @@ use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductCategoryApiContro
 use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductPackagingApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductVariantApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstAppSettingApiController;
+use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstFinanceSettingApiController;
+use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstPaymentSettingApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Vehicle\MstVehicleApiController;
 use App\Http\Controllers\Api\v1\Admin\Seller\Product\AdminProductListingApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\CartApiController;
@@ -197,8 +200,23 @@ Route::group([
 
 
             // Settings
-            Route::get('setting/app', [MstAppSettingApiController::class, 'getSetting']);
-            Route::put('setting/app', [MstAppSettingApiController::class, 'updateSetting']);
+            Route::prefix('setting')->group(function () {
+                // App Settings
+                Route::get('app', [MstAppSettingApiController::class, 'getSetting']);
+                Route::put('app', [MstAppSettingApiController::class, 'updateSetting']);
+
+                // Finance Setting
+                Route::get('finance', [MstFinanceSettingApiController::class, 'getSetting']);
+                Route::put('finance', [MstFinanceSettingApiController::class, 'updateSetting']);
+
+                // Payment Setting
+                Route::get('payment', [MstPaymentSettingApiController::class, 'getSetting']);
+                Route::put('payment', [MstPaymentSettingApiController::class, 'updateSetting']);
+
+
+                // Financial year Setting
+                Route::apiResource('financialYear', MstFinancialYearApiController::class);
+            });
 
             ###
             ##### Master  Routes
