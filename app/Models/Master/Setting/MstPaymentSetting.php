@@ -38,15 +38,15 @@ class MstPaymentSetting extends BaseModel
 
         'min_payout_amount',
         'max_payout_amount',
+        'payout_cycle',
 
         'min_cart_order_amount',
         'max_cart_order_amount',
-
-        'payout_cycle',
-        'refund_window_days',
-
         'max_payment_attempts',
         'cart_expiry_minutes',
+
+
+        'refund_window_days',
 
     ];
 

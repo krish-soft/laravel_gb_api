@@ -26,7 +26,7 @@ class MstPaymentSettingApiController extends ApiResponseWithAdminAuthController
     {
         $user = $request->user();
 
-        if (!$user->isAdminManagement() || $user->role !== AdminRoleEnum::SUPERADMIN) {
+        if (!$user->isAdminManagement() || $user->role !== AdminRoleEnum::SUPERADMIN->value) {
             return $this->showErrorMessage(__('messages.error_messages.unauthorized_action'), 403);
         }
 
@@ -36,13 +36,13 @@ class MstPaymentSettingApiController extends ApiResponseWithAdminAuthController
 
             'min_payout_amount'         => 'sometimes|numeric|min:1',
             'max_payout_amount'         => 'sometimes|numeric|min:1',
+            'payout_cycle'              => 'sometimes|string|min:1|in:daily,weekly,monthly',
             'min_cart_order_amount'     => 'sometimes|numeric|min:1',
             'max_cart_order_amount'     => 'sometimes|numeric|min:1',
-
-            'payout_cycle'              => 'sometimes|integer|min:1',
-            'refund_window_days'        => 'sometimes|integer|min:1',
-            'max_payment_attempts'      => 'sometimes|integer|min:1',
             'cart_expiry_minutes'       => 'sometimes|integer|min:1',
+            'max_payment_attempts'      => 'sometimes|integer|min:1',
+
+            'refund_window_days'        => 'sometimes|integer|min:1',
 
         ]);
 

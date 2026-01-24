@@ -42,8 +42,9 @@ class MstBusinessSetting extends BaseModel
         'trade_name',
 
         'gst_number',
-        'gst_state_code',
-        'is_gst_enabled',
+        'cin_number',
+        'pan_number',
+        'tan_number',
 
         'email',
         'phone',
@@ -73,7 +74,6 @@ class MstBusinessSetting extends BaseModel
             return self::firstOrCreate(
                 [
                     'setting_code' => 'SETTING_001',
-
                 ],
                 [
                     'legal_name' => 'Krishna Software Pvt Ltd',
@@ -85,7 +85,7 @@ class MstBusinessSetting extends BaseModel
 
 
     // Relation
-    public function billingAddress()
+    public function billAddress()
     {
         return $this->belongsTo(Address::class, 'bill_addr_code', 'addr_code');
     }

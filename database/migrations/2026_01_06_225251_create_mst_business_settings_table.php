@@ -22,12 +22,9 @@ return new class extends Migration
             $table->string('legal_name')->default('Green Bazar (Krishna Software Pvt Ltd)')->nullable();
             $table->string('trade_name')->nullable();
 
-            // GST & tax
-            $table->string('gst_number')->nullable();
-            $table->string('gst_state_code', 2)->nullable();
-            $table->boolean('is_gst_enabled')->default(false)->nullable();
-
+       
             // Legal identity
+            $table->text('gst_number')->nullable();
             $table->text('cin_number')->nullable();
             $table->text('pan_number')->nullable();
             $table->text('tan_number')->nullable();

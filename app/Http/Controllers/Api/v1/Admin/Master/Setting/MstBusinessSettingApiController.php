@@ -21,6 +21,8 @@ class MstBusinessSettingApiController extends ApiResponseWithAdminAuthController
 
         $businessSetting = MstBusinessSetting::getOrCreate();
 
+        $businessSetting = MstBusinessSetting::with('billAddress')->where('id', $businessSetting->id)->first();
+
         return $this->successResponse(__('messages.success_messages.success_get'), $businessSetting, 200);
     }
 
@@ -28,28 +30,29 @@ class MstBusinessSettingApiController extends ApiResponseWithAdminAuthController
     {
         $user = $request->user();
 
-        if (!$user->isAdminManagement() || $user->role !== AdminRoleEnum::SUPERADMIN) {
+        if (!$user->isAdminManagement() || $user->role !== AdminRoleEnum::SUPERADMIN->value) {
             return $this->showErrorMessage(__('messages.error_messages.unauthorized_action'), 403);
         }
 
         $validated = $request->validate([
-            'picture'                 => 'sometimes|string',
-            'legal_name'              => 'sometimes|string|max:255',
-            'trade_name'              => 'sometimes|string|max:255',
+            'picture'                 => 'nullable|string',
 
-            'gst_number'              => 'sometimes|string|max:50',
-            'gst_state_code'          => 'sometimes|string|max:10',
-            'is_gst_enabled'          => 'sometimes|boolean',
+            'legal_name'              => 'nullable|string|max:100',
+            'trade_name'              => 'nullable|string|max:100',
 
-            'email'                   => 'sometimes|string|email|max:255',
-            'phone'                   => 'sometimes|string|max:20',
-            // 'bill_bill_addr_code',
-            // 'bill_addr_code',
+            'gst_number'             => 'nullable|string|max:20',
+            'cin_number'             => 'nullable|string|max:20',
+            'pan_number'             => 'nullable|string|max:20',
+            'tan_number'             => 'nullable|string|max:20',
 
-            'website'                => 'sometimes|string|max:255|url',
-            'terms_url'              => 'sometimes|string|max:255|url',
-            'privacy_url'            => 'sometimes|string|max:255|url',
-            'notes'                  => 'sometimes|string',
+            'email'                   => 'nullable|string|email|max:255',
+            'phone_number'            => 'nullable|string|max:20',
+
+            'website'                => 'nullable|string|max:255|url',
+            'terms_url'              => 'nullable|string|max:255|url',
+            'privacy_url'            => 'nullable|string|max:255|url',
+
+            'notes'                  => 'nullable|string',
 
             'is_active'              => 'sometimes|boolean',
 
@@ -88,18 +91,19 @@ class MstBusinessSettingApiController extends ApiResponseWithAdminAuthController
     }
 
 
-    public function saveBillAddress(AddressRequest $request, MstBusinessSetting $businessSetting)
+    public function saveBillAddress(AddressRequest $request)
     {
-        // Log::info('Saving address for depot', ['depot_id' => $depot->id]);
+        // Log::info('Saving address for depot', ['businessSetting' => $businessSetting->setting_code]);
 
         $data = $request->validated();
 
         $data['addr_type'] = AddressTypeEnum::BILL->value;
 
+        $businessSetting = MstBusinessSetting::getOrCreate();
 
         if ($businessSetting->bill_addr_code) {
             // UPDATE
-            $address = Address::where('bill_addr_code', $businessSetting->bill_addr_code)
+            $address = Address::where('addr_code', $businessSetting->bill_addr_code)
                 ->firstOrFail();
 
             $address->update($data);
@@ -115,6 +119,7 @@ class MstBusinessSettingApiController extends ApiResponseWithAdminAuthController
 
             $event = 'business_bill_address_added';
         }
+
 
         logActivity(
             $event,

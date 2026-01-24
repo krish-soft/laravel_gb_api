@@ -17,10 +17,11 @@ class BusinessSettingSeeder extends Seeder
     {
         //
 
+        $addrCode = 'HO001';
 
         $addr = Address::create([
-           
-            'addr_code' => 'HO001',
+
+            'addr_code' =>  $addrCode,
             'addr_name' => 'Head Office',
             'addr_type' => AddressTypeEnum::BILL->value,
 
@@ -48,11 +49,12 @@ class BusinessSettingSeeder extends Seeder
 
         MstBusinessSetting::create([
             // App identity
-             'setting_code' => 'SETTING_001',
+
+            'setting_code' => 'SETTING_001',
             'legal_name' => 'Krishna Software Pvt Ltd',
             'trade_name' => 'Green Bazar',
 
-            'bill_addr_code' => $addr->addr_code,
+            'bill_addr_code' =>  $addrCode,
 
             //
             'website' => 'https://greenbazar.net.in',
