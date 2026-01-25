@@ -7,7 +7,7 @@ use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserResetPasswordApiContr
 use App\Http\Controllers\Api\v1\Admin\Common\Fulfillment\AdminFulfillmentLocationApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Payment\PaymentReconcileApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Payment\PayoutApiController;
-use App\Http\Controllers\Api\v1\Admin\Common\User\CustomerApiController;
+use App\Http\Controllers\Api\v1\Admin\Common\Customer\CustomerApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeLevelApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\Rule\MstDeliveryChargeRuleApiController;
@@ -202,9 +202,13 @@ Route::group([
 
 
             // Regular User Management
-            Route::apiResource('customer', CustomerApiController::class); // Manage Regular user
-            Route::post('customer/{user}/addDepot', [CustomerApiController::class, 'addDepot']);
-            Route::delete('customer/{user}/removeDepot', [CustomerApiController::class, 'removeDepot']);
+            Route::prefix('customer')->group(function () {
+                Route::apiResource('customer', CustomerApiController::class); // Manage Regular user
+
+                ## Customers Actions 
+                Route::post('customer/{user}/addDepot', [CustomerApiController::class, 'addDepot']);
+                Route::delete('customer/{user}/removeDepot', [CustomerApiController::class, 'removeDepot']);
+            });
 
             // Fulfillment Location Routes
             Route::apiResource('fulfillmentLocation', AdminFulfillmentLocationApiController::class);

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\v1\Admin\Common\User;
+namespace App\Http\Controllers\Api\v1\Admin\Common\Customer;
 
 use App\Enum\User\UserRoleEnum;
 use App\Enum\User\UserTypeEnum;
@@ -14,11 +14,21 @@ class CustomerApiController extends ApiResponseWithAdminAuthController
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         //
+        $userQuery = User::with()->latest()->whereIn('role', [
+            UserRoleEnum::BUYER->value,
+            UserRoleEnum::SELLER->value,
+            UserRoleEnum::DELIVERY->value,
+        ]);
 
-        $users = User::latest()->get();
+
+        // Apply filters if any
+
+        $users = $userQuery->get();
+
+
 
         return $this->successResponse(__('messages.success_messages.success_get'), $users, 200);
     }
