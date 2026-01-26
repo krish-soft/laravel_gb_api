@@ -14,5 +14,11 @@ enum AdminUserTypeEnum: string
     case SUPPORT = 'support'; // Support
     case STAFF = 'staff'; // Staff
 
-
+    public static function casesAsValues(): array
+    {
+        return array_map(
+            fn(self $case) => $case->value,
+            self::cases()
+        );
+    }
 }

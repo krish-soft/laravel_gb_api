@@ -67,6 +67,8 @@ return new class extends Migration
             $table->string('custchar1', 100)->nullable();
             $table->string('custchar2', 100)->nullable();
 
+            $table->string('remarks', 100)->nullable();
+
             $table->timestamps();
             $table->softDeletes();
 

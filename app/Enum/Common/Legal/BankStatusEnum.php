@@ -9,4 +9,12 @@ enum BankStatusEnum: string
     case VERIFIED = 'verified';
     case REJECTED = 'rejected';
     case LOCKED   = 'locked';
+
+    public static function casesAsValues(): array
+    {
+        return array_map(
+            fn(self $case) => $case->value,
+            self::cases()
+        );
+    }
 }

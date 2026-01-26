@@ -2,12 +2,16 @@
 
 namespace App\Enum\Common\Legal;
 
-enum KycStatusEnum: string
+enum KycReviewEnum: string
 {
     //
-    case PENDING  = 'pending';
-    case APPROVED = 'approved';
-    case REJECTED = 'rejected';
+
+    case APPROVE  = 'approve';
+
+
+    case NEED_SELFIE  = 'need_selfie';
+    case NEED_PAN_CARD  = 'need_pan_card';
+    case NEED_AADHAAR  = 'need_aadhaar';
 
     public static function casesAsValues(): array
     {
@@ -16,4 +20,6 @@ enum KycStatusEnum: string
             self::cases()
         );
     }
+
+    //
 }

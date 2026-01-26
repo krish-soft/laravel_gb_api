@@ -45,7 +45,7 @@ class AccountLedger extends BaseModel
         'settled_at',
 
         'is_tax',
-        'remark',
+        'remarks',
     ];
 
     // casts

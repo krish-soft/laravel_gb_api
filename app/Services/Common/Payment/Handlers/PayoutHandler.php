@@ -47,7 +47,7 @@ class PayoutHandler
     //             [
     //                 'reference' => $payout->payout_code,
     //                 'payment_reference' => $gatewayRef,
-    //                 'remark' => 'Wallet payout to bank',
+    //                 'remarks' => 'Wallet payout to bank',
     //             ]
     //         );
 
@@ -136,7 +136,7 @@ class PayoutHandler
 
         $payout->update([
             'status' => PayoutStatusEnum::FAILED->value,
-            'remark' => $reason,
+            'remarks' => $reason,
         ]);
 
         logActivity(

@@ -56,7 +56,7 @@ return new class extends Migration
             // Tax flag (excluded from seller/driver payable)
             $table->boolean('is_tax')->default(false)->nullable();
 
-            $table->string('remark')->nullable();
+            $table->string('remarks')->nullable();
 
 
             $table->timestamps();

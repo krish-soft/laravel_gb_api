@@ -33,7 +33,7 @@ return new class extends Migration
             $table->boolean('is_active')->default(true)->nullable();
             $table->string('inactive_reason')->nullable();
 
-            $table->string('remark')->nullable();
+            $table->string('remarks')->nullable();
 
             $table->timestamps();
             $table->softDeletes();

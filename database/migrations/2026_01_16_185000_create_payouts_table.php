@@ -34,7 +34,7 @@ return new class extends Migration
             $table->string('approved_by')->nullable(); // admin user who approved
             $table->timestamp('approved_at')->nullable();
 
-            $table->text('remark')->nullable();
+            $table->text('remarks')->nullable();
 
             $table->timestamps();
             $table->softDeletes();

@@ -46,6 +46,8 @@ class UserKyc extends BaseModel
 
         'custchar1',
         'custchar2',
+
+        'remarks',
     ];
 
 

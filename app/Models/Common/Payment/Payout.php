@@ -30,7 +30,7 @@ class Payout extends BaseModel
         'paid_at',
         'reference',
 
-        'remark',
+        'remarks',
     ];
 
     // casts

@@ -23,4 +23,12 @@ enum LegalDocumentTypeEnum: string
     case ID_PROOF = 'id_proof';
     case PHOTO = 'photo';
     case OTHER = 'other';
+
+    public static function casesAsValues(): array
+    {
+        return array_map(
+            fn(self $case) => $case->value,
+            self::cases()
+        );
+    }
 }

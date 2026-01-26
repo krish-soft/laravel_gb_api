@@ -44,7 +44,7 @@ return new class extends Migration
 
 
             // Optional meta
-            $table->string('remark')->nullable();
+            $table->string('remarks')->nullable();
 
             $table->timestamps();
             $table->softDeletes();

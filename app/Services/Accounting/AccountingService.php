@@ -44,7 +44,7 @@ class AccountingService
                 'payment_reference' => $data['payment_reference'] ?? null,
 
                 'parent_ledger_id'  => $data['parent_ledger_id'] ?? null,
-                'remark'            => $data['remark'] ?? null,
+                'remarks'            => $data['remarks'] ?? null,
             ]);
 
             $this->updateAccountSnapshot($account, $ledger);
@@ -161,7 +161,7 @@ class AccountingService
                 'ledger_date'       => $data['ledger_date'] ?? $ledger->ledger_date,
                 'reference'         => $data['reference'] ?? $ledger->reference,
                 'payment_reference' => $data['payment_reference'] ?? $ledger->payment_reference,
-                'remark'            => $data['remark'] ?? $ledger->remark,
+                'remarks'            => $data['remarks'] ?? $ledger->remark,
             ]);
 
             logActivity(
@@ -188,7 +188,7 @@ class AccountingService
                 'status'           => LedgerStatusEnum::AVAILABLE->value,
                 'parent_ledger_id' => $ledger->id,
                 'ledger_date'      => now()->toDateString(),
-                'remark'           => $remark,
+                'remarks'           => $remark,
             ]
         );
     }

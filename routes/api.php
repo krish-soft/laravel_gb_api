@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\v1\Admin\Common\Fulfillment\AdminFulfillmentLocatio
 use App\Http\Controllers\Api\v1\Admin\Common\Payment\PaymentReconcileApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Payment\PayoutApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Customer\CustomerApiController;
+use App\Http\Controllers\Api\v1\Admin\Common\Customer\CustomerLegalActionApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeLevelApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\Rule\MstDeliveryChargeRuleApiController;
@@ -79,6 +80,9 @@ Route::group([
         Route::get('states', [UtilsApiController::class, 'getStateList']);
         Route::get('units', [UtilsApiController::class, 'getUnitList']);
         Route::get('pack-type-units', [UtilsApiController::class, 'getPackTypeUnitList']);
+
+        Route::get('app-meta', [UtilsApiController::class, 'getAppMetaInfo']);
+        Route::get('enums', [UtilsApiController::class, 'getAlLEnums']);
     });
 
 
@@ -206,14 +210,24 @@ Route::group([
                 Route::apiResource('customer', CustomerApiController::class); // Manage Regular user
 
                 ## Customers Actions 
-                Route::post('customer/{user}/addDepot', [CustomerApiController::class, 'addDepot']);
-                Route::delete('customer/{user}/removeDepot', [CustomerApiController::class, 'removeDepot']);
+                Route::post('addDepot', [CustomerApiController::class, 'addDepot']);
+                Route::delete('removeDepot', [CustomerApiController::class, 'removeDepot']);
+
+                ## Legal Actions
+                Route::get('kyc', [CustomerLegalActionApiController::class, 'getKycDetails']);
+                Route::post('kyc/updateStatus', [CustomerLegalActionApiController::class, 'updateKycStatus']);
+
+                Route::get('legaldoc/list', [CustomerLegalActionApiController::class, 'getLegalDocumentList']);
+                Route::delete('legaldoc/delete/{documentId}', [CustomerLegalActionApiController::class, 'deleteLegalDocument']);
+
+                //
             });
+
 
             // Fulfillment Location Routes
             Route::apiResource('fulfillmentLocation', AdminFulfillmentLocationApiController::class);
-            Route::post('fulfillmentLocation/{user}/addDepot', [AdminFulfillmentLocationApiController::class, 'addDepot']);
-            Route::delete('fulfillmentLocation/{user}/removeDepot', [AdminFulfillmentLocationApiController::class, 'removeDepot']);
+            Route::post('fulfillmentLocation/{location}/addDepot', [AdminFulfillmentLocationApiController::class, 'addDepot']);
+            Route::delete('fulfillmentLocation/{location}/removeDepot', [AdminFulfillmentLocationApiController::class, 'removeDepot']);
 
             ###
             ##### Master  Routes

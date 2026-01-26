@@ -3,6 +3,7 @@
 namespace Database\Seeders\User;
 
 use App\Enum\Admin\AdminRoleEnum;
+use App\Enum\Admin\AdminUserTypeEnum;
 use App\Enum\User\UserRoleEnum;
 use App\Enum\User\UserTypeEnum;
 use App\Models\User;
@@ -20,20 +21,42 @@ class UserSeeder extends Seeder
         User::create([
 
             'user_code' => 'developer01',
-            'nickname' =>  User::generateUniqueNickName(UserTypeEnum::DEVELOPER->value),
+            'nickname' =>  User::generateUniqueNickName(AdminUserTypeEnum::DEVELOPER->value),
             'name' => 'Developer Test',
 
             'email' => 'developer@krishnasoftware.com',
             'password' => bcrypt('password'),
 
             'role' =>  AdminRoleEnum::SUPERADMIN->value,
-            'user_type' => UserTypeEnum::DEVELOPER->value,
+            'user_type' => AdminUserTypeEnum::DEVELOPER->value,
             'email_verified_at' => now(),
 
             'is_active' => true,
             'is_test_user' => true,
 
-            'access_modules'=> '*',
+            'access_modules' => '*',
+
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        User::create([
+
+            'user_code' => 'krunal-rana',
+            'nickname' =>  User::generateUniqueNickName(AdminUserTypeEnum::DEVELOPER->value),
+            'name' => 'Krunal Rana',
+
+            'email' => 'krunal@lionheartapps.com',
+            'password' => bcrypt('Password@2026!'),
+
+            'role' =>  AdminRoleEnum::SUPERADMIN->value,
+            'user_type' => AdminUserTypeEnum::DEVELOPER->value,
+            'email_verified_at' => now(),
+
+            'is_active' => true,
+            'is_test_user' => false,
+
+            'access_modules' => '*',
 
             'created_at' => now(),
             'updated_at' => now(),

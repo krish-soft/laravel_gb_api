@@ -31,7 +31,7 @@ class FulfillmentLocation extends BaseModel
         'addr_code',
         'is_active',
         'inactive_reason',
-        'remark',
+        'remarks',
 
         // Verification audit
         'status',

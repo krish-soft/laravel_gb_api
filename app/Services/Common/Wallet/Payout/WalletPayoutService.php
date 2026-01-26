@@ -197,7 +197,7 @@ class WalletPayoutService
             [
                 'reference' => $payout->payout_code,
                 'payment_reference' => $ref,
-                'remark' => 'Wallet payout',
+                'remarks' => 'Wallet payout',
 
                 'source_type' => Payout::class,
                 'source_id' => $payout->id,

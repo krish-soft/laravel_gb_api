@@ -30,4 +30,15 @@ enum AccountEntryTypeEnum: string
 
         // 🔹 Reversal
     case ORDER_CANCEL               = 'order_cancel';
+
+
+
+
+    public static function casesAsValues(): array
+    {
+        return array_map(
+            fn(self $case) => $case->value,
+            self::cases()
+        );
+    }
 }

@@ -62,7 +62,7 @@ class Address extends BaseModel
 
         'is_active',
 
-        'remark',
+        'remarks',
 
         'custchar1',
         'custchar2',

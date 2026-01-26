@@ -38,7 +38,7 @@ class Account extends BaseModel
         'is_active',
         'inactive_reason',
 
-        'remark',
+        'remarks',
     ];
 
     // casts

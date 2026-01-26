@@ -27,7 +27,7 @@ class AccountSeeder extends Seeder
             'total_credit' => 0.00,
             'total_debit' => 0.00,
             'is_active' => true,
-            'remark' => 'Tracks platform earned income (fees, penalties)',
+            'remarks' => 'Tracks platform earned income (fees, penalties)',
         ]);
 
 
@@ -43,7 +43,7 @@ class AccountSeeder extends Seeder
             'total_credit' => 0.00,
             'total_debit' => 0.00,
             'is_active' => true,
-            'remark' => 'Temporary holding of buyer payments before settlement',
+            'remarks' => 'Temporary holding of buyer payments before settlement',
         ]);
 
 
@@ -59,7 +59,7 @@ class AccountSeeder extends Seeder
             'total_credit' => 0.00,
             'total_debit' => 0.00,
             'is_active' => true,
-            'remark' => 'Tracks GST collected and payable to government',
+            'remarks' => 'Tracks GST collected and payable to government',
         ]);
 
 
