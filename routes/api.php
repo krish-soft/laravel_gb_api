@@ -196,7 +196,8 @@ Route::group([
 
 
             // Product Listing Routes
-            Route::prefix('product-listing')->group(function () {
+            Route::prefix('listing')->group(function () {
+                Route::post('listing', [AdminProductListingApiController::class, 'previewWithCharges']);
                 Route::post('listing/preview', [AdminProductListingApiController::class, 'previewWithCharges']);
                 Route::post('listing/confirm', [AdminProductListingApiController::class, 'confirmListing']);
                 Route::post('listing/{listingId}/cancel', [AdminProductListingApiController::class, 'cancelListing']);
@@ -234,15 +235,15 @@ Route::group([
                 Route::get('kyc/{id}', [CustomerLegalActionApiController::class, 'getKycDetails']);
                 Route::put('kyc/status/{id}', [CustomerLegalActionApiController::class, 'updateKycStatus']);
 
-                Route::get('legaldoc/list', [CustomerLegalActionApiController::class, 'getLegalDocumentList']);
-                Route::delete('legaldoc/delete/{documentId}', [CustomerLegalActionApiController::class, 'deleteLegalDocument']);
+                // Route::get('legaldoc/list', [CustomerLegalActionApiController::class, 'getLegalDocumentList']);
+                // Route::delete('legaldoc/delete/{documentId}', [CustomerLegalActionApiController::class, 'deleteLegalDocument']);
             });
 
 
             // Fulfillment Location Routes
             Route::apiResource('fulfillmentLocation', AdminFulfillmentLocationApiController::class);
-            Route::post('fulfillmentLocation/{location}/addDepot', [AdminFulfillmentLocationApiController::class, 'addDepot']);
-            Route::delete('fulfillmentLocation/{location}/removeDepot', [AdminFulfillmentLocationApiController::class, 'removeDepot']);
+            Route::post('fulfillmentLocation/addDepot', [AdminFulfillmentLocationApiController::class, 'addDepot']);
+            Route::delete('fulfillmentLocation/removeDepot/{fulfillmentLocationDepot}', [AdminFulfillmentLocationApiController::class, 'removeDepot']);
 
             ###
             ##### Master  Routes

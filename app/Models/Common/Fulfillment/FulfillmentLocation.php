@@ -50,12 +50,12 @@ class FulfillmentLocation extends BaseModel
 
     protected $hidden = [
         // Verification audit
-        'status',
-        'verification_mode',
-        'verified_at',
-        'verified_by',
-        'verified_user_id',
-        'review_comment',
+        // 'status',
+        // 'verification_mode',
+        // 'verified_at',
+        // 'verified_by',
+        // 'verified_user_id',
+        // 'review_comment',
     ];
 
     // Scope

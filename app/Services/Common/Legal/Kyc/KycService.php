@@ -210,7 +210,7 @@ class KycService
 
             $kyc->status = $data['status'];
             $kyc->review_comment = $data['review_comment'] ?? null;
-            $kyc->verification_mode = 'admin_panel';
+            $kyc->verification_mode = 'admin_user';
 
             if ($data['status'] === KycStatusEnum::APPROVED->value) {
                 // On approval, mark KYC as not expired

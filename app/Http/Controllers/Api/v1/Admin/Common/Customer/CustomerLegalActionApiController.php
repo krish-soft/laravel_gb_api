@@ -54,7 +54,7 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
     {
         //
 
-        $userKyc = UserKyc::with('legalDocuments')->where('id', $kycId)->firstOrFail();
+        $userKyc = UserKyc::with(['legalDocuments', 'user:id,user_code,name,role'])->where('id', $kycId)->firstOrFail();
 
         // If status is PENDING, change to UNDER_REVIEW
         if ($userKyc->status === KycStatusEnum::PENDING->value) {
@@ -63,7 +63,7 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
         }
 
         // DO CRUD before this
-        $depots = UserDepot::with(['depot', 'user:id,user_code,name'])
+        $depots = UserDepot::with(['depot', 'user:id,user_code,name,role'])
             ->where('user_id', $userKyc->user_id)
             ->get();
 

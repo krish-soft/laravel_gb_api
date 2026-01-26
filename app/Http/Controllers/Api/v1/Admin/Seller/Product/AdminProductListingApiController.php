@@ -20,6 +20,12 @@ class AdminProductListingApiController extends ApiResponseWithAuthController
     }
 
 
+    public function index(Request $request)
+    {
+        
+    }
+
+
     public function store(Request $request)
     {
         try {
