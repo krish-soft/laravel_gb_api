@@ -244,6 +244,11 @@ class User extends Authenticatable
         return in_array($this->role, AdminRoleEnum::casesAsValues(), true);
     }
 
+    public function isSuperAdminGroup(): bool
+    {
+        return in_array($this->role, [AdminRoleEnum::SUPERADMIN->value, AdminRoleEnum::ADMIN->value], true);
+    }
+
     public function hasModuleAccess(int $moduleCode): bool
     {
         if (empty($this->access_modules) || !is_array($this->access_modules)) {
@@ -270,7 +275,7 @@ class User extends Authenticatable
     {
         //
         return $this->isKycApproved()
-//            && $this->isBankVerified() // Optional when money need they will do
+            //            && $this->isBankVerified() // Optional when money need they will do
             && $this->depots()->exists()
             && $this->fulfillmentLocations()->exists();
     }
@@ -283,6 +288,11 @@ class User extends Authenticatable
         'is_kyc_approved',
         'is_bank_verified',
         'is_user_ready_for_order_management',
+
+        'is_depot_assigned',
+        'is_fulfillment_location_exist',
+
+        //
     ];
 
     public function getIsKycApprovedAttribute(): bool
@@ -298,6 +308,16 @@ class User extends Authenticatable
     public function getIsUserReadyForOrderManagementAttribute(): bool
     {
         return $this->isUserReadyForOrderManagement();
+    }
+
+    public function getIsDepotAssignedAttribute(): bool
+    {
+        return $this->depots()->exists();
+    }
+
+    public function getIsFulfillmentLocationExistAttribute(): bool
+    {
+        return $this->fulfillmentLocations()->exists();
     }
 
 

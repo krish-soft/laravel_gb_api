@@ -8,7 +8,7 @@ enum AdminRoleEnum: string
 
     case SUPERADMIN = 'super_admin'; // Super Admin with all modules and permissions
     case ADMIN = 'admin'; // Admin with limited moduels and permissions
-    case SUPERVISOR = 'supervisor'; // Supervisor
+    case STAFF = 'admin_staff'; // Supervisor
 
 
     public static function casesAsValues(): array

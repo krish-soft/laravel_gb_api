@@ -17,18 +17,14 @@ class CustomerApiController extends ApiResponseWithAdminAuthController
     public function index(Request $request)
     {
         //
-        $userQuery = User::with()->latest()->whereIn('role', [
-            UserRoleEnum::BUYER->value,
-            UserRoleEnum::SELLER->value,
-            UserRoleEnum::DELIVERY->value,
-        ]);
-
+        $userQuery = User::latest()->whereIn('role', UserRoleEnum::casesAsValues());
 
         // Apply filters if any
-
-        $users = $userQuery->get();
-
-
+        if ($request->user()->isSuperAdminGroup()) {
+            $users = $userQuery->get();
+        } else {
+            $users = $userQuery->limit(100)->get();
+        }
 
         return $this->successResponse(__('messages.success_messages.success_get'), $users, 200);
     }
