@@ -10,7 +10,8 @@ enum KycStatusEnum: string
     case REJECTED = 'rejected'; // needs re-upload
 
     case UNDER_REVIEW  = 'under_review'; // being reviewed
-    case REQUEST_FOR_REVIEW  = 'request_for_review'; // flagged for review next time
+    
+    // case REQUEST_FOR_REVIEW  = 'request_for_review'; // flagged for review next time
 
     public static function casesAsValues(): array
     {

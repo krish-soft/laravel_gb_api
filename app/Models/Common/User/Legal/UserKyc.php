@@ -32,6 +32,8 @@ class UserKyc extends BaseModel
         // Verification fields
         'status',
 
+
+        'is_verified',
         'verification_mode',
         'verified_at',
         'verified_by',

@@ -223,7 +223,7 @@ Route::group([
 
                 ## Customers Actions 
                 Route::post('addDepot', [CustomerApiController::class, 'addDepot']);
-                Route::delete('removeDepot', [CustomerApiController::class, 'removeDepot']);
+                Route::delete('removeDepot/{userDepot}', [CustomerApiController::class, 'removeDepot']);
                 //
             });
 
@@ -232,7 +232,7 @@ Route::group([
 
                 Route::get('kyc', [CustomerLegalActionApiController::class, 'getKycList']);
                 Route::get('kyc/{id}', [CustomerLegalActionApiController::class, 'getKycDetails']);
-                Route::post('kyc/status/{id}', [CustomerLegalActionApiController::class, 'updateKycStatus']);
+                Route::put('kyc/status/{id}', [CustomerLegalActionApiController::class, 'updateKycStatus']);
 
                 Route::get('legaldoc/list', [CustomerLegalActionApiController::class, 'getLegalDocumentList']);
                 Route::delete('legaldoc/delete/{documentId}', [CustomerLegalActionApiController::class, 'deleteLegalDocument']);

@@ -22,7 +22,7 @@ return new class extends Migration
 
             $table->string('user_code', 20)->nullable();
             $table->string('picture')->nullable();
-            
+
             // Reference
             $table->string('kyc_code', 20)->unique();
 
@@ -47,6 +47,7 @@ return new class extends Migration
             $table->string('status', 20)->default('pending')->nullable();    // pending | needs_update | verified | expired
 
             // Verification audit
+            $table->boolean('is_verified')->default(false)->nullable();
             $table->string('verification_mode', 20)->nullable();    // manual | system
             $table->timestamp('verified_at')->nullable();
             $table->string('verified_by', 100)->nullable();
@@ -59,6 +60,7 @@ return new class extends Migration
             // e.g. "PAN image is blurry, please re-upload"
 
             // Expiry (for yearly re-KYC)
+
             $table->boolean('is_expired')->default(false)->nullable();
             $table->timestamp('expired_at')->nullable();
 

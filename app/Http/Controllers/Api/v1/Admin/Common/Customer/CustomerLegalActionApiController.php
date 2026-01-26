@@ -7,6 +7,8 @@ use App\Http\Controllers\ApiResponseWithAdminAuthController;
 use App\Http\Controllers\Controller;
 use App\Models\Common\User\Legal\UserKyc;
 use App\Models\Common\User\Legal\UserLegalDocument;
+use App\Models\Common\User\UserDepot;
+use App\Models\User;
 use App\Services\Common\Legal\BankService;
 use App\Services\Common\Legal\Kyc\KycService;
 use Illuminate\Http\Request;
@@ -18,7 +20,11 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
     protected KycService $kycService;
     protected BankService $bankService;
 
-    public function __construct(KycService $kycService, BankService $bankService) {}
+    public function __construct(KycService $kycService, BankService $bankService)
+    {
+        $this->kycService = $kycService;
+        $this->bankService = $bankService;
+    }
 
     /**
      *  KYC List
@@ -32,7 +38,9 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
         if ($request->has('status') && !is_null($request->status)) {
             $userKycQuery->where('status', $request->status);
         } else {
-            $userKycQuery->where('status',  KycStatusEnum::PENDING->value);
+            if (!request()->user()->isSuperAdminGroup()) {
+                $userKycQuery->whereIn('status', [KycStatusEnum::PENDING->value, KycStatusEnum::UNDER_REVIEW->value]);
+            }
         }
 
         $userKycList = $userKycQuery->get();
@@ -47,6 +55,13 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
         //
 
         $userKyc = UserKyc::with('legalDocuments')->where('id', $kycId)->firstOrFail();
+
+        $depots = UserDepot::with(['depot', 'user:id,user_code,name'])
+            ->where('user_id', $userKyc->user_id)
+            ->get();
+
+        $userKyc->depots = $depots;
+
 
         // log Activity
         logActivity(

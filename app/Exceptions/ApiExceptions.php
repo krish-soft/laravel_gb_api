@@ -19,6 +19,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Exception\RouteNotFoundException;
 
 use Illuminate\Support\Facades\Route as RouteFacade;
+use RuntimeException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException as SymfonyNotFoundHttpException;
 
 
@@ -27,13 +28,13 @@ class ApiExceptions extends Exception
     use ApiResponserTrait;
 
     public function handleException($request, Exception $exception)
-    { 
+    {
         // Default Log here
         Log::error($exception->getMessage(), [
             'exception' => $exception,
             'trace' => $exception->getTraceAsString(),
         ]);
-        
+
         // Handle different exception types
         if ($exception instanceof ValidationException) {
             return $this->convertValidationExceptionToResponse($exception, $request);
@@ -117,6 +118,14 @@ class ApiExceptions extends Exception
 
         if ($exception instanceof TokenMismatchException) {
             return redirect()->back()->withInput($request->input());
+        }
+
+        if ($exception instanceof RuntimeException) {           
+
+            return $this->showErrorMessage(
+                $exception->getMessage() ?: 'Transaction failed. Changes were rolled back.',
+                500
+            );
         }
 
 

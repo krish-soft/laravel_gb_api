@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\v1\Admin\Common\Customer;
 use App\Enum\User\UserRoleEnum;
 use App\Enum\User\UserTypeEnum;
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
+use App\Models\Common\User\UserDepot;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -179,14 +180,26 @@ class CustomerApiController extends ApiResponseWithAdminAuthController
     /**
      *  User Depots
      */
-    public function addDepot(Request $request, User $user)
+    public function addDepot(Request $request,)
     {
         $request->validate([
+            'user_id' => 'required|exists:users,id',
             'depot_id' => 'required|exists:mst_depots,id',
             'is_primary' => 'sometimes|boolean',
         ]);
 
+
+        $user = User::findOrFail($request->user_id);
         $makePrimary = (bool)$request->input('is_primary', false);
+
+        // Check duplicated exist or not 
+        $exist = UserDepot::where('user_id', $user->id)
+            ->where('depot_id', $request->depot_id)
+            ->first();
+
+        if ($exist) {
+            return $this->errorResponse(__('messages.error_messages.already_exists'), 409);
+        }
 
         // Check if user already has a primary depot
         $hasPrimary = $user->depots()->where('is_primary', true)->exists();
@@ -228,11 +241,15 @@ class CustomerApiController extends ApiResponseWithAdminAuthController
     }
 
 
-    public function removeDepot(Request $request, User $user, $depotId)
+    public function removeDepot(Request $request, UserDepot $userDepot)
     {
-        $userDepot = $user->depots()
-            ->where('depot_id', $depotId)
-            ->firstOrFail();
+        // $request->validate([
+        //     'user_id' => 'required|exists:users,id',
+        //     'depot_id' => 'required|exists:mst_depots,id',
+        // ]);
+
+        $user = User::findOrFail($userDepot->user_id);
+        $depotId = $userDepot->depot_id;
 
         $wasPrimary = $userDepot->is_primary;
 

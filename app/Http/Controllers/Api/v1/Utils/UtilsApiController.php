@@ -68,6 +68,7 @@ class UtilsApiController extends ApiResponseController
 
         $adminData = [];
 
+
         if (request()->user() && request()->user()->isAdminManagement()) {
             // Add more enums for admin users if needed
             $adminData = [
@@ -91,11 +92,25 @@ class UtilsApiController extends ApiResponseController
             ];
         }
 
-        $data = array_merge($commonData, $adminData);
+        $dataList = array_merge($commonData, $adminData);
+
+        $processData = [];
+        // now in this per array can you assign key as enum name and value as cases
+        foreach ($dataList as $enumName => $values) {
+            $processData[$enumName] = [];
+
+            foreach ($values as $value) {
+                $processData[$enumName][] = [
+                    'id' => $value,
+                    'value'  => $value,
+                    'label' => ucfirst(strtolower($value)),
+                ];
+            }
+        }
 
 
 
-        return $this->successResponse(__('messages.success_messages.success_get'), $data);
+        return $this->successResponse(__('messages.success_messages.success_get'), $processData);
     }
 
 

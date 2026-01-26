@@ -202,11 +202,7 @@ class KycService
             );
         }
 
-        if (!in_array($data['status'], [
-            KycStatusEnum::PENDING->value,
-            KycStatusEnum::APPROVED->value,
-            KycStatusEnum::REJECTED->value,
-        ])) {
+        if (!in_array($data['status'], KycStatusEnum::casesAsValues())) {
             throw new RuntimeException(__('messages.error_messages.invalid_kyc_status'));
         }
 
@@ -214,20 +210,32 @@ class KycService
 
             $kyc->status = $data['status'];
             $kyc->review_comment = $data['review_comment'] ?? null;
-            $kyc->verified_at = now();
-            $kyc->verified_by = $loginAdmin->name;
-            $kyc->verified_user_id = $loginAdmin->id;
+            $kyc->verification_mode = 'admin_panel';
 
+            if ($data['status'] === KycStatusEnum::APPROVED->value) {
+                // On approval, mark KYC as not expired
+                $kyc->is_verified = true;
+
+                $kyc->is_expired = false;
+                $kyc->expired_at = null;
+            }
             // If rejected → mark expired (forces re-KYC)
             if ($data['status'] === KycStatusEnum::REJECTED->value) {
                 $kyc->is_expired = true;
                 $kyc->expired_at = now();
+
+                $kyc->is_verified = false;
             }
+
+            // Common
+            $kyc->verified_at = now();
+            $kyc->verified_by = $loginAdmin->name;
+            $kyc->verified_user_id = $loginAdmin->id;
 
             $kyc->save();
 
             /* OPTIONAL: update all documents status together */
-            if (!empty($kyc->status !== KycStatusEnum::PENDING->value)) {
+            if ($kyc->status == KycStatusEnum::APPROVED->value) {
 
                 UserLegalDocument::where('user_kyc_id', $kyc->id)
                     ->update([
@@ -235,6 +243,12 @@ class KycService
                         'verified_at' => $kyc->verified_at,
                         'verified_by' => $loginAdmin->name,
                         'verified_user_id' => $loginAdmin->id,
+                    ]);
+            } else {
+
+                UserLegalDocument::where('user_kyc_id', $kyc->id)
+                    ->update([
+                        'status' => $kyc->status,
                     ]);
             }
 
