@@ -4,7 +4,10 @@ namespace App\Models\Common\User\Legal;
 
 use App\Models\BaseModel;
 use App\Models\User;
+use DateTime;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 
 class UserLegalDocument extends BaseModel
 {
@@ -50,6 +53,8 @@ class UserLegalDocument extends BaseModel
 
     protected $hidden = [
         'document_number_encrypted',
+        'document_path_front', // hide actual storage paths
+        'document_path_back', // hide actual storage paths
     ];
 
     /**
@@ -110,4 +115,55 @@ class UserLegalDocument extends BaseModel
     {
         return $this->belongsTo(User::class, 'verified_user_id');
     }
+
+
+
+
+
+    protected $appends = ['document_url_front', 'document_url_back'];
+
+    // Ssign Picture url in return not picture atrtrilbute as pictureUrl
+
+    public function getDocumentUrlFrontAttribute()
+    {
+        // return $this->document_path_front
+        //     ? route('files.view', ['path' => $this->document_path_front])
+        //     : null;
+        return $this->document_path_front && !$this->is_verified
+            ? URL::temporarySignedRoute(
+                'files.view',
+                now()->addMinutes(5),
+                ['path' => $this->document_path_front]
+            )
+            : null;
+    }
+
+
+    public function getDocumentUrlBackAttribute()
+    {
+        // return $this->document_path_back
+        //     ? route('files.view', ['path' => $this->document_path_back])
+        //     : null;
+        return $this->document_path_back && !$this->is_verified
+            ? URL::temporarySignedRoute(
+                'files.view',
+                now()->addMinutes(5),
+                ['path' => $this->document_path_back]
+            )
+            : null;
+    }
+
+    //   public function getDocumentUrlBackAttribute()
+    // {
+    //     if ($this->document_path_back) {
+    //         return Storage::disk('private')->url($this->document_path_back);
+    //     }
+    //     return null;
+    // }
+
+
+
+
+
+    //
 }

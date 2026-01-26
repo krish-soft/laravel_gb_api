@@ -92,7 +92,7 @@ class KycService
             }
 
             if ($selfieImage) {
-                $this->storeSelfieDoc($user, $kyc, $selfieImage);
+                $this->storeSelfieDoc($user, $kyc, $files);
             }
 
 
@@ -183,7 +183,7 @@ class KycService
 
     public function verifyKyc(
         User $user,
-        int $kycId,
+        UserKyc $kyc,
         array $data,
         User $loginAdmin
     ): UserKyc {
@@ -194,7 +194,7 @@ class KycService
             );
         }
 
-        $kyc = UserKyc::where('id', $kycId)->first();
+        // $kyc = UserKyc::where('id', $kycId)->first();
 
         if (!$kyc) {
             throw new RuntimeException(

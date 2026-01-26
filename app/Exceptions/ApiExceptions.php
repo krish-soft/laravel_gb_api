@@ -12,6 +12,7 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
 use Illuminate\Session\TokenMismatchException;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -26,7 +27,13 @@ class ApiExceptions extends Exception
     use ApiResponserTrait;
 
     public function handleException($request, Exception $exception)
-    {
+    { 
+        // Default Log here
+        Log::error($exception->getMessage(), [
+            'exception' => $exception,
+            'trace' => $exception->getTraceAsString(),
+        ]);
+        
         // Handle different exception types
         if ($exception instanceof ValidationException) {
             return $this->convertValidationExceptionToResponse($exception, $request);

@@ -44,12 +44,24 @@ use App\Http\Controllers\Web\Webhooks\RazorpayPayoutWebhookController;
 use App\Http\Controllers\Web\Webhooks\RazorpayWebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
+use Illuminate\Support\Facades\Storage;
 
 // Public Payment Route
 Route::post('/webhooks/razorpay/payments', [RazorpayWebhookController::class, 'handle']);
 Route::post('/webhooks/razorpay/payouts', [RazorpayPayoutWebhookController::class, 'handle']);
 Route::post('/webhooks/razorpay/bankAccount', [RazorpayBankVerificationWebhookHandler::class, 'handle']);
+
+// Serve Private Files
+Route::get('/files/{path}', function ($path) {
+    abort_unless(Storage::disk('private')->exists($path), 404);
+
+    return response()->file(
+        Storage::disk('private')->path($path)
+    );
+})
+    ->where('path', '.*')
+    ->name('files.view')
+    ->middleware('signed');
 
 
 Route::group([
@@ -212,15 +224,18 @@ Route::group([
                 ## Customers Actions 
                 Route::post('addDepot', [CustomerApiController::class, 'addDepot']);
                 Route::delete('removeDepot', [CustomerApiController::class, 'removeDepot']);
+                //
+            });
 
-                ## Legal Actions
-                Route::get('kyc', [CustomerLegalActionApiController::class, 'getKycDetails']);
-                Route::post('kyc/updateStatus', [CustomerLegalActionApiController::class, 'updateKycStatus']);
+            ## Legal Actions
+            Route::prefix('legal')->group(function () {
+
+                Route::get('kyc', [CustomerLegalActionApiController::class, 'getKycList']);
+                Route::get('kyc/{id}', [CustomerLegalActionApiController::class, 'getKycDetails']);
+                Route::post('kyc/status/{id}', [CustomerLegalActionApiController::class, 'updateKycStatus']);
 
                 Route::get('legaldoc/list', [CustomerLegalActionApiController::class, 'getLegalDocumentList']);
                 Route::delete('legaldoc/delete/{documentId}', [CustomerLegalActionApiController::class, 'deleteLegalDocument']);
-
-                //
             });
 
 

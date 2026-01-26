@@ -10,10 +10,13 @@ use App\Models\Common\User\Legal\UserLegalDocument;
 use App\Services\Common\Legal\BankService;
 use App\Services\Common\Legal\Kyc\KycService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class CustomerLegalActionApiController extends ApiResponseWithAdminAuthController
 {
     //
+    protected KycService $kycService;
+    protected BankService $bankService;
 
     public function __construct(KycService $kycService, BankService $bankService) {}
 
@@ -24,8 +27,7 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
     public function getKycList(Request $request)
     {
         //
-
-        $userKycQuery = UserKyc::latest();
+        $userKycQuery = UserKyc::with('user:id,user_code,name')->latest();
 
         if ($request->has('status') && !is_null($request->status)) {
             $userKycQuery->where('status', $request->status);
@@ -35,21 +37,30 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
 
         $userKycList = $userKycQuery->get();
 
-        $this->successResponse(__('messages.success_messages.success_get'), $userKycList, 200);
+
+        return  $this->successResponse(__('messages.success_messages.success_get'),  $userKycList, 200);
     }
 
 
-    public function getKycDetails(Request $request,)
+    public function getKycDetails(Request $request, $kycId)
     {
         //
-        $request->validate([
-            'kyc_id' => 'required|integer',
-        ]);
 
-        $kycId = $request->kyc_id;
-        $userKyc = UserKyc::where('id', $kycId)->firstOrFail();
+        $userKyc = UserKyc::with('legalDocuments')->where('id', $kycId)->firstOrFail();
 
-        $this->successResponse(__('messages.success_messages.success_get'), $userKyc, 200);
+        // log Activity
+        logActivity(
+            'admin_user_seen_kyc_details',
+            $request->user(),       // ACTOR (who did it)
+            get_class($userKyc),       // SUBJECT TYPE (what was affected)
+            $userKyc->id,              // SUBJECT ID
+            $userKyc->kyc_code,       // SUBJECT CODE (human readable)
+            [
+                'kyc_code' => $userKyc->kyc_code,
+            ]
+        );
+
+        return $this->successResponse(__('messages.success_messages.success_get'), $userKyc, 200);
     }
 
 
@@ -66,32 +77,21 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
         $status = $request->status;
 
         $userKyc = UserKyc::where('id', $kycId)->firstOrFail();
+        $user = $userKyc->user;
 
-        $userKyc->update([
+        $requestData = [
             'status' => $status,
             'review_comment' => $request->review_comment,
-            'verification_mode' => 'admin_user',
-            'verified_at' => now(),
-            'verified_by' => $request->user()->id,
-            'verified_user_id' => $request->user()->id,
-        ]);
+        ];
 
-        // Log Activity
-        logActivity(
-            'user_kyc_status_updated',
-            $request->user(),       // ACTOR (who did it)
-            get_class($userKyc),       // SUBJECT TYPE (what was affected)
-            $userKyc->id,              // SUBJECT ID
-            $userKyc->kyc_code,       // SUBJECT CODE (human readable)
-            [
-                'kyc_code' => $userKyc->kyc_code,
-                'status' => $userKyc->status,
-                'review_comment' => $request->review_comment,
-            ]
+        $this->kycService->verifyKyc(
+            $user,
+            $userKyc,
+            $requestData,
+            $request->user()
         );
 
-
-        $this->successResponse(__('messages.success_messages.success_update'), $userKyc, 200);
+        return $this->successResponse(__('messages.success_messages.success_update'), $userKyc, 200);
     }
 
     /**
@@ -109,7 +109,7 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
 
         $legalDocuments = UserLegalDocument::where('user_id', $userId)->get();
 
-        $this->successResponse(__('messages.success_messages.success_get'), $legalDocuments, 200);
+        return  $this->successResponse(__('messages.success_messages.success_get'), $legalDocuments, 200);
     }
 
 
@@ -138,7 +138,7 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
             ]
         );
 
-        $this->successResponse(__('messages.success_messages.success_delete'), null, 200);
+        return  $this->successResponse(__('messages.success_messages.success_delete'), null, 200);
     }
 
 

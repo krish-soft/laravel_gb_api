@@ -5,9 +5,12 @@ namespace App\Enum\Common\Legal;
 enum KycStatusEnum: string
 {
     //
-    case PENDING  = 'pending';
-    case APPROVED = 'approved';
-    case REJECTED = 'rejected';
+    case PENDING  = 'pending'; // awaiting review
+    case APPROVED = 'approved'; // verified
+    case REJECTED = 'rejected'; // needs re-upload
+
+    case UNDER_REVIEW  = 'under_review'; // being reviewed
+    case REQUEST_FOR_REVIEW  = 'request_for_review'; // flagged for review next time
 
     public static function casesAsValues(): array
     {
