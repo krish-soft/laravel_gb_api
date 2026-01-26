@@ -62,6 +62,8 @@ class UserSeeder extends Seeder
             'updated_at' => now(),
         ]);
 
+        
+
         User::create([
 
             'user_code' => 'buyer01',

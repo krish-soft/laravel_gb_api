@@ -10,10 +10,10 @@ enum AppModuleEnum: int
 
         // Catalog & Supply (200–299)
     case CATEGORIES          = 201;
-    case PRODUCTS            = 202;
+    case PRODUCTS            = 202; // USED
     case INVENTORY           = 203;
-    case LISTINGS            = 204; // Farmer crop listings
-    case PRICING_BIDDING     = 205; // Fixed price / auction / negotiation
+    case LISTINGS            = 204;
+    case PRICING_BIDDING     = 205;
 
         // Orders & Transactions (300–399)
     case CARTS               = 301;
@@ -23,7 +23,7 @@ enum AppModuleEnum: int
     case WALLETS             = 305;
     case SETTLEMENTS         = 306;
     case REFUNDS             = 307;
-    case COMMISSIONS         = 308;
+    case COMMISSIONS         = 308; // USED
 
         // Logistics & Delivery (400–499)
     case DRIVERS             = 401;
@@ -44,10 +44,11 @@ enum AppModuleEnum: int
     case DASHBOARDS          = 603;
 
         // System & Configuration (700–799)
-    case MASTERS             = 701;
-    case SETTINGS            = 702;
+    case MASTERS             = 701; // USED
+    case SETTINGS            = 702; // USED
     case CMS                 = 703;
-    case LEGALS              = 704;
+    case LEGALS              = 704; // USED
+    case GEOGRAPHY           = 705; // USED
 
         // Admin & Operations (800–899)
     case ADMIN               = 801;
