@@ -57,6 +57,9 @@ class Order extends BaseModel
         'ship_addr_code',
         'pick_addr_code',
 
+        'is_buyer_pickup',
+        'pickup_addr_code', // If buyer pickup selected
+
         //
     ];
 
@@ -69,6 +72,7 @@ class Order extends BaseModel
         'is_paid' => 'boolean',
         'is_locked' => 'boolean',
         'is_manual' => 'boolean',
+        'is_buyer_pickup' => 'boolean',
     ];
 
     // Relationships

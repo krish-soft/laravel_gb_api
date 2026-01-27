@@ -93,6 +93,11 @@ class User extends Authenticatable
         'password',
         'remember_token',
         'user_key',
+        'kyc_code',
+
+        // relations to hide
+        'kyc', // to prevent N+1 issue
+        'bank', // to prevent N+1 issue
     ];
 
     /**
@@ -178,7 +183,7 @@ class User extends Authenticatable
 
     public function kyc()
     {
-        return $this->hasOne(UserKyc::class, 'kyc_code', 'kyc_code');
+        return $this->hasOne(UserKyc::class, 'user_id', 'id');
     }
 
     public function bank()

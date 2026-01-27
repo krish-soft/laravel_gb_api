@@ -58,7 +58,7 @@ class ProductListingApiController extends ApiResponseWithAuthController
     }
 
 
-    public function confirmListing(Request $request)
+    public function createListing(Request $request)
     {
 
 

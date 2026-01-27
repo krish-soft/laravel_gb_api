@@ -33,7 +33,6 @@ return new class extends Migration
 
             $table->boolean('is_sell_to_market')->default(false)->nullable(); //             
             $table->boolean('is_seller_delivery')->default(false)->nullable();
-            $table->boolean('is_buyer_pickup')->default(false)->nullable();
 
             $table->boolean('is_active')->default(true)->nullable(); // Active after 2 mins of creation
             $table->string('inactive_reason', 100)->nullable();

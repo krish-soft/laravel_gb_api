@@ -53,4 +53,10 @@ enum AppModuleEnum: int
         // Admin & Operations (800–899)
     case ADMIN               = 801;
     case AUDIT_LOGS          = 802;
+
+
+    case SELLERS            = 900; // USED
+    case BUYERS             = 901;
+    case DELIVERY_PARTNERS  = 902;
+    case AFFILIATES         = 903;
 }

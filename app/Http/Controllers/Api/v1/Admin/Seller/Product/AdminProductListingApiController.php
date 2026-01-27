@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api\v1\Admin\Seller\Product;
 
 use App\Http\Controllers\ApiResponseWithAuthController;
+use App\Models\Seller\Product\ProductListing;
 use App\Models\User;
 use App\Services\Seller\Product\ProductListingService;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
@@ -20,13 +22,27 @@ class AdminProductListingApiController extends ApiResponseWithAuthController
     }
 
 
-    public function index(Request $request)
+    public function getListings(Request $request)
     {
-        
+
+        //
+        $listings = ProductListing::with(['seller', 'fulfillmentLocation'])
+            ->when($request->has('seller_id'), function ($query) use ($request) {
+                $query->where('seller_id', $request->seller_id);
+            })
+            ->when($request->has('status'), function ($query) use ($request) {
+                $query->where('status', $request->status);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+
+        return $this->successResponse(__('messages.success_messages.success_get'), $listings, 200);
     }
 
 
-    public function store(Request $request)
+
+    public function createListing(Request $request)
     {
         try {
             $data = $request->validate($this->createRules());
@@ -44,11 +60,28 @@ class AdminProductListingApiController extends ApiResponseWithAuthController
         }
     }
 
+    public function getListingDetails(Request $request, $listingId)
+    {
+
+        $listingDetails = ProductListing::with([
+            'seller',
+            'fulfillmentLocation',
+            'fulfillmentLocation.address',
+            'listingItems',
+            'listingItems.product',
+            'listingItems.listingPackages'
+        ])
+            ->where('id', $listingId)
+            ->first();
+
+        return $this->successResponse(__('messages.success_messages.success_get'), $listingDetails, 200);
+    }
+
     public function updatePackage(Request $request, int $packageId)
     {
+       
         try {
             $data = $request->validate($this->updatePackageRules());
-
             $subjectUser = User::findOrFail($data['user_id']);
 
             $package = $this->service->updatePackage(
@@ -92,9 +125,10 @@ class AdminProductListingApiController extends ApiResponseWithAuthController
 
     public function cancelListing(Request $request, int $listingId)
     {
+        // 
         try {
             $data = $request->validate([
-                'reason' => 'required|string|max:255',
+                'reason' => 'required|string|max:100',
             ]);
 
             $this->service->cancelListing(
@@ -160,14 +194,16 @@ class AdminProductListingApiController extends ApiResponseWithAuthController
         ];
     }
 
+    // Admin only can change qty of package
     protected function updatePackageRules(): array
     {
         return [
+            'user_id' => 'sometimes|integer|exists:users,id',
             'qty' => 'sometimes|numeric|min:0.01',
-            'pack_price' => 'sometimes|numeric|min:0',
-            'per_kg_price' => 'sometimes|numeric|min:0',
-            'discount_amount' => 'nullable|numeric|min:0',
-            'discount_type' => 'nullable|in:flat,percentage',
+            // 'pack_price' => 'sometimes|numeric|min:0',
+            // 'per_kg_price' => 'sometimes|numeric|min:0',
+            // 'discount_amount' => 'nullable|numeric|min:0',
+            // 'discount_type' => 'nullable|in:flat,percentage',
         ];
     }
 }

@@ -4,6 +4,7 @@ namespace App\Models\Seller\Product;
 
 use App\Models\BaseModel;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
+use App\Models\Common\Log\ActivityLog;
 use App\Models\Master\Unique\MstSeqCodeGenerator;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -55,7 +56,7 @@ class ProductListing extends BaseModel
 
     protected $fillable = [
         'seller_id',
-        
+
         'fulfillment_location_id',
         'listing_code',
 
@@ -64,7 +65,6 @@ class ProductListing extends BaseModel
 
         'is_sell_to_market',
         'is_seller_delivery',
-        'is_buyer_pickup',
 
         'is_active',
         'inactive_reason',
@@ -83,7 +83,6 @@ class ProductListing extends BaseModel
         'expires_at' => 'datetime',
         'is_sell_to_market' => 'boolean',
         'is_seller_delivery' => 'boolean',
-        'is_buyer_pickup' => 'boolean',
         'is_active' => 'boolean',
         'is_partial' => 'boolean',
         'is_sold' => 'boolean',
@@ -109,8 +108,15 @@ class ProductListing extends BaseModel
         return $this->belongsTo(User::class, 'seller_id');
     }
 
-    public function pickupFulfillmentLocation()
+    public function fulfillmentLocation()
     {
         return $this->belongsTo(FulfillmentLocation::class, 'fulfillment_location_id');
+    }
+
+
+    // Logs
+    public function activityLogs()
+    {
+        return $this->morphMany(ActivityLog::class, 'subject');
     }
 }

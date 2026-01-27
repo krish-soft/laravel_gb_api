@@ -172,6 +172,7 @@ return [
         /* Stock */
         'insufficient_stock' => 'Insufficient stock for the requested quantity.',
         'qty_less_than_sold' => 'Quantity cannot be less than sold quantity.',
+        'qty_exceeds_max_allowed' => 'Quantity exceeds the maximum allowed limit.',
 
         /* Checkout & Payment */
         'checkout_failed'        => 'Checkout failed. Please try again.',

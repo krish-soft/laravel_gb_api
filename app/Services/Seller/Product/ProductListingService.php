@@ -106,7 +106,6 @@ class ProductListingService
 
         if ($hasSold) {
             throw new RuntimeException(__('messages.error_messages.listing_flags_locked'));
-
         }
 
         $updateData = array_intersect_key($data, array_flip($allowed));
@@ -143,13 +142,21 @@ class ProductListingService
         $package = ProductListingPackage::findOrFail($packageId);
         $listing = $package->productListingItem->productListing;
 
-        $this->authorize($user, $listing);
+        // if listing is expired/locked/sold
+        if ($listing->is_expired || $listing->is_locked || $listing->is_sold) {
+            throw new RuntimeException(
+                __('messages.error_messages.listing_locked')
+            );
+        }
+
+        // $this->authorize($user, $listing);
 
         if (isset($data['qty']) && $data['qty'] < $package->sold_qty) {
             throw new RuntimeException(
                 __('messages.error_messages.qty_less_than_sold')
             );
         }
+
 
         $package->fill(array_intersect_key(
             $data,
@@ -167,12 +174,17 @@ class ProductListingService
 
         $this->recalculateListingState($listing);
 
+        // Log activity
         logActivity(
             'product_listing_package_updated',
-            $user,
+            request()->user(),
             ProductListingPackage::class,
             $package->id,
-            $package->listing_code
+            $package->listing_code,
+            [
+                'old' => $package->getOriginal(),
+                'new' => $package->getAttributes(),
+            ]
         );
 
         return $package;
@@ -193,7 +205,7 @@ class ProductListingService
         $package = ProductListingPackage::findOrFail($packageId);
         $listing = $package->productListingItem->productListing;
 
-        $this->authorize($user, $listing);
+        // $this->authorize($user, $listing);
 
         if ($package->sold_qty > 0) {
             throw new RuntimeException(
@@ -203,6 +215,17 @@ class ProductListingService
 
         DB::transaction(function () use ($package, $listing, $reason) {
             $package->delete();
+
+            // Log activity
+            logActivity(
+                'product_listing_package_deleted',
+                request()->user(),
+                ProductListingPackage::class,
+                $package->id,
+                $package->listing_code,
+                ['reason' => $reason]
+            );
+
             $this->recalculateListingState($listing, $reason);
         });
     }
@@ -237,9 +260,27 @@ class ProductListingService
             'is_active' => false,
             'inactive_reason' => $reason,
             'is_expired' => true,
-
             'expires_at' => now(),
+            'is_locked' => true,
         ]);
+
+        // Also packages make cancelled 
+        ProductListingPackage::whereHas(
+            'productListingItem',
+            fn($q) => $q->where('product_listing_id', $listing->id)
+        )->where('sold_qty', 0)->update([
+            'is_locked' => true,
+        ]);
+
+        // Log activity
+        logActivity(
+            'product_listing_cancelled',
+            $user,
+            ProductListing::class,
+            $listing->id,
+            $listing->listing_code,
+            ['reason' => $reason]
+        );
     }
 
     /* =========================================================
@@ -262,8 +303,7 @@ class ProductListingService
     protected function recalculateListingState(
         ProductListing $listing,
         ?string        $reason = null
-    ): void
-    {
+    ): void {
 
         // 🔒 TERMINAL STATES → DO NOTHING
         if ($listing->is_sold || !$listing->is_active || $listing->is_expired) {

@@ -29,7 +29,6 @@ class Cart extends BaseModel
         'locked_at',
         'converted_at',
         'expired_at',
-
     ];
 
 

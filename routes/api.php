@@ -127,7 +127,7 @@ Route::group([
         // Which Required KYC Approved User Only
         Route::group([
             'middleware' => [
-                // 'user-legal-checker' // Custom Middleware to check user legal (KYC) status // Testing Removed
+                'user-legal-checker' // Custom Middleware to check user legal (KYC) status // Testing Removed
             ]
         ], function () {
 
@@ -141,13 +141,13 @@ Route::group([
 
 
             // Product Listing Routes
-            Route::prefix('product-listing')->group(function () {
-                Route::post('listing/preview', [ProductListingApiController::class, 'previewWithCharges']);
-                Route::post('listing/confirm', [ProductListingApiController::class, 'confirmListing']);
-                Route::post('listing/{listingId}/cancel', [ProductListingApiController::class, 'cancelListing']);
+            Route::prefix('listing')->group(function () {
+                Route::post('create', [ProductListingApiController::class, 'createListing']);
+                Route::post('preview-charge', [ProductListingApiController::class, 'previewWithCharges']);
+                Route::post('cancel/{listingId}', [ProductListingApiController::class, 'cancelListing']);
 
                 Route::put('packages/{packageId}', [ProductListingApiController::class, 'updatePackage']);
-                Route::post('packages/{packageId}/cancel', [ProductListingApiController::class, 'deletePackage']);
+                Route::post('packages/cancel/{packageId}', [ProductListingApiController::class, 'deletePackage']);
             });
 
             // Cart Routes
@@ -164,6 +164,10 @@ Route::group([
 
         //
     });
+
+    /**
+     *  ADMIN
+     */
 
 
     ## Admin User Auth Protected Routes
@@ -197,19 +201,20 @@ Route::group([
 
             // Product Listing Routes
             Route::prefix('listing')->group(function () {
-                Route::post('listing', [AdminProductListingApiController::class, 'previewWithCharges']);
-                Route::post('listing/preview', [AdminProductListingApiController::class, 'previewWithCharges']);
-                Route::post('listing/confirm', [AdminProductListingApiController::class, 'confirmListing']);
-                Route::post('listing/{listingId}/cancel', [AdminProductListingApiController::class, 'cancelListing']);
+
+                Route::get('/', [AdminProductListingApiController::class, 'getListings']);
+                Route::get('/{id}', [AdminProductListingApiController::class, 'getListingDetails']);
+
+                Route::post('create', [AdminProductListingApiController::class, 'createListing']);
+                Route::post('cancel/{listingId}', [AdminProductListingApiController::class, 'cancelListing']);
 
                 Route::put('packages/{packageId}', [AdminProductListingApiController::class, 'updatePackage']);
-                Route::post('packages/{packageId}/cancel', [AdminProductListingApiController::class, 'deletePackage']);
+                Route::delete('packages/delete/{packageId}', [AdminProductListingApiController::class, 'deletePackage']);
             });
 
 
             // Payments
             Route::post('/payments/{payment_code}/reconcile', [PaymentReconcileApiController::class, 'reconcile']);
-
             Route::prefix('payouts')->group(function () {
                 Route::get('/', [PayoutApiController::class, 'index']);
                 Route::post('{payout}/approve', [PayoutApiController::class, 'approve']);

@@ -19,8 +19,10 @@ class ProductListingPackage extends BaseModel
         'pack_type_unit',
         'pack_price',
         'per_kg_price',
+        
         'discount_amount',
         'discount_type',
+
         'is_partial',
         'is_sold',
         'is_locked',

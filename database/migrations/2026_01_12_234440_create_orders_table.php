@@ -45,7 +45,11 @@ return new class extends Migration
             // For Invoice Billing & Shipping
             $table->string('bill_addr_code', 20)->nullable(); // Billing Address
             $table->string('ship_addr_code', 20)->nullable(); // Shipping Address
-            $table->string('pick_addr_code', 20)->nullable(); // Pickup Address
+            $table->string('pick_addr_code', 20)->nullable(); // Pickup Address for Seller Pickup
+
+            // Pickup info
+            $table->boolean('is_buyer_pickup')->default(false)->nullable();
+            $table->string('pickup_addr_code')->nullable(); // If buyer pickup selected
 
 
             // payment
@@ -56,7 +60,7 @@ return new class extends Migration
             $table->boolean('is_paid')->default(false)->nullable();
             $table->boolean('is_locked')->default(false)->nullable(); // No one can modify after this
             $table->boolean('is_manual')->default(false)->nullable(); // when send to market and then we have to create order manually
-            
+
             $table->string('wallet_txn_code', 100)->nullable();
 
             $table->timestamps();

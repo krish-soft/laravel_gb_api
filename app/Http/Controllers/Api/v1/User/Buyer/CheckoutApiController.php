@@ -75,6 +75,7 @@ class CheckoutApiController extends ApiResponseWithAuthController
         $data = $request->validate([
             'payment_method' => 'required|in:razorpay,wallet', // manual only via admin
             'charges'        => 'required|array|min:1',
+            'is_buyer_pickup' => 'required|boolean',
         ]);
 
         $cart = Cart::where('buyer_id', $user->id)
@@ -83,7 +84,7 @@ class CheckoutApiController extends ApiResponseWithAuthController
             ->latest()
             ->firstOrFail();
 
-        $wallet = $user->wallet;
+
 
         // 🔢 Calculate total
         $totalAmount = $cart->getTotalCartItemAmount();
@@ -91,26 +92,6 @@ class CheckoutApiController extends ApiResponseWithAuthController
             $totalAmount += $charge['total_amount'];
         }
 
-        // 🔒 Wallet pre-check ONLY if wallet selected
-        if (
-            $data['payment_method'] === PaymentMethodEnum::WALLET->value
-            && !$wallet->canDebit($totalAmount)
-        ) {
-            logActivity(
-                'checkout_wallet_insufficient_balance',
-                $user,
-                Cart::class,
-                $cart->id,
-                null,
-                ['amount_required' => $totalAmount]
-            );
-
-            return $this->showErrorMessage(
-                __('messages.error_messages.insufficient_wallet_balance'),
-                400,
-                ActionCodeEnum::WALLET_INSUFFICIENT_BALANCE
-            );
-        }
 
         DB::beginTransaction();
 
@@ -168,7 +149,6 @@ class CheckoutApiController extends ApiResponseWithAuthController
              */
             if (
                 MstPaymentSetting::payInMode() === PaymentMethodEnum::MANUAL
-//                || $data['payment_method'] === PaymentMethodEnum::WALLET->value
             ) {
 
                 $payment->markPaid('MANUAL');

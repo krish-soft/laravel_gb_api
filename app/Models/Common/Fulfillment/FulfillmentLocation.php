@@ -73,7 +73,7 @@ class FulfillmentLocation extends BaseModel
 
     public function address()
     {
-        return $this->belongsTo(Address::class, 'addr_code', 'addr_code');
+        return $this->hasOne(Address::class, 'addr_code', 'addr_code');
     }
 
     public function depots()
