@@ -90,6 +90,7 @@ return [
         'unauthorized_access_admin' => 'You are not authorized to access this administrative resource.',
         'unauthorized_action'       => 'You are not authorized to perform this action.',
         'main_resource_cannot_delete'       =>  'Main resource cannot be deleted as it is essential for system operations.',
+        'invalid_current_password'  => 'The current password provided is incorrect.',
         /* File Upload */
         'file_upload_failed'        => 'File upload failed. Please try again.',
 

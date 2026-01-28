@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstPaymentSettingApiControl
 use App\Http\Controllers\Api\v1\Admin\Master\Vehicle\MstVehicleApiController;
 use App\Http\Controllers\Api\v1\Admin\Seller\Product\AdminProductListingApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\CartApiController;
+use App\Http\Controllers\Api\v1\User\Buyer\CheckoutApiController;
 use App\Http\Controllers\Api\v1\User\Common\Auth\UserLoginApiController;
 use App\Http\Controllers\Api\v1\User\Common\Auth\UserLogoutApiController;
 use App\Http\Controllers\Api\v1\User\Common\Auth\UserRegisterApiController;
@@ -38,6 +39,7 @@ use App\Http\Controllers\Api\v1\User\Common\Fulfillment\FulfillmentLocationApiCo
 use App\Http\Controllers\Api\v1\User\Common\Legal\UserBankApiController;
 use App\Http\Controllers\Api\v1\User\Common\Legal\UserKycApiController;
 use App\Http\Controllers\Api\v1\User\Seller\Product\ProductListingApiController;
+use App\Http\Controllers\Api\v1\User\UserProfileApiController;
 use App\Http\Controllers\Api\v1\Utils\UtilsApiController;
 use App\Http\Controllers\Web\Webhooks\RazorpayBankVerificationWebhookHandler;
 use App\Http\Controllers\Web\Webhooks\RazorpayPayoutWebhookController;
@@ -111,10 +113,25 @@ Route::group([
         ]
     ], function () {
 
-
         // Logout
         Route::post('/signout', [UserLogoutApiController::class, 'logout']);
         Route::post('/signout/all', [UserLogoutApiController::class, 'logoutAllDevices']);
+
+
+        Route::prefix('user')->group(function () {
+
+            Route::get('/meta', [UserProfileApiController::class, 'metaDetails']);
+
+            Route::get('/profile', [UserProfileApiController::class, 'getProfile']);
+            Route::put('/profile', [UserProfileApiController::class, 'updateProfile']);
+            Route::put('/profile/password', [UserProfileApiController::class, 'updatePassword']);
+
+            // address
+            Route::post('/profile/address', [UserProfileApiController::class, 'saveAddress']);
+            Route::post('/profile/billingAddress', [UserProfileApiController::class, 'saveBillingAddress']);
+
+            //
+        });
 
         // KYC Routes
         Route::post('/kyc', [UserKycApiController::class, 'storeKyc']); // Add KYC
@@ -124,6 +141,11 @@ Route::group([
         Route::apiResource('userBank', UserBankApiController::class);
 
 
+        // Fulfillment Location Routes
+        Route::apiResource('fulfillmentLocation', FulfillmentLocationApiController::class);
+        Route::post('fulfillmentLocation/address/{fulfillmentLocation}', [FulfillmentLocationApiController::class, 'saveAddress']);
+
+
         // Which Required KYC Approved User Only
         Route::group([
             'middleware' => [
@@ -131,13 +153,6 @@ Route::group([
             ]
         ], function () {
 
-            Route::get('user-profile', function (Request $request) {
-                return $request->user();
-            });
-
-            // Fulfillment Location Routes
-            Route::apiResource('fulfillmentLocation', FulfillmentLocationApiController::class);
-            Route::post('fulfillmentLocation/{fulfillmentLocation}/address', [FulfillmentLocationApiController::class, 'saveAddress']);
 
 
             // Product Listing Routes
@@ -158,6 +173,16 @@ Route::group([
                 Route::delete('item/{cartItemId}', [CartApiController::class, 'removeItem']);
                 Route::delete('clear', [CartApiController::class, 'clearCart']);
             });
+
+
+            Route::prefix('checkout')->group(function () {
+                Route::get('preview', [CheckoutApiController::class, 'preview']);
+                Route::get('confirm', [CheckoutApiController::class, 'confirm']);
+            });
+
+
+
+            //
 
             //
         });
@@ -197,6 +222,8 @@ Route::group([
             Route::get('user-profile', function (Request $request) {
                 return $request->user();
             });
+
+
 
 
             // Product Listing Routes

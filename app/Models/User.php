@@ -291,6 +291,9 @@ class User extends Authenticatable
 
     protected $appends = [
         'is_kyc_approved',
+        'kyc_review_comment',
+
+
         'is_bank_verified',
         'is_user_ready_for_order_management',
 
@@ -303,6 +306,11 @@ class User extends Authenticatable
     public function getIsKycApprovedAttribute(): bool
     {
         return $this->isKycApproved();
+    }
+
+    public function getKycReviewCommentAttribute(): string
+    {
+        return !$this->isKycApproved() ? $this->kyc->review_comment : '';
     }
 
     public function getIsBankVerifiedAttribute(): bool
