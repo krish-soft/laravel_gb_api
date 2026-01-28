@@ -35,7 +35,7 @@ class User extends Authenticatable
     protected static function booted(): void
     {
         static::creating(function ($user) {
-            $user->username = self::generateUniqueUserCode();
+            $user->user_code = self::generateUniqueUserCode();
             $user->user_key = self::generateUniqueUserKey();
             $user->nickname = self::generateUniqueNickName($user->user_type);
         });
@@ -98,6 +98,13 @@ class User extends Authenticatable
         // relations to hide
         'kyc', // to prevent N+1 issue
         'bank', // to prevent N+1 issue
+        'legalDocuments', // to prevent N+1 issue
+        'depots', // to prevent N+1 issue
+        'fulfillmentLocations', // to prevent N+1 issue
+        'buyerCart',
+        'sellerProductListings',
+        'wallets',
+
     ];
 
     /**
@@ -310,7 +317,7 @@ class User extends Authenticatable
 
     public function getKycReviewCommentAttribute(): string
     {
-        return !$this->isKycApproved() ? $this->kyc->review_comment : '';
+        return !$this->isKycApproved() ? $this->kyc->review_comment ?? '' : '';
     }
 
     public function getIsBankVerifiedAttribute(): bool

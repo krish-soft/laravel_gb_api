@@ -91,6 +91,8 @@ return [
         'unauthorized_action'       => 'You are not authorized to perform this action.',
         'main_resource_cannot_delete'       =>  'Main resource cannot be deleted as it is essential for system operations.',
         'invalid_current_password'  => 'The current password provided is incorrect.',
+
+
         /* File Upload */
         'file_upload_failed'        => 'File upload failed. Please try again.',
 
@@ -180,6 +182,7 @@ return [
         'invalid_payment_method' => 'Invalid payment method.',
         'payment_processed'      => 'Payment has already been processed.',
         'payment_failed'         => 'Payment failed. Please try again.',
+        'payment_already_finalized' => 'Payment is already finalized (already paid).',
 
         /* Order */
         'order_not_found'   => 'Order not found.',

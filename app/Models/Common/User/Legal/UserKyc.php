@@ -61,7 +61,7 @@ class UserKyc extends BaseModel
      * Attribute casting
      */
     protected $casts = [
-        'pan_card_number'    => 'encrypted',   // PAN encrypted
+        // 'pan_card_number'    => 'encrypted',   // PAN encrypted
         'verified_at' => 'datetime',
         'expired_at'  => 'datetime',
         'is_expired'  => 'boolean',

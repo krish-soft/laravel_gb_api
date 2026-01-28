@@ -254,6 +254,11 @@ Route::group([
             Route::prefix('customer')->group(function () {
                 Route::apiResource('customer', CustomerApiController::class); // Manage Regular user
 
+                Route::get('/search', [CustomerApiController::class, 'searchCustomerAutocomplete']); // Manage Regular user
+
+                Route::post('/address', [CustomerApiController::class, 'saveAddress']); // Manage Regular user
+                Route::post('/billingAddress', [CustomerApiController::class, 'saveBillingAddress']); // 
+                
                 ## Customers Actions 
                 Route::post('addDepot', [CustomerApiController::class, 'addDepot']);
                 Route::delete('removeDepot/{userDepot}', [CustomerApiController::class, 'removeDepot']);
@@ -264,6 +269,7 @@ Route::group([
             Route::prefix('legal')->group(function () {
 
                 Route::get('kyc', [CustomerLegalActionApiController::class, 'getKycList']);
+                Route::post('kyc/create', [CustomerLegalActionApiController::class, 'addNewKyc']);
                 Route::get('kyc/{id}', [CustomerLegalActionApiController::class, 'getKycDetails']);
                 Route::put('kyc/status/{id}', [CustomerLegalActionApiController::class, 'updateKycStatus']);
 

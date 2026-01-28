@@ -12,10 +12,9 @@ class PaymentReconcileApiController extends ApiResponseWithAdminAuthController
     //
 
     public function reconcile(
-        string                       $payment_code,
+        string  $payment_code,
         PaymentReconciliationService $service
-    )
-    {
+    ) {
         $payment = Payment::where('payment_code', $payment_code)
             ->firstOrFail();
 
@@ -33,10 +32,12 @@ class PaymentReconcileApiController extends ApiResponseWithAdminAuthController
                 ]
             );
 
-            return response()->json([
-                'message' => 'Payment already finalized',
-                'status' => $payment->status,
-            ]);
+            // return response()->json([
+            //     'message' => 'Payment already finalized',
+            //     'status' => $payment->status,
+            // ]);
+
+            return $this->showErrorMessage(__('messages.error_messages.payment_already_finalized'), 200);
         }
 
         $oldStatus = $payment->status;
@@ -68,37 +69,36 @@ class PaymentReconcileApiController extends ApiResponseWithAdminAuthController
             : 'Payment checked, no status change.' . ', old_status : ' . $oldStatus . ' ,new_status : ' . $newStatus;
 
         return $this->showSuccessMessage($message, 200);
-
     }
 
 
-//    public function reconcile(
-//        string $payment_code,
-//        PaymentReconciliationService $service
-//    ) {
-//        $payment = Payment::where('payment_code', $payment_code)
-//            ->firstOrFail();
-//
-//        $service->reconcile($payment);
-//
-//        // 9️⃣ Log Activity
-//        logActivity(
-//            'razorpay_webhook_received',
-//            $payment->user() ?? null,
-//            get_class($payment),
-//            $payment->id,
-//            $payment->payment_code,
-//            [
-//                'payment_code' => $payment->payment_code,
-//                'gateway_order_id' => $payment->gateway_order_id,
-//                'amount' => $payment->amount,
-//                'currency' => $payment->currency,
-//            ]
-//        );
-//
-//        return response()->json([
-//            'message' => 'Payment reconciled',
-//            'status' => $payment->fresh()->status,
-//        ]);
-//    }
+    //    public function reconcile(
+    //        string $payment_code,
+    //        PaymentReconciliationService $service
+    //    ) {
+    //        $payment = Payment::where('payment_code', $payment_code)
+    //            ->firstOrFail();
+    //
+    //        $service->reconcile($payment);
+    //
+    //        // 9️⃣ Log Activity
+    //        logActivity(
+    //            'razorpay_webhook_received',
+    //            $payment->user() ?? null,
+    //            get_class($payment),
+    //            $payment->id,
+    //            $payment->payment_code,
+    //            [
+    //                'payment_code' => $payment->payment_code,
+    //                'gateway_order_id' => $payment->gateway_order_id,
+    //                'amount' => $payment->amount,
+    //                'currency' => $payment->currency,
+    //            ]
+    //        );
+    //
+    //        return response()->json([
+    //            'message' => 'Payment reconciled',
+    //            'status' => $payment->fresh()->status,
+    //        ]);
+    //    }
 }

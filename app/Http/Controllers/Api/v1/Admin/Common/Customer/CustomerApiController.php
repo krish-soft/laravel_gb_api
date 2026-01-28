@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\Api\v1\Admin\Common\Customer;
 
+use App\Enum\AddressTypeEnum;
 use App\Enum\User\UserRoleEnum;
 use App\Enum\User\UserTypeEnum;
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
+use App\Http\Requests\AddressRequest;
+use App\Models\Common\Address;
 use App\Models\Common\User\UserDepot;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -12,6 +15,32 @@ use Illuminate\Support\Str;
 
 class CustomerApiController extends ApiResponseWithAdminAuthController
 {
+
+
+    public function searchCustomerAutocomplete(Request $request)
+    {
+        // 
+        $searchTerm = $request->input('q', '');
+
+        $userQuery = User::query()
+            ->where(function ($query) use ($searchTerm) {
+                $query->where('name', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('phone_number', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('email', 'like', '%' . $searchTerm . '%');
+            })
+            ->whereIn('role', UserRoleEnum::casesAsValues())
+            ->orderBy('name', 'asc')
+            ->limit(10);
+
+
+        $users = $userQuery->get();
+
+
+        return $this->successResponse(__('messages.success_messages.success_get'), $users, 200);
+    }
+
+
+
     /**
      * Display a listing of the resource.
      */
@@ -285,6 +314,122 @@ class CustomerApiController extends ApiResponseWithAdminAuthController
         );
     }
 
+
+    public function saveAddress(AddressRequest $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        $data = $request->validated();
+        $user = User::findOrFail($request->user_id);
+
+        if ($user->isBuyer()) {
+            $data['addr_type'] = AddressTypeEnum::SHIP->value;
+        } else if ($user->isSeller()) {
+            $data['addr_type'] = AddressTypeEnum::PICK->value;
+        } else if ($user->isDelivery()) {
+            $data['addr_type'] = AddressTypeEnum::DELIVERY_PARTNER_HUB->value;
+        }
+
+
+
+        if ($user->addr_code) {
+            // UPDATE
+            $address = Address::where('addr_code', $user->addr_code)
+                ->firstOrFail();
+
+            $address->update($data);
+
+            $event = 'user_address_updated';
+        } else {
+            // CREATE
+            $address = Address::create($data);
+
+            $user->update([
+                'addr_code' => $address->addr_code,
+            ]);
+
+            $event = 'user_address_added';
+        }
+
+        // Log Activity
+        logActivity(
+            $event,
+            $request->user(),
+            get_class($user),
+            $user->id,
+            $user->code,
+            [
+                'user_code' => $user->code,
+                'addr_code' => $address->addr_code,
+            ]
+        );
+
+        return $this->showSuccessMessage(
+            __('messages.success_messages.success_update'),
+            200
+        );
+    }
+
+
+    public function saveBillingAddress(AddressRequest $request)
+    {
+
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        $data = $request->validated();
+        $user = User::findOrFail($request->user_id);
+
+        if ($user->isBuyer()) {
+            $data['addr_type'] = AddressTypeEnum::SHIP->value;
+        } else if ($user->isSeller()) {
+            $data['addr_type'] = AddressTypeEnum::PICK->value;
+        } else if ($user->isDelivery()) {
+            $data['addr_type'] = AddressTypeEnum::DELIVERY_PARTNER_HUB->value;
+        }
+
+
+
+        if ($user->bill_addr_code) {
+            // UPDATE
+            $address = Address::where('bill_addr_code', $user->bill_addr_code)
+                ->firstOrFail();
+
+            $address->update($data);
+
+            $event = 'user_billing_address_updated';
+        } else {
+            // CREATE
+            $address = Address::create($data);
+
+            $user->update([
+                'bill_addr_code' => $address->bill_addr_code,
+            ]);
+
+            $event = 'user_billing_address_added';
+        }
+
+        // Log Activity
+        logActivity(
+            $event,
+            $request->user(),
+            get_class($user),
+            $user->id,
+            $user->code,
+            [
+                'user_code' => $user->code,
+                'bill_addr_code' => $address->bill_addr_code,
+            ]
+        );
+
+        return $this->showSuccessMessage(
+            __('messages.success_messages.success_update'),
+            200
+        );
+    }
 
     //
 }

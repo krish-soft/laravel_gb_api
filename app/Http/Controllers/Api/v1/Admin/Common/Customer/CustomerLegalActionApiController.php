@@ -30,6 +30,39 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
      *  KYC List
      */
 
+    public function addNewKyc(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|integer',
+
+            'legal_name' => 'required|string|max:150',
+
+            'aadhaar_number' => 'required|digits:12',
+            'aadhaar_front_image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            'aadhaar_back_image'  => 'required|image|mimes:jpg,jpeg,png|max:2048',
+
+            'pan_card_number' => 'nullable|string|max:15',
+            'pan_card_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+
+            'selfie_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048', // optional selfie image
+
+            'dob' => 'required|date_format:Y-m-d|before:today',
+        ]);
+
+        $user = User::where('id', $request->user_id)->firstOrFail();
+
+        $this->kycService->addKyc(
+            $user,                   // user
+            $request->all(),        // input data
+            $request->allFiles()    // uploaded files
+        );
+
+
+
+        return $this->successResponse(__('messages.success_messages.kyc_submitted'), null, 200);
+        // 
+    }
+
     public function getKycList(Request $request)
     {
         //
