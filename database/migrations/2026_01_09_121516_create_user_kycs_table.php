@@ -36,7 +36,8 @@ return new class extends Migration
             $table->string('other_name', 100)->nullable();
 
             // Masked identifiers
-            $table->string('pan_card_number', 15)->nullable();
+            $table->text('pan_card_number')->nullable();
+
             $table->string('aadhaar_last4', 4)->nullable();
             $table->string('aadhaar_vid_last4', 4)->nullable();
 
