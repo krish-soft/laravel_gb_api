@@ -138,10 +138,8 @@ class CheckoutConfirmService
                     $listing->update(['is_sold' => true]);
                 }
 
-
                 $lineTotal = $cartItem->order_qty * $cartItem->pack_price;
                 $subtotal += $lineTotal;
-
 
                 $listingProduct = $listingItem->product;
                 $listingVariant = $listingItem->productVariant ?? null;
@@ -158,7 +156,10 @@ class CheckoutConfirmService
                     'product_listing_item_id' => $listingItem->id,
                     'product_listing_package_id' => $package->id,
 
+                    'product_code' => $listingProduct->product_code ?? null,
                     'product_name' => $listingProduct->name,
+
+                    'variant_code' => $listingVariant?->variant_code ?? null,
                     'variant_name' =>  $listingVariant?->name ?? null,
 
                     'pack_size' => $package->pack_size,
@@ -207,8 +208,13 @@ class CheckoutConfirmService
                     'total_amount' => $charge['total_amount'],
                 ]);
 
+
+
                 $taxAmount += $charge['tax_amount'];
                 $chargesTotal += $charge['total_amount'];
+
+                // Item Sub total add taxavble
+                $subtotal += $charge['taxable_amount'];
             }
 
             /* -------------------------------------------------

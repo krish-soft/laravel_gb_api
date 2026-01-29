@@ -54,7 +54,7 @@ class PaymentReconciliationService
 
                 $finalizer->handleSuccess($payment);
 
-                Log::info('Marking payment as PAID via reconciliation: ' . $payment->payment_code);
+                // Log::info('Marking payment as PAID via reconciliation: ' . $payment->payment_code);
             } elseif ($result['status'] === PaymentStatusEnum::FAILED->value) {
 
                 $payment->markFailed(

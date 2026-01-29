@@ -41,11 +41,13 @@ class AdminOrderApiController extends ApiResponseWithAdminAuthController
         $order = Order::with([
             'buyer',
             'orderItems',
+            'orderItems.pickupFulfillmentLocation',
+
             'orderCharges',
             'shippingFulfillmentLocation', // actual shipping location
             'billingAddress', // for invoice
             'shippingAddress', // for invoice
-        ])->firstOrfail($orderId);
+        ])->where('id', $orderId)->firstOrfail();
 
 
 

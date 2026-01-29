@@ -199,7 +199,7 @@ Route::group([
             });
 
 
-            Route::post('/payments/reconcile', [PaymentReconcileApiController::class, 'reconcile']);
+            // Route::post('/payments/reconcile', [PaymentReconcileApiController::class, 'reconcile']); // Testing 
             //
 
             //

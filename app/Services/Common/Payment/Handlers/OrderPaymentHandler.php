@@ -37,6 +37,9 @@ class OrderPaymentHandler
             $order->update([
                 'order_status' => OrderStatusEnum::CONFIRMED->value,
                 'payment_status' => PaymentStatusEnum::PAID->value,
+                //
+                'reference' => $payment->payment_code ?? null,
+                'payment_reference' => $payment->gateway_order_id ?? null,
             ]);
 
             //
@@ -80,6 +83,7 @@ class OrderPaymentHandler
             $order->update([
                 'order_status' => OrderStatusEnum::FAILED_PAYMENT->value,
                 'payment_status' => PaymentStatusEnum::FAILED->value,
+                'reference' => $payment->payment_code ?? null,
             ]);
 
             // Then Revert due to revert will not apply on processing so no issues
