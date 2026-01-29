@@ -25,7 +25,7 @@ return new class extends Migration
 
             /* ===================== SUBJECT ===================== */
             // What / whose data was affected
-            $table->string('subject_type')->nullable(); // User | UserKyc | Order | Wallet
+            $table->string('subject_type')->nullable(); // User | UserKyc | Order 
             $table->unsignedBigInteger('subject_id')->nullable();
             $table->string('subject_code', 100)->nullable();
 
