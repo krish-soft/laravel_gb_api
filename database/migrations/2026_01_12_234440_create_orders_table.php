@@ -70,6 +70,8 @@ return new class extends Migration
             $table->boolean('is_manual')->default(false)->nullable(); // when send to market and then we have to create order manually
 
 
+            $table->string('remarks', 100)->nullable(); // internal reference
+
             $table->timestamps();
             $table->softDeletes();
 

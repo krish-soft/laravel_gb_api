@@ -60,6 +60,8 @@ class Order extends BaseModel
         'is_locked',
         'is_manual', // Manually created order
 
+        'remarks',
+
         //
     ];
 

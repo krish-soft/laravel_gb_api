@@ -84,7 +84,7 @@ class CheckoutApiController extends ApiResponseWithAuthController
 
         $data = $request->validate([
             'payment_method' => 'required|in:razorpay', // manual only via admin
-            'charges'        => 'required|array|min:1',
+            // 'charges'        => 'required|array|min:1',
             'is_buyer_pickup' => 'required|boolean',
         ]);
 
@@ -95,9 +95,24 @@ class CheckoutApiController extends ApiResponseWithAuthController
             ->firstOrFail();
 
 
-        // 🔢 Calculate total
+
+        $previewData = app(CheckoutPreviewService::class)->preview($cart, $data['is_buyer_pickup']);
+        $charges = $previewData['charges'];
+
+        // if not found then give error 
+        if (!is_array($charges) || count($charges) === 0) {
+            throw new RuntimeException(__('messages.error_messages.invalid_checkout_charges'));
+        }
+
+
+        // 🔢 Calculate total old from request
+        // $totalAmount = $cart->getTotalCartItemAmount();
+        // foreach ($data['charges'] as $charge) {
+        //     $totalAmount += $charge['total_amount'];
+        // }
+
         $totalAmount = $cart->getTotalCartItemAmount();
-        foreach ($data['charges'] as $charge) {
+        foreach ($charges as $charge) {
             $totalAmount += $charge['total_amount'];
         }
 
@@ -110,7 +125,7 @@ class CheckoutApiController extends ApiResponseWithAuthController
              */
             $order = $checkoutService->confirm(
                 $cart,
-                $data['charges'],
+                $charges, //$data['charges'],
                 $data['payment_method']
             );
 

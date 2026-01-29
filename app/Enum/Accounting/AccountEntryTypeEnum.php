@@ -10,12 +10,12 @@ enum AccountEntryTypeEnum: string
     case ORDER_CHARGE_AMOUNT        = 'order_charge_amount';
 
         // 🔹 Platform charges (order-level)
-    case ORDER_PLATFORM_FEE_BASE    = 'order_platform_fee_base';
-    case ORDER_PLATFORM_FEE_TAX     = 'order_platform_fee_tax';
+    case PLATFORM_CHARGE_BASE    = 'platform_charge_base';
+    case PLATFORM_CHARGE_TAX     = 'platform_charge_tax';
 
         // 🔹 Delivery charges (order-level)
-    case ORDER_DELIVERY_FEE_BASE    = 'order_delivery_fee_base';
-    case ORDER_DELIVERY_FEE_TAX     = 'order_delivery_fee_tax';
+    case DELIVERY_CHARGE_BASE    = 'delivery_charge_base';
+    case DELIVERY_CHARGE_TAX     = 'delivery_charge_tax';
 
         // 🔹 Adjustments
     case ORDER_PENALTY              = 'order_penalty';

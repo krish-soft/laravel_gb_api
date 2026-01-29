@@ -109,7 +109,7 @@ class OrderAccountingService
 
                 if ($this->ledgerExists(
                     $revenue->id,
-                    AccountEntryTypeEnum::ORDER_PLATFORM_FEE_BASE->value,
+                    AccountEntryTypeEnum::PLATFORM_CHARGE_BASE->value,
                     get_class($charge),
                     $charge->id
                 )) {
@@ -119,7 +119,7 @@ class OrderAccountingService
                 $accounting->createLedger($revenue, [
                     'credit' => $charge->taxable_amount,
                     'debit'  => 0,
-                    'entry_type' => AccountEntryTypeEnum::ORDER_PLATFORM_FEE_BASE->value,
+                    'entry_type' => AccountEntryTypeEnum::PLATFORM_CHARGE_BASE->value,
                     'status' => LedgerStatusEnum::PENDING->value,
                     'source_type' => get_class($charge),
                     'source_id' => $charge->id,

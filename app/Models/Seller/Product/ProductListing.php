@@ -96,7 +96,7 @@ class ProductListing extends BaseModel
         return $query->where('is_active', true);
     }
 
-    
+
 
     // Relationships
     public function listingItems()
@@ -119,5 +119,38 @@ class ProductListing extends BaseModel
     public function activityLogs()
     {
         return $this->morphMany(ActivityLog::class, 'subject');
+    }
+
+
+    protected $appends = [
+        'total_qty',
+        'total_sold_qty',
+        'total_available_qty',
+    ];
+
+    // get total qty 
+    public function getTotalQtyAttribute()
+    {
+        return $this->listingItems()
+            ->join('product_listing_packages', 'product_listing_items.id', '=', 'product_listing_packages.product_listing_item_id')
+            ->sum('product_listing_packages.qty');
+    }
+
+    // get total sold qty
+    public function getTotalSoldQtyAttribute()
+    {
+        return $this->listingItems()
+            ->join('product_listing_packages', 'product_listing_items.id', '=', 'product_listing_packages.product_listing_item_id')
+            ->sum('product_listing_packages.sold_qty');
+    }
+
+
+    // get total available qty
+    public function getTotalAvailableQtyAttribute()
+    {
+        return $this->listingItems()
+            ->join('product_listing_packages', 'product_listing_items.id', '=', 'product_listing_packages.product_listing_item_id')
+            ->selectRaw('SUM(product_listing_packages.qty - product_listing_packages.sold_qty) as available_qty')
+            ->value('available_qty');
     }
 }

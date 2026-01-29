@@ -13,6 +13,7 @@ use App\Models\Buyer\Order\OrderItem;
 use App\Models\Master\Setting\MstAppSetting;
 use App\Models\Master\Setting\MstFinanceSetting;
 use App\Models\Master\Setting\MstPaymentSetting;
+use App\Models\Seller\Product\ProductListingPackage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -90,8 +91,8 @@ class CheckoutConfirmService
 
                 // Log::info(json_encode([
                 //     'package' => $package,
-                //     'listingItem' => $listingItem,
-                //     'listing' => $listing,
+                //     // 'listingItem' => $listingItem,
+                //     // 'listing' => $listing,
                 // ], JSON_PRETTY_PRINT));
 
 
@@ -124,9 +125,19 @@ class CheckoutConfirmService
                     $package->update(['is_sold' => true]);
                 }
 
-                if ($listingItem->listingPackages()->where('is_sold', false)->count() === 0) {
+                // if ($listingItem->listingPackages()->where('is_sold', false)->count() === 0) {
+                //     $listing->update(['is_sold' => true]);
+                // }
+
+                $hasAvailablePackages = ProductListingPackage::whereHas(
+                    'productListingItem',
+                    fn($q) => $q->where('product_listing_id', $listing->id)
+                )->where('is_sold', false)->exists();
+
+                if (!$hasAvailablePackages) {
                     $listing->update(['is_sold' => true]);
                 }
+
 
                 $lineTotal = $cartItem->order_qty * $cartItem->pack_price;
                 $subtotal += $lineTotal;

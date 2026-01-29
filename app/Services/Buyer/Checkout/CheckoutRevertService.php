@@ -3,7 +3,9 @@
 namespace App\Services\Buyer\Checkout;
 
 use App\Enum\Common\Order\OrderStatusEnum;
+use App\Enum\Common\Payment\PaymentStatusEnum;
 use App\Models\Buyer\Order\Order;
+use App\Models\Common\Payment\Payment;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -11,7 +13,7 @@ class CheckoutRevertService
 {
     public function revert(Order $order): Order
     {
-//        if (!in_array($order->order_status, [OrderStatusEnum::PENDING->value, OrderStatusEnum::PROCESSING->value])) {
+        //        if (!in_array($order->order_status, [OrderStatusEnum::PENDING->value, OrderStatusEnum::PROCESSING->value])) {
         if (!in_array($order->order_status, [OrderStatusEnum::FAILED_PAYMENT->value])) {
             throw new RuntimeException(__('messages.error_messages.order_cannot_be_reverted'));
         }
@@ -20,7 +22,7 @@ class CheckoutRevertService
 
             foreach ($order->orderItems as $orderItem) {
 
-                $package = $orderItem->package()
+                $package = $orderItem->productListingPackage()
                     ->lockForUpdate()
                     ->first();
 
@@ -52,8 +54,13 @@ class CheckoutRevertService
                     continue;
                 }
 
-                $totalQty = $listing->packages()->sum('qty');
-                $totalSold = $listing->packages()->sum('sold_qty');
+                // $totalQty = $listing->packages()->sum('qty');
+                // $totalSold = $listing->packages()->sum('sold_qty');
+                $totalQty = 0;
+                $totalSold = 0;
+
+                $totalQty = $listing->total_qty;
+                $totalSold = $listing->total_total_sold_qtyqty;
 
                 if ($totalSold <= 0) {
                     $listing->is_sold = false;
@@ -79,6 +86,8 @@ class CheckoutRevertService
             if (!in_array($order->order_status, [OrderStatusEnum::CANCELLED->value])) {
                 $order->update([
                     'order_status' => OrderStatusEnum::CANCELLED->value, // Finally Cancelled
+                    'remarks' => 'Order reverted due to failed payment',
+                    // 'payment_status' => PaymentStatusEnum::FAILED->value,
                 ]);
             }
 

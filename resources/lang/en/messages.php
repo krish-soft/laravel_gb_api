@@ -62,6 +62,7 @@ return [
         'order_created'    => 'Order placed successfully.',
         'proceed_to_payment' => 'Please proceed to payment to complete your order.',
         'success_preview'   => 'Preview generated successfully.',
+        'invalid_checkout_charges' => 'Invalid checkout charges calculated.',
 
         /* Payment */
         'payment_initiated' => 'Payment initiated successfully.',

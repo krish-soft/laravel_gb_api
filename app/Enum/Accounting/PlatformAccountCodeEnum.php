@@ -35,7 +35,7 @@ enum PlatformAccountCodeEnum: string
     // | - | ---------- | ----------------- | ------ | ----- | ----------------------- | --------- |
     // | 1 | PLATFORM   | PLATFORM_CLEARING | 1061.8 | 0     | order_payment_received  | AVAILABLE |
     // | 2 | SELLER     | SELLER_MAIN       | 1000   | 0     | order_base_amount       | PENDING   |
-    // | 3 | PLATFORM   | PLATFORM_REVENUE  | 10     | 0     | order_platform_fee_base | AVAILABLE |
+    // | 3 | PLATFORM   | PLATFORM_REVENUE  | 10     | 0     | PLATFORM_CHARGE_BASE | AVAILABLE |
     // | 4 | PLATFORM   | PLATFORM_TAX      | 51.8   | 0     | order_tax_amount        | AVAILABLE |
 
     // AFTER DELIVERY (STATUS UPDATE ONLY)
