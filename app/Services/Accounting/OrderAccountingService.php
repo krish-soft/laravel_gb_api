@@ -26,7 +26,13 @@ class OrderAccountingService
             | 1. PLATFORM CLEARING (FULL PAID AMOUNT)
             |-------------------------------------------------
             */
-            $clearing = Account::where('accnt_code', PlatformAccountCodeEnum::PLATFORM_CLEARING->value)->firstOrFail();
+            // $clearing = Account::where('accnt_code', PlatformAccountCodeEnum::PLATFORM_CLEARING->value)->firstOrFail();
+            $clearing = Account::getOrCreateByOwner(
+                AccountOwnerTypeEnum::PLATFORM->value,
+                null,
+                PlatformAccountCodeEnum::PLATFORM_CLEARING->value
+            );
+
 
             if (!$this->ledgerExists(
                 $clearing->id,
@@ -54,9 +60,15 @@ class OrderAccountingService
             */
             foreach ($order->orderItems as $item) {
 
-                $seller = Account::where('owner_type', AccountOwnerTypeEnum::SELLER->value)
-                    ->where('owner_id', $item->seller_id)
-                    ->firstOrFail();
+                // $seller = Account::where('owner_type', AccountOwnerTypeEnum::SELLER->value)
+                //     ->where('owner_id', $item->seller_id)
+                //     ->firstOrFail();
+                $seller = Account::getOrCreateByOwner(
+                    AccountOwnerTypeEnum::SELLER->value,
+                    $item->seller_id
+                );
+
+
 
                 if ($this->ledgerExists(
                     $seller->id,
@@ -87,7 +99,13 @@ class OrderAccountingService
             */
             foreach ($order->orderCharges as $charge) {
 
-                $revenue = Account::where('accnt_code', PlatformAccountCodeEnum::PLATFORM_REVENUE->value)->firstOrFail();
+                // $revenue = Account::where('accnt_code', PlatformAccountCodeEnum::PLATFORM_REVENUE->value)->firstOrFail();
+                $revenue = Account::getOrCreateByOwner(
+                    AccountOwnerTypeEnum::PLATFORM->value,
+                    null,
+                    PlatformAccountCodeEnum::PLATFORM_REVENUE->value
+                );
+
 
                 if ($this->ledgerExists(
                     $revenue->id,
@@ -118,7 +136,13 @@ class OrderAccountingService
             */
             if ($order->tax_amount > 0) {
 
-                $tax = Account::where('owner_type', AccountOwnerTypeEnum::GOVERNMENT->value)->firstOrFail();
+                // $tax = Account::where('owner_type', AccountOwnerTypeEnum::GOVERNMENT->value)->firstOrFail();
+                $tax = Account::getOrCreateByOwner(
+                    AccountOwnerTypeEnum::GOVERNMENT->value,
+                    null,
+                    PlatformAccountCodeEnum::PLATFORM_TAX->value
+                );
+
 
                 if (!$this->ledgerExists(
                     $tax->id,

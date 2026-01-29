@@ -33,7 +33,7 @@ class Account extends BaseModel
 
         'available_balance',
         'hold_balance',
-        
+
         'total_credit',
         'total_debit',
 
@@ -51,6 +51,35 @@ class Account extends BaseModel
         'total_debit' => 'decimal:2',
         'is_active' => 'boolean',
     ];
+
+
+    public static function getOrCreateByOwner(
+        string $ownerType,
+        ?int $ownerId = null,
+        ?string $accountCode = null
+    ): self {
+        return self::firstOrCreate(
+            [
+                'owner_type' => $ownerType,
+                'owner_id'   => $ownerId, // ✅ nullable
+            ],
+            [
+                'accnt_code'         => $accountCode, // nullable
+
+                'total_credit'      => 0,
+                'total_debit'       => 0,
+
+                'hold_balance'      => 0,
+                'available_balance' => 0,
+
+                'is_active'        => true,
+
+            ]
+        );
+    }
+
+
+
 
     // relationships
 

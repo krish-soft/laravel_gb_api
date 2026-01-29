@@ -29,8 +29,7 @@ class RazorpayService
         string $receipt,
         float  $amount,
         string $currency = PaymentCurrencyEnum::INR->value
-    ): array
-    {
+    ): array {
         try {
             $order = $this->api->order->create([
                 'receipt' => $receipt,
@@ -76,7 +75,6 @@ class RazorpayService
                     'receipt' => $receipt,
                     'amount' => $amount,
                     'currency' => $currency,
-                    'gateway_order_id' => $order['id'],
                     'error' => $e->getMessage(),
                 ]
             );
@@ -204,8 +202,7 @@ class RazorpayService
     public function refundPayment(
         string $gatewayPaymentId,
         ?float $amount = null
-    ): array
-    {
+    ): array {
         $payload = [];
 
         if ($amount !== null) {
@@ -251,48 +248,106 @@ class RazorpayService
      ===================================================== */
     public function getFinalStatusByOrder(
         string $gatewayOrderId,
-        ?int   $expectedAmountPaise = null
-    ): string
-    {
+        ?int $expectedAmountPaise = null
+    ): array {
+
         try {
+
             $payments = $this->fetchPaymentsByOrder($gatewayOrderId);
 
-            foreach ($payments['items'] ?? [] as $payment) {
+            $hasAttempt = false;
+            $hasPending = false;
+            $capturedPayment = null;
 
+            foreach ($payments['items'] ?? [] as $payment) {
+                $hasAttempt = true;
+
+                // ✅ MONEY RECEIVED (FINAL)
                 if (
                     $payment['status'] === PaymentStatusEnum::CAPTURED->value &&
                     (
                         $expectedAmountPaise === null ||
-                        (int)$payment['amount'] === $expectedAmountPaise
+                        (int) $payment['amount'] === $expectedAmountPaise
                     )
                 ) {
-                    return PaymentStatusEnum::PAID->value;
+                    $capturedPayment = $payment;
+                    break;
+                }
+
+                // ⏳ STILL IN PROGRESS
+                if (in_array($payment['status'], [
+                    PaymentStatusEnum::CREATED->value,
+                    PaymentStatusEnum::AUTHORIZED->value,
+                    PaymentStatusEnum::ATTEMPTED->value ?? null,
+                ], true)) {
+                    $hasPending = true;
                 }
             }
 
-            return PaymentStatusEnum::FAILED->value;
+            // ✅ PAID (highest priority)
+            if ($capturedPayment) {
+                return [
+                    'status'          => PaymentStatusEnum::PAID->value,
+                    'gateway_payload' => $payments,
+                    'paid_via'        => $this->formatPaidVia($capturedPayment),
+                ];
+            }
 
-        } catch (\Exception $e) {
+            // ⏳ PENDING (never fail here)
+            if ($hasPending || !$hasAttempt) {
+                return [
+                    'status'          => PaymentStatusEnum::PENDING->value,
+                    'gateway_payload' => $payments,
+                    'paid_via'        => null,
+                ];
+            }
+
+            // ❌ FAILED (ONLY when attempts exist and none are pending or captured)
+            return [
+                'status'          => PaymentStatusEnum::FAILED->value,
+                'gateway_payload' => $payments,
+                'paid_via'        => null,
+            ];
+        } catch (\Throwable $e) {
+
+            // 🚨 On exception → NEVER mark failed automatically
             Log::error('Razorpay reconciliation failed', [
                 'gateway_order_id' => $gatewayOrderId,
                 'error' => $e->getMessage(),
             ]);
 
-            // Log Activity
-            logActivity(
-                'razorpay_reconciliation_failed',
-                request()?->user() ?? null,   // Sanctum / Web / null-safe
-                null,
-                null,
-                null,
-                [
-                    'gateway_order_id' => $gatewayOrderId,
-                    'error' => $e->getMessage(),
-                ]
-            );
-
-            // Fail safe: treat as failed, cron/admin can retry
-            return PaymentStatusEnum::FAILED->value;
+            return [
+                'status'          => PaymentStatusEnum::PENDING->value, // SAFE DEFAULT
+                'gateway_payload' => null,
+                'paid_via'        => null,
+                'error'           => $e->getMessage(),
+            ];
         }
+    }
+
+    private function formatPaidVia(array $payment): string
+    {
+        return match ($payment['method'] ?? null) {
+
+            'upi' => 'UPI (' . ($payment['vpa'] ?? 'UPI') . ')',
+
+            'card' => 'Card (' .
+                ucfirst($payment['card']['network'] ?? 'Card') .
+                ' •••• ' .
+                ($payment['card']['last4'] ?? 'XXXX') .
+                ')',
+
+            'netbanking' => 'NetBanking (' . strtoupper($payment['bank'] ?? 'Bank') . ')',
+
+            'wallet' => 'Wallet (' . ucfirst($payment['wallet'] ?? 'Wallet') . ')',
+
+            'emi' => 'EMI (' .
+                ucfirst($payment['card']['network'] ?? 'Card') .
+                ' •••• ' .
+                ($payment['card']['last4'] ?? 'XXXX') .
+                ')',
+
+            default => 'Online Payment',
+        };
     }
 }

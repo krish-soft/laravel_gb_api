@@ -2,7 +2,7 @@
 
 namespace App\Enum\Common\Payment;
 
-enum PaymentStatusEnum : string
+enum PaymentStatusEnum: string
 {
     //
     case INITIATED = 'initiated';
@@ -11,6 +11,11 @@ enum PaymentStatusEnum : string
     case FAILED = 'failed';
 
 
-    // Razorpay specific
+        // Razorpay specific
     case CAPTURED = 'captured';
+    case CREATED = 'created';
+    case AUTHORIZED = 'authorized';
+    case ATTEMPTED = 'attempted';
+
+    //
 }

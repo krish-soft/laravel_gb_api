@@ -80,16 +80,10 @@ class AccountingService
             ]);
 
             if (!$ledger->is_tax) {
-
-                if ($ledger->credit > 0) {
-                    $account->decrement('hold_balance', $ledger->credit);
-                    $account->increment('available_balance', $ledger->credit);
-                }
-
-                if ($ledger->debit > 0) {
-                    $account->increment('hold_balance', $ledger->debit);
-                    $account->decrement('available_balance', $ledger->debit);
-                }
+                $account->update([
+                    'hold_balance'      => DB::raw("hold_balance - {$amount}"),
+                    'available_balance' => DB::raw("available_balance + {$amount}"),
+                ]);
             }
 
             logActivity(
@@ -115,9 +109,10 @@ class AccountingService
             $account = Account::lockForUpdate()->findOrFail($ledger->account_id);
 
             if (!$ledger->is_tax && $ledger->debit > 0) {
-                $account->decrement('available_balance', $ledger->debit);
+                $account->update([
+                    'available_balance' => DB::raw("available_balance - {$ledger->debit}"),
+                ]);
             }
-
 
             $ledger->update([
                 'status'     => LedgerStatusEnum::SETTLED->value,
@@ -200,27 +195,23 @@ class AccountingService
 
     protected function updateAccountSnapshot(Account $account, AccountLedger $ledger): void
     {
-        // totals (always)
-        if ($ledger->credit > 0) {
-            $account->increment('total_credit', $ledger->credit);
+        $updates = [
+            'total_credit' => DB::raw("total_credit + {$ledger->credit}"),
+            'total_debit'  => DB::raw("total_debit + {$ledger->debit}"),
+        ];
+
+        if (!$ledger->is_tax) {
+            $net = $ledger->credit - $ledger->debit;
+
+            if ($ledger->status === LedgerStatusEnum::PENDING->value) {
+                $updates['hold_balance'] = DB::raw("hold_balance + {$net}");
+            }
+
+            if ($ledger->status === LedgerStatusEnum::AVAILABLE->value) {
+                $updates['available_balance'] = DB::raw("available_balance + {$net}");
+            }
         }
 
-        if ($ledger->debit > 0) {
-            $account->increment('total_debit', $ledger->debit);
-        }
-
-        if ($ledger->is_tax) {
-            return;
-        }
-
-        $net = $ledger->credit - $ledger->debit;
-
-        if ($ledger->status === LedgerStatusEnum::PENDING->value && $net != 0) {
-            $account->increment('hold_balance', $net);
-        }
-
-        if ($ledger->status === LedgerStatusEnum::AVAILABLE->value && $net != 0) {
-            $account->increment('available_balance', $net);
-        }
+        $account->update($updates);
     }
 }

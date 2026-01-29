@@ -6,15 +6,24 @@ use App\Enum\Common\Payment\PaymentStatusEnum;
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
 use App\Models\Common\Payment\Payment;
 use App\Services\Common\Payment\PaymentReconciliationService;
+use Illuminate\Http\Request;
 
 class PaymentReconcileApiController extends ApiResponseWithAdminAuthController
 {
     //
 
     public function reconcile(
-        string  $payment_code,
+        Request   $request,
         PaymentReconciliationService $service
     ) {
+
+        $request->validate([
+            'payment_code' => 'required|string|exists:payments,payment_code',
+        ]);
+
+        $payment_code = $request->input('payment_code');
+
+
         $payment = Payment::where('payment_code', $payment_code)
             ->firstOrFail();
 

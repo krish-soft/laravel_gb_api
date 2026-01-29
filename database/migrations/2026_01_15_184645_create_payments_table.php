@@ -80,7 +80,9 @@ return new class extends Migration
                      /* =====================================================
             | AUDIT / META
             ===================================================== */
-                     $table->json('meta')->nullable();                     // webhook payload, notes
+                     $table->string('paid_via')->nullable();
+                     $table->json('meta')->nullable();
+                     // webhook payload, notes
                      $table->timestamp('paid_at')->nullable();
                      $table->timestamp('failed_at')->nullable();
 

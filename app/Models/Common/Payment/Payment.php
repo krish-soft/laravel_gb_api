@@ -15,14 +15,12 @@ class Payment extends BaseModel
     protected $fillable = [
         'user_id',
 
-
         'payment_uuid',
         'payment_code',
 
         'source_type',
         'source_id',
         'source_code',
-
 
         'currency',
         'amount',
@@ -49,6 +47,8 @@ class Payment extends BaseModel
         'is_refunded',
 
         'meta',
+        'paid_via', // new field for payment method used
+
         'paid_at',
         'failed_at',
     ];
@@ -88,6 +88,7 @@ class Payment extends BaseModel
             'is_final' => true,
             'paid_at' => now(),
             'meta' => array_merge($this->meta ?? [], $meta),
+            'paid_via' => $meta['paid_via'] ?? null,
         ]);
     }
 

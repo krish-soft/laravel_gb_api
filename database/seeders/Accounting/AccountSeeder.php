@@ -51,7 +51,7 @@ class AccountSeeder extends Seeder
         Account::create([
             'name' => 'Platform Tax Liability Account',
             'accnt_code' => PlatformAccountCodeEnum::PLATFORM_TAX->value, // 'PLATFORM_TAX',
-            'owner_type' => AccountOwnerTypeEnum::PLATFORM->value,
+            'owner_type' => AccountOwnerTypeEnum::GOVERNMENT->value,
             'owner_id' => null,
             'currency' => 'INR',
             'available_balance' => 0.00,
