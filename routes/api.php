@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\v1\Admin\Common\Payment\PaymentReconcileApiControll
 use App\Http\Controllers\Api\v1\Admin\Common\Payment\PayoutApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Customer\CustomerApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Customer\CustomerLegalActionApiController;
+use App\Http\Controllers\Api\v1\Admin\Common\Payment\AdminPaymentApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeLevelApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\Rule\MstDeliveryChargeRuleApiController;
@@ -236,12 +237,9 @@ Route::group([
             Route::post('/register', [AdminUserRegisterApiController::class, 'register']); // Admin User Registration
             Route::post('/signout', [AdminUserLogoutApiController::class, 'logout']); // Admin User Logout
 
-
             Route::get('user-profile', function (Request $request) {
                 return $request->user();
             });
-
-
 
             // Product Listing Routes
             Route::prefix('listing')->group(function () {
@@ -256,16 +254,23 @@ Route::group([
                 Route::delete('packages/delete/{packageId}', [AdminProductListingApiController::class, 'deletePackage']);
             });
 
-
             Route::prefix('order')->group(function () {
                 Route::get('/', [AdminOrderApiController::class, 'getOrdersList']);
                 Route::get('/{orderId}', [AdminOrderApiController::class, 'getOrderDetails']);
                 //
             });
 
+            // Payments  
+            Route::prefix('payment')->group(function () {
+                Route::get('/', [AdminPaymentApiController::class, 'getPaymentsList']);
+                Route::get('/{paymentId}', [AdminPaymentApiController::class, 'getPaymentDetails']);
+                //
+            });
 
-            // Payments
+            // reconcile
             Route::post('/payments/reconcile', [PaymentReconcileApiController::class, 'reconcile']);
+
+            // Payouts
             Route::prefix('payouts')->group(function () {
                 Route::get('/', [PayoutApiController::class, 'index']);
                 Route::post('{payout}/approve', [PayoutApiController::class, 'approve']);

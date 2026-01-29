@@ -24,6 +24,7 @@ return new class extends Migration
      ===================================================== */
                      $table->uuid('payment_uuid')->unique();              // internal unique id
                      $table->string('payment_code')->unique();            // PAY-2026-000001
+                     $table->date('payment_date')->nullable();     // payment date
 
                      /* =====================================================
      | SOURCE (WHAT THIS PAYMENT IS FOR)

@@ -12,10 +12,12 @@ class Payment extends BaseModel
     //
     use SoftDeletes;
 
+
     protected $fillable = [
         'user_id',
 
         'payment_uuid',
+        'payment_date',
         'payment_code',
 
         'source_type',
@@ -74,6 +76,10 @@ class Payment extends BaseModel
     {
         static::creating(function ($payment) {
             $payment->payment_uuid ??= (string)Str::uuid();
+
+            if (empty($payment->payment_date)) {
+                $payment->payment_date = date('Y-m-d');
+            }
         });
     }
 
