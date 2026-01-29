@@ -14,7 +14,7 @@ class AdminPaymentApiController extends ApiResponseWithAdminAuthController
     public function getPaymentsList(Request $request)
     {
 
-        $paymentQuery = Payment::latest();
+        $paymentQuery = Payment::with('user')->latest();
 
         if ($request->has('status')) {
             $paymentQuery->where('status', $request->input('status'));

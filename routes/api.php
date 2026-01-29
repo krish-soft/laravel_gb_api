@@ -265,10 +265,12 @@ Route::group([
                 Route::get('/', [AdminPaymentApiController::class, 'getPaymentsList']);
                 Route::get('/{paymentId}', [AdminPaymentApiController::class, 'getPaymentDetails']);
                 //
+
+                // reconcile
+                Route::post('/reconcile', [PaymentReconcileApiController::class, 'reconcile']);
             });
 
-            // reconcile
-            Route::post('/payments/reconcile', [PaymentReconcileApiController::class, 'reconcile']);
+
 
             // Payouts
             Route::prefix('payouts')->group(function () {

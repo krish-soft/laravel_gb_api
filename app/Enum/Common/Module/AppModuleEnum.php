@@ -17,10 +17,10 @@ enum AppModuleEnum: int
 
         // Orders & Transactions (300–399)
     case CARTS               = 301;
-    case ORDERS              = 302;
+    case ORDERS              = 302; // USED
     case ORDER_ITEMS         = 303;
-    case PAYMENTS            = 304;
-    case WALLETS             = 305;
+    case PAYMENTS            = 304; // USED
+    // case WALLETS             = 305;
     case SETTLEMENTS         = 306;
     case REFUNDS             = 307;
     case COMMISSIONS         = 308; // USED
@@ -56,7 +56,7 @@ enum AppModuleEnum: int
 
 
     case SELLERS            = 900; // USED
-    case BUYERS             = 901;
+    case BUYERS             = 901; // USED
     case DELIVERY_PARTNERS  = 902;
     case AFFILIATES         = 903;
 }
