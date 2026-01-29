@@ -7,6 +7,7 @@ use App\Enum\Common\Payment\PaymentMethodEnum;
 use App\Http\Controllers\ApiResponseWithAuthController;
 use App\Models\Buyer\Cart\Cart;
 use App\Models\Buyer\Order\Order;
+use App\Models\Common\Fulfillment\FulfillmentLocation;
 use App\Models\Common\Payment\Payment;
 use App\Models\Master\Setting\MstAppSetting;
 use App\Models\Master\Setting\MstFinanceSetting;
@@ -84,9 +85,21 @@ class CheckoutApiController extends ApiResponseWithAuthController
 
         $data = $request->validate([
             'payment_method' => 'required|in:razorpay', // manual only via admin
+            'fulfillment_location_id' => 'sometimes|exists:fulfillment_locations,id',
             // 'charges'        => 'required|array|min:1',
             'is_buyer_pickup' => 'required|boolean',
         ]);
+
+        $fulfillmentLocationId = $data['fulfillment_location_id'] ?? null;
+
+        $fulfillmentLocation = FulfillmentLocation::findOrFail($fulfillmentLocationId);
+
+        if ($fulfillmentLocation->user_id !== $user->id) {
+            return $this->showErrorMessage(
+                __('messages.error_messages.unauthorized_action'),
+                400
+            );
+        }
 
         $cart = Cart::where('buyer_id', $user->id)
             ->where('status', 'active')
@@ -126,7 +139,8 @@ class CheckoutApiController extends ApiResponseWithAuthController
             $order = $checkoutService->confirm(
                 $cart,
                 $charges, //$data['charges'],
-                $data['payment_method']
+                $data['payment_method'],
+                $fulfillmentLocationId
             );
 
             logActivity(

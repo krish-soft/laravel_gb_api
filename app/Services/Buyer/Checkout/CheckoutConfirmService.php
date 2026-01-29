@@ -22,7 +22,7 @@ class CheckoutConfirmService
 {
 
 
-    public function confirm(Cart $cart, array $charges, $paymentMethod): Order
+    public function confirm(Cart $cart, array $charges, $paymentMethod, $fulfillmentLocationId): Order
     {
 
         /* -------------------------------------------------
@@ -50,7 +50,7 @@ class CheckoutConfirmService
             throw new RuntimeException(__('messages.error_messages.cart_expired'));
         }
 
-        return DB::transaction(function () use ($cart, $charges, $paymentMethod) {
+        return DB::transaction(function () use ($cart, $charges, $paymentMethod, $fulfillmentLocationId) {
             /* -------------------------------------------------
              | 0️⃣ Lock cart (prevent double checkout)
              -------------------------------------------------*/
@@ -72,7 +72,7 @@ class CheckoutConfirmService
                 'total_amount' => 0,
                 'order_status' => OrderStatusEnum::PENDING->value,
 
-                'shipping_fulfillment_location_id' => $cart->fulfillment_location_id // shipping location from cart
+                'shipping_fulfillment_location_id' =>  $fulfillmentLocationId // shipping location from cart
             ]);
 
             $subtotal = 0;
