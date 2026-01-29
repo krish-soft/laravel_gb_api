@@ -45,6 +45,7 @@ use App\Http\Controllers\Api\v1\Utils\UtilsApiController;
 use App\Http\Controllers\Web\Webhooks\RazorpayBankVerificationWebhookHandler;
 use App\Http\Controllers\Web\Webhooks\RazorpayPayoutWebhookController;
 use App\Http\Controllers\Web\Webhooks\RazorpayWebhookController;
+use App\Models\Common\Payment\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -66,6 +67,21 @@ Route::get('/files/{path}', function ($path) {
     ->name('files.view')
     ->middleware('signed');
 
+
+// routes/web.php or api.php
+Route::get('/payment/status/{payment}', function (Request $request, string $payment) {
+
+    if (!$request->hasValidSignature()) {
+        abort(403);
+    }
+
+    $payment = Payment::where('payment_code', $payment)->firstOrFail();
+
+    return response()->json([
+        'status'       => $payment->status,       // initiated | paid | failed
+        'order_number' => optional($payment->source())->order_number,
+    ]);
+})->name('payment.status');
 
 Route::group([
     'prefix' => 'v1',

@@ -70,6 +70,7 @@ class OrderPaymentHandler
                 in_array($order->order_status, [
                     OrderStatusEnum::CANCELLED->value,
                     OrderStatusEnum::FAILED_PAYMENT->value,
+                    OrderStatusEnum::CONFIRMED->value, // already confirmed 
                 ])
             ) {
                 return;

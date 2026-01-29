@@ -21,14 +21,39 @@ Artisan::command('inspire', function () {
 
 if (MstPaymentSetting::payInMode() == PaymentMethodEnum::RAZORPAY->value) {
 
+    // 1️⃣ Reconcile Razorpay payments
+    Schedule::call(function () {
 
+        $reconciler = app(
+            \App\Services\Common\Payment\PaymentReconciliationService::class
+        );
+
+        Payment::whereIn('status', [
+            PaymentStatusEnum::INITIATED->value,
+            PaymentStatusEnum::PROCESSING->value
+        ])
+            ->whereNotNull('gateway_order_id')
+            ->where('created_at', '<', now()->subMinutes(10))
+            ->each(function (Payment $payment) use ($reconciler) {
+
+                if ($payment->is_final) {
+                    return;
+                }
+
+                $reconciler->reconcile($payment);
+            });
+    })->everyFiveMinutes();
+
+
+
+    // 2️⃣ Timeout payments (FINAL FAILURE)
     Schedule::call(function () {
 
         $finalizer = app(\App\Services\Common\Payment\PaymentFinalizerService::class);
 
-        Payment::where('status', PaymentStatusEnum::INITIATED->value)
-            ->whereNull('gateway_order_id') // 🔥 IMPORTANT GUARD
-            ->where('created_at', '<', now()->subMinutes(20))
+        Payment::whereIn('status', [PaymentStatusEnum::INITIATED->value, PaymentStatusEnum::PROCESSING->value])
+            ->whereNotNull('gateway_order_id')
+            ->where('created_at', '<', now()->subMinutes(25))
             ->each(function (Payment $payment) use ($finalizer) {
 
                 if ($payment->is_final) {
@@ -38,28 +63,10 @@ if (MstPaymentSetting::payInMode() == PaymentMethodEnum::RAZORPAY->value) {
                 $payment->markFailed('timeout', 'Payment not completed');
                 $finalizer->handleFailure($payment, 'timeout');
             });
-    })->everyMinute();
-
-
-    Schedule::call(function () {
-
-        $reconciler = app(
-            \App\Services\Common\Payment\PaymentReconciliationService::class
-        );
-
-        Payment::where('status', PaymentStatusEnum::INITIATED->value)
-            ->whereNotNull('gateway_order_id')
-            ->where('created_at', '<', now()->subMinutes(10))
-            ->each(function ($payment) use ($reconciler) {
-
-                if ($payment->is_final) {
-                    return;
-                }
-
-                $reconciler->reconcile($payment);
-            });
-    })->everyFiveMinutes();
+    })->everyThirtyMinutes();
 }
+
+
 
 if (MstPaymentSetting::payOutMode() == PaymentMethodEnum::RAZORPAY->value) {
 
