@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\v1\Admin\Buyer\Order\AdminOrderApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserLoginApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserLogoutApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserRegisterApiController;
@@ -225,7 +226,6 @@ Route::group([
 
 
 
-
             // Product Listing Routes
             Route::prefix('listing')->group(function () {
 
@@ -237,6 +237,13 @@ Route::group([
 
                 Route::put('packages/{packageId}', [AdminProductListingApiController::class, 'updatePackage']);
                 Route::delete('packages/delete/{packageId}', [AdminProductListingApiController::class, 'deletePackage']);
+            });
+
+
+            Route::prefix('order')->group(function () {
+                Route::get('/', [AdminOrderApiController::class, 'getOrdersList']);
+                Route::get('/{orderId}', [AdminOrderApiController::class, 'getOrderDetails']);
+                //
             });
 
 
@@ -258,7 +265,7 @@ Route::group([
 
                 Route::post('/address', [CustomerApiController::class, 'saveAddress']); // Manage Regular user
                 Route::post('/billingAddress', [CustomerApiController::class, 'saveBillingAddress']); // 
-                
+
                 ## Customers Actions 
                 Route::post('addDepot', [CustomerApiController::class, 'addDepot']);
                 Route::delete('removeDepot/{userDepot}', [CustomerApiController::class, 'removeDepot']);

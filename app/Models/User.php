@@ -214,7 +214,12 @@ class User extends Authenticatable
 
     public function depots()
     {
-        return $this->hasMany(UserDepot::class);
+        return $this->hasMany(UserDepot::class, 'user_id', 'id');
+    }
+
+    public function primaryDepot()
+    {
+        return $this->hasOne(UserDepot::class, 'user_id', 'id')->where('is_primary', true);
     }
 
     public function buyerCart()
@@ -290,6 +295,8 @@ class User extends Authenticatable
             && $this->depots()->exists()
             && $this->fulfillmentLocations()->exists();
     }
+
+
 
 
     // Appends

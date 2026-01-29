@@ -29,6 +29,7 @@ class Order extends BaseModel
     protected $fillable = [
         'cart_id',
         'buyer_id',
+        'depot_id',
 
         'shipping_fulfillment_location_id',
 
@@ -44,20 +45,20 @@ class Order extends BaseModel
 
         'payment_method', // payment method
         'payment_status', // payment status
+        'payment_reference', // payment reference
+
+        'reference', // internal reference // payment_code
+
+        'bill_addr_code',
+        'ship_addr_code',
+
+        'is_buyer_pickup',
+        'pickup_addr_code', // If buyer pickup selected
 
         'is_partial',
         'is_paid',
         'is_locked',
         'is_manual', // Manually created order
-
-        'wallet_txn_code', // For Refrence
-
-        'bill_addr_code',
-        'ship_addr_code',
-        'pick_addr_code',
-
-        'is_buyer_pickup',
-        'pickup_addr_code', // If buyer pickup selected
 
         //
     ];
@@ -92,7 +93,7 @@ class Order extends BaseModel
     }
 
 
-
+    // actual shipping location
     public function shippingFulfillmentLocation()
     {
         return $this->belongsTo(FulfillmentLocation::class, 'shipping_fulfillment_location_id', 'id');
@@ -103,19 +104,22 @@ class Order extends BaseModel
         return $this->belongsTo(Cart::class, 'cart_id', 'id');
     }
 
+    // for invoice
     public function billingAddress()
     {
         return $this->belongsTo(Address::class, 'bill_addr_code', 'address_code');
     }
 
+    // for invoice
     public function shippingAddress()
     {
         return $this->belongsTo(Address::class, 'ship_addr_code', 'address_code');
     }
 
+    // if buyer want to pickup
     public function pickupAddress()
     {
-        return $this->belongsTo(Address::class, 'pick_addr_code', 'address_code');
+        return $this->belongsTo(Address::class, 'pickup_addr_code', 'address_code');
     }
 
 

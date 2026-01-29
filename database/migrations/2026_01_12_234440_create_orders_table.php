@@ -25,6 +25,12 @@ return new class extends Migration
                 ->constrained('users')
                 ->restrictOnDelete();
 
+            // Seller snapshot (important)
+            $table->foreignId('depot_id')
+                ->nullable()
+                ->constrained('mst_depots')
+                ->nullOnDelete();
+
 
             $table->foreignId('shipping_fulfillment_location_id')
                 ->nullable()
@@ -45,23 +51,24 @@ return new class extends Migration
             // For Invoice Billing & Shipping
             $table->string('bill_addr_code', 20)->nullable(); // Billing Address
             $table->string('ship_addr_code', 20)->nullable(); // Shipping Address
-            $table->string('pick_addr_code', 20)->nullable(); // Pickup Address for Seller Pickup
 
             // Pickup info
             $table->boolean('is_buyer_pickup')->default(false)->nullable();
-            $table->string('pickup_addr_code')->nullable(); // If buyer pickup selected
-
+            $table->string('pickup_addr_code', 20)->nullable(); // Pickup Address for Seller Pickup
 
             // payment
             $table->string('payment_method', 30);
             $table->string('payment_status', 30)->nullable();
+            $table->string('payment_reference', 100)->nullable();
+
+            $table->string('reference', 100)->nullable(); // internal reference
+
 
             $table->boolean('is_partial')->default(false)->nullable();
             $table->boolean('is_paid')->default(false)->nullable();
             $table->boolean('is_locked')->default(false)->nullable(); // No one can modify after this
             $table->boolean('is_manual')->default(false)->nullable(); // when send to market and then we have to create order manually
 
-            $table->string('wallet_txn_code', 100)->nullable();
 
             $table->timestamps();
             $table->softDeletes();
