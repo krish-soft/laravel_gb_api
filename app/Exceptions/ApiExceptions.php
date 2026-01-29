@@ -30,10 +30,11 @@ class ApiExceptions extends Exception
     public function handleException($request, Exception $exception)
     {
         // Default Log here
-        Log::error($exception->getMessage(), [
-            'exception' => $exception,
-            'trace' => $exception->getTraceAsString(),
-        ]);
+        // Log::error($exception->getMessage(), [
+        //     'exception' => $exception,
+        //     'trace' => $exception->getTraceAsString(),
+        // ]);
+        // Log::error($exception); // Simple log
 
         // Handle different exception types
         if ($exception instanceof ValidationException) {
@@ -120,7 +121,7 @@ class ApiExceptions extends Exception
             return redirect()->back()->withInput($request->input());
         }
 
-        if ($exception instanceof RuntimeException) {           
+        if ($exception instanceof RuntimeException) {
 
             return $this->showErrorMessage(
                 $exception->getMessage() ?: 'Transaction failed. Changes were rolled back.',

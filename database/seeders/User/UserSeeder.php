@@ -62,8 +62,9 @@ class UserSeeder extends Seeder
             'updated_at' => now(),
         ]);
 
-        
 
+
+        // 
         User::create([
 
             'user_code' => 'buyer01',
@@ -80,6 +81,7 @@ class UserSeeder extends Seeder
 
             'is_active' => true,
             'is_test_user' => true,
+            'charge_level_code' => 'B-STD',
 
             'created_at' => now(),
             'updated_at' => now(),
@@ -103,6 +105,7 @@ class UserSeeder extends Seeder
 
             'is_active' => true,
             'is_test_user' => true,
+            'charge_level_code' => 'S-STD',
 
             'created_at' => now(),
             'updated_at' => now(),
@@ -125,6 +128,7 @@ class UserSeeder extends Seeder
 
             'is_active' => true,
             'is_test_user' => true,
+            'charge_level_code' => 'D-STD',
 
             'created_at' => now(),
             'updated_at' => now(),

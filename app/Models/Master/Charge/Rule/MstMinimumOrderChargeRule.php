@@ -35,11 +35,11 @@ class MstMinimumOrderChargeRule extends BaseModel
         'description',
 
         'calc_type',
+        'calc_base',
         'calc_condition',
-        'min_order_price',
-        // Disable for now
-        // 'min_order_qty',
-        // 'min_order_weight',
+        'min_order_price',      
+        'min_order_qty',
+        'min_order_weight',
         'charge_amount',
         'is_active',
     ];

@@ -100,7 +100,7 @@ class CustomerApiController extends ApiResponseWithAdminAuthController
             'password' => bcrypt(Str::random(12)), // Random password
             'role' => $request->role,
             'user_type' => $userType,
-            'price_level_code' => $priceLevelCode,
+            'charge_level_code' => $priceLevelCode,
         ]);
 
         // Log activity

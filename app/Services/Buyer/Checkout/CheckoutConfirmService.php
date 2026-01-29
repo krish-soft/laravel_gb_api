@@ -3,6 +3,7 @@
 namespace App\Services\Buyer\Checkout;
 
 use App\Enum\Common\Cart\CartStatusEnum;
+use App\Enum\Common\Charge\ChargesEnum;
 use App\Enum\Common\Order\OrderChargeTypeEnum;
 use App\Enum\Common\Order\OrderStatusEnum;
 use App\Models\Buyer\Cart\Cart;
@@ -13,6 +14,7 @@ use App\Models\Master\Setting\MstAppSetting;
 use App\Models\Master\Setting\MstFinanceSetting;
 use App\Models\Master\Setting\MstPaymentSetting;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class CheckoutConfirmService
@@ -53,7 +55,7 @@ class CheckoutConfirmService
              -------------------------------------------------*/
             $cart->update([
                 'status' => CartStatusEnum::LOCKED->value,
-                'locked_at'=> now(),
+                'locked_at' => now(),
             ]);
 
             /* -------------------------------------------------
@@ -63,6 +65,8 @@ class CheckoutConfirmService
                 'buyer_id' => $cart->buyer_id,
                 'cart_id' => $cart->id,
                 'currency' => MstFinanceSetting::currency() ?? 'INR',
+                'order_date' => date('Y-m-d'),
+                'payment_method' => $paymentMethod,
                 'subtotal' => 0,
                 'total_amount' => 0,
                 'order_status' => OrderStatusEnum::PENDING->value,
@@ -83,6 +87,13 @@ class CheckoutConfirmService
 
                 $listingItem = $package?->productListingItem;
                 $listing = $listingItem?->productListing;
+
+                // Log::info(json_encode([
+                //     'package' => $package,
+                //     'listingItem' => $listingItem,
+                //     'listing' => $listing,
+                // ], JSON_PRETTY_PRINT));
+
 
                 if (!$package || !$listingItem || !$listing) {
                     throw new RuntimeException(__('messages.error_messages.listing_not_available'));
@@ -113,12 +124,16 @@ class CheckoutConfirmService
                     $package->update(['is_sold' => true]);
                 }
 
-                if ($listing->packages()->where('is_sold', false)->count() === 0) {
+                if ($listingItem->listingPackages()->where('is_sold', false)->count() === 0) {
                     $listing->update(['is_sold' => true]);
                 }
 
                 $lineTotal = $cartItem->order_qty * $cartItem->pack_price;
                 $subtotal += $lineTotal;
+
+
+                $listingProduct = $listingItem->product;
+                $listingVariant = $listingItem->productVariant ?? null;
 
                 /* ---- Order item snapshot ---- */
                 OrderItem::create([
@@ -128,11 +143,12 @@ class CheckoutConfirmService
                     'pickup_fulfillment_location_id' => $listing->fulfillment_location_id, // seller location
 
                     'listing_code' => $listing->listing_code,
+
                     'product_listing_item_id' => $listingItem->id,
                     'product_listing_package_id' => $package->id,
 
-                    'product_name' => $listingItem->product_name,
-                    'variant_name' => $listingItem->variant_name,
+                    'product_name' => $listingProduct->name,
+                    'variant_name' =>  $listingVariant?->name ?? null,
 
                     'pack_size' => $package->pack_size,
                     'pack_unit' => $package->pack_unit,
@@ -140,6 +156,7 @@ class CheckoutConfirmService
 
                     'order_qty' => $cartItem->order_qty,
                     'pack_price' => $cartItem->pack_price,
+                    'per_unit_price' => $cartItem->per_unit_price,
 
                     'taxable_amount' => $lineTotal,
                     'tax_amount' => 0, // tax from charges only
@@ -156,10 +173,12 @@ class CheckoutConfirmService
 
             foreach ($charges as $charge) {
 
+
                 // enum validation (IMPORTANT)
-                if (!OrderChargeTypeEnum::tryFrom($charge['charge_type'])) {
+                if (!in_array($charge['charge_code'], ChargesEnum::casesAsValues())) {
                     throw new RuntimeException(__('messages.error_messages.checkout_failed'));
                 }
+
 
                 OrderCharge::create([
                     'order_id' => $order->id,

@@ -70,7 +70,7 @@ class User extends Authenticatable
         'is_active',
         'inactive_reason',
 
-        'price_level_code',
+        'charge_level_code',
         'kyc_code',
         'sales_rep', // To Identify who get onboard this user
 

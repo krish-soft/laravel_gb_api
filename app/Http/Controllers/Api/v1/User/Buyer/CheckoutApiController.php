@@ -19,6 +19,7 @@ use App\Services\Common\Payment\PaymentService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use RuntimeException;
 
@@ -31,19 +32,28 @@ class CheckoutApiController extends ApiResponseWithAuthController
      */
     public function preview(
         Request                $request,
-        CheckoutPreviewService $service
+        CheckoutPreviewService $service,
     ) {
+
+        $request->validate([
+            'is_buyer_pickup' => 'sometimes|boolean', // base on this delivery charge will be calculated
+        ]);
+
+        $isBuyerPickup = $request->input('is_buyer_pickup') ?? false;
+
         try {
-            $cart = Cart::where('buyer_id', $request->user()->id)
+            $cart = Cart::with('buyer', 'cartItems')->where('buyer_id', $request->user()->id)
                 ->where('status', 'active')
                 ->with([
                     'cartItems.productListingPackage.productListingItem.productListing'
                 ])
                 ->firstOrFail();
 
+            // 
+
             return $this->successResponse(
                 __('messages.success_messages.checkout_preview'),
-                $service->preview($cart),
+                $service->preview($cart, $isBuyerPickup),
                 200
             );
         } catch (Exception $e) {
@@ -85,13 +95,11 @@ class CheckoutApiController extends ApiResponseWithAuthController
             ->firstOrFail();
 
 
-
         // 🔢 Calculate total
         $totalAmount = $cart->getTotalCartItemAmount();
         foreach ($data['charges'] as $charge) {
             $totalAmount += $charge['total_amount'];
         }
-
 
         DB::beginTransaction();
 

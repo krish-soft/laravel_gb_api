@@ -44,7 +44,7 @@ return new class extends Migration
             $table->string('inactive_reason', 100)->nullable();
 
             // other to map table 
-            $table->string('price_level_code', 50)->nullable();
+            $table->string('charge_level_code', 50)->nullable();
             $table->string('kyc_code', 50)->nullable(); // current KYC code
             $table->string('sales_rep', 50)->nullable(); // To Identify who get onboard this user
 

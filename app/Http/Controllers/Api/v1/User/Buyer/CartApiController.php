@@ -20,6 +20,10 @@ class CartApiController extends ApiResponseWithAuthController
     {
         $user = $request->user();
 
+        if (!$user->isBuyer()) {
+            return $this->showErrorMessage(__('messages.error_messages.unauthorized_access'), 403);
+        }
+
         $cart = Cart::where('buyer_id', $user->id)
             ->whereIn('status', [
                 CartStatusEnum::ACTIVE->value,
@@ -43,6 +47,9 @@ class CartApiController extends ApiResponseWithAuthController
             ]);
         }
 
+        $cart = Cart::with('cartItems')
+            ->find($cart->id);
+
         return $this->successResponse(__('messages.success_messages.cart_fetched'), $cart, 200);
     }
 
@@ -58,8 +65,11 @@ class CartApiController extends ApiResponseWithAuthController
         ]);
 
         $user = $request->user();
-
         $cart = $this->getWritableCart($user);
+
+        if (!$user->isBuyer() || $cart->buyer_id !== $user->id) {
+            return $this->showErrorMessage(__('messages.error_messages.unauthorized_access'), 403);
+        }
 
         $package = ProductListingPackage::with(
             'productListingItem.productListing'
@@ -121,7 +131,12 @@ class CartApiController extends ApiResponseWithAuthController
         ]);
 
         $user = $request->user();
+
         $cart = $this->getWritableCart($user);
+
+        if (!$user->isBuyer() || $cart->buyer_id !== $user->id) {
+            return $this->showErrorMessage(__('messages.error_messages.unauthorized_access'), 403);
+        }
 
         $item = CartItem::where('cart_id', $cart->id)
             ->findOrFail($cartItemId);
@@ -140,7 +155,14 @@ class CartApiController extends ApiResponseWithAuthController
     public function removeItem(Request $request, int $cartItemId)
     {
         $user = $request->user();
+
+
         $cart = $this->getWritableCart($user);
+
+        if (!$user->isBuyer() || $cart->buyer_id !== $user->id) {
+            return $this->showErrorMessage(__('messages.error_messages.unauthorized_access'), 403);
+        }
+
 
         $item = CartItem::where('cart_id', $cart->id)
             ->findOrFail($cartItemId);
@@ -158,6 +180,10 @@ class CartApiController extends ApiResponseWithAuthController
     {
         $user = $request->user();
         $cart = $this->getWritableCart($user);
+
+        if (!$user->isBuyer() || $cart->buyer_id !== $user->id) {
+            return $this->showErrorMessage(__('messages.error_messages.unauthorized_access'), 403);
+        }
 
         $cart->cartItems()->delete();
 

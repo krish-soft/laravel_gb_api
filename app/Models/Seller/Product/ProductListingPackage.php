@@ -54,6 +54,7 @@ class ProductListingPackage extends BaseModel
 
     // Relationships
 
+    
     public function productListingItem()
     {
         return $this->belongsTo(ProductListingItem::class, 'product_listing_item_id');

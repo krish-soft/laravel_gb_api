@@ -196,6 +196,7 @@ return [
         'missing_charge_level_pricing_config' => 'Missing charge level pricing configuration.',
         'nothing_to_update'    => 'No changes detected to update.',
         'reason_required'      => 'A reason is required for this action.',
+        'missing_charge_level_code' => 'Missing charge level code configuration.',
 
         /* Wallet */
         'insufficient_wallet_balance' => 'Insufficient wallet balance to complete this transaction.',

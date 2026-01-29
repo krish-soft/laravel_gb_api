@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api\v1\User\Seller\Product;
 
 use App\Http\Controllers\ApiResponseWithAuthController;
+use App\Models\Seller\Product\ProductListing;
 use App\Services\Seller\Product\ProductListingService;
 use App\Services\Seller\Product\ProductListingChargePreviewService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Razorpay\Api\Product;
 use RuntimeException;
 
 class ProductListingApiController extends ApiResponseWithAuthController
@@ -17,6 +19,31 @@ class ProductListingApiController extends ApiResponseWithAuthController
     public function __construct(ProductListingService $service)
     {
         $this->service = $service;
+    }
+
+    public function getProductListing(Request $request)
+    {
+        if (!$request->user()->isSeller()) {
+            return $this->showErrorMessage(__('messages.error_messages.unauthorized_access'), 403);
+        }
+
+
+        $productListingQuery = ProductListing::latest()->with([
+            'fulfillmentLocation',
+            'listingItems.product',
+            'listingItems.productVariant',
+            'listingItems.listingPackages',
+        ])->where('seller_id', $request->user()->id);
+
+        if ($request->has('is_active')) {
+            $productListingQuery->where('is_active', $request->input('is_active'));
+        } else {
+            $productListingQuery->where('is_active', true);
+        }
+
+        $productListings = $productListingQuery->get();
+
+        return $this->successResponse(__('messages.success_messages.success_get'), $productListings, 200);
     }
 
 

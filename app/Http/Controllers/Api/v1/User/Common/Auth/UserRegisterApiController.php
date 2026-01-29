@@ -117,7 +117,7 @@ class UserRegisterApiController extends ApiResponseController
             'password'      => bcrypt($request->password),
             'role'          => $request->role,
             'user_type' => $userType,
-            'price_level_code' => $priceLevelCode,
+            'charge_level_code' => $priceLevelCode,
             'sales_rep'     => $request->sales_rep ?? null,
 
         ]);

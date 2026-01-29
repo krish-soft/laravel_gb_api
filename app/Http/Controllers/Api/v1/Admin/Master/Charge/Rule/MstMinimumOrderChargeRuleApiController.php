@@ -39,7 +39,7 @@ class MstMinimumOrderChargeRuleApiController extends ApiResponseWithAdminAuthCon
             'min_order_price' => 'required_if:calc_base,price|min:0',
             'min_order_qty' => 'required_if:calc_base,qty|min:0',
             'min_order_weight' => 'required_if:calc_base,weight|min:0',
-            
+
             'charge_amount' => 'required|numeric|min:0',
 
         ]);
@@ -74,7 +74,9 @@ class MstMinimumOrderChargeRuleApiController extends ApiResponseWithAdminAuthCon
                 'calc_base' => $mstMinimumOrderChargeRule->calc_base,
                 'calc_type' => $mstMinimumOrderChargeRule->calc_type,
                 'calc_condition' => $mstMinimumOrderChargeRule->calc_condition,
-                'min_order_price' => $mstMinimumOrderChargeRule->min_order_price,
+                'min_order_price' => $mstMinimumOrderChargeRule->min_order_price ?? 0,
+                'min_order_qty' => $mstMinimumOrderChargeRule->min_order_qty ?? 0,
+                'min_order_weight' => $mstMinimumOrderChargeRule->min_order_weight ?? 0,
                 'charge_amount' => $mstMinimumOrderChargeRule->charge_amount,
             ]
         );
@@ -146,7 +148,9 @@ class MstMinimumOrderChargeRuleApiController extends ApiResponseWithAdminAuthCon
                 'charge_level_id' => $mstMinimumOrderChargeRule->charge_level_id,
                 'calc_type' => $mstMinimumOrderChargeRule->calc_type,
                 'calc_condition' => $mstMinimumOrderChargeRule->calc_condition,
-                'min_order_price' => $mstMinimumOrderChargeRule->min_order_price,
+                'min_order_price' => $mstMinimumOrderChargeRule->min_order_price ?? 0,
+                'min_order_qty' => $mstMinimumOrderChargeRule->min_order_qty ?? 0,
+                'min_order_weight' => $mstMinimumOrderChargeRule->min_order_weight ?? 0,
                 'charge_amount' => $mstMinimumOrderChargeRule->charge_amount,
             ]
         );

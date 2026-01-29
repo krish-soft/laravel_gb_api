@@ -19,8 +19,9 @@ class CheckoutPreviewService
         $this->chargeService = $chargeService;
     }
 
-    public function preview(Cart $cart): array
+    public function preview(Cart $cart, bool $isBuyerPickup): array
     {
+    
         if ($cart->status !== CartStatusEnum::ACTIVE->value) {
             throw new RuntimeException(__('messages.error_messages.cart_not_active'));
         }
@@ -140,7 +141,8 @@ class CheckoutPreviewService
             $chargeSummary = $this->chargeService->calculate(
                 $cart->buyer->charge_level_code,
                 $subtotal,
-                $packages
+                $packages,
+                $isBuyerPickup
             );
         }
 

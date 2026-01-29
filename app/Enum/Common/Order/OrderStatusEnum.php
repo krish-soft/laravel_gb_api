@@ -14,9 +14,17 @@ enum OrderStatusEnum: string
     case FAILED_PAYMENT = 'failed_payment';
     case REFUNDED = 'refunded';
 
-    // Keeping for future use
+        // Keeping for future use
     case SHIPPED = 'shipped';
     case COMPLETED = 'completed';
+
+    public static function casesAsValues(): array
+    {
+        return array_map(
+            fn(self $case) => $case->value,
+            self::cases()
+        );
+    }
 
     //
 }

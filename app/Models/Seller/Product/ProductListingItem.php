@@ -46,6 +46,7 @@ class ProductListingItem extends BaseModel
         return $this->hasMany(ProductListingPackage::class, 'product_listing_item_id');
     }
 
+    
     // helpers
     public function isOrganic()
     {

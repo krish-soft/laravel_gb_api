@@ -53,7 +53,7 @@ class PaymentPageController extends Controller
         // Log Activity
         logActivity(
             'razorpay_web_payment_started',        // EVENT
-            $payment->user() ?? null,                 // ACTOR (who did it)
+            $payment->user ?? null,                 // ACTOR (who did it)
             get_class($payment), // SUBJECT TYPE (what was affected)
             $payment->id,              // SUBJECT ID
             $payment->payment_code,       // SUBJECT CODE (human readable)

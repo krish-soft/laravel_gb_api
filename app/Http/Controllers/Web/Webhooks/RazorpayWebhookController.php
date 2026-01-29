@@ -83,7 +83,7 @@ class RazorpayWebhookController extends Controller
         // 9️⃣ Log Activity
         logActivity(
             'razorpay_webhook_received',
-            $payment?->user() ?? null,
+            $payment?->user ?? null,
             get_class($payment),
             $payment->id,
             $payment->payment_code,

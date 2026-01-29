@@ -158,6 +158,7 @@ Route::group([
 
             // Product Listing Routes
             Route::prefix('listing')->group(function () {
+                Route::get('/', [ProductListingApiController::class, 'getProductListing']);
                 Route::post('create', [ProductListingApiController::class, 'createListing']);
                 Route::post('preview-charge', [ProductListingApiController::class, 'previewWithCharges']);
                 Route::post('cancel/{listingId}', [ProductListingApiController::class, 'cancelListing']);
