@@ -11,7 +11,7 @@ enum EntityTypeEnum: string
     case BUYER = 'buyer';
     case DELIVERY = 'delivery';
 
-    case USER = 'user'; // common to sue like wallet recahrge, etc.
+    case USER = 'user'; // general user
     case BANK = 'bank'; // payouts to bank
     case GATEWAY = 'gateway'; // verification, fees, etc.
 }

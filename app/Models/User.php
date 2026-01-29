@@ -15,7 +15,6 @@ use App\Models\Common\User\Legal\UserBank;
 use App\Models\Common\User\Legal\UserKyc;
 use App\Models\Common\User\Legal\UserLegalDocument;
 use App\Models\Common\User\UserDepot;
-use App\Models\Common\Wallet\Wallet;
 use App\Models\Seller\Product\ProductListing;
 use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

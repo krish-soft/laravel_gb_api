@@ -6,7 +6,6 @@ use App\Models\BaseModel;
 use App\Models\Buyer\Cart\Cart;
 use App\Models\Common\Address;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
-use App\Models\Common\Wallet\WalletTransaction;
 use App\Models\Master\Unique\MstSeqCodeGenerator;
 use App\Models\User;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -119,10 +118,7 @@ class Order extends BaseModel
         return $this->belongsTo(Address::class, 'pick_addr_code', 'address_code');
     }
 
-    public function walletTransaction()
-    {
-        return $this->belongsTo(WalletTransaction::class, 'wallet_txn_code', 'wallet_txn_code');
-    }
+
 
     //
 }

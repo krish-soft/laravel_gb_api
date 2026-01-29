@@ -73,7 +73,7 @@ class CheckoutApiController extends ApiResponseWithAuthController
         }
 
         $data = $request->validate([
-            'payment_method' => 'required|in:razorpay,wallet', // manual only via admin
+            'payment_method' => 'required|in:razorpay', // manual only via admin
             'charges'        => 'required|array|min:1',
             'is_buyer_pickup' => 'required|boolean',
         ]);
@@ -144,7 +144,7 @@ class CheckoutApiController extends ApiResponseWithAuthController
 
             /**
              * ------------------------------------
-             * WALLET / MANUAL (SYNC)
+             *  MANUAL (SYNC)
              * ------------------------------------
              */
             if (

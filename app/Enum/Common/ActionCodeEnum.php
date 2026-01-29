@@ -16,7 +16,6 @@ enum ActionCodeEnum: int
 
     case PAYMENT_RAZORPAY      = 1401;
 
-    case WALLET_INSUFFICIENT_BALANCE = 1501; // Added for insufficient wallet balance
 
    
 }

@@ -3,11 +3,8 @@
 namespace App\Services\Common\Payment\Gateways;
 
 use App\Enum\Common\EntityTypeEnum;
-use App\Enum\Common\Wallet\WalletStatusEnum;
-use App\Enum\Common\Wallet\WalletTypeEnum;
 use App\Models\Common\User\Legal\UserBank;
 use App\Models\User;
-use App\Services\Common\Wallet\WalletService;
 use Razorpay\Api\Api;
 use Razorpay\Api\Errors\Error as RazorpayError;
 use RuntimeException;
@@ -155,34 +152,7 @@ class RazorpayBankVerificationService
                 'queue_if_low_balance' => false,
             ]);
 
-            /**
-             * 🔹 RECORD PLATFORM COST (₹1 Razorpay bank verification)
-             * - Audit only
-             * - No wallet balance impact
-             * - No ledger entry
-             */
-            app(WalletService::class)->createTransaction(
-                $bank->user->wallet,
-                1,
-                WalletTypeEnum::DEBIT,
-                WalletStatusEnum::COMPLETED,
-                [
-                    'reference' => 'BANK_VERIFY_' . $bank->bank_code,
-                    'description' => '₹1 bank verification (platform cost)',
-                    'gateway' => 'razorpay',
-                    'payment_reference' => $payout['id'],
 
-                    // 🔥 KEY: audit only
-                    'is_affecting_balance' => false,
-
-                    // 🔥 WHO PAID WHOM
-                    'from_entity' => EntityTypeEnum::PLATFORM->value,
-                    'from_entity_id' => null,
-
-                    'to_entity' => EntityTypeEnum::GATEWAY->value,
-                    'to_entity_id' => null,
-                ]
-            );
 
 
             // ❌ DO NOT finalize this transaction

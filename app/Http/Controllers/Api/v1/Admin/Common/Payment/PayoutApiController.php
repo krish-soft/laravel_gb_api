@@ -8,8 +8,7 @@ use App\Http\Controllers\ApiResponseWithAdminAuthController;
 use App\Models\Common\Payment\Payout;
 use App\Models\Master\Setting\MstAppSetting;
 use App\Services\Common\Payment\Handlers\PayoutHandler;
-use App\Services\Common\Wallet\Payout\WalletPayoutReconciliationService;
-use App\Services\Common\Wallet\Payout\WalletPayoutService;
+
 use Illuminate\Http\Request;
 
 class PayoutApiController extends ApiResponseWithAdminAuthController
@@ -42,7 +41,7 @@ class PayoutApiController extends ApiResponseWithAdminAuthController
      * Approve payout (MANUAL or RAZORPAY)
      * ✔ ONE endpoint
      * ✔ Mode-driven
-     * ✔ Wallet debit ONLY when appropriate
+     * ✔ Account debit ONLY when appropriate
      */
     public function approve(Request $request, Payout $payout)
     {
@@ -89,7 +88,7 @@ class PayoutApiController extends ApiResponseWithAdminAuthController
         /**
          * 🔹 MANUAL PAYOUT
          * Admin already transferred money outside system
-         * → Wallet debit happens NOW
+         * → debit happens NOW
          */
         if ($mode === PaymentMethodEnum::MANUAL->value) {
 
@@ -122,12 +121,11 @@ class PayoutApiController extends ApiResponseWithAdminAuthController
         /**
          * 🔹 RAZORPAY PAYOUT
          * Approval ONLY initiates Razorpay transfer
-         * → Wallet debit happens via webhook / reconcile
+         * →  debit happens via webhook / reconcile
          */
         if ($mode === PaymentMethodEnum::RAZORPAY->value) {
 
-            app(WalletPayoutService::class)
-                ->approveAndProcess($payout);
+
 
             //
             logActivity(
@@ -167,11 +165,9 @@ class PayoutApiController extends ApiResponseWithAdminAuthController
      */
     public function reconcile(Payout $payout)
     {
-        app(WalletPayoutReconciliationService::class)
-            ->reconcile($payout);
-
-        return $this->showSuccessMessage(
-            'Payout reconciled. Current status: ' . $payout->fresh()->status
-        );
+       
+        // return $this->showSuccessMessage(
+        //     'Payout reconciled. Current status: ' . $payout->fresh()->status
+        // );
     }
 }
