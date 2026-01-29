@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('owner_type', 50);   // SELLER / DRIVER / PLATFORM / GOVERNMENT
             $table->unsignedBigInteger('owner_id')->nullable();
 
+            $table->string('type', 50)->nullable();   // e.g., MAIN, TAX, REVNUE, CLEARING, EXPENSE
 
             // 🔴 SNAPSHOT COLUMNS
             $table->decimal('available_balance', 15, 2)->default(0.00); // ready to payout / usable

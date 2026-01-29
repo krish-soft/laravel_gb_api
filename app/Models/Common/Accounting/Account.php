@@ -29,9 +29,11 @@ class Account extends BaseModel
         'owner_id',
 
         'currency',
+        'type',
 
         'available_balance',
         'hold_balance',
+        
         'total_credit',
         'total_debit',
 

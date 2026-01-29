@@ -25,6 +25,8 @@ class AccountLedger extends BaseModel
         'account_id',
         'finance_year_id',
 
+        'description',
+
         'credit',
         'debit',
 
@@ -45,6 +47,8 @@ class AccountLedger extends BaseModel
         'settled_at',
 
         'is_tax',
+        'is_open_balance',
+
         'remarks',
     ];
 
@@ -53,6 +57,7 @@ class AccountLedger extends BaseModel
         'credit' => 'decimal:2',
         'debit' => 'decimal:2',
         'is_tax' => 'boolean',
+        'is_open_balance' => 'boolean',
     ];
 
     // relationships

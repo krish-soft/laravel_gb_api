@@ -28,6 +28,8 @@ return new class extends Migration
             // Financial year
             $table->unsignedBigInteger('finance_year_id')->nullable();
 
+            $table->string('description')->nullable();
+
             // Money movement (only one side non-zero)
             $table->decimal('credit', 15, 2)->default(0.00);
             $table->decimal('debit', 15, 2)->default(0.00);
@@ -55,6 +57,7 @@ return new class extends Migration
 
             // Tax flag (excluded from seller/driver payable)
             $table->boolean('is_tax')->default(false)->nullable();
+            $table->boolean('is_open_balance')->default(false)->nullable();
 
             $table->string('remarks')->nullable();
 

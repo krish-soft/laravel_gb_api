@@ -62,6 +62,22 @@ class AccountSeeder extends Seeder
             'remarks' => 'Tracks GST collected and payable to government',
         ]);
 
+        Account::create([
+            'name' => 'Platform Market Liability Account',
+            'accnt_code' => PlatformAccountCodeEnum::PLATFORM_TO_MARKET->value, // 'PLATFORM_MARKET',
+            'owner_type' => AccountOwnerTypeEnum::PLATFORM->value,
+            'owner_id' => null,
+            'currency' => 'INR',
+            'available_balance' => 0.00,
+            'hold_balance' => 0.00,
+            'total_credit' => 0.00,
+            'total_debit' => 0.00,
+            'is_active' => true,
+            'remarks' => 'Tracks GST collected and payable to government',
+        ]);
+
+
+
 
 
 
