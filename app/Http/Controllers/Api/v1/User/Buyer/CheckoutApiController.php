@@ -92,13 +92,14 @@ class CheckoutApiController extends ApiResponseWithAuthController
 
         $fulfillmentLocationId = $data['fulfillment_location_id'] ?? null;
 
-        $fulfillmentLocation = FulfillmentLocation::findOrFail($fulfillmentLocationId);
-
-        if ($fulfillmentLocation->user_id !== $user->id) {
-            return $this->showErrorMessage(
-                __('messages.error_messages.unauthorized_action'),
-                400
-            );
+        if ($fulfillmentLocationId) {
+            $fulfillmentLocation = FulfillmentLocation::findOrFail($fulfillmentLocationId);
+            if ($fulfillmentLocation->user_id !== $user->id) {
+                return $this->showErrorMessage(
+                    __('messages.error_messages.unauthorized_action'),
+                    400
+                );
+            }
         }
 
         $cart = Cart::where('buyer_id', $user->id)
