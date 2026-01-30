@@ -55,12 +55,12 @@ class UserProfileApiController extends ApiResponseWithAuthController
         $request->validate([
             'name' => 'required|string|max:150',
             'email' => 'required|email|max:255|unique:users,email,' . $user->id,
-            'phone' => 'required|string|max:20|unique:users,phone,' . $user->id,
+            'phone_number' => 'required|string|max:20|unique:users,phone_number,' . $user->id,
         ]);
 
         $user->name = $request->input('name');
         $user->email = $request->input('email');
-        $user->phone = $request->input('phone');
+        $user->phone_number = $request->input('phone_number');
         $user->save();
 
         return $this->showSuccessMessage(__('messages.success_messages.success_update'), 200);
