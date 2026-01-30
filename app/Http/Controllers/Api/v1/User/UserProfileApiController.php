@@ -18,7 +18,12 @@ class UserProfileApiController extends ApiResponseWithAuthController
     {
         $user = $request->user();
 
-        $meta = [
+        $meta = [     
+            'user_code' => $user->user_code,
+            'name' => $user->name,
+            'nickname' => $user->nickname,
+            'email' => $user->email,
+            'phone_number' => $user->phone_number,
             'user_type' => $user->user_type, // buyer, seller, delivery
             'is_kyc_approved' => $user->is_kyc_approved,
             'kyc_review_comment' => $user->kyc_review_comment,
