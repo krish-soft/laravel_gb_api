@@ -102,7 +102,6 @@ class User extends Authenticatable
         'fulfillmentLocations', // to prevent N+1 issue
         'buyerCart',
         'sellerProductListings',
-        'wallets',
 
     ];
 
