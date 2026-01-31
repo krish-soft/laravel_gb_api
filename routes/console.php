@@ -42,7 +42,7 @@ if (MstPaymentSetting::payInMode() == PaymentMethodEnum::RAZORPAY->value) {
 
                 $reconciler->reconcile($payment);
             });
-    })->everyFiveMinutes();
+    })->everyMinute();
 
 
 

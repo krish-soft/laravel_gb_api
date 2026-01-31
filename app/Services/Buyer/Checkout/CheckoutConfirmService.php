@@ -223,7 +223,7 @@ class CheckoutConfirmService
             $order->update([
                 'subtotal' => $subtotal,
                 'tax_amount' => $taxAmount, // from charges only
-                'total_amount' => $subtotal + $chargesTotal,
+                'total_amount' => $subtotal + $taxAmount,
             ]);
 
             /* -------------------------------------------------
