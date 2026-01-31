@@ -17,31 +17,31 @@ return new class extends Migration
                      $table->foreignId('user_id')
                             ->nullable()
                             ->constrained()
-                            ->nullOnDelete();
+                            ->restrictOnDelete();
 
                      /* =====================================================
-     | IDENTIFICATION
-     ===================================================== */
+                     | IDENTIFICATION
+                     ===================================================== */
                      $table->uuid('payment_uuid')->unique();              // internal unique id
                      $table->string('payment_code')->unique();            // PAY-2026-000001
                      $table->date('payment_date')->nullable();     // payment date
 
                      /* =====================================================
-     | SOURCE (WHAT THIS PAYMENT IS FOR)
-     | Order / Subscription / Anything
-     ===================================================== */
+                     | SOURCE (WHAT THIS PAYMENT IS FOR)
+                     | Order / Subscription / Anything
+                     ===================================================== */
                      $table->string('source_type');                       // Order::class, 
                      $table->unsignedBigInteger('source_id');             // order_id, 
                      $table->string('source_code')->nullable();           // order_number,
 
                      /* =====================================================
-     | USER
-     ===================================================== */
+                     | USER
+                     ===================================================== */
 
 
                      /* =====================================================
-     | AMOUNT DETAILS
-     ===================================================== */
+                     | AMOUNT DETAILS
+                     ===================================================== */
                      $table->string('currency', 3)->default('INR');
                      $table->decimal('amount', 12, 2);                    // total amount
                      $table->decimal('tax_amount', 12, 2)->default(0)->nullable();
@@ -49,29 +49,29 @@ return new class extends Migration
                      $table->decimal('net_amount', 12, 2)->nullable();                // amount - fees
 
                      /* =====================================================
-     | PAYMENT CONTEXT
-     ===================================================== */
+                     | PAYMENT CONTEXT
+                     ===================================================== */
                      $table->string('payment_type', 30);                  // checkout | 
                      $table->string('payment_method', 30)->nullable();    // razorpay | manual |
                      $table->string('gateway', 30)->nullable();           // razorpay
                      $table->string('status', 30)->index();               // initiated | pending | paid | failed | refunded
 
                      /* =====================================================
-     | GATEWAY REFERENCES
-     ===================================================== */
+                     | GATEWAY REFERENCES
+                     ===================================================== */
                      $table->string('gateway_order_id')->nullable()->index();
                      $table->string('gateway_payment_id')->nullable()->index();
                      $table->string('gateway_signature')->nullable();
 
                      /* =====================================================
-     | IDEMPOTENCY & RETRIES
-     ===================================================== */
+                     | IDEMPOTENCY & RETRIES
+                     ===================================================== */
                      $table->unsignedInteger('attempt_no')->default(1);
                      $table->boolean('is_final')->default(false);          // webhook-confirmed
 
                      /* =====================================================
-        | FAILURE / REFUND INFO
-        ===================================================== */
+                     | FAILURE / REFUND INFO
+                     ===================================================== */
                      $table->string('failure_code')->nullable();
                      $table->text('failure_reason')->nullable();
 
@@ -79,10 +79,13 @@ return new class extends Migration
                      $table->boolean('is_refunded')->default(false);
 
                      /* =====================================================
-            | AUDIT / META
-            ===================================================== */
+                     | AUDIT / META
+                     ===================================================== */
                      $table->string('paid_via')->nullable();
                      $table->json('meta')->nullable();
+
+                     $table->text('payment_url')->nullable();
+
                      // webhook payload, notes
                      $table->timestamp('paid_at')->nullable();
                      $table->timestamp('failed_at')->nullable();

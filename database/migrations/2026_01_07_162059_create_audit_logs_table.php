@@ -20,8 +20,12 @@ return new class extends Migration
             $table->string('user_code', 20)->nullable();
 
             // What was changed
-            $table->string('auditable_type', 100); // Model class name
+            $table->string('auditable_type'); // Model class name
             $table->unsignedBigInteger('auditable_id');
+
+            // Parent / related entity (if any)
+            $table->string('related_type')->nullable()->index();
+            $table->unsignedBigInteger('related_id')->nullable()->index();
 
             // Action type
             $table->string('action', 100);

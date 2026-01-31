@@ -16,7 +16,7 @@ class AdminOrderApiController extends ApiResponseWithAdminAuthController
     {
         //
 
-        $orderQuery = Order::with(['buyer', 'shippingFulfillmentLocation'])->latest();
+        $orderQuery = Order::with(['buyer', 'shippingFulfillmentLocation.address'])->latest();
 
         if ($request->has('status')) {
             $orderQuery->where('status', $request->input('status'));
@@ -39,12 +39,13 @@ class AdminOrderApiController extends ApiResponseWithAdminAuthController
         //
 
         $order = Order::with([
+            'activityLogs', // 
             'buyer',
             'orderItems',
             'orderItems.pickupFulfillmentLocation',
 
             'orderCharges',
-            'shippingFulfillmentLocation', // actual shipping location
+            'shippingFulfillmentLocation.address', // actual shipping location
             'billingAddress', // for invoice
             'shippingAddress', // for invoice
         ])->where('id', $orderId)->firstOrfail();

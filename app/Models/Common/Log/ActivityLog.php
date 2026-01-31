@@ -24,6 +24,9 @@ class ActivityLog extends Model
         'subject_id',
         'subject_code',
 
+        'related_type',
+        'related_id',
+
         // Extra context
         'meta',
         'ip_address',
@@ -51,7 +54,10 @@ class ActivityLog extends Model
         ?string $subjectCode = null,
 
         // META
-        array $meta = []
+        array $meta = [],
+
+        ?string $relatedType = null,
+        ?int $relatedId = null,
     ): ?self {
         try {
 
@@ -80,6 +86,10 @@ class ActivityLog extends Model
                 'subject_type' => $subjectType ? substr($subjectType, 0, 100) : null,
                 'subject_id'   => $subjectId,
                 'subject_code' => $subjectCode ? substr($subjectCode, 0, 100) : null,
+
+                // RELATED
+                'related_type' => $relatedType ? substr($relatedType, 0, 100) : null,
+                'related_id'   => $relatedId,
 
                 // META
                 'meta'         => $meta ?: null,
@@ -110,4 +120,18 @@ class ActivityLog extends Model
     {
         return $this->belongsTo(User::class, 'actor_id');
     }
+
+    public function subject()
+    {
+        return $this->morphTo();
+    }
+
+    public function related()
+    {
+        return $this->morphTo();
+    }
+
+
+
+    //
 }

@@ -2,6 +2,7 @@
 
 namespace App\Services\Common\Payment\Handlers;
 
+use App\Enum\Common\Cart\CartStatusEnum;
 use App\Enum\Common\Order\OrderStatusEnum;
 use App\Enum\Common\Payment\PaymentStatusEnum;
 use App\Models\Buyer\Order\Order;
@@ -9,6 +10,7 @@ use App\Models\Common\Payment\Payment;
 use App\Services\Accounting\OrderAccountingService;
 use App\Services\Buyer\Checkout\CheckoutRevertService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class OrderPaymentHandler
 {
@@ -35,11 +37,14 @@ class OrderPaymentHandler
 
             // 1️⃣ Confirm order
             $order->update([
+                'is_paid' => true,
                 'order_status' => OrderStatusEnum::CONFIRMED->value,
                 'payment_status' => PaymentStatusEnum::PAID->value,
                 //
                 'reference' => $payment->payment_code ?? null,
                 'payment_reference' => $payment->gateway_order_id ?? null,
+
+
             ]);
 
             //
@@ -91,6 +96,25 @@ class OrderPaymentHandler
             // Revert Checkout
             $checkoutRevertService = app(CheckoutRevertService::class);
             $checkoutRevertService->revert($order);
+
+
+            $oldCart = $order->cart;
+
+            if ($oldCart) {
+
+                // 1️⃣ Clone cart
+                $newCart = $oldCart->replicate();
+                $newCart->cart_uuid = null;   // let booted() regenerate
+                $newCart->status = CartStatusEnum::ACTIVE->value;
+                $newCart->save();
+
+                // 2️⃣ Clone cart items
+                foreach ($oldCart->cartItems as $item) {
+                    $newItem = $item->replicate();
+                    $newItem->cart_id = $newCart->id;
+                    $newItem->save();
+                }
+            }
         });
     }
 }

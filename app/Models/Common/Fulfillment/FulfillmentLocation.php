@@ -93,5 +93,11 @@ class FulfillmentLocation extends BaseModel
     }
 
 
+    public function primaryDepot()
+    {
+        return $this->depots()->where('is_primary', true)->first();
+    }
+
+
     //
 }

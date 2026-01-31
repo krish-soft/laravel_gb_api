@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\v1\User\Buyer;
 
 use App\Enum\Common\ActionCodeEnum;
+use App\Enum\Common\Legal\KycStatusEnum;
 use App\Enum\Common\Payment\PaymentMethodEnum;
 use App\Http\Controllers\ApiResponseWithAuthController;
 use App\Models\Buyer\Cart\Cart;
@@ -91,10 +92,26 @@ class CheckoutApiController extends ApiResponseWithAuthController
             'is_buyer_pickup' => 'required|boolean',
         ]);
 
+
+        $cart = Cart::where('id', $data['cart_id'])
+            ->where('buyer_id', $user->id)
+            ->where('status', 'active')
+            ->with(['cartItems.productListingPackage.productListingItem.productListing'])
+            ->latest()
+            ->first();
+
+        if (!$cart) {
+            return $this->showErrorMessage(
+                __('messages.error_messages.cart_not_active_or_converted'),
+                404
+            );
+        }
+
         $fulfillmentLocationId = $data['fulfillment_location_id'] ?? null;
 
 
         $fulfillmentLocation = FulfillmentLocation::findOrFail($fulfillmentLocationId);
+
         if ($fulfillmentLocation->user_id !== $user->id) {
             return $this->showErrorMessage(
                 __('messages.error_messages.unauthorized_action'),
@@ -102,24 +119,33 @@ class CheckoutApiController extends ApiResponseWithAuthController
             );
         }
 
+        if ($fulfillmentLocation->status !== KycStatusEnum::APPROVED->value) {
+            return $this->showErrorMessage(
+                __('messages.error_messages.invalid_fulfillment_location'),
+                400
+            );
+        }
 
-        $cart = Cart::where('id', $data['cart_id'])
-            ->where('buyer_id', $user->id)
-            ->where('status', 'active')
-            ->with(['cartItems.productListingPackage.productListingItem.productListing'])
-            ->latest()
-            ->firstOrFail();
+        // Get preview data again to ensure charges are correct
+        $cartMeta = $cart->meta ?? [];
 
 
+        // also check  can checkour and message
+        if (!($cartMeta['can_checkout'] ?? false)) {
+            return $this->showErrorMessage(
+                $cartMeta['message_not_checkout'] ?? __('messages.error_messages.invalid_checkout_charges'),
+                400
+            );
+        }
 
-        $previewData = app(CheckoutPreviewService::class)->preview($cart, $data['is_buyer_pickup']);
-        $charges = $previewData['charges'];
-
+        $charges = $cartMeta['charges'] ?? null;
         // if not found then give error 
         if (!is_array($charges) || count($charges) === 0) {
             throw new RuntimeException(__('messages.error_messages.invalid_checkout_charges'));
         }
 
+        // $previewData = app(CheckoutPreviewService::class)->preview($cart, $data['is_buyer_pickup']);
+        // $charges = $previewData['charges'];
 
 
         $totalAmount = $cart->getTotalCartItemAmount();
@@ -138,7 +164,7 @@ class CheckoutApiController extends ApiResponseWithAuthController
                 $cart,
                 $charges, //$data['charges'],
                 $data['payment_method'],
-                $fulfillmentLocationId
+                $fulfillmentLocation
             );
 
             // 
@@ -166,6 +192,9 @@ class CheckoutApiController extends ApiResponseWithAuthController
                 'payment_method' => $data['payment_method'],
             ]);
 
+
+
+            //
             logActivity(
                 'payment_initiated',
                 $user,
@@ -173,9 +202,14 @@ class CheckoutApiController extends ApiResponseWithAuthController
                 $payment->id,
                 $payment->payment_code,
                 [
+                    'payment_code' => $payment->payment_code,
                     'method' => $payment->payment_method,
                     'amount' => $payment->amount,
-                ]
+                    'status' => $payment->status,
+                ],
+                // RELATED
+                Order::class,
+                $order->id
             );
 
             /**
@@ -197,7 +231,10 @@ class CheckoutApiController extends ApiResponseWithAuthController
                     Payment::class,
                     $payment->id,
                     $payment->payment_code,
-                    ['amount' => $payment->amount]
+                    ['amount' => $payment->amount],
+                    // RELATED
+                    Order::class,
+                    $order->id
                 );
 
                 DB::commit();
@@ -231,6 +268,9 @@ class CheckoutApiController extends ApiResponseWithAuthController
                 now()->addMinutes(15),
                 ['payment_code' => $payment->payment_code]
             );
+            // Store this payment URL to paymnent so can retrieve later if needed
+            $payment->payment_url = $paymentUrl;
+            $payment->save();
 
             logActivity(
                 'razorpay_payment_initiated',
@@ -241,7 +281,10 @@ class CheckoutApiController extends ApiResponseWithAuthController
                 [
                     'gateway_order_id' => $payment->gateway_order_id,
                     'amount' => $payment->amount,
-                ]
+                ],
+                // RELATED
+                Order::class,
+                $order->id
             );
 
             DB::commit();
@@ -268,7 +311,10 @@ class CheckoutApiController extends ApiResponseWithAuthController
                     Payment::class,
                     $payment->id,
                     $payment->payment_code,
-                    ['reason' => $e->getMessage()]
+                    ['reason' => $e->getMessage()],
+                    // RELATED
+                    Order::class,
+                    $order->id
                 );
             }
 

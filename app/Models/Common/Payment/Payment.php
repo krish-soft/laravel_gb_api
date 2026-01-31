@@ -51,6 +51,8 @@ class Payment extends BaseModel
         'meta',
         'paid_via', // new field for payment method used
 
+        'payment_url', // new field for payment URL
+
         'paid_at',
         'failed_at',
     ];
@@ -95,6 +97,7 @@ class Payment extends BaseModel
             'paid_at' => now(),
             'meta' => array_merge($this->meta ?? [], $meta),
             'paid_via' => $meta['paid_via'] ?? null,
+            'payment_url' => null, // clear payment URL on success
         ]);
     }
 
@@ -105,6 +108,7 @@ class Payment extends BaseModel
             'failure_code' => $code,
             'failure_reason' => $reason,
             'failed_at' => now(),
+            'payment_url' => null, // clear payment URL on failure
         ]);
     }
 

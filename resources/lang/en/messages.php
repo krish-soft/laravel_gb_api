@@ -156,6 +156,9 @@ return [
         'cart_not_active' => 'No active cart found for the user.',
         'cart_empty'      => 'Cart is empty. Please add items to proceed.',
         'cart_expired' => 'Your cart has expired. Please continue by starting a new order.',
+        'cart_has_invalid_items' => 'Your cart contains invalid or unavailable items. Please review your cart before proceeding to checkout.',
+        'cart_below_minimum_amount' => 'Your cart total is below the minimum required amount of :amount to proceed to checkout.',
+        'cart_not_active_or_converted' => 'Cart is empty or has already been converted to an order.',
 
         /* Listing */
         'listing_locked'         => 'Listing is locked or expired.',
@@ -201,6 +204,9 @@ return [
 
         /* Wallet */
         'insufficient_wallet_balance' => 'Insufficient wallet balance to complete this transaction.',
+
+        /* Fulfillment Location */
+        'invalid_fulfillment_location' => 'The specified fulfillment location is invalid or inactive.',
     ],
 
 ];

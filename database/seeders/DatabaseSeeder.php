@@ -22,7 +22,7 @@ class DatabaseSeeder extends Seeder
             Master\MstFinancialSeeder::class,
 
             // Accounting Seeders
-            \Database\Seeders\Accounting\AccountSeeder::class, 
+            \Database\Seeders\Accounting\AccountSeeder::class,
 
             // App Settings
             \Database\Seeders\Setting\AppSettingSeeder::class,
@@ -58,8 +58,9 @@ class DatabaseSeeder extends Seeder
             \Database\Seeders\Master\Charge\MstMinimumOrderChargeRuleSeeder::class,
             \Database\Seeders\Master\Charge\MstDeliveryChargeRuleSeeder::class,
 
-            // Fulfillment Location Seeder
-            \Database\Seeders\Fulfillment\FulfillmentLocationSeeder::class,
+
+            // Test Data Seeder
+            TestDataSeeder::class,
 
 
         ]);

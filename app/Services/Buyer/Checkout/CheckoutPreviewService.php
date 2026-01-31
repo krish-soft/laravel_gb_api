@@ -21,7 +21,7 @@ class CheckoutPreviewService
 
     public function preview(Cart $cart, bool $isBuyerPickup): array
     {
-    
+
         if ($cart->status !== CartStatusEnum::ACTIVE->value) {
             throw new RuntimeException(__('messages.error_messages.cart_not_active'));
         }
@@ -146,6 +146,33 @@ class CheckoutPreviewService
             );
         }
 
+        $minimumCartAmount = MstPaymentSetting::minCartOrderAmount();
+
+        $canCheckout = !$hasInvalidItems && $subtotal >= $minimumCartAmount;
+        $messageNotCheckout = null;
+
+        if ($hasInvalidItems) {
+            $messageNotCheckout .= __('messages.error_messages.cart_has_invalid_items');
+        }
+
+        if ($subtotal < $minimumCartAmount) {
+            $messageNotCheckout .= __('messages.error_messages.cart_below_minimum_amount', [
+                'amount' => number_format($minimumCartAmount, 2),
+            ]);
+        }
+        $finalTotalAmount =  round($subtotal + $chargeSummary['total_charge_amount'], 2);
+        // Save meta preview data to cart
+        $cart->meta = [
+            'previewed_at' => now(),
+            'subtotal' => round($subtotal, 2),
+            'total_charge_amount' => $chargeSummary['total_charge_amount'],
+            'has_invalid_items' => $hasInvalidItems,
+            'can_checkout' => $canCheckout,
+            'message_not_checkout' => $messageNotCheckout,
+            'charges' => $chargeSummary['charges'], // detailed charges so no need to rerun on confirm
+        ];
+        $cart->save();
+
         return [
             'cart_id' => $cart->id,
             'currency' => MstFinanceSetting::currency() ?? 'INR',
@@ -159,13 +186,11 @@ class CheckoutPreviewService
             'charge_tax' => $chargeSummary['charge_tax'],
             'total_charge_amount' => $chargeSummary['total_charge_amount'],
 
-            'total_amount' => round(
-                $subtotal + $chargeSummary['total_charge_amount'],
-                2
-            ),
+            'total_amount' => $finalTotalAmount,
 
             'has_invalid_items' => $hasInvalidItems,
-            'can_checkout' => !$hasInvalidItems,
+            'can_checkout' => $canCheckout,
+            'message_not_checkout' => $messageNotCheckout,
         ];
     }
 }

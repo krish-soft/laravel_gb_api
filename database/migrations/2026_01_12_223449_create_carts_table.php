@@ -29,6 +29,8 @@ return new class extends Migration
 
             $table->string('status', 30);
 
+            $table->json('meta')->nullable(); // like last preview data
+
             $table->timestamp('locked_at')->nullable();
             $table->timestamp('converted_at')->nullable();
             $table->timestamp('expired_at')->nullable();

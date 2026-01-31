@@ -58,8 +58,19 @@ class BaseModel extends Model
 
     // Common Relations
 
-    // public function activityLogs()
-    // {
-    //     return $this->morphMany(ActivityLog::class, 'subject_type', 'subject_id');
-    // }
+    public function activityLogs()
+    {
+        return $this->morphMany(
+            ActivityLog::class,
+            'subject'
+        )->latest();
+    }
+
+    public function relatedActivityLogs()
+    {
+        return $this->morphMany(
+            ActivityLog::class,
+            'related'
+        )->latest();
+    }
 }

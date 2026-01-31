@@ -10,6 +10,7 @@ use App\Models\Buyer\Cart\Cart;
 use App\Models\Buyer\Order\Order;
 use App\Models\Buyer\Order\OrderCharge;
 use App\Models\Buyer\Order\OrderItem;
+use App\Models\Common\Fulfillment\FulfillmentLocation;
 use App\Models\Master\Setting\MstAppSetting;
 use App\Models\Master\Setting\MstFinanceSetting;
 use App\Models\Master\Setting\MstPaymentSetting;
@@ -22,7 +23,7 @@ class CheckoutConfirmService
 {
 
 
-    public function confirm(Cart $cart, array $charges, $paymentMethod, $fulfillmentLocationId): Order
+    public function confirm(Cart $cart, array $charges, $paymentMethod, FulfillmentLocation $fulfillmentLocation): Order
     {
 
         /* -------------------------------------------------
@@ -50,7 +51,7 @@ class CheckoutConfirmService
             throw new RuntimeException(__('messages.error_messages.cart_expired'));
         }
 
-        return DB::transaction(function () use ($cart, $charges, $paymentMethod, $fulfillmentLocationId) {
+        return DB::transaction(function () use ($cart, $charges, $paymentMethod, $fulfillmentLocation) {
             /* -------------------------------------------------
              | 0️⃣ Lock cart (prevent double checkout)
              -------------------------------------------------*/
@@ -59,12 +60,18 @@ class CheckoutConfirmService
                 'locked_at' => now(),
             ]);
 
+            // Get Depot Id from fulfillment location if not then from user 
+            $fulfillmentLocationId = $fulfillmentLocation->id;
+            $depotId = $fulfillmentLocation->primaryDepot()?->id ?? $cart->buyer->primaryDepot()?->id ?? null;
+
             /* -------------------------------------------------
              | 1️⃣ Create Order
              -------------------------------------------------*/
             $order = Order::create([
                 'buyer_id' => $cart->buyer_id,
                 'cart_id' => $cart->id,
+                'depot_id' => $depotId,
+
                 'currency' => MstFinanceSetting::currency() ?? 'INR',
                 'order_date' => date('Y-m-d'),
                 'payment_method' => $paymentMethod,

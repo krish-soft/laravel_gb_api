@@ -29,6 +29,7 @@ class Cart extends BaseModel
         'locked_at',
         'converted_at',
         'expired_at',
+        'meta',
     ];
 
 
@@ -37,6 +38,7 @@ class Cart extends BaseModel
         'locked_at' => 'datetime',
         'converted_at' => 'datetime',
         'expired_at' => 'datetime',
+        'meta' => 'array',
     ];
 
     // Relationships

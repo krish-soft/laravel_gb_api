@@ -196,7 +196,7 @@ Route::group([
 
             Route::prefix('checkout')->group(function () {
                 Route::get('preview', [CheckoutApiController::class, 'preview']);
-                Route::get('confirm', [CheckoutApiController::class, 'confirm']);
+                Route::post('confirm', [CheckoutApiController::class, 'confirm']);
             });
 
 

@@ -29,6 +29,12 @@ return new class extends Migration
             $table->unsignedBigInteger('subject_id')->nullable();
             $table->string('subject_code', 100)->nullable();
 
+
+            // Parent / related entity (if any)
+            $table->string('related_type')->nullable()->index();
+            $table->unsignedBigInteger('related_id')->nullable()->index();
+
+
             /* ===================== EXTRA CONTEXT ===================== */
             $table->json('meta')->nullable();
 

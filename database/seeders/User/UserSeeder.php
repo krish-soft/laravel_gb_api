@@ -16,13 +16,14 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        //
+        // Admin User
+
 
         User::create([
-
+            'id' => 1,
             'user_code' => 'developer01',
             'nickname' =>  User::generateUniqueNickName(AdminUserTypeEnum::DEVELOPER->value),
-            'name' => 'Developer Test',
+            'name' => 'Developer User',
 
             'email' => 'developer@krishnasoftware.com',
             'password' => bcrypt('password'),
@@ -32,7 +33,7 @@ class UserSeeder extends Seeder
             'email_verified_at' => now(),
 
             'is_active' => true,
-            'is_test_user' => true,
+            'is_test_user' => false,
 
             'access_modules' => '*',
 
@@ -41,7 +42,7 @@ class UserSeeder extends Seeder
         ]);
 
         User::create([
-
+            'id' => 2,
             'user_code' => 'krunal-rana',
             'nickname' =>  User::generateUniqueNickName(AdminUserTypeEnum::DEVELOPER->value),
             'name' => 'Krunal Rana',
@@ -63,76 +64,6 @@ class UserSeeder extends Seeder
         ]);
 
 
-
-        // 
-        User::create([
-
-            'user_code' => 'buyer01',
-            'nickname' => User::generateUniqueNickName(UserTypeEnum::TRADER->value),
-            'name' => 'Buyer Test',
-
-            'dial_code' => '91',
-            'phone_number' => '7777777777',
-            'password' => bcrypt('password'),
-
-            'role' => UserRoleEnum::BUYER->value,
-            'user_type' => UserTypeEnum::TRADER->value,
-            'phone_number_verified_at' => now(),
-
-            'is_active' => true,
-            'is_test_user' => true,
-            'charge_level_code' => 'B-STD',
-
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-
-
-        User::create([
-
-            'user_code' => 'seller01',
-            'nickname' => User::generateUniqueNickName(UserTypeEnum::FARMER->value),
-            'name' => 'Seller Test',
-
-            'dial_code' => '91',
-            'phone_number' => '8888888888',
-            'password' => bcrypt('password'),
-
-            'role' => UserRoleEnum::SELLER->value,
-            'user_type' => UserTypeEnum::FARMER->value,
-            'phone_number_verified_at' => now(),
-
-            'is_active' => true,
-            'is_test_user' => true,
-            'charge_level_code' => 'S-STD',
-
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-
-        User::create([
-
-            'user_code' => 'delivery01',
-            'nickname' => User::generateUniqueNickName(UserTypeEnum::DELIVERY->value),
-            'name' => 'Delivery Test',
-
-            'dial_code' => '91',
-            'phone_number' => '6666666666',
-            'password' => bcrypt('password'),
-
-            'role' => UserRoleEnum::DELIVERY->value,
-            'user_type' => UserTypeEnum::DELIVERY->value,
-            'phone_number_verified_at' => now(),
-
-            'is_active' => true,
-            'is_test_user' => true,
-            'charge_level_code' => 'D-STD',
-
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
 
 
 
