@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Common\Log\ActivityLog;
 use App\Models\Common\Log\AuditLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
@@ -36,8 +37,6 @@ class BaseModel extends Model
         static::deleted(function ($model) {
             self::audit('deleted', $model, $model->getAttributes(), []);
         });
-
-
     }
 
     protected static function audit($action, $model, $old, $new)
@@ -53,4 +52,14 @@ class BaseModel extends Model
             'user_agent' => request()->userAgent(),
         ]);
     }
+
+
+
+
+    // Common Relations
+
+    // public function activityLogs()
+    // {
+    //     return $this->morphMany(ActivityLog::class, 'subject_type', 'subject_id');
+    // }
 }

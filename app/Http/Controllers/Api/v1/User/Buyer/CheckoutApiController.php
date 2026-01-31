@@ -84,25 +84,27 @@ class CheckoutApiController extends ApiResponseWithAuthController
         }
 
         $data = $request->validate([
+            'cart_id' => 'required|exists:carts,id',
             'payment_method' => 'required|in:razorpay', // manual only via admin
-            'fulfillment_location_id' => 'sometimes|exists:fulfillment_locations,id',
+            'fulfillment_location_id' => 'required|exists:fulfillment_locations,id',
             // 'charges'        => 'required|array|min:1',
             'is_buyer_pickup' => 'required|boolean',
         ]);
 
         $fulfillmentLocationId = $data['fulfillment_location_id'] ?? null;
 
-        if ($fulfillmentLocationId) {
-            $fulfillmentLocation = FulfillmentLocation::findOrFail($fulfillmentLocationId);
-            if ($fulfillmentLocation->user_id !== $user->id) {
-                return $this->showErrorMessage(
-                    __('messages.error_messages.unauthorized_action'),
-                    400
-                );
-            }
+
+        $fulfillmentLocation = FulfillmentLocation::findOrFail($fulfillmentLocationId);
+        if ($fulfillmentLocation->user_id !== $user->id) {
+            return $this->showErrorMessage(
+                __('messages.error_messages.unauthorized_action'),
+                400
+            );
         }
 
-        $cart = Cart::where('buyer_id', $user->id)
+
+        $cart = Cart::where('id', $data['cart_id'])
+            ->where('buyer_id', $user->id)
             ->where('status', 'active')
             ->with(['cartItems.productListingPackage.productListingItem.productListing'])
             ->latest()
@@ -119,11 +121,6 @@ class CheckoutApiController extends ApiResponseWithAuthController
         }
 
 
-        // 🔢 Calculate total old from request
-        // $totalAmount = $cart->getTotalCartItemAmount();
-        // foreach ($data['charges'] as $charge) {
-        //     $totalAmount += $charge['total_amount'];
-        // }
 
         $totalAmount = $cart->getTotalCartItemAmount();
         foreach ($charges as $charge) {
@@ -144,6 +141,7 @@ class CheckoutApiController extends ApiResponseWithAuthController
                 $fulfillmentLocationId
             );
 
+            // 
             logActivity(
                 'checkout_order_created',
                 $user,
