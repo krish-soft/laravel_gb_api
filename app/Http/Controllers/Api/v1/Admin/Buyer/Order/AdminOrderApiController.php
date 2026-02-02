@@ -38,8 +38,7 @@ class AdminOrderApiController extends ApiResponseWithAdminAuthController
     {
         //
 
-        $order = Order::with([
-            'activityLogs', // 
+        $order = Order::with([           
             'buyer',
             'orderItems',
             'orderItems.pickupFulfillmentLocation',
