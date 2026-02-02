@@ -8,8 +8,6 @@ use App\Models\User;
 use App\Services\Seller\Product\ProductListingService;
 use Exception;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
 class AdminProductListingApiController extends ApiResponseWithAuthController
@@ -63,7 +61,7 @@ class AdminProductListingApiController extends ApiResponseWithAuthController
     public function getListingDetails(Request $request, $listingId)
     {
 
-        $listingDetails = ProductListing::with([
+        $listingDetails = ProductListing::with([     
             'seller',
             'fulfillmentLocation',
             'fulfillmentLocation.address',
@@ -79,7 +77,7 @@ class AdminProductListingApiController extends ApiResponseWithAuthController
 
     public function updatePackage(Request $request, int $packageId)
     {
-       
+
         try {
             $data = $request->validate($this->updatePackageRules());
             $subjectUser = User::findOrFail($data['user_id']);

@@ -132,6 +132,29 @@ class ActivityLog extends Model
     }
 
 
+    public function toLog(): array
+    {
+        return [
+            'log_type'       => 'activity',
+
+            'subject_type'   => $this->subject_type,
+            'subject_id'     => $this->subject_id,
+
+            'related_type'   => $this->related_type,
+            'related_id'     => $this->related_id,
+
+            'auditable_type' => null,
+            'auditable_id'   => null,
+
+            'action'         => $this->event,
+            'meta'           => $this->meta,
+
+            'created_at'     => $this->created_at,
+            'log'            => $this,
+        ];
+    }
+
+
 
     //
 }

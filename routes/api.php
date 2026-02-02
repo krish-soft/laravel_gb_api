@@ -170,8 +170,8 @@ Route::group([
                 'user-legal-checker' // Custom Middleware to check user legal (KYC) status // Testing Removed
             ]
         ], function () {
-
-
+            
+            // Seller/Farmer Routes
 
             // Product Listing Routes
             Route::prefix('listing')->group(function () {
@@ -184,6 +184,11 @@ Route::group([
                 Route::post('packages/cancel/{packageId}', [ProductListingApiController::class, 'deletePackage']);
             });
 
+
+
+
+            // Buyer/Trader Routes
+
             // Cart Routes
             Route::prefix('cart')->group(function () {
                 Route::get('active', [CartApiController::class, 'getActiveCart']);
@@ -194,6 +199,7 @@ Route::group([
             });
 
 
+            // Checkout Routes
             Route::prefix('checkout')->group(function () {
                 Route::get('preview', [CheckoutApiController::class, 'preview']);
                 Route::post('confirm', [CheckoutApiController::class, 'confirm']);

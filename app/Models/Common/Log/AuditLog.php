@@ -60,4 +60,43 @@ class AuditLog extends Model
             return null;
         }
     }
+
+
+    // public function user()
+    // {
+    //     return $this->belongsTo(\App\Models\User::class, 'user_code', 'user_code');
+    // }
+
+    public function auditable()
+    {
+        return $this->morphTo();
+    }
+
+    // App\Models\Common\Log\AuditLog.php
+
+    public function toLog(): array
+    {
+        return [
+            'log_type'       => 'audit',
+
+            'subject_type'   => null,
+            'subject_id'     => null,
+
+            'related_type'   => null,
+            'related_id'     => null,
+
+            'auditable_type' => $this->auditable_type,
+            'auditable_id'   => $this->auditable_id,
+
+            'action'         => $this->action,
+            'meta'           => [
+                'old' => $this->old_values,
+                'new' => $this->new_values,
+                'reason' => $this->reason,
+            ],
+
+            'created_at'     => $this->created_at,
+            'log'            => $this,
+        ];
+    }
 }

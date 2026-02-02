@@ -6,7 +6,7 @@ use App\Models\Common\Log\ActivityLog;
 use App\Models\Common\Log\AuditLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Collection;
 
 class BaseModel extends Model
 {
@@ -58,19 +58,44 @@ class BaseModel extends Model
 
     // Common Relations
 
+    // Relations
     public function activityLogs()
     {
-        return $this->morphMany(
-            ActivityLog::class,
-            'subject'
-        )->latest();
+        return $this->morphMany(ActivityLog::class, 'subject')->latest();
     }
 
     public function relatedActivityLogs()
     {
-        return $this->morphMany(
-            ActivityLog::class,
-            'related'
-        )->latest();
+        return $this->morphMany(ActivityLog::class, 'related')->latest();
     }
+
+    public function auditLogs()
+    {
+        return $this->morphMany(AuditLog::class, 'auditable')->latest();
+    }
+
+    // Timeline
+
+    public function timeLineLogs(): Collection
+    {
+        return collect()
+            ->merge($this->relationLoaded('activityLogs') ? $this->activityLogs : [])
+            ->merge($this->relationLoaded('relatedActivityLogs') ? $this->relatedActivityLogs : [])
+            ->merge($this->relationLoaded('auditLogs') ? $this->auditLogs : [])
+            ->map(fn($log) => method_exists($log, 'toLog') ? $log->toLog() : $log)
+            ->sortByDesc('created_at')
+            ->values();
+    }
+
+    protected $appends = ['time_line_logs'];
+
+    public function getTimeLineLogsAttribute()
+    {
+        return $this->timeLineLogs();
+    }
+
+
+
+
+    // End Common Relations
 }
