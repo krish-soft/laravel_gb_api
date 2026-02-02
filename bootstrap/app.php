@@ -24,6 +24,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'user-checker' => \App\Http\Middleware\User\UserChecker::class,
             'admin-user-checker' => \App\Http\Middleware\Admin\AdminUserChecker::class, // Added Admin User Checker Middleware
             'user-legal-checker' => \App\Http\Middleware\User\UserLegalChecker::class,
+
+            'buyer-checker' => \App\Http\Middleware\User\BuyerChecker::class,
+            'seller-checker' => \App\Http\Middleware\User\SellerChecker::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

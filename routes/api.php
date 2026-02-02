@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstFinanceSettingApiControl
 use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstPaymentSettingApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Vehicle\MstVehicleApiController;
 use App\Http\Controllers\Api\v1\Admin\Seller\Product\AdminProductListingApiController;
+use App\Http\Controllers\Api\v1\User\Buyer\BuyerProductListingApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\CartApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\CheckoutApiController;
 use App\Http\Controllers\Api\v1\User\Common\Auth\UserLoginApiController;
@@ -170,39 +171,54 @@ Route::group([
                 'user-legal-checker' // Custom Middleware to check user legal (KYC) status // Testing Removed
             ]
         ], function () {
-            
+
             // Seller/Farmer Routes
 
-            // Product Listing Routes
-            Route::prefix('listing')->group(function () {
-                Route::get('/', [ProductListingApiController::class, 'getProductListing']);
-                Route::post('create', [ProductListingApiController::class, 'createListing']);
-                Route::post('preview-charge', [ProductListingApiController::class, 'previewWithCharges']);
-                Route::post('cancel/{listingId}', [ProductListingApiController::class, 'cancelListing']);
+            Route::prefix('seller')
+                ->middleware([
+                    'seller-checker' // Custom Middleware to check if user is seller
+                ])
+                ->group(function () {
 
-                Route::put('packages/{packageId}', [ProductListingApiController::class, 'updatePackage']);
-                Route::post('packages/cancel/{packageId}', [ProductListingApiController::class, 'deletePackage']);
-            });
+                    // Product Listing Routes
+                    Route::prefix('listing')->group(function () {
+                        Route::get('/', [ProductListingApiController::class, 'getProductListing']);
+                        Route::post('create', [ProductListingApiController::class, 'createListing']);
+                        Route::post('preview-charge', [ProductListingApiController::class, 'previewWithCharges']);
+                        Route::post('cancel/{listingId}', [ProductListingApiController::class, 'cancelListing']);
 
+                        Route::put('packages/{packageId}', [ProductListingApiController::class, 'updatePackage']);
+                        Route::post('packages/cancel/{packageId}', [ProductListingApiController::class, 'deletePackage']);
+                    });
 
+                    //
+                });
 
 
             // Buyer/Trader Routes
+            Route::prefix('buyer')->middleware([
+                'buyer-checker' // Custom Middleware to check if user is buyer
+            ])->group(function () {
 
-            // Cart Routes
-            Route::prefix('cart')->group(function () {
-                Route::get('active', [CartApiController::class, 'getActiveCart']);
-                Route::post('item', [CartApiController::class, 'addItem']);
-                Route::put('item/{cartItemId}', [CartApiController::class, 'updateItem']);
-                Route::delete('item/{cartItemId}', [CartApiController::class, 'removeItem']);
-                Route::delete('clear', [CartApiController::class, 'clearCart']);
-            });
+                Route::get('products', [BuyerProductListingApiController::class, 'getBuyerProductListing']);
+
+                // Cart Routes
+                Route::prefix('cart')->group(function () {
+                    Route::get('active', [CartApiController::class, 'getActiveCart']);
+                    Route::post('item', [CartApiController::class, 'addItem']);
+                    Route::put('item/{cartItemId}', [CartApiController::class, 'updateItem']);
+                    Route::delete('item/{cartItemId}', [CartApiController::class, 'removeItem']);
+                    Route::delete('clear', [CartApiController::class, 'clearCart']);
+                });
 
 
-            // Checkout Routes
-            Route::prefix('checkout')->group(function () {
-                Route::get('preview', [CheckoutApiController::class, 'preview']);
-                Route::post('confirm', [CheckoutApiController::class, 'confirm']);
+                // Checkout Routes
+                Route::prefix('checkout')->group(function () {
+                    Route::get('preview', [CheckoutApiController::class, 'preview']);
+                    Route::post('confirm', [CheckoutApiController::class, 'confirm']);
+                });
+
+                //
             });
 
 
