@@ -77,12 +77,12 @@ class CheckoutApiController extends ApiResponseWithAuthController
     ) {
         $user = $request->user();
 
-        if (!$user->isBuyer()) {
-            return $this->showErrorMessage(
-                __('messages.error_messages.unauthorized_action'),
-                403
-            );
-        }
+        // if (!$user->isBuyer()) {
+        //     return $this->showErrorMessage(
+        //         __('messages.error_messages.unauthorized_action'),
+        //         403
+        //     );
+        // }
 
         $data = $request->validate([
             'cart_id' => 'required|exists:carts,id',

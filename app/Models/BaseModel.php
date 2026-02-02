@@ -84,6 +84,7 @@ class BaseModel extends Model
             ->merge($this->relationLoaded('auditLogs') ? $this->auditLogs : [])
             ->map(fn($log) => method_exists($log, 'toLog') ? $log->toLog() : $log)
             ->sortByDesc('created_at')
+            ->take(15)        // ✅ LIMIT HERE ONLY
             ->values();
     }
 

@@ -7,6 +7,7 @@ use App\Http\Controllers\ApiResponseWithAuthController;
 use App\Models\Buyer\Cart\Cart;
 use App\Models\Buyer\Cart\CartItem;
 use App\Models\Seller\Product\ProductListingPackage;
+use App\Policies\Buyer\BuyerPolicyManager;
 use Illuminate\Http\Request;
 use RuntimeException;
 
@@ -20,9 +21,9 @@ class CartApiController extends ApiResponseWithAuthController
     {
         $user = $request->user();
 
-        if (!$user->isBuyer()) {
-            return $this->showErrorMessage(__('messages.error_messages.unauthorized_access'), 403);
-        }
+        // if (!$user->isBuyer()) {
+        //     return $this->showErrorMessage(__('messages.error_messages.unauthorized_access'), 403);
+        // }
 
         $cart = Cart::where('buyer_id', $user->id)
             ->whereIn('status', [
@@ -67,13 +68,19 @@ class CartApiController extends ApiResponseWithAuthController
         $user = $request->user();
         $cart = $this->getWritableCart($user);
 
-        if (!$user->isBuyer() || $cart->buyer_id !== $user->id) {
-            return $this->showErrorMessage(__('messages.error_messages.unauthorized_access'), 403);
-        }
+        // if (!$user->isBuyer() || $cart->buyer_id !== $user->id) {
+        //     return $this->showErrorMessage(__('messages.error_messages.unauthorized_access'), 403);
+        // }
 
         $package = ProductListingPackage::with(
             'productListingItem.productListing'
         )->findOrFail($data['product_listing_package_id']);
+
+
+        // First check its allowable to add this package
+        if (BuyerPolicyManager::canBuyerSeeProductListing($user, $package->productListingItem->productListing) === false) {
+            return $this->showErrorMessage(__('messages.error_messages.unauthorized_action'), 403);
+        }
 
         // Cannot add sold-out package
         if ($package->sold_qty >= $package->qty) {
@@ -134,9 +141,9 @@ class CartApiController extends ApiResponseWithAuthController
 
         $cart = $this->getWritableCart($user);
 
-        if (!$user->isBuyer() || $cart->buyer_id !== $user->id) {
-            return $this->showErrorMessage(__('messages.error_messages.unauthorized_access'), 403);
-        }
+        // if (!$user->isBuyer() || $cart->buyer_id !== $user->id) {
+        //     return $this->showErrorMessage(__('messages.error_messages.unauthorized_access'), 403);
+        // }
 
         $item = CartItem::where('cart_id', $cart->id)
             ->findOrFail($cartItemId);
@@ -159,9 +166,9 @@ class CartApiController extends ApiResponseWithAuthController
 
         $cart = $this->getWritableCart($user);
 
-        if (!$user->isBuyer() || $cart->buyer_id !== $user->id) {
-            return $this->showErrorMessage(__('messages.error_messages.unauthorized_access'), 403);
-        }
+        // if (!$user->isBuyer() || $cart->buyer_id !== $user->id) {
+        //     return $this->showErrorMessage(__('messages.error_messages.unauthorized_access'), 403);
+        // }
 
 
         $item = CartItem::where('cart_id', $cart->id)
@@ -181,9 +188,9 @@ class CartApiController extends ApiResponseWithAuthController
         $user = $request->user();
         $cart = $this->getWritableCart($user);
 
-        if (!$user->isBuyer() || $cart->buyer_id !== $user->id) {
-            return $this->showErrorMessage(__('messages.error_messages.unauthorized_access'), 403);
-        }
+        // if (!$user->isBuyer() || $cart->buyer_id !== $user->id) {
+        //     return $this->showErrorMessage(__('messages.error_messages.unauthorized_access'), 403);
+        // }
 
         $cart->cartItems()->delete();
 
