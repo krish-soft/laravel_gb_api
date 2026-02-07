@@ -4,8 +4,10 @@ namespace App\Models\Buyer\Order;
 
 use App\Models\BaseModel;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
+use App\Models\Seller\Product\ProductListing;
 use App\Models\Seller\Product\ProductListingItem;
 use App\Models\Seller\Product\ProductListingPackage;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
 class OrderItem extends BaseModel
@@ -74,4 +76,25 @@ class OrderItem extends BaseModel
     {
         return $this->belongsTo(FulfillmentLocation::class, 'pickup_fulfillment_location_id', 'id');
     }
+
+
+    protected $appends = [
+        'seller',
+    ];
+
+
+    public function getSellerAttribute()
+    {
+        // Get seller info from the related product listing item -> product listing -> seller
+        $sellerId = $this->productListingItem?->productListing?->seller_id;
+
+        if (!$sellerId) {
+            return null;
+        }
+
+        return \App\Models\User::select('id', 'name', 'user_code', 'nickname')
+            ->find($sellerId);
+    }
+
+    //
 }

@@ -6,6 +6,7 @@ use App\Models\BaseModel;
 use App\Models\Buyer\Cart\Cart;
 use App\Models\Common\Address;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
+use App\Models\Master\Depot\MstDepot;
 use App\Models\Master\Unique\MstSeqCodeGenerator;
 use App\Models\User;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -92,6 +93,11 @@ class Order extends BaseModel
     public function buyer()
     {
         return $this->belongsTo(User::class, 'buyer_id', 'id');
+    }
+
+    public function depot()
+    {
+        return $this->belongsTo(MstDepot::class, 'depot_id', 'id');
     }
 
 
