@@ -24,6 +24,7 @@ enum AppModuleEnum: int
     case SETTLEMENTS         = 306;
     case REFUNDS             = 307;
     case COMMISSIONS         = 308; // USED
+    case ACCOUNTINGS         = 309; // USED
 
         // Logistics & Delivery (400–499)
     case DRIVERS             = 401;

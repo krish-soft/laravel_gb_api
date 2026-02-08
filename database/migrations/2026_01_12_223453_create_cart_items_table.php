@@ -58,7 +58,12 @@ return new class extends Migration
             $table->softDeletes();
 
             // Prevent duplicate same package in same cart
-            $table->unique(['cart_id', 'product_listing_package_id']);
+            $table->unique(['cart_id', 'product_listing_package_id', 'deleted_at'], 'cart_package_unique');
+
+            // Indexes for faster lookups
+            $table->index(['product_listing_item_id']);
+            $table->index(['product_listing_package_id']);
+            $table->index(['seller_id']);
 
             $table->index(['cart_id']);
         });

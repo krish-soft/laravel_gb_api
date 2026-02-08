@@ -26,7 +26,7 @@ class AccountAdminApiController extends ApiResponseWithAdminAuthController
         $accntCode = $request->input('accnt_code');
         $ownerId = $request->input('owner_id');
 
-        $accntQuery = Account::oldest();
+        $accntQuery = Account::with('user:id,name,user_code,nickname')->oldest();
 
         if ($accntCode) {
             $accntQuery->where('accnt_code', $accntCode);
@@ -85,6 +85,10 @@ class AccountAdminApiController extends ApiResponseWithAdminAuthController
     public function show(Account $account)
     {
         //
+
+        $account = Account::with(['ledgers', 'user:id,name,user_code,nickname'])
+            ->findOrFail($account->id);
+
 
         return $this->successResponse(__('messages.success_messages.success_get'), $account);
     }

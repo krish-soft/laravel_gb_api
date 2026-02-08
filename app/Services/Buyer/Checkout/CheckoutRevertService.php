@@ -14,9 +14,10 @@ class CheckoutRevertService
     public function revert(Order $order): Order
     {
         //        if (!in_array($order->order_status, [OrderStatusEnum::PENDING->value, OrderStatusEnum::PROCESSING->value])) {
-        if (!in_array($order->order_status, [OrderStatusEnum::FAILED_PAYMENT->value])) {
-            throw new RuntimeException(__('messages.error_messages.order_cannot_be_reverted'));
-        }
+        // Ignore this becasue revertin is base on failure of any transactions
+        // if (!in_array($order->order_status, [OrderStatusEnum::FAILED_PAYMENT->value])) {
+        //     throw new RuntimeException(__('messages.error_messages.order_cannot_be_reverted'));
+        // }
 
         return DB::transaction(function () use ($order) {
 
@@ -86,7 +87,7 @@ class CheckoutRevertService
             if (!in_array($order->order_status, [OrderStatusEnum::CANCELLED->value])) {
                 $order->update([
                     'order_status' => OrderStatusEnum::CANCELLED->value, // Finally Cancelled
-                    'remarks' => 'Order reverted due to failed payment',
+                    'remarks' => 'Order reverted due to failed payment', // can be anything not fail only for payment if manual then ?
                     // 'payment_status' => PaymentStatusEnum::FAILED->value,
                 ]);
             }

@@ -108,7 +108,7 @@ class Payment extends BaseModel
             'failure_code' => $code,
             'failure_reason' => $reason,
             'failed_at' => now(),
-            'payment_url' => null, // clear payment URL on failure
+            // 'payment_url' => null, // clear payment URL on failure not necessary as it can be retried using the same URL
         ]);
     }
 

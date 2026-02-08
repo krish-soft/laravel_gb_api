@@ -2,6 +2,7 @@
 
 namespace App\Models\Common\Accounting;
 
+use App\Enum\Accounting\AccountOwnerTypeEnum;
 use App\Models\BaseModel;
 use App\Models\User;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -53,30 +54,74 @@ class Account extends BaseModel
     ];
 
 
+
     public static function getOrCreateByOwner(
         string $ownerType,
         ?int $ownerId = null,
         ?string $accountCode = null
     ): self {
-        return self::firstOrCreate(
-            [
-                'owner_type' => $ownerType,
-                'owner_id'   => $ownerId, // ✅ nullable
-            ],
-            [
-                'accnt_code'         => $accountCode, // nullable
+        // $existModel = null;
 
-                'total_credit'      => 0,
-                'total_debit'       => 0,
+        if ($ownerType == AccountOwnerTypeEnum::PLATFORM->value) {
+            $existModel = self::where('owner_type', $ownerType)
+                // ->whereNotNull('accnt_code')
+                ->where('accnt_code', $accountCode)
+                ->first();
+        } else {
+            $existModel = self::where('owner_type', $ownerType)
+                // ->whereNotNull('owner_id')
+                ->where('owner_id', $ownerId)
+                ->first();
+        }
 
-                'hold_balance'      => 0,
-                'available_balance' => 0,
+        // if found return
+        if ($existModel) {
+            return $existModel;
+        }
 
-                'is_active'        => true,
+        // else create new
+        return self::create([
+            'owner_type' => $ownerType,
+            'owner_id'   => $ownerId,
+            'accnt_code' => $accountCode ?? self::generateAccountCode(),
 
-            ]
-        );
+            'total_credit'      => 0,
+            'total_debit'       => 0,
+
+            'hold_balance'      => 0,
+            'available_balance' => 0,
+
+            'is_active'        => true,
+        ]);
     }
+
+
+
+
+    // public static function getOrCreateByOwner(
+    //     string $ownerType,
+    //     ?int $ownerId = null,
+    //     ?string $accountCode = null
+    // ): self {
+    //     return self::firstOrCreate(
+    //         [
+    //             'owner_type' => $ownerType,
+    //             'owner_id'   => $ownerId, // ✅ nullable
+    //             'accnt_code'         => $accountCode, // nullable
+    //         ],
+    //         [
+    //             'total_credit'      => 0,
+    //             'total_debit'       => 0,
+
+    //             'hold_balance'      => 0,
+    //             'available_balance' => 0,
+
+    //             'is_active'        => true,
+
+    //         ]
+    //     );
+    // }
+
 
 
 

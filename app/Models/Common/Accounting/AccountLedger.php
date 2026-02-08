@@ -82,8 +82,20 @@ class AccountLedger extends BaseModel
         return $code;
     }
 
+    // morph source relation for order, 
 
+    public function source()
+    {
+        return $this->morphTo(null, 'source_type', 'source_id');
+    }
 
+    // appends source
 
+    protected $appends = ['source'];
+
+    public function getSourceAttribute()
+    {
+        return $this->source()->first();
+    }
     //
 }

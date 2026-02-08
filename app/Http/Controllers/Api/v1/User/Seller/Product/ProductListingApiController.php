@@ -8,6 +8,7 @@ use App\Services\Seller\Product\ProductListingService;
 use App\Services\Seller\Product\ProductListingChargePreviewService;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Razorpay\Api\Product;
 use RuntimeException;
@@ -174,7 +175,9 @@ class ProductListingApiController extends ApiResponseWithAuthController
     {
         return [
 
-            'fulfillment_location_id' => 'required|integer|exists:fulfillment_locations,id',
+            // 'fulfillment_location_id' => 'required|integer|exists:fulfillment_locations,id',
+            'fulfillment_location_id' => Rule::exists('fulfillment_locations', 'id')->where('user_id', request()->user()->id),
+
 
             'is_sell_to_market' => 'required|boolean',
             'is_seller_delivery' => 'required|boolean',

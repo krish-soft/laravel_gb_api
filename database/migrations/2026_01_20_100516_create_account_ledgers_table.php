@@ -28,7 +28,7 @@ return new class extends Migration
             // Financial year
             $table->unsignedBigInteger('finance_year_id')->nullable();
 
-            $table->string('description')->nullable();
+            $table->text('description')->nullable();
 
             // Money movement (only one side non-zero)
             $table->decimal('credit', 15, 2)->default(0.00);

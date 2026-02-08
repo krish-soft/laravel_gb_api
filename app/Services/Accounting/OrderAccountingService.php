@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\DB;
 
 class OrderAccountingService
 {
+
+
     public function recordPaidOrder(Order $order, Payment $payment): void
     {
         DB::transaction(function () use ($order, $payment) {
@@ -30,7 +32,7 @@ class OrderAccountingService
             $clearing = Account::getOrCreateByOwner(
                 AccountOwnerTypeEnum::PLATFORM->value,
                 null,
-                PlatformAccountCodeEnum::PLATFORM_CLEARING->value
+                PlatformAccountCodeEnum::PLATFORM_CLEARING->value,
             );
 
 
@@ -41,6 +43,7 @@ class OrderAccountingService
                 $order->id
             )) {
                 $accounting->createLedger($clearing, [
+                    'description' => "Payment received for Order #{$order->order_number}",
                     'credit' => $order->total_amount,
                     'debit'  => 0,
                     'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
@@ -60,12 +63,19 @@ class OrderAccountingService
             */
             foreach ($order->orderItems as $item) {
 
+                // seller 
+                $seller = $item->seller;
+                // if not fail transactions 
+                if (!$seller) {
+                    throw new \Exception("Seller not found for Order Item ID: {$item->id}");
+                    return;
+                }
                 // $seller = Account::where('owner_type', AccountOwnerTypeEnum::SELLER->value)
                 //     ->where('owner_id', $item->seller_id)
                 //     ->firstOrFail();
                 $seller = Account::getOrCreateByOwner(
                     AccountOwnerTypeEnum::SELLER->value,
-                    $item->seller_id
+                    $seller->id
                 );
 
 
@@ -80,6 +90,7 @@ class OrderAccountingService
                 }
 
                 $accounting->createLedger($seller, [
+                    'description' => "Earnings for Order #{$order->order_number}: {$item->product_name} x {$item->ship_qty}",
                     'credit' => $item->taxable_amount,
                     'debit'  => 0,
                     'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
@@ -117,10 +128,11 @@ class OrderAccountingService
                 }
 
                 $accounting->createLedger($revenue, [
+                    'description' => "Platform fee for Order #{$order->order_number}: {$charge->charge_name}",
                     'credit' => $charge->taxable_amount,
                     'debit'  => 0,
                     'entry_type' => AccountEntryTypeEnum::PLATFORM_CHARGE_BASE->value,
-                    'status' => LedgerStatusEnum::PENDING->value,
+                    'status' => LedgerStatusEnum::AVAILABLE->value,
                     'source_type' => get_class($charge),
                     'source_id' => $charge->id,
                     'source_code' => $order->order_number,
@@ -151,6 +163,7 @@ class OrderAccountingService
                     $order->id
                 )) {
                     $accounting->createLedger($tax, [
+                        'description' => "Tax for Order #{$order->order_number}",
                         'credit' => $order->tax_amount,
                         'debit'  => 0,
                         'entry_type' => AccountEntryTypeEnum::ORDER_TAX_AMOUNT->value,

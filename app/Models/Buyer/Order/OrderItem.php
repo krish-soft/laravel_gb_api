@@ -78,6 +78,8 @@ class OrderItem extends BaseModel
     }
 
 
+    ### USED IN TOO MANY PLACES, SO ADDED HERE FOR EASY ACCESS
+    // DO NOT ACCESS WITH RELATIONSHIP TO AVOID N+1 PROBLEMS
     protected $appends = [
         'seller',
     ];

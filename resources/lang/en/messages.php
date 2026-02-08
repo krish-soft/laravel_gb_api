@@ -159,6 +159,7 @@ return [
         'cart_has_invalid_items' => 'Your cart contains invalid or unavailable items. Please review your cart before proceeding to checkout.',
         'cart_below_minimum_amount' => 'Your cart total is below the minimum required amount of :amount to proceed to checkout.',
         'cart_not_active_or_converted' => 'Cart is empty or has already been converted to an order.',
+        'invalid_checkout_charges' =>  'Invalid checkout charges calculated. Please review your cart and try again.',
 
         /* Listing */
         'listing_locked'         => 'Listing is locked or expired.',
@@ -166,6 +167,7 @@ return [
         'listing_terminal_state' => 'Listing is completed or inactive and cannot be modified.',
         'listing_has_sales'      => 'Listing has completed sales and cannot be cancelled.',
         'listing_flags_locked'   => 'Listing is locked due to multiple flags.',
+        'product_listing_inactive' => 'The product listing is inactive.',
 
         /* Package */
         'package_locked'        => 'Package is locked.',

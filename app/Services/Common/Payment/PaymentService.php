@@ -34,7 +34,7 @@ class PaymentService
 
             'payment_type' => $data['payment_type'],      // checkout | wallet_topUp
             'payment_method' => $data['payment_method'],  // razorpay
-            'gateway' => PaymentGatewayEnum::RAZORPAY,
+            'gateway' => $data['gateway'] ?? PaymentGatewayEnum::RAZORPAY->value,
 
             'status' => PaymentStatusEnum::INITIATED->value,
             'meta' => $data['meta'] ?? [],

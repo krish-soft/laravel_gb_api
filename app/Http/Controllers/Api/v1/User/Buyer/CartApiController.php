@@ -76,6 +76,11 @@ class CartApiController extends ApiResponseWithAuthController
             'productListingItem.productListing'
         )->findOrFail($data['product_listing_package_id']);
 
+        // Check that product listing is active or not 
+        if (!$package->productListingItem?->productListing?->is_active) {
+            return $this->showErrorMessage(__('messages.error_messages.product_listing_inactive'), 400);
+        }
+
 
         // First check its allowable to add this package
         if (BuyerPolicyManager::canBuyerSeeProductListing($user, $package->productListingItem->productListing) === false) {

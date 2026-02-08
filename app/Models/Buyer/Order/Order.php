@@ -21,7 +21,7 @@ class Order extends BaseModel
         static::creating(function ($order) {
             do {
                 $sequence = MstSeqCodeGenerator::getNextOrderNo();
-                $orderNumber = 'ORD-' . str_pad($sequence, 8, '0', STR_PAD_LEFT);
+                $orderNumber = 'ORD-' . str_pad($sequence, 6, '0', STR_PAD_LEFT);
             } while (Order::withTrashed()->where('order_number', $orderNumber)->exists());
             $order->order_number = $orderNumber;
         });

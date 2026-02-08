@@ -218,8 +218,11 @@ class CheckoutApiController extends ApiResponseWithAuthController
              * ------------------------------------
              */
             if (
-                MstPaymentSetting::payInMode() === PaymentMethodEnum::MANUAL
+                MstPaymentSetting::payInMode() === PaymentMethodEnum::MANUAL->value
             ) {
+
+                $payment->gateway = 'manual';
+                $payment->save();
 
                 $payment->markPaid('MANUAL');
 
@@ -246,6 +249,7 @@ class CheckoutApiController extends ApiResponseWithAuthController
                 );
             }
 
+            return;
             /**
              * ------------------------------------
              * RAZORPAY (ASYNC)

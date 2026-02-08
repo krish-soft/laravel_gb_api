@@ -134,7 +134,7 @@ class TestDataSeeder extends Seeder
 
         FulfillmentLocation::create([
             'user_id' => $buyer->id, // Seller User ID
-            'name' => 'Shop ',
+            'name' => 'Shop',
             'fl_code' => 'FL-0002',
             'addr_code' => $buyerAddress->addr_code,
             'type' => FulfillmentLocationTypeEnum::SHOP->value,

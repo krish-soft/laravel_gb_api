@@ -29,6 +29,8 @@ class AccountingService
                 'finance_year_id'   => MstFinanceSetting::appFinancialYearId(),
                 'ledger_date'       => $data['ledger_date'] ?? now()->toDateString(),
 
+                'description'       => $data['description'] ?? null,
+
                 'credit'            => $credit,
                 'debit'             => $debit,
 
