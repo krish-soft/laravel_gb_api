@@ -90,7 +90,7 @@ class OrderAccountingService
                 }
 
                 $accounting->createLedger($seller, [
-                    'description' => "Earnings for Order #{$order->order_number}: {$item->product_name} x {$item->ship_qty}",
+                    'description' => "Earnings for Order #{$order->order_number}: {$item->product_name} x {$item->order_qty}",
                     'credit' => $item->taxable_amount,
                     'debit'  => 0,
                     'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
