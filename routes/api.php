@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Api\v1\Admin\Buyer\Order\AdminOrderApiController;
+use App\Http\Controllers\Api\v1\Admin\Common\Accounting\AccountAdminApiController;
+use App\Http\Controllers\Api\v1\Admin\Common\Accounting\AccountLedgerAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserLoginApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserLogoutApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserRegisterApiController;
@@ -301,6 +303,12 @@ Route::group([
                 Route::post('{payout}/approve', [PayoutApiController::class, 'approve']);
                 Route::post('{payout}/fail', [PayoutApiController::class, 'fail']);
                 Route::post('{payout}/reconcile', [PayoutApiController::class, 'reconcile']);
+            });
+
+            // Accounting 
+            Route::prefix('accounting')->group(function () {
+                Route::apiResource('account', AccountAdminApiController::class);
+                Route::apiResource('ledger', AccountLedgerAdminApiController::class);
             });
 
 
