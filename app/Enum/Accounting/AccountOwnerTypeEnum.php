@@ -10,6 +10,8 @@ enum AccountOwnerTypeEnum: string
     case SELLER = 'seller';
     case DELIVERY = 'delivery';
     case GOVERNMENT = 'government';
+    case BANK = 'bank';
+    case CASH = 'cash';
 
      public static function casesAsValues(): array
     {

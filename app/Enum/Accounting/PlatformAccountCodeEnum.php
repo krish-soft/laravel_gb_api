@@ -11,6 +11,13 @@ enum PlatformAccountCodeEnum: string
     case PLATFORM_TAX = 'PLATFORM_TAX';
     case PLATFORM_TO_MARKET = 'PLATFORM_TO_MARKET'; // When Sell to market
 
+    case CASH = 'CASH';
+
+    case BANK_01 = 'BANK_01';
+    case BANK_02 = 'BANK_02';
+
+
+
     public static function casesAsValues(): array
     {
         return array_map(
