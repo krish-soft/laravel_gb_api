@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstBusinessSettingApiContro
 use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstFinanceSettingApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstPaymentSettingApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Vehicle\MstVehicleApiController;
+use App\Http\Controllers\Api\v1\Admin\Report\Order\OrderReportAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Seller\Product\AdminProductListingApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\BuyerProductListingApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\CartApiController;
@@ -335,6 +336,18 @@ Route::group([
             Route::apiResource('fulfillmentLocation', AdminFulfillmentLocationApiController::class);
             Route::post('fulfillmentLocation/addDepot', [AdminFulfillmentLocationApiController::class, 'addDepot']);
             Route::delete('fulfillmentLocation/removeDepot/{fulfillmentLocationDepot}', [AdminFulfillmentLocationApiController::class, 'removeDepot']);
+
+
+            ## Report
+            Route::prefix('report')->group(function () {
+
+                Route::get('orders-by-depot', [OrderReportAdminApiController::class, 'getOrdersReportByDepot']);
+
+
+                //
+
+                //
+            });
 
             ###
             ##### Master  Routes
