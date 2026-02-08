@@ -12,6 +12,7 @@ use App\Models\Common\Accounting\Account;
 use App\Models\Common\Accounting\AccountLedger;
 use App\Models\Common\Payment\Payment;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 class OrderAccountingService
 {
@@ -67,8 +68,8 @@ class OrderAccountingService
                 $seller = $item->seller;
                 // if not fail transactions 
                 if (!$seller) {
-                    throw new \Exception("Seller not found for Order Item ID: {$item->id}");
-                    return;
+                    throw  new RuntimeException("Seller not found for Order Item ID: {$item->id}");
+                    // return;
                 }
                 // $seller = Account::where('owner_type', AccountOwnerTypeEnum::SELLER->value)
                 //     ->where('owner_id', $item->seller_id)
