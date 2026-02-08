@@ -130,7 +130,9 @@ class Account extends BaseModel
 
     public function ledgers()
     {
-        return $this->hasMany(AccountLedger::class, 'account_id', 'id');
+        return $this->hasMany(AccountLedger::class, 'account_id', 'id')
+            ->latest('ledger_date')     // primary ordering
+            ->latest('id');             // tie-breaker
     }
 
     public function user()

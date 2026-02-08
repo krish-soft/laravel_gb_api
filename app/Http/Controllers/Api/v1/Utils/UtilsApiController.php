@@ -16,6 +16,7 @@ use App\Enum\User\UserRoleEnum;
 use App\Enum\User\UserTypeEnum;
 use App\Http\Controllers\ApiResponseController;
 use App\Http\Controllers\Controller;
+use App\Models\Master\MstFinancialYear;
 use App\Models\Master\MstPackType;
 use App\Models\Master\MstState;
 use App\Models\Master\MstUnit;
@@ -87,6 +88,11 @@ class UtilsApiController extends ApiResponseController
                 'accounting_owner_types' => AccountOwnerTypeEnum::casesAsValues(),
                 'ledger_statuses' => LedgerStatusEnum::casesAsValues(),
                 'platform_accounts' => PlatformAccountCodeEnum::casesAsValues(),
+
+                'financial_years' => MstFinancialYear::active()->pluck('id')->toArray(),
+
+
+
                 // 
 
             ];
@@ -103,7 +109,7 @@ class UtilsApiController extends ApiResponseController
                 $processData[$enumName][] = [
                     'id' => $value,
                     'value'  => $value,
-                    'label' => ucfirst(strtolower($value)),
+                    'label' => ucfirst(strtolower((string) $value)),
                 ];
             }
         }

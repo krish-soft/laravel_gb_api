@@ -31,6 +31,11 @@ enum AccountEntryTypeEnum: string
         // 🔹 Reversal
     case ORDER_CANCEL               = 'order_cancel';
 
+    case OPENING_BALANCE            = 'opening_balance';
+
+        //
+    case OTHER                      = 'other';
+
 
 
 

@@ -47,6 +47,12 @@ class AccountingService
 
                 'parent_ledger_id'  => $data['parent_ledger_id'] ?? null,
                 'remarks'            => $data['remarks'] ?? null,
+
+                'is_open_balance'   => $data['is_open_balance'] ?? false,
+                'is_tax'            => $data['is_tax'] ?? false,
+
+                'settled_at'       => $data['settled_at'] ?? null,
+
             ]);
 
             $this->updateAccountSnapshot($account, $ledger);

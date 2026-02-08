@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api\v1\Admin\Common\Accounting;
 
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
 use App\Http\Controllers\Controller;
+use App\Models\Common\Accounting\Account;
 use App\Models\Common\Accounting\AccountLedger;
+use App\Models\Master\Setting\MstFinanceSetting;
 use App\Services\Accounting\AccountingService;
 use Illuminate\Http\Request;
 
@@ -39,7 +41,7 @@ class AccountLedgerAdminApiController extends ApiResponseWithAdminAuthController
         $request->validate([
             //
             'account_id' => 'required|integer|exists:accounts,id',
-            'finance_year_id' => 'required|integer|exists:finance_years,id',
+            'finance_year_id' => 'nullable|integer|exists:mst_financial_years,id',
             'description' => 'required|string|max:255',
             'credit' => 'required|numeric|min:0',
             'debit' => 'required|numeric|min:0',
@@ -58,9 +60,23 @@ class AccountLedgerAdminApiController extends ApiResponseWithAdminAuthController
             'remarks' => 'nullable|string|max:500',
         ]);
 
+        $account = Account::findOrFail($request->account_id);
+
+        // Check already have open balance for this same year
+        if ($request->is_open_balance) {
+            $existingOpenBalance = AccountLedger::where('account_id', $account->id)
+                ->where('is_open_balance', true)
+                ->where('finance_year_id', $request->finance_year_id ?? MstFinanceSetting::appFinancialYearId())
+                ->first();
+
+            if ($existingOpenBalance) {
+                return $this->errorResponse('An open balance ledger already exists for this account and financial year.', 422);
+            }
+        }
+
         $accountLedger = app(AccountingService::class)->createLedger(
-            account: $request->account,
-            data: $request->only([
+            $account,
+            $request->only([
                 'finance_year_id',
                 'description',
                 'credit',
