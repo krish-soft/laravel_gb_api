@@ -129,7 +129,7 @@ class OrderAccountingService
                 }
 
                 $accounting->createLedger($revenue, [
-                    'description' => "Platform fee for Order #{$order->order_number}: {$charge->charge_name}",
+                    'description' => "Fees for Order #{$order->order_number}: {$charge->charge_name}",
                     'credit' => $charge->taxable_amount,
                     'debit'  => 0,
                     'entry_type' => AccountEntryTypeEnum::PLATFORM_CHARGE_BASE->value,

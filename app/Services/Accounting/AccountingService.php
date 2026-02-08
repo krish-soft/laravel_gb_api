@@ -211,9 +211,9 @@ class AccountingService
             $account->increment('total_debit', $ledger->debit);
         }
 
-        if ($ledger->is_tax) {
-            return;
-        }
+        // if ($ledger->is_tax) {
+        //     return;
+        // }
 
         $net = $ledger->credit - $ledger->debit;
 
