@@ -26,7 +26,7 @@ class AccountingService
 
             $ledger = AccountLedger::create([
                 'account_id'        => $account->id,
-                'finance_year_id'   => MstFinanceSetting::appFinancialYearId(),
+                'finance_year_id'   => $data['finance_year_id'] ??  MstFinanceSetting::appFinancialYearId(),
                 'ledger_date'       => $data['ledger_date'] ?? now()->toDateString(),
 
                 'description'       => $data['description'] ?? null,
