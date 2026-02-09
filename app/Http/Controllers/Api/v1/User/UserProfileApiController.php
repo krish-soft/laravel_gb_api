@@ -41,7 +41,7 @@ class UserProfileApiController extends ApiResponseWithAuthController
     {
         $requestUser = $request->user();
 
-        $user = User::with(['address', 'billingAddress'])->find($requestUser->id);
+        $user = User::with(['address', 'billAddress'])->find($requestUser->id);
 
         return $this->successResponse(__('messages.success_messages.success_get'), $user, 200);
     }
