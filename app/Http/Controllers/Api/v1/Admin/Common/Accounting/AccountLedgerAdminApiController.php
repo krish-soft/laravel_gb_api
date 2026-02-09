@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\v1\Admin\Common\Accounting;
 
+use App\Enum\Accounting\LedgerStatusEnum;
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
 use App\Http\Controllers\Controller;
 use App\Models\Common\Accounting\Account;
@@ -200,6 +201,28 @@ class AccountLedgerAdminApiController extends ApiResponseWithAdminAuthController
     {
         //
 
+        // reveres reverseLedger
+
+        if ($accountLedger->status === LedgerStatusEnum::SETTLED->value) {
+
+            $accountLedger = app(AccountingService::class)->reverseLedger($accountLedger, 'manual_reversal_for_deletion');
+
+            // Log activity for reversal
+            logActivity(
+                'account_ledger_reversed',   // ACTIVITY TYPE (what happened)
+                request()->user(),       // ACTOR (who did it)
+                get_class($accountLedger),       // SUBJECT TYPE (what was affected)
+                $accountLedger->id,              // SUBJECT ID
+                $accountLedger->ledger_code,       // SUBJECT CODE (human readable)
+                [
+                    'credit' => $accountLedger->credit,
+                    'debit' => $accountLedger->debit,
+                    'status' => $accountLedger->status,
+                ]
+            );
+
+            return $this->showSuccessMessage(__('messages.success_messages.success_reverse'));
+        }
 
         return $this->errorResponse(__('messages.error_messages.user_detlete_prohibited'), 403);
 

@@ -25,6 +25,7 @@ return [
         'success_update' => 'Resource updated successfully.',
         'success_delete' => 'Resource deleted successfully.',
         'success_cancel' => 'Resource cancelled successfully.',
+        'success_reverse' => 'Resource transaction reversed successfully.',
 
         /* Authentication */
         'success_login'      => 'Login completed successfully.',
