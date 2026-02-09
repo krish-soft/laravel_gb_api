@@ -5,8 +5,10 @@ namespace App\Services\Common\Payment\Handlers;
 use App\Enum\Common\Cart\CartStatusEnum;
 use App\Enum\Common\Order\OrderStatusEnum;
 use App\Enum\Common\Payment\PaymentStatusEnum;
+use App\Enum\Common\Shipment\ShipmentStatusEnum;
 use App\Models\Buyer\Order\Order;
 use App\Models\Common\Payment\Payment;
+use App\Models\Common\Shipment\ShipmentPackage;
 use App\Services\Accounting\OrderAccountingService;
 use App\Services\Buyer\Checkout\CheckoutRevertService;
 use Illuminate\Support\Facades\DB;
@@ -53,6 +55,33 @@ class OrderPaymentHandler
                 ->recordPaidOrder($order, $payment);
 
             //TODO:: Shipment process can be triggered here or via another service/event
+
+            foreach ($order->orderItems as $item) {
+
+                $totalPackages = (int) $item->order_qty; // qty = number of packages
+
+                // prevent duplicate creation (idempotent)
+                $alreadyCreated = ShipmentPackage::where('order_item_id', $item->id)->count();
+
+                $toCreate = max(0, $totalPackages - $alreadyCreated);
+
+                for ($i = 0; $i < $toCreate; $i++) {
+
+                    ShipmentPackage::create([
+                        'order_id'       => $order->id,
+                        'order_number'    => $order->order_number,
+                        'order_item_id'  => $item->id,
+                        'buyer_id'       => $order->buyer_id,
+                        'seller_id'      => $item->seller->id, // Assuming OrderItem has a seller relationship
+                        'qty'            => 1,
+                        'pack_size'      => $item->pack_size,
+                        'pack_unit'      => $item->pack_unit,
+                        'pack_type_unit' => $item->pack_type_unit,
+                        'package_number' => ShipmentPackage::generatePackageNumber($order->buyer_id),
+                        'status'         => ShipmentStatusEnum::PENDING->value,
+                    ]);
+                }
+            }
         });
     }
 

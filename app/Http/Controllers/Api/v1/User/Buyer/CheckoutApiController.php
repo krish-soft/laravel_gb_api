@@ -131,12 +131,12 @@ class CheckoutApiController extends ApiResponseWithAuthController
 
 
         // also check  can checkour and message
-        if (!($cartMeta['can_checkout'] ?? false)) {
-            return $this->showErrorMessage(
-                $cartMeta['message_not_checkout'] ?? __('messages.error_messages.invalid_checkout_charges'),
-                400
-            );
-        }
+        // if (!($cartMeta['can_checkout'] ?? false)) {
+        //     return $this->showErrorMessage(
+        //         $cartMeta['message_not_checkout'] ?? __('messages.error_messages.invalid_checkout_charges'),
+        //         400
+        //     );
+        // }
 
         $charges = $cartMeta['charges'] ?? null;
         // if not found then give error 
