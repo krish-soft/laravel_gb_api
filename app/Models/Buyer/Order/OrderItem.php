@@ -82,6 +82,7 @@ class OrderItem extends BaseModel
     // DO NOT ACCESS WITH RELATIONSHIP TO AVOID N+1 PROBLEMS
     protected $appends = [
         'seller',
+        'pickup_depot',
     ];
 
 
@@ -97,6 +98,17 @@ class OrderItem extends BaseModel
         return \App\Models\User::select('id', 'name', 'user_code', 'nickname')
             ->find($sellerId);
     }
+
+
+    // Get Depot info from the related order
+    public function getPickupDepotAttribute()
+    {
+
+        return $this->pickupFulfillmentLocation->primaryDepot ?? $this->pickupFulfillmentLocation->user->primaryDepot ?? null;
+    }
+
+
+
 
     //
 }

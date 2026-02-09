@@ -27,12 +27,39 @@ return new class extends Migration
 
             // Direct access (avoid joining orders/users every time)
             $table->foreignId('buyer_id')
+                ->nullable()
                 ->constrained('users')
                 ->restrictOnDelete();
 
             $table->foreignId('seller_id')
+                ->nullable()
                 ->constrained('users')
                 ->restrictOnDelete();
+
+            // Per fulfillment location (if multiple locations are used)
+            $table->foreignId('pickup_fulfillment_location_id')
+                ->nullable()
+                ->constrained('fulfillment_locations')
+                ->restrictOnDelete();
+
+            $table->foreignId('shipping_fulfillment_location_id')
+                ->nullable()
+                ->constrained('fulfillment_locations')
+                ->restrictOnDelete();
+
+
+            // depots
+
+            $table->foreignId('pickup_depot_id')
+                ->nullable()
+                ->constrained('mst_depots')
+                ->restrictOnDelete();
+
+            $table->foreignId('shipping_depot_id')
+                ->nullable()
+                ->constrained('mst_depots')
+                ->restrictOnDelete();
+
 
             // One row = one physical package
             $table->unsignedInteger('qty')->default(1);

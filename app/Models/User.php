@@ -77,6 +77,8 @@ class User extends Authenticatable
         'bill_addr_code',
         'addr_code',
 
+        'is_available_for_delivery',
+
         'last_login_at',
         'last_login_ip',
 
@@ -93,6 +95,8 @@ class User extends Authenticatable
         'remember_token',
         'user_key',
         'kyc_code',
+
+        'is_available_for_delivery',
 
         // relations to hide
         'kyc', // to prevent N+1 issue
@@ -121,6 +125,7 @@ class User extends Authenticatable
             'is_sales_rep' => 'boolean',
             'is_important' => 'boolean',
             'access_modules' => 'array',
+            'is_available_for_delivery' => 'boolean',
 
         ];
     }

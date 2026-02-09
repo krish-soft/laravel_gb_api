@@ -6,6 +6,7 @@ use App\Models\BaseModel;
 use App\Models\Buyer\Cart\Cart;
 use App\Models\Common\Address;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
+use App\Models\Common\Shipment\ShipmentPackage;
 use App\Models\Master\Depot\MstDepot;
 use App\Models\Master\Unique\MstSeqCodeGenerator;
 use App\Models\User;
@@ -95,9 +96,15 @@ class Order extends BaseModel
         return $this->belongsTo(User::class, 'buyer_id', 'id');
     }
 
+    // shipping Depot for this order
     public function depot()
     {
         return $this->belongsTo(MstDepot::class, 'depot_id', 'id');
+    }
+
+    public function shipmentPackages()
+    {
+        return $this->hasMany(ShipmentPackage::class, 'order_id', 'id');
     }
 
 

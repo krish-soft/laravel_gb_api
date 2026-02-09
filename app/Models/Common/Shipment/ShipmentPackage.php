@@ -4,6 +4,9 @@ namespace App\Models\Common\Shipment;
 
 use App\Models\Buyer\Order\Order;
 use App\Models\Buyer\Order\OrderItem;
+use App\Models\Common\Fulfillment\FulfillmentLocation;
+use App\Models\Master\Depot\MstDepot;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
@@ -23,13 +26,22 @@ class ShipmentPackage extends Model
         'buyer_id',
         'seller_id',
 
+        'pickup_fulfillment_location_id',
+        'shipping_fulfillment_location_id',
+
+        'pickup_depot_id',
+        'shipping_depot_id',
+
         'qty',
         'pack_size',
         'pack_unit',
         'pack_type_unit',
+
         'shipment_number',
         'package_number',
+
         'status',
+
         'carrier',
         'tracking_number',
         'remarks',
@@ -54,6 +66,36 @@ class ShipmentPackage extends Model
     public function orderItem()
     {
         return $this->belongsTo(OrderItem::class);
+    }
+
+    public function buyer()
+    {
+        return $this->belongsTo(User::class, 'buyer_id');
+    }
+
+    public function seller()
+    {
+        return $this->belongsTo(User::class, 'seller_id');
+    }
+
+    public function pickupFulfillmentLocation()
+    {
+        return $this->belongsTo(FulfillmentLocation::class, 'pickup_fulfillment_location_id');
+    }
+
+    public function shippingFulfillmentLocation()
+    {
+        return $this->belongsTo(FulfillmentLocation::class, 'shipping_fulfillment_location_id');
+    }
+
+    public function pickupDepot()
+    {
+        return $this->belongsTo(MstDepot::class, 'pickup_depot_id');
+    }
+
+    public function shippingDepot()
+    {
+        return $this->belongsTo(MstDepot::class, 'shipping_depot_id');
     }
 
     /*

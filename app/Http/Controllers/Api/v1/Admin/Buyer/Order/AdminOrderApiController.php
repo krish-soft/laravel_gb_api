@@ -46,6 +46,11 @@ class AdminOrderApiController extends ApiResponseWithAdminAuthController
             'shippingFulfillmentLocation.address', // actual shipping location
             'billingAddress', // for invoice
             'shippingAddress', // for invoice
+
+            // shipment packages for this order
+            'shipmentPackages.buyer',
+            'shipmentPackages.seller',
+            
         ])->where('id', $orderId)->firstOrfail();
 
 

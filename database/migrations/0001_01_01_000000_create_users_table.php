@@ -51,6 +51,7 @@ return new class extends Migration
             $table->string('bill_addr_code', 50)->nullable(); // Billing Address Code
             $table->string('addr_code', 50)->nullable(); // Shipping Address Code
 
+            $table->boolean('is_available_for_delivery')->default(false)->nullable(); // for driver to stay online or offline for delivery
 
             // Tracking
             $table->timestamp('last_login_at')->nullable();

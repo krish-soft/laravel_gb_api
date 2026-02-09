@@ -56,7 +56,7 @@ class OrderPaymentHandler
 
             //TODO:: Shipment process can be triggered here or via another service/event
 
-            foreach ($order->orderItems as $item) {
+            foreach ($order->orderItems->sortByDesc('order_qty') as $item) {
 
                 $totalPackages = (int) $item->order_qty; // qty = number of packages
 
@@ -71,14 +71,23 @@ class OrderPaymentHandler
                         'order_id'       => $order->id,
                         'order_number'    => $order->order_number,
                         'order_item_id'  => $item->id,
+
                         'buyer_id'       => $order->buyer_id,
                         'seller_id'      => $item->seller->id, // Assuming OrderItem has a seller relationship
+
+                        'pickup_fulfillment_location_id' => $item->pickup_fulfillment_location_id, // Assuming OrderItem has pickupFulfillmentLocation relationship
+                        'shipping_fulfillment_location_id' => $order->shipping_fulfillment_location_id, // Assuming same as order's shipping location for now
+
                         'qty'            => 1,
                         'pack_size'      => $item->pack_size,
                         'pack_unit'      => $item->pack_unit,
                         'pack_type_unit' => $item->pack_type_unit,
+
                         'package_number' => ShipmentPackage::generatePackageNumber($order->buyer_id),
                         'status'         => ShipmentStatusEnum::PENDING->value,
+
+                        'pickup_depot_id' => $item?->pickup_depot?->id, // Assuming OrderItem has pickup_depot_id
+                        'shipping_depot_id' => $order->depot_id, // From order directly
                     ]);
                 }
             }
