@@ -46,7 +46,7 @@ class AccountLedgerAdminApiController extends ApiResponseWithAdminAuthController
             'credit' => 'required|numeric|min:0',
             'debit' => 'required|numeric|min:0',
             'ledger_date' => 'required|date',
-            'entry_type' => 'required|string|max:100',
+            'entry_type' => 'nullable|string|max:100',
             'source_type' => 'nullable|string|max:100',
             'source_id' => 'nullable|integer',
             'source_code' => 'nullable|string|max:100',
@@ -74,7 +74,7 @@ class AccountLedgerAdminApiController extends ApiResponseWithAdminAuthController
             }
         }
 
-        $accountLedger = app(AccountingService::class)->createLedger(
+        $accountLedger = app(AccountingService::class)->manualEntry(
             $account,
             $request->only([
                 'finance_year_id',

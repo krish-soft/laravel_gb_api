@@ -155,8 +155,8 @@ class AccountingService
     {
         return $this->createLedger($account, array_merge($data, [
             'entry_type' => 'manual',
-            'status'     => LedgerStatusEnum::AVAILABLE->value,
-            'source_type' => 'SYSTEM',
+            'status'     => $data['status'] ?? LedgerStatusEnum::AVAILABLE->value,
+            'source_type' => 'manual_entry',
         ]));
     }
 
