@@ -83,7 +83,7 @@ class OrderPaymentHandler
                         'pack_unit'      => $item->pack_unit,
                         'pack_type_unit' => $item->pack_type_unit,
 
-                        'package_number' => ShipmentPackage::generatePackageNumber($order->buyer_id),
+                        'package_number' => ShipmentPackage::generatePackageNumber($order->buyer_id, $order->id),
                         'status'         => ShipmentStatusEnum::PENDING->value,
 
                         'pickup_depot_id' => $item?->pickup_depot?->id, // Assuming OrderItem has pickup_depot_id

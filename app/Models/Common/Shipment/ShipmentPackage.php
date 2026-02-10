@@ -9,6 +9,7 @@ use App\Models\Master\Depot\MstDepot;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class ShipmentPackage extends Model
@@ -128,33 +129,22 @@ class ShipmentPackage extends Model
     }
 
 
-    private static function businessDate(): string
+    private static function businessWindow(): array
     {
         $now = now();
 
-        $startHour = 14; // 2 PM
-        $endHour   = 11; // 11 AM
-
-        /**
-         * Logic:
-         * - From 14:00 onwards → same calendar date
-         * - From 00:00 to 10:59 → previous calendar date
-         * - From 11:00 to 13:59 → NEW day window
-         */
-
-        if ($now->hour >= $startHour) {
-            // 2 PM → 11:59 PM
-            return $now->toDateString();
+        // If before 11 AM → we are still in previous business day
+        if ($now->hour < 11) {
+            $start = $now->copy()->subDay()->setTime(14, 0, 0); // yesterday 2 PM
+            $end   = $now->copy()->setTime(10, 59, 59);        // today 10:59 AM
+        } else {
+            $start = $now->copy()->setTime(14, 0, 0);          // today 2 PM
+            $end   = $now->copy()->addDay()->setTime(10, 59, 59); // tomorrow 10:59 AM
         }
 
-        if ($now->hour < $endHour) {
-            // 12 AM → 10:59 AM
-            return $now->subDay()->toDateString();
-        }
-
-        // 11:00 AM → 1:59 PM (reset window)
-        return $now->toDateString();
+        return [$start, $end];
     }
+
 
     /*
     |--------------------------------------------------------------------------
@@ -165,32 +155,67 @@ class ShipmentPackage extends Model
     | Buyer B → B-1, B-2
     |--------------------------------------------------------------------------
     */
-    public static function generatePackageNumber(?int $buyerId): string
+    public static function generatePackageNumber(int $buyerId): string
     {
-        $businessDate = self::businessDate();
+        return DB::transaction(function () use ($buyerId) {
 
-        // Prefix logic stays SAME
-        if ($buyerId) {
+            [$start, $end] = self::businessWindow();
+
+            // Buyer prefix
             $buyerIndex = $buyerId % 18278;
             $prefix = self::alphaSequence($buyerIndex ?: 1);
-        } else {
-            $prefix = 'SYS'; // reserved forever
-        }
 
-        $lastSeq = self::where('package_number', 'like', "{$prefix}-%")
-            ->whereDate('created_at', $businessDate)
-            ->whereNull('deleted_at')
-            ->selectRaw("
-            MAX(
-                CAST(SUBSTRING_INDEX(package_number, '-', -1) AS UNSIGNED)
-            ) as max_seq
-        ")
-            ->value('max_seq');
+            // 🔒 LOCK buyer rows in this business window
+            $lastSeq = self::where('buyer_id', $buyerId)
+                ->whereBetween('created_at', [$start, $end])
+                ->where('package_number', 'like', "{$prefix}-%")
+                ->lockForUpdate()
+                ->selectRaw("
+                MAX(
+                    CAST(SUBSTRING_INDEX(package_number, '-', -1) AS UNSIGNED)
+                ) as max_seq
+            ")
+                ->value('max_seq');
 
-        $next = ($lastSeq ?? 0) + 1;
+            $next = ($lastSeq ?? 0) + 1;
 
-        return "{$prefix}-{$next}";
+            return "{$prefix}-{$next}";
+        });
     }
+
+
+    // public static function generatePackageNumber(
+    //     ?int $buyerId,
+    //     ?string $date = null
+    // ): string {
+    //     $date = $date ?? now()->toDateString();
+
+    //     // Determine prefix
+    //     if ($buyerId) {
+    //         // Stable buyer-based prefix
+    //         $buyerIndex = $buyerId % 18278; // limit size
+    //         $prefix = self::alphaSequence($buyerIndex ?: 1);
+    //     } else {
+    //         // Reserved system prefix (NEVER assigned to buyers)
+    //         $prefix = 'SYS';
+    //     }
+
+    //     // Get last sequence number for this prefix + day
+    //     $lastSeq = self::where('package_number', 'like', "{$prefix}-%")
+    //         ->whereDate('created_at', $date)
+    //         ->whereNull('deleted_at')
+    //         ->selectRaw("
+    //         MAX(
+    //             CAST(SUBSTRING_INDEX(package_number, '-', -1) AS UNSIGNED)
+    //         ) as max_seq
+    //     ")
+    //         ->value('max_seq');
+
+    //     $next = ($lastSeq ?? 0) + 1;
+
+    //     return "{$prefix}-{$next}";
+    // }
+
 
     /*
     |--------------------------------------------------------------------------

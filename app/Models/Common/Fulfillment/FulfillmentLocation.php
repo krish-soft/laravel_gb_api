@@ -95,7 +95,11 @@ class FulfillmentLocation extends BaseModel
 
     public function primaryDepot()
     {
-        return $this->depots()->where('is_primary', true)->first();
+        return $this->hasOne(
+            FulfillmentLocationDepot::class,
+            'fulfillment_location_id',
+            'id'
+        )->where('is_primary', true);
     }
 
 
