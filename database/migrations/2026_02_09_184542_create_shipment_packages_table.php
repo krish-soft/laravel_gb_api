@@ -47,7 +47,6 @@ return new class extends Migration
                 ->constrained('fulfillment_locations')
                 ->restrictOnDelete();
 
-
             // depots
 
             $table->foreignId('pickup_depot_id')
@@ -61,6 +60,7 @@ return new class extends Migration
                 ->restrictOnDelete();
 
 
+            $table->date('shipment_date')->nullable();
             // One row = one physical package
             $table->unsignedInteger('qty')->default(1);
 
@@ -83,13 +83,21 @@ return new class extends Migration
 
             $table->string('remarks')->nullable();
 
+            $table->timestamp('packed_at')->nullable();
+            $table->timestamp('picked_up_at')->nullable();
+            $table->timestamp('in_transit_at')->nullable();
+            $table->timestamp('delivered_at')->nullable();
+            $table->timestamp('returned_at')->nullable();
+            $table->timestamp('cancelled_at')->nullable();
+
             $table->timestamps();
             $table->softDeletes();
 
             // Indexes ONLY (NOT unique)
             $table->index(['order_id']);
             $table->index(['buyer_id', 'package_number']);
-            $table->index(['status']);
+            $table->index(['shipping_depot_id', 'status']);
+            $table->index(['pickup_depot_id', 'status']);
         });
     }
 

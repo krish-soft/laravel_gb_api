@@ -33,6 +33,8 @@ class ShipmentPackage extends Model
         'pickup_depot_id',
         'shipping_depot_id',
 
+        'shipment_date',
+
         'qty',
         'pack_size',
         'pack_unit',
@@ -46,11 +48,25 @@ class ShipmentPackage extends Model
         'carrier',
         'tracking_number',
         'remarks',
+
+        'packed_at',
+        'picked_up_at',
+        'in_transit_at',
+        'delivered_at',
+        'returned_at',
+        'cancelled_at',
     ];
 
     protected $casts = [
         'qty' => 'integer',
         'pack_size' => 'decimal:2',
+        'shipment_date' => 'date',
+        'packed_at' => 'datetime',
+        'picked_up_at' => 'datetime',
+        'in_transit_at' => 'datetime',
+        'delivered_at' => 'datetime',
+        'returned_at' => 'datetime',
+        'cancelled_at' => 'datetime',
     ];
 
     /*

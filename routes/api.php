@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\v1\Admin\Common\Payment\PayoutApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Customer\CustomerApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Customer\CustomerLegalActionApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Payment\AdminPaymentApiController;
+use App\Http\Controllers\Api\v1\Admin\Delivery\ShipmentPackageAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeLevelApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\Rule\MstDeliveryChargeRuleApiController;
@@ -345,11 +346,20 @@ Route::group([
             Route::post('fulfillmentLocation/addDepot', [AdminFulfillmentLocationApiController::class, 'addDepot']);
             Route::delete('fulfillmentLocation/removeDepot/{fulfillmentLocationDepot}', [AdminFulfillmentLocationApiController::class, 'removeDepot']);
 
+            Route::prefix('shipping')->group(function () {
+
+                Route::get('summary', [ShipmentPackageAdminApiController::class, 'summaryReport']);
+                Route::apiResource('shipmentPackage', ShipmentPackageAdminApiController::class)->only(['index', 'show']);
+                Route::put('shipmentPackage/status/{shipmentPackage}', [ShipmentPackageAdminApiController::class, 'updateStatus']);
+
+                //  
+            });
 
             ## Report
             Route::prefix('report')->group(function () {
 
                 Route::get('orders-by-depot', [OrderReportAdminApiController::class, 'getOrdersReportByDepot']);
+
 
 
                 //

@@ -175,8 +175,8 @@ class User extends Authenticatable
     {
         do {
             $number = self::withTrashed()->count() + 1;
-            $formatted = str_pad($number, 8, '0', STR_PAD_LEFT); // 00000001
-            $nickname = substr($formatted, 0, 4) . '-' . substr($formatted, 4, 4); // 0000-0001
+            $formatted = str_pad($number, 6, '0', STR_PAD_LEFT); // 000001
+            $nickname = substr($formatted, 0, 3) . '-' . substr($formatted, 3, 3); // 000-001
         } while (self::withTrashed()->where('nickname', $nickname)->exists());
 
         return $nickname;

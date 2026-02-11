@@ -62,7 +62,7 @@ class CheckoutConfirmService
 
             // Get Depot Id from fulfillment location if not then from user 
             $fulfillmentLocationId = $fulfillmentLocation->id;
-            $depotId = $fulfillmentLocation->primaryDepot()?->depot_id ?? $cart->buyer->primaryDepot()?->depot_id ?? null; // depot_id becasue have anotehr tables so
+            $depotId = $fulfillmentLocation->primaryDepot->depot_id ?? $cart->buyer->primaryDepot->depot_id; // depot_id becasue have anotehr tables so
 
             /* -------------------------------------------------
              | 1️⃣ Create Order
