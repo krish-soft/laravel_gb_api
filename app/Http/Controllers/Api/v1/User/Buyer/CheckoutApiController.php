@@ -249,7 +249,7 @@ class CheckoutApiController extends ApiResponseWithAuthController
                 );
             }
 
-            return;
+            return "Testing no razorpay";
             /**
              * ------------------------------------
              * RAZORPAY (ASYNC)

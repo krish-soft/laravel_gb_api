@@ -18,6 +18,11 @@ class MstPaymentSetting extends BaseModel
             throw new \Exception('Payment settings cannot be deleted.');
         });
 
+        static::updated(function () {
+            if (Schema::hasTable('mst_payment_settings') && Cache::has('mst_payment_settings')) {
+                Cache::forget('mst_payment_settings');
+            }
+        });
 
         static::saved(function () {
             try {

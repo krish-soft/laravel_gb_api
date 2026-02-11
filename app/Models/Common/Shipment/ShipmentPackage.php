@@ -155,21 +155,25 @@ class ShipmentPackage extends Model
     | Buyer B → B-1, B-2
     |--------------------------------------------------------------------------
     */
+    protected static array $runtimeSequence = [];
+
     public static function generatePackageNumber(int $buyerId): string
     {
-        return DB::transaction(function () use ($buyerId) {
+        [$start, $end] = self::businessWindow();
 
-            [$start, $end] = self::businessWindow();
+        // Buyer prefix
+        $buyerIndex = $buyerId % 18278;
+        $prefix = self::alphaSequence($buyerIndex ?: 1);
 
-            // Buyer prefix
-            $buyerIndex = $buyerId % 18278;
-            $prefix = self::alphaSequence($buyerIndex ?: 1);
+        // Unique runtime key per buyer + window
+        $key = $buyerId . '|' . $start->timestamp . '|' . $end->timestamp;
 
-            // 🔒 LOCK buyer rows in this business window
+        // 🔥 Load from DB only once per request
+        if (!isset(self::$runtimeSequence[$key])) {
+
             $lastSeq = self::where('buyer_id', $buyerId)
                 ->whereBetween('created_at', [$start, $end])
                 ->where('package_number', 'like', "{$prefix}-%")
-                ->lockForUpdate()
                 ->selectRaw("
                 MAX(
                     CAST(SUBSTRING_INDEX(package_number, '-', -1) AS UNSIGNED)
@@ -177,11 +181,15 @@ class ShipmentPackage extends Model
             ")
                 ->value('max_seq');
 
-            $next = ($lastSeq ?? 0) + 1;
+            self::$runtimeSequence[$key] = (int) ($lastSeq ?? 0);
+        }
 
-            return "{$prefix}-{$next}";
-        });
+        // 🔥 Increment locally (THIS fixes C-1,C-1,C-1 issue)
+        self::$runtimeSequence[$key]++;
+
+        return "{$prefix}-" . self::$runtimeSequence[$key];
     }
+
 
 
     // public static function generatePackageNumber(

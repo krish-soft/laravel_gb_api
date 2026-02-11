@@ -30,6 +30,12 @@ class MstFinanceSetting extends BaseModel
                 // ignore completely
             }
         });
+
+        static::updated(function () {
+            if (Schema::hasTable('mst_finance_settings') && Cache::has('mst_finance_settings')) {
+                Cache::forget('mst_finance_settings');
+            }
+        });
     }
 
     protected $fillable = [
@@ -130,7 +136,8 @@ class MstFinanceSetting extends BaseModel
     }
 
 
-    public static function isFinancialYearEnabled(){
+    public static function isFinancialYearEnabled()
+    {
         return self::getOrCreate()->is_financial_year_logic_enabled ?? false;
     }
 }

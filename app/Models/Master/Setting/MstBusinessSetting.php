@@ -7,6 +7,7 @@ use App\Models\Common\Address;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 
 class MstBusinessSetting extends BaseModel
 {
@@ -23,11 +24,17 @@ class MstBusinessSetting extends BaseModel
 
         static::saved(function () {
             try {
-                if (Cache::has('mst_business_settings')) {
+                if (Schema::hasTable('mst_business_settings') && Cache::has('mst_business_settings')) {
                     Cache::forget('mst_business_settings');
                 }
             } catch (\Throwable $e) {
                 // ignore completely
+            }
+        });
+
+        static::updated(function () {
+            if (Schema::hasTable('mst_business_settings') && Cache::has('mst_business_settings')) {
+                Cache::forget('mst_business_settings');
             }
         });
     }
