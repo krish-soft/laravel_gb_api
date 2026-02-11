@@ -56,7 +56,7 @@ class OrderPaymentHandler
 
             //TODO:: Shipment process can be triggered here or via another service/event
 
-            foreach ($order->orderItems->sortByDesc('order_qty') as $item) {
+            foreach ($order->orderItems->sortByDesc('order_qty',SORT_DESC) as $item) {
 
                 $totalPackages = (int) $item->order_qty; // qty = number of packages
 
