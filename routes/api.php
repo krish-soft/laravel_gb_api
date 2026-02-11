@@ -13,7 +13,7 @@ use App\Http\Controllers\Api\v1\Admin\Common\Payment\PayoutApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Customer\CustomerApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Customer\CustomerLegalActionApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Payment\AdminPaymentApiController;
-use App\Http\Controllers\Api\v1\Admin\Delivery\ShipmentPackageAdminApiController;
+use App\Http\Controllers\Api\v1\Admin\Shipment\ShipmentPackageAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeLevelApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\Rule\MstDeliveryChargeRuleApiController;
@@ -35,6 +35,7 @@ use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstPaymentSettingApiControl
 use App\Http\Controllers\Api\v1\Admin\Master\Vehicle\MstVehicleApiController;
 use App\Http\Controllers\Api\v1\Admin\Report\Order\OrderReportAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Seller\Product\AdminProductListingApiController;
+use App\Http\Controllers\Api\v1\Admin\Shipment\ShipmentAdminApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\BuyerProductListingApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\CartApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\CheckoutApiController;
@@ -351,6 +352,19 @@ Route::group([
                 Route::get('summary', [ShipmentPackageAdminApiController::class, 'summaryReport']);
                 Route::apiResource('shipmentPackage', ShipmentPackageAdminApiController::class)->only(['index', 'show']);
                 Route::put('shipmentPackage/status/{shipmentPackage}', [ShipmentPackageAdminApiController::class, 'updateStatus']);
+
+                // 
+                Route::post('shipment-generate-package-groups', [ShipmentAdminApiController::class, 'generateShipmentAndGroups']);
+                Route::apiResource('shipment', ShipmentAdminApiController::class)->only(['index', 'show']);
+
+                Route::post('shipments/split-group', [ShipmentAdminApiController::class, 'splitGroup']);
+                Route::post('shipments/move-package', [ShipmentAdminApiController::class, 'movePackage']);
+
+                Route::post('shipments/merge-groups', [ShipmentAdminApiController::class, 'mergeGroups']);
+                Route::post('shipments/merge-shipments', [ShipmentAdminApiController::class, 'mergeShipments']);
+
+                Route::post('shipments/rebuild/{shipment}', [ShipmentAdminApiController::class, 'rebuildShipment']);
+                Route::get('shipment-groups/{groupNumber}', [ShipmentAdminApiController::class, 'getGroupPackages']);
 
                 //  
             });

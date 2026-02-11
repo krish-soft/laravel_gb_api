@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\v1\Admin\Delivery;
+namespace App\Http\Controllers\Api\v1\Admin\Shipment;
 
 use App\Enum\Common\Shipment\ShipmentStatusEnum;
 use App\Http\Controllers\ApiResponseWithAdminAuthController;

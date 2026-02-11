@@ -11,6 +11,10 @@ enum ShipmentStatusEnum: string
     case PICKED_UP = 'picked_up';
 
     case IN_TRANSIT = 'in_transit';
+    case ARRIVED_AT_DEPOT = 'arrived_at_depot';
+    case DISPATCHED_FROM_DEPOT = 'dispatched_from_depot';
+
+    case DISPATCHED = 'dispatched';
     case SHIPPED = 'shipped';
     case DELIVERED = 'delivered';
 
@@ -18,6 +22,11 @@ enum ShipmentStatusEnum: string
     case CANCELLED = 'cancelled';
     case DAMAGED = 'damaged';
     case LOST = 'lost';
+
+        //  grouping status
+    case PICKUP = 'pickup';
+    case DISPATCH = 'dispatch';
+    case GROUPED = 'grouped';
 
     public static function casesAsValues(): array
     {

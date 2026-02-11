@@ -70,7 +70,7 @@ return new class extends Migration
             $table->string('pack_type_unit', 50)->nullable();
 
             // Identifiers
-            $table->string('shipment_number', 20)->unique(); // HARD unique label
+            $table->string('shipment_package_number', 20)->unique(); // HARD unique label
             $table->string('package_number', 30); // A-1, AA-2 etc.
 
             // Status flow

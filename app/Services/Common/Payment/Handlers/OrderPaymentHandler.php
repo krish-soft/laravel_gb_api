@@ -11,6 +11,7 @@ use App\Models\Common\Payment\Payment;
 use App\Models\Common\Shipment\ShipmentPackage;
 use App\Services\Accounting\OrderAccountingService;
 use App\Services\Buyer\Checkout\CheckoutRevertService;
+use App\Services\Common\Shipment\ShipmentService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -93,6 +94,17 @@ class OrderPaymentHandler
                     ]);
                 }
             }
+
+
+            // Once Shipment Ready create a Shipments and assign packages to it and update status to ready for pickup or ready for dispatch based on shipment type (pickup or dispatch)
+
+            app(ShipmentService::class)->createShipmentAndGroups(ShipmentStatusEnum::PICKUP->value);
+
+            // app(ShipmentService::class)->createShipmentAndGroups(ShipmentStatusEnum::DISPATCH->value);
+
+
+
+            //
         });
     }
 

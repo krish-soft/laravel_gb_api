@@ -40,7 +40,7 @@ class ShipmentPackage extends Model
         'pack_unit',
         'pack_type_unit',
 
-        'shipment_number',
+        'shipment_package_number',
         'package_number',
 
         'status',
@@ -115,6 +115,11 @@ class ShipmentPackage extends Model
         return $this->belongsTo(MstDepot::class, 'shipping_depot_id');
     }
 
+    public function packageGroup()
+    {
+        return $this->hasOne(ShipmentPackageGroup::class, 'shipment_package_id');
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Booted: Generate UNIQUE shipment_number (8-char alphanumeric)
@@ -124,8 +129,8 @@ class ShipmentPackage extends Model
     protected static function booted()
     {
         static::creating(function ($model) {
-            if (empty($model->shipment_number)) {
-                $model->shipment_number = self::generateUniqueShipmentNumber();
+            if (empty($model->shipment_package_number)) {
+                $model->shipment_package_number = self::generateUniqueShipmentNumber();
             }
         });
     }
@@ -137,7 +142,7 @@ class ShipmentPackage extends Model
             $code = strtoupper(Str::random(8));
         } while (
             self::withTrashed()
-            ->where('shipment_number', $code)
+            ->where('shipment_package_number', $code)
             ->exists()
         );
 
