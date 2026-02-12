@@ -117,6 +117,10 @@ class Shipment extends BaseModel
         'total_packages',
         'total_weight',
         'group_number',
+
+        // NEW
+        'from_address',
+        'to_address',
     ];
 
 
@@ -146,5 +150,82 @@ class Shipment extends BaseModel
         // fallback query
         return $this->shipmentGroups()
             ->value('group_number');
+    }
+
+
+    /*
+|--------------------------------------------------------------------------
+| NORMALIZED ORIGIN ADDRESS
+|--------------------------------------------------------------------------
+*/
+
+    public function getFromAddressAttribute()
+    {
+        $address = null;
+
+        if ($this->shipment_type === 'pickup') {
+            $address = $this->originFulfillmentLocation?->address;
+        } elseif ($this->shipment_type === 'dispatch') {
+            $address = $this->originDepot?->address ?? null;
+        } elseif ($this->shipment_type === 'transfer') {
+            $address = $this->originDepot?->address ?? null;
+        }
+
+        if (!$address) {
+            return null;
+        }
+
+        return [
+            'addr_name' => $address->addr_name,
+            'line1' => $address->address_line1,
+            'line2' => $address->address_line2,
+            'village' => $address->village,
+            'taluka' => $address->taluka,
+            'city'  => $address->city,
+            'state' => $address->state,
+            'postal_code' => $address->postal_code,
+            'contact_name' => $address->contact_name,
+            'phone' => $address->phone_number,
+            'lat' => $address->latitude,
+            'lng' => $address->longitude,
+        ];
+    }
+
+    /*
+|--------------------------------------------------------------------------
+| NORMALIZED DESTINATION ADDRESS
+|--------------------------------------------------------------------------
+*/
+
+    public function getToAddressAttribute()
+    {
+        $address = null;
+
+        if ($this->shipment_type === 'pickup') {
+            $address = $this->destinationDepot?->address ?? null;
+        } elseif ($this->shipment_type === 'dispatch') {
+            $address = $this->destinationFulfillmentLocation?->address;
+        } elseif ($this->shipment_type === 'transfer') {
+            $address = $this->destinationDepot?->address ?? null;
+        }
+
+        if (!$address) {
+            return null;
+        }
+
+        return [
+            'addr_name' => $address->addr_name,
+            'line1' => $address->address_line1,
+            'line2' => $address->address_line2,
+            'village' => $address->village,
+            'taluka' => $address->taluka,
+            'city'  => $address->city,
+            'state' => $address->state,
+            'postal_code' => $address->postal_code,
+            'contact_name' => $address->contact_name,
+            'phone' => $address->phone_number,
+            'lat' => $address->latitude,
+            'lng' => $address->longitude,
+        ];
     }
 }

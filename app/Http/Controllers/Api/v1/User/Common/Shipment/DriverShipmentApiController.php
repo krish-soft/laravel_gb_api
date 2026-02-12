@@ -28,13 +28,15 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
         ]);
 
         $query = DriverShipment::with([
+
+            // 🔥 ONLY ROUTE DATA
             'shipment.originFulfillmentLocation.address',
             'shipment.destinationFulfillmentLocation.address',
-            'shipment.originDepot',
-            'shipment.destinationDepot',
-            'shipment.shipmentGroups.shipmentPackage',
-            'shipment.shipmentGroups.shipmentPackage.buyer',
-            'shipment.shipmentGroups.shipmentPackage.seller',
+            'shipment.originDepot.address',
+            'shipment.destinationDepot.address',
+
+            // 🔥 ONLY COUNT PURPOSE
+            'shipment.shipmentGroups:id,shipment_id',
         ])
             ->where('driver_id', $request->user()->id)
             ->where('status', '!=', DriverShipmentStatusEnum::CANCELLED->value);
@@ -47,15 +49,9 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
             ? now()->parse($request->end_date)->endOfDay()
             : now()->endOfDay();
 
-        $query->whereBetween('assigned_at', [$start, $end]);
-
-        $driverShipments = $query->get();
-
-        /*
-    |--------------------------------------------------------------------------
-    | 🔥 BUILD DRIVER ROUTE LIST
-    |--------------------------------------------------------------------------
-    */
+        $driverShipments = $query
+            ->whereBetween('assigned_at', [$start, $end])
+            ->get();
 
         $priority = [
             'pickup'   => 1,
@@ -75,75 +71,22 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
                     'shipment_type'      => $shipment->shipment_type,
                     'status'             => $shipment->status,
 
-                    /*
-                |--------------------------------------------------------------------------
-                | ADDRESS RESOLUTION
-                |--------------------------------------------------------------------------
-                */
-                    'origin' => [
-                        'type' => $shipment->origin_type,
-                        'name' =>
-                        $shipment->originFulfillmentLocation?->address?->addr_name
-                            ?? $shipment->originDepot?->name,
-                        'lat'  =>
-                        $shipment->originFulfillmentLocation?->address?->latitude
-                            ?? $shipment->originDepot?->latitude,
-                        'lng'  =>
-                        $shipment->originFulfillmentLocation?->address?->longitude
-                            ?? $shipment->originDepot?->longitude,
-                    ],
+                    // 🔥 MODEL ACCESSOR (FAST)
+                    'origin'      => $shipment->from_address,
+                    'destination' => $shipment->to_address,
 
-                    'destination' => [
-                        'type' => $shipment->destination_type,
-                        'name' =>
-                        $shipment->destinationFulfillmentLocation?->address?->addr_name
-                            ?? $shipment->destinationDepot?->name,
-                        'lat'  =>
-                        $shipment->destinationFulfillmentLocation?->address?->latitude
-                            ?? $shipment->destinationDepot?->latitude,
-                        'lng'  =>
-                        $shipment->destinationFulfillmentLocation?->address?->longitude
-                            ?? $shipment->destinationDepot?->longitude,
-                    ],
-
-                    /*
-                |--------------------------------------------------------------------------
-                | PACKAGES SUMMARY
-                |--------------------------------------------------------------------------
-                */
+                    // 🔥 COUNT ONLY
                     'total_packages' => $shipment->shipmentGroups->count(),
-
-                    'packages' => $shipment->shipmentGroups->map(function ($g) {
-
-                        $p = $g->shipmentPackage;
-
-                        return [
-                            'package_number' => $p->package_number,
-                            'buyer'  => $p->buyer?->nickname,
-                            'seller' => $p->seller?->nickname,
-                            'qty'    => $p->qty,
-                            'pack_size' => $p->pack_size,
-                            'unit'      => $p->pack_unit,
-                        ];
-                    }),
                 ];
             })
-
-            /*
-        |--------------------------------------------------------------------------
-        | 🔥 SORT BY ROUTE SEQUENCE
-        |--------------------------------------------------------------------------
-        */
             ->sortBy(function ($item) use ($priority) {
 
-                // completed goes bottom
                 if ($item['status'] === 'completed') {
                     return 999;
                 }
 
                 return $priority[$item['shipment_type']] ?? 50;
             })
-
             ->values();
 
         return $this->successResponse(
@@ -153,6 +96,77 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
     }
 
 
+    /*
+    |--------------------------------------------------------------------------
+    | SINGLE SHIPMENT DETAIL (PHONE DETAIL SCREEN)
+    |--------------------------------------------------------------------------
+    */
+
+    public function shipmentDetails(DriverShipment $driverShipment)
+    {
+        if ($driverShipment->driver_id !== request()->user()->id) {
+            return $this->errorResponse("Unauthorized", 403);
+        }
+
+        if (in_array($driverShipment->status, [
+            DriverShipmentStatusEnum::CANCELLED->value,
+            DriverShipmentStatusEnum::COMPLETED->value
+        ])) {
+            return $this->errorResponse("This shipment has been cancelled/completed.", 410);
+        }
+
+        $driverShipment->load([
+
+            'shipment.originFulfillmentLocation.address',
+            'shipment.destinationFulfillmentLocation.address',
+            'shipment.originDepot.address',
+            'shipment.destinationDepot.address',
+
+            'shipment.shipmentGroups.shipmentPackage.buyer.address',
+            'shipment.shipmentGroups.shipmentPackage.seller.address',
+        ]);
+
+        $shipment = $driverShipment->shipment;
+
+        return $this->successResponse(
+            __('messages.success_messages.success_get'),
+            [
+                'driver_shipment_id' => $driverShipment->id,
+                'shipment_number' => $shipment->shipment_number,
+                'shipment_type'   => $shipment->shipment_type,
+                'status'          => $shipment->status,
+
+                'origin'      => $shipment->from_address,
+                'destination' => $shipment->to_address,
+
+                'packages' => $shipment->shipmentGroups->map(function ($g) {
+
+                    $p = $g->shipmentPackage;
+
+                    return [
+                        'shipment_group_id' => $g->id,     // 🔥 IMPORTANT
+                        'shipment_package_id' => $p->id,   // 🔥 IMPORTANT
+                        'package_number' => $p->package_number,
+                        'qty' => $p->qty,
+                        'pack_size' => $p->pack_size,
+                        'unit' => $p->pack_unit,
+
+                        'buyer' => [
+                            'nickname' => $p->buyer?->nickname,
+                            'phone' => $p->buyer?->address?->phone_number,
+                            'address' => $p->buyer?->address?->address_line1,
+                        ],
+
+                        'seller' => [
+                            'nickname' => $p->seller?->nickname,
+                            'phone' => $p->seller?->address?->phone_number,
+                            'address' => $p->seller?->address?->address_line1,
+                        ],
+                    ];
+                })->values(),
+            ]
+        );
+    }
 
     public function getAllShipments(Request $request)
     {
@@ -209,27 +223,7 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
         return $this->successResponse(__('messages.success_messages.success_get'), $shipments);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | SINGLE SHIPMENT DETAIL (PHONE DETAIL SCREEN)
-    |--------------------------------------------------------------------------
-    */
-    public function shipmentDetails(DriverShipment $driverShipment)
-    {
-        if ($driverShipment->driver_id !== request()->user()->id) {
-            return $this->errorResponse("Unauthorized", 403);
-        }
 
-        if (in_array($driverShipment->status, [DriverShipmentStatusEnum::CANCELLED->value, DriverShipmentStatusEnum::COMPLETED->value])) {
-            return $this->errorResponse("This shipment has been cancelled/completed.", 410);
-        }
-
-        $driverShipment->load([
-            'shipment.shipmentGroups.shipmentPackage',
-        ]);
-
-        return $this->successResponse(__('messages.success_messages.success_get'), $driverShipment);
-    }
 
     /*
     |--------------------------------------------------------------------------
