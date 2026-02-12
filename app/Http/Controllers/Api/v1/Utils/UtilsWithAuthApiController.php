@@ -47,7 +47,7 @@ class UtilsWithAuthApiController extends ApiResponseWithAuthController
 
     public function getProducts()
     {
-        $list = MstProduct::with('variants', 'packagings')->active()->get();
+        $list = MstProduct::with('category', 'variants', 'packagings')->active()->get();
         return $this->successResponse(__('messages.success_messages.success_get'), $list);
     }
 
