@@ -100,12 +100,12 @@ class MstProduct extends BaseModel
 
     public function variants()
     {
-        return $this->hasMany(MstProductVariant::class, 'product_id');
+        return $this->hasMany(MstProductVariant::class, 'product_id')->active();
     }
 
-    public function packages()
+    public function packagings()
     {
-        return $this->hasMany(MstProductPackaging::class, 'product_id');
+        return $this->hasMany(MstProductPackaging::class, 'product_id')->active();
     }
 
     public function farmerListingItems()

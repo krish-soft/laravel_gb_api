@@ -47,16 +47,25 @@ class UtilsWithAuthApiController extends ApiResponseWithAuthController
 
     public function getProducts()
     {
-        $list = MstProduct::with('variants')->active()->get();
+        $list = MstProduct::with('variants', 'packagings')->active()->get();
         return $this->successResponse(__('messages.success_messages.success_get'), $list);
     }
 
     public function getProductVariants($productId)
     {
-        $product = MstProduct::find($productId);
+        $product = MstProduct::findOrFail($productId);
+
 
         $variants = $product->variants()->active()->get();
         return $this->successResponse(__('messages.success_messages.success_get'), $variants);
+    }
+
+    public function getProductPackagings($productId)
+    {
+        $product = MstProduct::findOrFail($productId);
+
+        $packagings = $product->packagings()->active()->get();
+        return $this->successResponse(__('messages.success_messages.success_get'), $packagings);
     }
 
 
