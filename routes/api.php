@@ -146,7 +146,8 @@ Route::group([
             Route::get('pack-type-units', [UtilsWithAuthApiController::class, 'getPackTypeUnitList']);
 
             Route::get('products', [UtilsWithAuthApiController::class, 'getProducts']);
-            Route::get('products/{productId}/variants', [UtilsWithAuthApiController::class, 'getProductVariants']);
+            Route::get('products/variants/{productId}', [UtilsWithAuthApiController::class, 'getProductVariants']);
+            Route::get('products/packagings/{productId}', [UtilsWithAuthApiController::class, 'getProductPackagings']);
 
             //
         });
