@@ -19,11 +19,14 @@ class DriverShipment extends BaseModel
         'shipment_id',
         'driver_id',
         'driver_vehicle_id',
+
         'assigned_by',
         'assigned_at',
         'accepted_at',
+        'rejected_at',
         'started_at',
         'completed_at',
+
         'vehicle_number',
         'status',
     ];
@@ -32,6 +35,7 @@ class DriverShipment extends BaseModel
     protected $casts = [
         'assigned_at' => 'datetime',
         'accepted_at' => 'datetime',
+        'rejected_at' => 'datetime',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
     ];

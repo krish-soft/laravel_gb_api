@@ -9,6 +9,7 @@ enum DriverShipmentStatusEnum: string
     case REQUESTED = 'requested';
     case ASSIGNED = 'assigned';
     case ACCEPTED = 'accepted';
+    case REJECTED = 'rejected';
     case IN_TRANSIT = 'in_transit';
     case COMPLETED = 'completed';
     case CANCELLED = 'cancelled';

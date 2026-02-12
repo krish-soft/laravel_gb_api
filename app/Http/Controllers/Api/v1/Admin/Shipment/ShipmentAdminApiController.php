@@ -19,7 +19,7 @@ class ShipmentAdminApiController extends ApiResponseWithAdminAuthController
     public function generateShipmentAndGroups(Request $request)
     {
         $request->validate([
-            'shipment_type' => 'required|string|in:pickup,dispatch',
+            'shipment_type' => 'required|string|in:pickup,dispatch,transfer',
         ]);
 
         $shipmentType = $request->input('shipment_type');
@@ -38,7 +38,7 @@ class ShipmentAdminApiController extends ApiResponseWithAdminAuthController
         $request->validate([
             'start_date'    => 'nullable|date',
             'end_date'      => 'nullable|date|after_or_equal:start_date',
-            'shipment_type' => 'nullable|string|in:pickup,dispatch',
+            'shipment_type' => 'nullable|string|in:pickup,dispatch,transfer',
             'status'        => 'nullable|string|in:' . implode(',', ShipmentStatusEnum::casesAsValues()),
         ]);
 

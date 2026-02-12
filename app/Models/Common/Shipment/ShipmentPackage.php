@@ -35,6 +35,9 @@ class ShipmentPackage extends Model
 
         'shipment_date',
 
+        'product_code',
+        'product_name',
+
         'qty',
         'pack_size',
         'pack_unit',
@@ -87,12 +90,12 @@ class ShipmentPackage extends Model
 
     public function buyer()
     {
-        return $this->belongsTo(User::class, 'buyer_id');
+        return $this->belongsTo(User::class, 'buyer_id')->select('id', 'name', 'user_code', 'nickname');
     }
 
     public function seller()
     {
-        return $this->belongsTo(User::class, 'seller_id');
+        return $this->belongsTo(User::class, 'seller_id')->select('id', 'name', 'user_code', 'nickname');
     }
 
     public function pickupFulfillmentLocation()

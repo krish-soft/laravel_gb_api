@@ -27,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
             'buyer-checker' => \App\Http\Middleware\User\BuyerChecker::class,
             'seller-checker' => \App\Http\Middleware\User\SellerChecker::class,
+            'delivery-checker' => \App\Http\Middleware\User\DeliveryChecker::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

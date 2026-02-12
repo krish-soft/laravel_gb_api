@@ -247,15 +247,24 @@ Route::group([
             });
 
             Route::prefix('delivery')->middleware([
-                // 'buyer-checker' // Custom Middleware to check if user is buyer
+                'delivery-checker' // Custom Middleware to check if user is buyer
             ])->group(function () {
 
-                // Driver Shipment Routes
-                Route::get('driver-shipments', [DriverShipmentApiController::class, 'getShipments']);
-                Route::get('driver-shipments/{driverShipment}', [DriverShipmentApiController::class, 'shipmentDetails']);
-                Route::post('driver-shipments/accept/{driverShipment}', [DriverShipmentApiController::class, 'accept']);
-                Route::post('driver-shipments/start/{driverShipment}', [DriverShipmentApiController::class, 'start']);
-                Route::post('driver-shipments/complete/{driverShipment}', [DriverShipmentApiController::class, 'complete']);
+            // Vehicle addition pending & images
+
+                Route::prefix('shipment')->group(function () {
+                    // Driver Shipment Routes
+                    Route::get('list/need-to-deliver', [DriverShipmentApiController::class, 'getDeliverShipments']);
+                    Route::get('list/all', [DriverShipmentApiController::class, 'getAllShipments']);
+                    Route::get('details/{driverShipment}', [DriverShipmentApiController::class, 'shipmentDetails']);
+
+                    Route::post('accept/{driverShipment}', [DriverShipmentApiController::class, 'accept']);
+                    Route::post('reject/{driverShipment}', [DriverShipmentApiController::class, 'reject']);
+                    Route::post('start/{driverShipment}', [DriverShipmentApiController::class, 'start']);
+                    Route::post('complete/{driverShipment}', [DriverShipmentApiController::class, 'complete']);
+                    //
+                });
+
                 //
             });
 

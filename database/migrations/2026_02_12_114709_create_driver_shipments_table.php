@@ -26,6 +26,7 @@ return new class extends Migration
 
             $table->timestamp('assigned_at')->nullable();
             $table->timestamp('accepted_at')->nullable();
+            $table->timestamp('rejected_at')->nullable();
             $table->timestamp('started_at')->nullable();
             $table->timestamp('completed_at')->nullable();
 

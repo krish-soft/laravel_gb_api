@@ -81,6 +81,9 @@ class OrderPaymentHandler
                         'pickup_fulfillment_location_id' => $item->pickup_fulfillment_location_id, // Assuming OrderItem has pickupFulfillmentLocation relationship
                         'shipping_fulfillment_location_id' => $order->shipping_fulfillment_location_id, // Assuming same as order's shipping location for now
 
+                        'product_code' => $item->product_code,
+                        'product_name' => $item->product_name,
+                        
                         'qty'            => 1,
                         'pack_size'      => $item->pack_size,
                         'pack_unit'      => $item->pack_unit,
