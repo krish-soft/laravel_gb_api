@@ -3,6 +3,8 @@
 namespace App\Models\Common\Shipment;
 
 use App\Models\BaseModel;
+use App\Models\Common\Fulfillment\FulfillmentLocation;
+use App\Models\Master\Depot\MstDepot;
 use App\Models\User;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
@@ -29,10 +31,12 @@ class Shipment extends BaseModel
         'seller_id',
 
         'origin_type',
-        'origin_id',
+        'origin_flmnt_location_id',
+        'origin_depot_id',
 
         'destination_type',
-        'destination_id',
+        'destination_flmnt_location_id',
+        'destination_depot_id',
 
         'status', // pending | grouped | assigned | in_transit | completed | cancelled
         'remarks',
@@ -65,40 +69,24 @@ class Shipment extends BaseModel
             ->select(['id', 'name', 'user_code', 'nickname']);
     }
 
-    public function origin()
+    public function originFulfillmentLocation()
     {
-        return match ($this->origin_type) {
-
-            'buyer'  => $this->belongsTo(User::class, 'origin_id')
-                ->select(['id', 'name', 'user_code', 'nickname']),
-
-            'seller' => $this->belongsTo(User::class, 'origin_id')
-                ->select(['id', 'name', 'user_code', 'nickname']),
-
-            'fulfillment_location' =>
-            $this->belongsTo(\App\Models\Common\Fulfillment\FulfillmentLocation::class, 'origin_id')
-                ->select(['id', 'name', 'fl_code']),
-
-            default => null,
-        };
+        return $this->belongsTo(FulfillmentLocation::class, 'origin_flmnt_location_id');
     }
 
-    public function destination()
+    public function destinationFulfillmentLocation()
     {
-        return match ($this->destination_type) {
+        return $this->belongsTo(FulfillmentLocation::class, 'destination_flmnt_location_id');
+    }
 
-            'buyer'  => $this->belongsTo(User::class, 'destination_id')
-                ->select(['id', 'name', 'user_code', 'nickname']),
+    public function originDepot()
+    {
+        return $this->belongsTo(MstDepot::class, 'origin_depot_id');
+    }
 
-            'seller' => $this->belongsTo(User::class, 'destination_id')
-                ->select(['id', 'name', 'user_code', 'nickname']),
-
-            'fulfillment_location' =>
-            $this->belongsTo(\App\Models\Common\Fulfillment\FulfillmentLocation::class, 'destination_id')
-                ->select(['id', 'name', 'fl_code']),
-
-            default => null,
-        };
+    public function destinationDepot()
+    {
+        return $this->belongsTo(MstDepot::class, 'destination_depot_id');
     }
 
 
@@ -128,8 +116,6 @@ class Shipment extends BaseModel
     protected $appends = [
         'total_packages',
         'total_weight',
-        'origin_label',
-        'destination_label',
         'group_number',
     ];
 
@@ -149,30 +135,6 @@ class Shipment extends BaseModel
     }
 
 
-    public function getOriginLabelAttribute()
-    {
-        if ($this->origin_type === 'buyer' || $this->origin_type === 'seller') {
-            return $this->origin?->name;
-        }
-
-        if ($this->origin_type === 'fulfillment_location') {
-            return $this->origin?->fl_code . ' | ' . $this->origin?->name;
-        }
-
-        return null;
-    }
-    public function getDestinationLabelAttribute()
-    {
-        if ($this->destination_type === 'buyer' || $this->destination_type === 'seller') {
-            return $this->destination?->name;
-        }
-
-        if ($this->destination_type === 'fulfillment_location') {
-            return $this->destination?->fl_code . ' | ' . $this->destination?->name;
-        }
-
-        return null;
-    }
 
     public function getGroupNumberAttribute()
     {

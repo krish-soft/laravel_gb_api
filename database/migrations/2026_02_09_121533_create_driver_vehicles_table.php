@@ -42,6 +42,10 @@ return new class extends Migration
 
             $table->boolean('is_available_for_delivery')->default(false)->nullable(); // for driver to stay online or offline for delivery
 
+            // last known location of vehicle for better assignment and tracking
+            $table->decimal('last_latitude', 10, 7)->nullable();
+            $table->decimal('last_longitude', 10, 7)->nullable();
+
 
             $table->timestamps();
             $table->softDeletes();

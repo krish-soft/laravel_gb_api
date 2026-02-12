@@ -23,10 +23,12 @@ return new class extends Migration
             $table->foreignId('seller_id')->nullable()->constrained('users')->nullOnDelete(); // pickup owner
 
             $table->string('origin_type', 50); // fulfillment_location | user
-            $table->unsignedBigInteger('origin_id'); // origin entity id
+            $table->unsignedBigInteger('origin_flmnt_location_id')->nullable(); // origin entity id // alwaays this
+            $table->unsignedBigInteger('origin_depot_id')->nullable(); // optional link to depot for easier querying
 
             $table->string('destination_type', 50); // fulfillment_location | user
-            $table->unsignedBigInteger('destination_id'); // destination entity id
+            $table->unsignedBigInteger('destination_flmnt_location_id')->nullable(); // destination entity id
+            $table->unsignedBigInteger('destination_depot_id')->nullable(); // optional link to depot for easier querying
 
             $table->string('status', 30)->default('pending')->index(); // pending | grouped | assigned | in_transit | completed | cancelled
 
@@ -35,8 +37,8 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index(['origin_type', 'origin_id']); // fast origin filter
-            $table->index(['destination_type', 'destination_id']); // fast destination filter
+            $table->index(['origin_type', 'origin_flmnt_location_id']); // fast origin filter
+            $table->index(['destination_type', 'destination_flmnt_location_id']); // fast destination filter
         });
     }
 

@@ -27,6 +27,9 @@ class DriverVehicle extends BaseModel
         'is_active',
         'inactive_reason',
         'is_available_for_delivery',
+
+        'last_latitude',
+        'last_longitude',
     ];
 
     // casts
@@ -36,6 +39,9 @@ class DriverVehicle extends BaseModel
         'max_load_capacity_kg' => 'decimal:2',
         'max_volume_capacity_cft' => 'decimal:2',
         'max_number_of_packages' => 'decimal:2',
+
+        'last_latitude' => 'decimal:7',
+        'last_longitude' => 'decimal:7',
     ];
 
     // scopes

@@ -92,6 +92,7 @@ class ShipmentService
                     return implode('|', [
                         $p->seller_id,
                         $p->pickup_fulfillment_location_id,
+                        $p->shipping_fulfillment_location_id,
                         $p->pickup_depot_id
                     ]);
                 }
@@ -124,13 +125,13 @@ class ShipmentService
                     ->where('shipment_type', $shipmentType)
                     ->when($shipmentType === 'pickup', function ($q) use ($first) {
                         $q->where('seller_id', $first->seller_id)
-                            ->where('origin_id', $first->pickup_fulfillment_location_id)
-                            ->where('destination_id', $first->pickup_depot_id);
+                            ->where('origin_flmnt_location_id', $first->pickup_fulfillment_location_id)
+                            ->where('destination_depot_id', $first->pickup_depot_id);
                     })
                     ->when($shipmentType === 'dispatch', function ($q) use ($first) {
                         $q->where('buyer_id', $first->buyer_id)
-                            ->where('origin_id', $first->shipping_depot_id)
-                            ->where('destination_id', $first->buyer_id);
+                            ->where('origin_depot_id', $first->shipping_depot_id)
+                            ->where('destination_flmnt_location_id', $first->shipping_fulfillment_location_id);
                     })
                     ->first();
 
@@ -151,15 +152,15 @@ class ShipmentService
                     if ($shipmentType === 'pickup') {
                         $shipmentData['seller_id'] = $first->seller_id;
                         $shipmentData['origin_type'] = 'fulfillment_location';
-                        $shipmentData['origin_id']   = $first->pickup_fulfillment_location_id;
+                        $shipmentData['origin_flmnt_location_id']   = $first->pickup_fulfillment_location_id;
                         $shipmentData['destination_type'] = 'depot';
-                        $shipmentData['destination_id']   = $first->pickup_depot_id;
+                        $shipmentData['destination_depot_id']   = $first->pickup_depot_id;
                     } else {
                         $shipmentData['buyer_id'] = $first->buyer_id;
                         $shipmentData['origin_type'] = 'depot';
-                        $shipmentData['origin_id']   = $first->shipping_depot_id;
-                        $shipmentData['destination_type'] = 'buyer';
-                        $shipmentData['destination_id']   = $first->buyer_id;
+                        $shipmentData['origin_depot_id']   = $first->shipping_depot_id;
+                        $shipmentData['destination_type'] = 'fulfillment_location';
+                        $shipmentData['destination_flmnt_location_id']   = $first->shipping_fulfillment_location_id;
                     }
 
                     $existingShipment = Shipment::create($shipmentData);
