@@ -58,6 +58,9 @@ class ShipmentPackage extends Model
         'delivered_at',
         'returned_at',
         'cancelled_at',
+
+        'is_seller_dropoff',
+        'is_buyer_pickup',
     ];
 
     protected $casts = [
@@ -70,6 +73,9 @@ class ShipmentPackage extends Model
         'delivered_at' => 'datetime',
         'returned_at' => 'datetime',
         'cancelled_at' => 'datetime',
+
+        'is_seller_dropoff' => 'boolean',
+        'is_buyer_pickup' => 'boolean',
     ];
 
     /*

@@ -94,6 +94,10 @@ return new class extends Migration
             $table->timestamp('returned_at')->nullable();
             $table->timestamp('cancelled_at')->nullable();
 
+            // To Eliminate in grouping confusion between seller drop-off and buyer pickup
+            $table->boolean('is_seller_dropoff')->default(false)->nullable();
+            $table->boolean('is_buyer_pickup')->default(false)->nullable();
+
             $table->timestamps();
             $table->softDeletes();
 

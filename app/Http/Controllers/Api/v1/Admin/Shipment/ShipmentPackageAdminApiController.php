@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Log;
 
 class ShipmentPackageAdminApiController extends ApiResponseWithAdminAuthController
 {
+
+
+
     //
     public function summaryReport(Request $request)
     {
@@ -182,6 +185,39 @@ class ShipmentPackageAdminApiController extends ApiResponseWithAdminAuthControll
                 ];
             });
 
+
+        /*
+    |--------------------------------------------------------------------------
+    | 🔥 NEW — DRIVER ACTION SUMMARY
+    |--------------------------------------------------------------------------
+    | pickup_needed   → driver must pickup from seller
+    | delivery_needed → driver must deliver to buyer
+    | self_handled    → no logistics movement
+    */
+
+        $logisticsActionSummary = collect([
+            'pickup_needed' => (clone $base)
+                ->where('is_seller_dropoff', false)
+                ->get(),
+
+            'delivery_needed' => (clone $base)
+                ->where('is_buyer_pickup', false)
+                ->get(),
+
+            'self_handled' => (clone $base)
+                ->where('is_seller_dropoff', true)
+                ->where('is_buyer_pickup', true)
+                ->get(),
+        ])->map(function ($packages, $key) {
+
+            return [
+                'action_type'   => $key,
+                'total_packages' => $packages->count(),
+                'packages'      => $packages,
+            ];
+        })->values();
+
+
         /*
     |--------------------------------------------------------------------------
     | FINAL RESPONSE
@@ -200,6 +236,8 @@ class ShipmentPackageAdminApiController extends ApiResponseWithAdminAuthControll
                 'pack_combination_summary' => $packCombinationSummary,
                 'regular_depot_summary'    => $regularDepotSummary,
                 'cross_depot_summary'      => $crossDepotSummary,
+
+                'logistics_action_summary' => $logisticsActionSummary,
             ]
         );
     }

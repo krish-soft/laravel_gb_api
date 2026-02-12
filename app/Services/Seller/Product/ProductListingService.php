@@ -95,7 +95,7 @@ class ProductListingService
         $allowed = [
             'fulfillment_location_id',
             'is_sell_to_market',
-            'is_seller_delivery',
+            'is_seller_dropoff',
             'is_buyer_pickup',
         ];
         // If Sold qty value have then seller can not change locations or flags

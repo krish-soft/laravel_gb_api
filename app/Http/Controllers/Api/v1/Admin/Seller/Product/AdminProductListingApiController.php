@@ -152,7 +152,7 @@ class AdminProductListingApiController extends ApiResponseWithAuthController
             'fulfillment_location_id' => 'required|integer|exists:fulfillment_locations,id',
 
             'is_sell_to_market' => 'boolean',
-            'is_seller_delivery' => 'boolean',
+            'is_seller_dropoff' => 'boolean',
             'is_buyer_pickup' => 'boolean',
 
             'productListingItems' => 'required|array|min:1',

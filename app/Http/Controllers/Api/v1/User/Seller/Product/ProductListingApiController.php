@@ -180,7 +180,7 @@ class ProductListingApiController extends ApiResponseWithAuthController
 
 
             'is_sell_to_market' => 'required|boolean',
-            'is_seller_delivery' => 'required|boolean',
+            'is_seller_dropoff' => 'required|boolean',
             'is_buyer_pickup' => 'nullable|boolean',
 
             'productListingItems' => 'required|array|min:1',

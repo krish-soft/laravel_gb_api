@@ -64,7 +64,7 @@ class ProductListing extends BaseModel
         'doc_date',
 
         'is_sell_to_market',
-        'is_seller_delivery',
+        'is_seller_dropoff',
 
         'is_active',
         'inactive_reason',
@@ -82,7 +82,7 @@ class ProductListing extends BaseModel
         'doc_date' => 'date',
         'expires_at' => 'datetime',
         'is_sell_to_market' => 'boolean',
-        'is_seller_delivery' => 'boolean',
+        'is_seller_dropoff' => 'boolean',
         'is_active' => 'boolean',
         'is_partial' => 'boolean',
         'is_sold' => 'boolean',

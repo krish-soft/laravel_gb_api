@@ -88,6 +88,11 @@ class ShipmentService
             $routeGroups = $packages->groupBy(function ($p) use ($shipmentType) {
 
                 if ($shipmentType === 'pickup') {
+
+                    if ($p->is_seller_dropoff) {
+                        return '__SKIP__';
+                    }
+
                     return implode('|', [
                         $p->seller_id,
                         $p->pickup_fulfillment_location_id,
@@ -109,6 +114,11 @@ class ShipmentService
                 }
 
                 if ($shipmentType === 'dispatch') {
+
+                    if ($p->is_buyer_pickup) {
+                        return '__SKIP__';
+                    }
+
                     return implode('|', [
                         $p->shipping_depot_id,
                         $p->buyer_id
@@ -188,14 +198,12 @@ class ShipmentService
                         $data['origin_flmnt_location_id'] = $first->pickup_fulfillment_location_id;
                         $data['destination_type'] = 'depot';
                         $data['destination_depot_id'] = $first->pickup_depot_id;
-
                     } elseif ($shipmentType === 'transfer') {
 
                         $data['origin_type'] = 'depot';
                         $data['origin_depot_id'] = $first->pickup_depot_id;
                         $data['destination_type'] = 'depot';
                         $data['destination_depot_id'] = $first->shipping_depot_id;
-                        
                     } elseif ($shipmentType === 'dispatch') {
 
                         $data['buyer_id'] = $first->buyer_id;

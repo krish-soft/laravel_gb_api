@@ -68,6 +68,8 @@ class OrderPaymentHandler
 
                 for ($i = 0; $i < $toCreate; $i++) {
 
+                    $productListing = $item->productListingItem?->productListing;
+
                     ShipmentPackage::create([
                         'order_id'       => $order->id,
                         'order_number'    => $order->order_number,
@@ -83,7 +85,7 @@ class OrderPaymentHandler
 
                         'product_code' => $item->product_code,
                         'product_name' => $item->product_name,
-                        
+
                         'qty'            => 1,
                         'pack_size'      => $item->pack_size,
                         'pack_unit'      => $item->pack_unit,
@@ -94,6 +96,9 @@ class OrderPaymentHandler
 
                         'pickup_depot_id' => $item?->pickup_depot?->depot_id, // Assuming OrderItem has pickup_depot_id
                         'shipping_depot_id' => $order->depot_id, // From order directly
+
+                        'is_buyer_pickup' => $order->is_buyer_pickup, // From order directly
+                        'is_seller_dropoff' => $productListing?->is_seller_dropoff,
                     ]);
                 }
             }
@@ -102,8 +107,8 @@ class OrderPaymentHandler
             // Once Shipment Ready create a Shipments and assign packages to it and update status to ready for pickup or ready for dispatch based on shipment type (pickup or dispatch)
 
             app(ShipmentService::class)->createShipmentAndGroups(ShipmentStatusEnum::PICKUP->value);
-
-            // app(ShipmentService::class)->createShipmentAndGroups(ShipmentStatusEnum::DISPATCH->value);
+            app(ShipmentService::class)->createShipmentAndGroups(ShipmentStatusEnum::TRANSFER->value);
+            app(ShipmentService::class)->createShipmentAndGroups(ShipmentStatusEnum::DISPATCH->value);
 
 
 

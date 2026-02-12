@@ -27,6 +27,7 @@ enum ShipmentStatusEnum: string
 
         //  grouping status
     case PICKUP = 'pickup';
+    case TRANSFER = 'transfer';
     case DISPATCH = 'dispatch';
     case GROUPED = 'grouped';
 
