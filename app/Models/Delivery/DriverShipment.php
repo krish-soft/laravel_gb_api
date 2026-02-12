@@ -6,10 +6,13 @@ use App\Models\BaseModel;
 use App\Models\Common\Shipment\Shipment;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DriverShipment extends BaseModel
 {
     //
+
+    use SoftDeletes;
 
 
     protected $fillable = [
@@ -22,6 +25,7 @@ class DriverShipment extends BaseModel
         'started_at',
         'completed_at',
         'vehicle_number',
+        'status',
     ];
 
     // casts 

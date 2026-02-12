@@ -7,6 +7,7 @@ use App\Models\Common\Shipment\ShipmentPackage;
 use App\Models\Common\Shipment\ShipmentPackageGroup;
 use Illuminate\Support\Facades\DB;
 use Exception;
+use RuntimeException;
 
 class ShipmentService
 {
@@ -24,7 +25,7 @@ class ShipmentService
             'cancelled',
             'returned'
         ])) {
-            throw new Exception("Package already processed. Action not allowed.");
+            throw new RuntimeException("Package already processed. Action not allowed.");
         }
     }
 
@@ -36,11 +37,11 @@ class ShipmentService
     private function assertSameShipmentContext(Shipment $from, Shipment $to)
     {
         if ($from->shipment_type !== $to->shipment_type) {
-            throw new Exception("Cannot mix pickup and dispatch shipments.");
+            throw new RuntimeException("Cannot mix pickup and dispatch shipments.");
         }
 
         if ($from->shipment_date != $to->shipment_date) {
-            throw new Exception("Shipment date mismatch.");
+            throw new RuntimeException("Shipment date mismatch.");
         }
     }
 
@@ -216,7 +217,7 @@ class ShipmentService
 
             // ❌ DO NOT allow split if already assigned
             if (in_array($originalShipment->status, ['assigned', 'in_transit', 'completed'])) {
-                throw new \Exception("Shipment locked. Cannot split.");
+                throw new RuntimeException("Shipment locked. Cannot split.");
             }
 
             /*
@@ -346,11 +347,11 @@ class ShipmentService
             $this->assertSameShipmentContext($fromShipment, $toShipment);
 
             if (in_array($fromShipment->status, ['assigned', 'in_transit', 'completed'])) {
-                throw new \Exception("Source shipment locked");
+                throw new RuntimeException("Source shipment locked");
             }
 
             if (in_array($toShipment->status, ['assigned', 'in_transit', 'completed'])) {
-                throw new \Exception("Target shipment locked");
+                throw new RuntimeException("Target shipment locked");
             }
 
             /*

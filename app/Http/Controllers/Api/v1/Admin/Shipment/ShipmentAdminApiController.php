@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\v1\Admin\Shipment;
 
+use App\Enum\Common\Shipment\ShipmentStatusEnum;
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
 use App\Http\Controllers\Controller;
 use App\Models\Common\Shipment\Shipment;
@@ -38,6 +39,7 @@ class ShipmentAdminApiController extends ApiResponseWithAdminAuthController
             'start_date'    => 'nullable|date',
             'end_date'      => 'nullable|date|after_or_equal:start_date',
             'shipment_type' => 'nullable|string|in:pickup,dispatch',
+            'status'        => 'nullable|string|in:' . implode(',', ShipmentStatusEnum::casesAsValues()),
         ]);
 
         $shipments = Shipment::query()
@@ -64,6 +66,10 @@ class ShipmentAdminApiController extends ApiResponseWithAdminAuthController
             ->when(
                 $request->filled('shipment_type'),
                 fn($q) => $q->where('shipment_type', $request->input('shipment_type'))
+            )
+            ->when(
+                $request->filled('status'),
+                fn($q) => $q->where('status', $request->input('status'))
             )
 
             ->orderByDesc('id')
@@ -152,7 +158,7 @@ class ShipmentAdminApiController extends ApiResponseWithAdminAuthController
         return $this->showSuccessMessage(__('messages.success_messages.success_update'));
     }
 
-    
+
 
     public function mergeShipments(Request $request)
     {

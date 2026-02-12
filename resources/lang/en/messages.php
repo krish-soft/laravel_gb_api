@@ -210,6 +210,8 @@ return [
 
         /* Fulfillment Location */
         'invalid_fulfillment_location' => 'The specified fulfillment location is invalid or inactive.',
+
+        'driver_vehicle_not_available' => 'No available driver vehicles found for delivery.',
     ],
 
 ];

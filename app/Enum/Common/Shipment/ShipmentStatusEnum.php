@@ -22,6 +22,8 @@ enum ShipmentStatusEnum: string
     case CANCELLED = 'cancelled';
     case DAMAGED = 'damaged';
     case LOST = 'lost';
+    
+    case ASSIGNED = 'assigned';
 
         //  grouping status
     case PICKUP = 'pickup';

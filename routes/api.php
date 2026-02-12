@@ -35,6 +35,7 @@ use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstPaymentSettingApiControl
 use App\Http\Controllers\Api\v1\Admin\Master\Vehicle\MstVehicleApiController;
 use App\Http\Controllers\Api\v1\Admin\Report\Order\OrderReportAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Seller\Product\AdminProductListingApiController;
+use App\Http\Controllers\Api\v1\Admin\Shipment\DriverShipmentAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Shipment\ShipmentAdminApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\BuyerProductListingApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\CartApiController;
@@ -46,6 +47,7 @@ use App\Http\Controllers\Api\v1\User\Common\Auth\UserResetPasswordApiController;
 use App\Http\Controllers\Api\v1\User\Common\Fulfillment\FulfillmentLocationApiController;
 use App\Http\Controllers\Api\v1\User\Common\Legal\UserBankApiController;
 use App\Http\Controllers\Api\v1\User\Common\Legal\UserKycApiController;
+use App\Http\Controllers\Api\v1\User\Common\Shipment\DriverShipmentApiController;
 use App\Http\Controllers\Api\v1\User\Seller\Product\ProductListingApiController;
 use App\Http\Controllers\Api\v1\User\UserProfileApiController;
 use App\Http\Controllers\Api\v1\Utils\UtilsApiController;
@@ -244,9 +246,19 @@ Route::group([
                 //
             });
 
+            Route::prefix('delivery')->middleware([
+                // 'buyer-checker' // Custom Middleware to check if user is buyer
+            ])->group(function () {
 
-            // Route::post('/payments/reconcile', [PaymentReconcileApiController::class, 'reconcile']); // Testing 
-            //
+                // Driver Shipment Routes
+                Route::get('driver-shipments', [DriverShipmentApiController::class, 'getShipments']);
+                Route::get('driver-shipments/{driverShipment}', [DriverShipmentApiController::class, 'shipmentDetails']);
+                Route::post('driver-shipments/accept/{driverShipment}', [DriverShipmentApiController::class, 'accept']);
+                Route::post('driver-shipments/start/{driverShipment}', [DriverShipmentApiController::class, 'start']);
+                Route::post('driver-shipments/complete/{driverShipment}', [DriverShipmentApiController::class, 'complete']);
+                //
+            });
+
 
             //
         });
@@ -371,7 +383,7 @@ Route::group([
                 Route::apiResource('shipmentPackage', ShipmentPackageAdminApiController::class)->only(['index', 'show']);
                 Route::put('shipmentPackage/status/{shipmentPackage}', [ShipmentPackageAdminApiController::class, 'updateStatus']);
 
-                // 
+                // Shipment and Groups Management
                 Route::post('shipment-generate-package-groups', [ShipmentAdminApiController::class, 'generateShipmentAndGroups']);
                 Route::apiResource('shipment', ShipmentAdminApiController::class)->only(['index', 'show']);
 
@@ -383,6 +395,13 @@ Route::group([
 
                 Route::post('shipments/rebuild/{shipment}', [ShipmentAdminApiController::class, 'rebuildShipment']);
                 Route::get('shipment-groups/{groupNumber}', [ShipmentAdminApiController::class, 'getGroupPackages']);
+
+                // Driver and Vehicle Assignment
+                Route::post('assign-shipment-to-driver', [DriverShipmentAdminApiController::class, 'assignDriver']);
+                Route::post('change-driver-shipment/{driverShipment}', [DriverShipmentAdminApiController::class, 'changeDriver']);
+                Route::post('cancel-driver-shipment/{driverShipment}', [DriverShipmentAdminApiController::class, 'cancel']);
+                Route::get('drivers', [DriverShipmentAdminApiController::class, 'getDriversWithAvailableVehicles']);
+                Route::get('driver-shipments', [DriverShipmentAdminApiController::class, 'getDriverShipments']);
 
                 //  
             });

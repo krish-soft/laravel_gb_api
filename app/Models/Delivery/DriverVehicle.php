@@ -3,6 +3,8 @@
 namespace App\Models\Delivery;
 
 use App\Models\BaseModel;
+use App\Models\Common\User\UserDepot;
+use App\Models\Master\Depot\MstDepot;
 use App\Models\Master\Vehicle\MstVehicle;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
@@ -18,6 +20,7 @@ class DriverVehicle extends BaseModel
         'picture',
         'driver_id',
         'vehicle_id',
+
         'driver_vehicle_code',
         'license_plate_number',
         'vehicle_color',
@@ -53,12 +56,17 @@ class DriverVehicle extends BaseModel
     // relationships
     public function driver()
     {
-        return $this->belongsTo(User::class, 'driver_id');
+        return $this->belongsTo(User::class, 'driver_id')->select('id', 'name', 'user_code', 'nickname');
     }
 
     public function vehicle()
     {
         return $this->belongsTo(MstVehicle::class, 'vehicle_id');
+    }
+
+    public function depots()
+    {
+        return $this->driver->depots();
     }
 
     //
