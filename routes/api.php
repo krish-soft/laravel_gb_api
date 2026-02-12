@@ -49,6 +49,7 @@ use App\Http\Controllers\Api\v1\User\Common\Legal\UserKycApiController;
 use App\Http\Controllers\Api\v1\User\Seller\Product\ProductListingApiController;
 use App\Http\Controllers\Api\v1\User\UserProfileApiController;
 use App\Http\Controllers\Api\v1\Utils\UtilsApiController;
+use App\Http\Controllers\Api\v1\Utils\UtilsWithAuthApiController;
 use App\Http\Controllers\Web\Webhooks\RazorpayBankVerificationWebhookHandler;
 use App\Http\Controllers\Web\Webhooks\RazorpayPayoutWebhookController;
 use App\Http\Controllers\Web\Webhooks\RazorpayWebhookController;
@@ -116,8 +117,7 @@ Route::group([
     // Utils
     Route::prefix('utils')->group(function () {
         Route::get('states', [UtilsApiController::class, 'getStateList']);
-        Route::get('units', [UtilsApiController::class, 'getUnitList']);
-        Route::get('pack-type-units', [UtilsApiController::class, 'getPackTypeUnitList']);
+
 
         Route::get('app-meta', [UtilsApiController::class, 'getAppMetaInfo']);
         Route::get('enums', [UtilsApiController::class, 'getAlLEnums']);
@@ -136,6 +136,23 @@ Route::group([
             'user-checker' // Custom Middleware to check token expiry
         ]
     ], function () {
+
+
+        // Utils 
+        Route::prefix('utils')->group(function () {
+
+            //
+            Route::get('units', [UtilsWithAuthApiController::class, 'getUnitList']);
+            Route::get('pack-type-units', [UtilsWithAuthApiController::class, 'getPackTypeUnitList']);
+
+            Route::get('products', [UtilsWithAuthApiController::class, 'getProducts']);
+            Route::get('products/{productId}/variants', [UtilsWithAuthApiController::class, 'getProductVariants']);
+
+            //
+        });
+
+
+
 
         // Logout
         Route::post('/signout', [UserLogoutApiController::class, 'logout']);
