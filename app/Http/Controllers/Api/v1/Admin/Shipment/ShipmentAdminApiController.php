@@ -44,17 +44,18 @@ class ShipmentAdminApiController extends ApiResponseWithAdminAuthController
 
         $shipments = Shipment::query()
             ->with([
-                // load groups
-                'shipmentGroups:id,shipment_id,group_number,shipment_package_id,buyer_id,seller_id',
+                'buyer',
+                'seller',
 
-                // load package inside group
-                'shipmentGroups.shipmentPackage:id,shipment_package_number,package_number,buyer_id,seller_id,status,pack_size,pack_unit',
+                'originFulfillmentLocation.address',
+                'destinationFulfillmentLocation.address',
 
-                // load buyer/seller inside package (avoid N+1 later)
-                'shipmentGroups.shipmentPackage.buyer:id,name,user_code,nickname',
-                'shipmentGroups.shipmentPackage.seller:id,name,user_code,nickname',
+                'originDepot',
+                'destinationDepot',
+
+                'shipmentGroups.shipmentPackage.buyer',
+                'shipmentGroups.shipmentPackage.seller',
             ])
-
             ->when(
                 $request->filled('start_date') && $request->filled('end_date'),
                 fn($q) => $q->whereBetween('shipment_date', [
@@ -62,7 +63,6 @@ class ShipmentAdminApiController extends ApiResponseWithAdminAuthController
                     $request->input('end_date'),
                 ])
             )
-
             ->when(
                 $request->filled('shipment_type'),
                 fn($q) => $q->where('shipment_type', $request->input('shipment_type'))
@@ -71,7 +71,6 @@ class ShipmentAdminApiController extends ApiResponseWithAdminAuthController
                 $request->filled('status'),
                 fn($q) => $q->where('status', $request->input('status'))
             )
-
             ->orderByDesc('id')
             ->get();
 

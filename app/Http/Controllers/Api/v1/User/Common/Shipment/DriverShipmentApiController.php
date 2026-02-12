@@ -23,17 +23,21 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
         $request->validate([
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
-            // 'driver_id' => 'nullable|exists:users,id',
             'shipment_number' => 'nullable|string',
             'status' => 'nullable|in:' . implode(',', DriverShipmentStatusEnum::casesAsValues()),
         ]);
 
         $query = DriverShipment::with([
+            'shipment.originFulfillmentLocation.address',
+            'shipment.destinationFulfillmentLocation.address',
+            'shipment.originDepot',
+            'shipment.destinationDepot',
             'shipment.shipmentGroups.shipmentPackage',
             'shipment.shipmentGroups.shipmentPackage.buyer',
             'shipment.shipmentGroups.shipmentPackage.seller',
         ])
-            ->where('driver_id', $request->user()->id);
+            ->where('driver_id', $request->user()->id)
+            ->where('status', '!=', DriverShipmentStatusEnum::CANCELLED->value);
 
         $start = $request->filled('start_date')
             ? now()->parse($request->start_date)->startOfDay()
@@ -45,14 +49,110 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
 
         $query->whereBetween('assigned_at', [$start, $end]);
 
-        $query->where('status', '!=', DriverShipmentStatusEnum::CANCELLED->value);
+        $driverShipments = $query->get();
 
+        /*
+    |--------------------------------------------------------------------------
+    | 🔥 BUILD DRIVER ROUTE LIST
+    |--------------------------------------------------------------------------
+    */
 
+        $priority = [
+            'pickup'   => 1,
+            'transfer' => 2,
+            'dispatch' => 3,
+        ];
 
-        $shipments = $query->orderByDesc('assigned_at')->get();
+        $routeList = $driverShipments
+            ->map(function ($ds) {
 
-        return $this->successResponse(__('messages.success_messages.success_get'), $shipments);
+                $shipment = $ds->shipment;
+
+                return [
+                    'driver_shipment_id' => $ds->id,
+                    'shipment_id'        => $shipment->id,
+                    'shipment_number'    => $shipment->shipment_number,
+                    'shipment_type'      => $shipment->shipment_type,
+                    'status'             => $shipment->status,
+
+                    /*
+                |--------------------------------------------------------------------------
+                | ADDRESS RESOLUTION
+                |--------------------------------------------------------------------------
+                */
+                    'origin' => [
+                        'type' => $shipment->origin_type,
+                        'name' =>
+                        $shipment->originFulfillmentLocation?->address?->addr_name
+                            ?? $shipment->originDepot?->name,
+                        'lat'  =>
+                        $shipment->originFulfillmentLocation?->address?->latitude
+                            ?? $shipment->originDepot?->latitude,
+                        'lng'  =>
+                        $shipment->originFulfillmentLocation?->address?->longitude
+                            ?? $shipment->originDepot?->longitude,
+                    ],
+
+                    'destination' => [
+                        'type' => $shipment->destination_type,
+                        'name' =>
+                        $shipment->destinationFulfillmentLocation?->address?->addr_name
+                            ?? $shipment->destinationDepot?->name,
+                        'lat'  =>
+                        $shipment->destinationFulfillmentLocation?->address?->latitude
+                            ?? $shipment->destinationDepot?->latitude,
+                        'lng'  =>
+                        $shipment->destinationFulfillmentLocation?->address?->longitude
+                            ?? $shipment->destinationDepot?->longitude,
+                    ],
+
+                    /*
+                |--------------------------------------------------------------------------
+                | PACKAGES SUMMARY
+                |--------------------------------------------------------------------------
+                */
+                    'total_packages' => $shipment->shipmentGroups->count(),
+
+                    'packages' => $shipment->shipmentGroups->map(function ($g) {
+
+                        $p = $g->shipmentPackage;
+
+                        return [
+                            'package_number' => $p->package_number,
+                            'buyer'  => $p->buyer?->nickname,
+                            'seller' => $p->seller?->nickname,
+                            'qty'    => $p->qty,
+                            'pack_size' => $p->pack_size,
+                            'unit'      => $p->pack_unit,
+                        ];
+                    }),
+                ];
+            })
+
+            /*
+        |--------------------------------------------------------------------------
+        | 🔥 SORT BY ROUTE SEQUENCE
+        |--------------------------------------------------------------------------
+        */
+            ->sortBy(function ($item) use ($priority) {
+
+                // completed goes bottom
+                if ($item['status'] === 'completed') {
+                    return 999;
+                }
+
+                return $priority[$item['shipment_type']] ?? 50;
+            })
+
+            ->values();
+
+        return $this->successResponse(
+            __('messages.success_messages.success_get'),
+            $routeList
+        );
     }
+
+
 
     public function getAllShipments(Request $request)
     {
@@ -238,7 +338,7 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
         // Get Original Order here 
         // per shipment package group andper package get order and make order status completed if all shipment completed for that order
 
-     
+
         // TODO: Trigger any post-delivery processes like notifications, payments, etc.
 
 

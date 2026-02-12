@@ -56,13 +56,12 @@ class ShipmentService
 
             /*
         |--------------------------------------------------------------------------
-        | STEP 1 — FETCH PACKAGES NOT IN THIS SHIPMENT TYPE
+        | FETCH PACKAGES
         |--------------------------------------------------------------------------
         */
 
             $packages = ShipmentPackage::query()
 
-                // 🚫 block only SAME shipment_type grouping
                 ->whereNotExists(function ($q) use ($shipmentType) {
                     $q->select(DB::raw(1))
                         ->from('shipment_package_groups as spg')
@@ -74,7 +73,6 @@ class ShipmentService
                 })
 
                 ->whereNotIn('status', ['delivered', 'cancelled', 'returned'])
-
                 ->get();
 
             if ($packages->isEmpty()) {
@@ -83,7 +81,7 @@ class ShipmentService
 
             /*
         |--------------------------------------------------------------------------
-        | STEP 2 — BUILD ROUTE GROUPS
+        | ROUTE GROUPING
         |--------------------------------------------------------------------------
         */
 
@@ -93,83 +91,126 @@ class ShipmentService
                     return implode('|', [
                         $p->seller_id,
                         $p->pickup_fulfillment_location_id,
-                        $p->shipping_fulfillment_location_id,
                         $p->pickup_depot_id
                     ]);
                 }
 
-                return implode('|', [
-                    $p->shipping_depot_id,
-                    $p->buyer_id
-                ]);
+                if ($shipmentType === 'transfer') {
+
+                    // 🔥 HARD STOP FOR SAME DEPOT
+                    if ((int)$p->pickup_depot_id === (int)$p->shipping_depot_id) {
+                        return '__SKIP__';
+                    }
+
+                    return implode('|', [
+                        $p->pickup_depot_id,
+                        $p->shipping_depot_id
+                    ]);
+                }
+
+                if ($shipmentType === 'dispatch') {
+                    return implode('|', [
+                        $p->shipping_depot_id,
+                        $p->buyer_id
+                    ]);
+                }
+
+                return '__SKIP__';
+            });
+
+            // 🔥 REMOVE SKIPPED TRANSFER KEYS ONLY
+            $routeGroups = $routeGroups->reject(function ($v, $key) {
+                return $key === '__SKIP__';
             });
 
             $createdShipments = [];
 
             /*
         |--------------------------------------------------------------------------
-        | STEP 3 — LOOP ROUTES
+        | CREATE SHIPMENTS
         |--------------------------------------------------------------------------
         */
 
-            foreach ($routeGroups as $routeKey => $collection) {
+            foreach ($routeGroups as $collection) {
+
+                if ($collection->isEmpty()) {
+                    continue;
+                }
 
                 $first = $collection->first();
 
                 /*
             |--------------------------------------------------------------------------
-            | 🔥 FIND EXISTING SHIPMENT FIRST
+            | FIND EXISTING SHIPMENT
             |--------------------------------------------------------------------------
             */
 
                 $existingShipment = Shipment::query()
                     ->where('shipment_type', $shipmentType)
+
                     ->when($shipmentType === 'pickup', function ($q) use ($first) {
                         $q->where('seller_id', $first->seller_id)
                             ->where('origin_flmnt_location_id', $first->pickup_fulfillment_location_id)
                             ->where('destination_depot_id', $first->pickup_depot_id);
                     })
+
+                    ->when($shipmentType === 'transfer', function ($q) use ($first) {
+                        $q->where('origin_depot_id', $first->pickup_depot_id)
+                            ->where('destination_depot_id', $first->shipping_depot_id);
+                    })
+
                     ->when($shipmentType === 'dispatch', function ($q) use ($first) {
                         $q->where('buyer_id', $first->buyer_id)
                             ->where('origin_depot_id', $first->shipping_depot_id)
                             ->where('destination_flmnt_location_id', $first->shipping_fulfillment_location_id);
                     })
+
                     ->first();
 
                 /*
             |--------------------------------------------------------------------------
-            | CREATE ONLY IF NOT EXIST
+            | CREATE SHIPMENT IF NOT EXIST
             |--------------------------------------------------------------------------
             */
 
                 if (!$existingShipment) {
 
-                    $shipmentData = [
+                    $data = [
                         'shipment_type' => $shipmentType,
                         'shipment_date' => now()->toDateString(),
                         'status'        => 'grouped',
                     ];
 
                     if ($shipmentType === 'pickup') {
-                        $shipmentData['seller_id'] = $first->seller_id;
-                        $shipmentData['origin_type'] = 'fulfillment_location';
-                        $shipmentData['origin_flmnt_location_id']   = $first->pickup_fulfillment_location_id;
-                        $shipmentData['destination_type'] = 'depot';
-                        $shipmentData['destination_depot_id']   = $first->pickup_depot_id;
-                    } else {
-                        $shipmentData['buyer_id'] = $first->buyer_id;
-                        $shipmentData['origin_type'] = 'depot';
-                        $shipmentData['origin_depot_id']   = $first->shipping_depot_id;
-                        $shipmentData['destination_type'] = 'fulfillment_location';
-                        $shipmentData['destination_flmnt_location_id']   = $first->shipping_fulfillment_location_id;
+
+                        $data['seller_id'] = $first->seller_id;
+                        $data['origin_type'] = 'fulfillment_location';
+                        $data['origin_flmnt_location_id'] = $first->pickup_fulfillment_location_id;
+                        $data['destination_type'] = 'depot';
+                        $data['destination_depot_id'] = $first->pickup_depot_id;
+
+                    } elseif ($shipmentType === 'transfer') {
+
+                        $data['origin_type'] = 'depot';
+                        $data['origin_depot_id'] = $first->pickup_depot_id;
+                        $data['destination_type'] = 'depot';
+                        $data['destination_depot_id'] = $first->shipping_depot_id;
+                        
+                    } elseif ($shipmentType === 'dispatch') {
+
+                        $data['buyer_id'] = $first->buyer_id;
+                        $data['origin_type'] = 'depot';
+                        $data['origin_depot_id'] = $first->shipping_depot_id;
+                        $data['destination_type'] = 'fulfillment_location';
+                        $data['destination_flmnt_location_id'] = $first->shipping_fulfillment_location_id;
                     }
 
-                    $existingShipment = Shipment::create($shipmentData);
+                    $existingShipment = Shipment::create($data);
                 }
 
                 /*
             |--------------------------------------------------------------------------
-            | STEP 4 — ADD PACKAGES INTO EXISTING SHIPMENT
+            | CREATE GROUP
             |--------------------------------------------------------------------------
             */
 
@@ -192,6 +233,150 @@ class ShipmentService
             return $createdShipments;
         });
     }
+
+    // Original but transfer not there
+    // public function createShipmentAndGroups(string $shipmentType): array
+    // {
+    //     return DB::transaction(function () use ($shipmentType) {
+
+    //         /*
+    //     |--------------------------------------------------------------------------
+    //     | STEP 1 — FETCH PACKAGES NOT IN THIS SHIPMENT TYPE
+    //     |--------------------------------------------------------------------------
+    //     */
+
+    //         $packages = ShipmentPackage::query()
+
+    //             // 🚫 block only SAME shipment_type grouping
+    //             ->whereNotExists(function ($q) use ($shipmentType) {
+    //                 $q->select(DB::raw(1))
+    //                     ->from('shipment_package_groups as spg')
+    //                     ->join('shipments as s', 's.id', '=', 'spg.shipment_id')
+    //                     ->whereColumn('spg.shipment_package_id', 'shipment_packages.id')
+    //                     ->where('s.shipment_type', $shipmentType)
+    //                     ->whereNull('spg.deleted_at')
+    //                     ->whereNull('s.deleted_at');
+    //             })
+
+    //             ->whereNotIn('status', ['delivered', 'cancelled', 'returned'])
+
+    //             ->get();
+
+    //         if ($packages->isEmpty()) {
+    //             return [];
+    //         }
+
+    //         /*
+    //     |--------------------------------------------------------------------------
+    //     | STEP 2 — BUILD ROUTE GROUPS
+    //     |--------------------------------------------------------------------------
+    //     */
+
+    //         $routeGroups = $packages->groupBy(function ($p) use ($shipmentType) {
+
+    //             if ($shipmentType === 'pickup') {
+    //                 return implode('|', [
+    //                     $p->seller_id,
+    //                     $p->pickup_fulfillment_location_id,
+    //                     $p->shipping_fulfillment_location_id,
+    //                     $p->pickup_depot_id
+    //                 ]);
+    //             }
+
+    //             return implode('|', [
+    //                 $p->shipping_depot_id,
+    //                 $p->buyer_id
+    //             ]);
+    //         });
+
+    //         $createdShipments = [];
+
+    //         /*
+    //     |--------------------------------------------------------------------------
+    //     | STEP 3 — LOOP ROUTES
+    //     |--------------------------------------------------------------------------
+    //     */
+
+    //         foreach ($routeGroups as $routeKey => $collection) {
+
+    //             $first = $collection->first();
+
+    //             /*
+    //         |--------------------------------------------------------------------------
+    //         | 🔥 FIND EXISTING SHIPMENT FIRST
+    //         |--------------------------------------------------------------------------
+    //         */
+
+    //             $existingShipment = Shipment::query()
+    //                 ->where('shipment_type', $shipmentType)
+    //                 ->when($shipmentType === 'pickup', function ($q) use ($first) {
+    //                     $q->where('seller_id', $first->seller_id)
+    //                         ->where('origin_flmnt_location_id', $first->pickup_fulfillment_location_id)
+    //                         ->where('destination_depot_id', $first->pickup_depot_id);
+    //                 })
+    //                 ->when($shipmentType === 'dispatch', function ($q) use ($first) {
+    //                     $q->where('buyer_id', $first->buyer_id)
+    //                         ->where('origin_depot_id', $first->shipping_depot_id)
+    //                         ->where('destination_flmnt_location_id', $first->shipping_fulfillment_location_id);
+    //                 })
+    //                 ->first();
+
+    //             /*
+    //         |--------------------------------------------------------------------------
+    //         | CREATE ONLY IF NOT EXIST
+    //         |--------------------------------------------------------------------------
+    //         */
+
+    //             if (!$existingShipment) {
+
+    //                 $shipmentData = [
+    //                     'shipment_type' => $shipmentType,
+    //                     'shipment_date' => now()->toDateString(),
+    //                     'status'        => 'grouped',
+    //                 ];
+
+    //                 if ($shipmentType === 'pickup') {
+    //                     $shipmentData['seller_id'] = $first->seller_id;
+    //                     $shipmentData['origin_type'] = 'fulfillment_location';
+    //                     $shipmentData['origin_flmnt_location_id']   = $first->pickup_fulfillment_location_id;
+    //                     $shipmentData['destination_type'] = 'depot';
+    //                     $shipmentData['destination_depot_id']   = $first->pickup_depot_id;
+    //                 } else {
+    //                     $shipmentData['buyer_id'] = $first->buyer_id;
+    //                     $shipmentData['origin_type'] = 'depot';
+    //                     $shipmentData['origin_depot_id']   = $first->shipping_depot_id;
+    //                     $shipmentData['destination_type'] = 'fulfillment_location';
+    //                     $shipmentData['destination_flmnt_location_id']   = $first->shipping_fulfillment_location_id;
+    //                 }
+
+    //                 $existingShipment = Shipment::create($shipmentData);
+    //             }
+
+    //             /*
+    //         |--------------------------------------------------------------------------
+    //         | STEP 4 — ADD PACKAGES INTO EXISTING SHIPMENT
+    //         |--------------------------------------------------------------------------
+    //         */
+
+    //             $groupNumber = ShipmentPackageGroup::generateUniqueGroupNumber();
+
+    //             foreach ($collection as $pkg) {
+
+    //                 ShipmentPackageGroup::create([
+    //                     'group_number'        => $groupNumber,
+    //                     'shipment_id'         => $existingShipment->id,
+    //                     'shipment_package_id' => $pkg->id,
+    //                     'buyer_id'            => $pkg->buyer_id,
+    //                     'seller_id'           => $pkg->seller_id,
+    //                 ]);
+    //             }
+
+    //             $createdShipments[] = $existingShipment;
+    //         }
+
+    //         return $createdShipments;
+    //     });
+    // }
 
 
     /*
