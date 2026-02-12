@@ -9,146 +9,88 @@ use Illuminate\Support\Facades\DB;
 
 class MstDeliveryChargeRuleSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        //
-        $deliveryFeeCharge = DB::table('mst_charges')->where('code', ChargesEnum::DELIVERY_FEE->value)->first();
+        $deliveryFeeCharge = DB::table('mst_charges')
+            ->where('code', ChargesEnum::DELIVERY_FEE->value)
+            ->first();
 
-        $standardPriceLevelBuyer = DB::table('mst_charge_levels')->where('code', 'B-STD')->first();
-        $standardPriceLevelSeller = DB::table('mst_charge_levels')->where('code', 'S-STD')->first();
-        // $standardPriceLevelDelivery = DB::table('mst_charge_levels')->where('code', 'D-STD')->first();
+        if (!$deliveryFeeCharge) {
+            return;
+        }
 
+        // --------------------------------------------------
+        // CHARGE LEVELS (Buyer / Seller / Driver)
+        // --------------------------------------------------
+        $levels = DB::table('mst_charge_levels')
+            ->whereIn('code', ['B-STD', 'S-STD', 'D-STD'])
+            ->pluck('id', 'code');
 
-        DB::table('mst_delivery_charge_rules')->insert([
-            // Buyer Delivery Fees
+        // --------------------------------------------------
+        // MASTER RULE MATRIX (DEFINE ONLY ONCE)
+        // --------------------------------------------------
+        $ruleMatrix = [
             [
-                'charge_id' => $deliveryFeeCharge->id,
-                'charge_level_id' => $standardPriceLevelBuyer->id,
-
-                'rule_no' => MstSeqCodeGenerator::getNextRuleNo(),
-                'description' => 'Delivery Fee for Buyer',
-              
+                'description'   => 'Delivery Fee Standard',
                 'measure_value' => 20.00,
-                'measure_unit' => 'kg',
+                'measure_unit'  => 'kg',
                 'pack_type_unit' => 'bag',
                 'charge_amount' => 40.00,
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
-                'charge_id' => $deliveryFeeCharge->id,
-                'charge_level_id' => $standardPriceLevelBuyer->id,
-
-                'rule_no' => MstSeqCodeGenerator::getNextRuleNo(),
-                'description' => 'Delivery Fee for Buyer',
-              
+                'description'   => 'Delivery Fee Standard',
                 'measure_value' => 20.00,
-                'measure_unit' => 'kg',
+                'measure_unit'  => 'kg',
                 'pack_type_unit' => 'crate',
                 'charge_amount' => 40.00,
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
-                'charge_id' => $deliveryFeeCharge->id,
-                'charge_level_id' => $standardPriceLevelBuyer->id,
-
-                'rule_no' => MstSeqCodeGenerator::getNextRuleNo(),
-                'description' => 'Delivery Fee for Buyer',
-              
+                'description'   => 'Delivery Fee Standard',
                 'measure_value' => 10.00,
-                'measure_unit' => 'kg',
+                'measure_unit'  => 'kg',
                 'pack_type_unit' => 'bag',
                 'charge_amount' => 25.00,
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
-
             [
-                'charge_id' => $deliveryFeeCharge->id,
-                'charge_level_id' => $standardPriceLevelBuyer->id,
-                'rule_no' => MstSeqCodeGenerator::getNextRuleNo(),
-                'description' => 'Delivery Fee for Buyer',
-              
+                'description'   => 'Delivery Fee Standard',
                 'measure_value' => 5.00,
-                'measure_unit' => 'kg',
+                'measure_unit'  => 'kg',
                 'pack_type_unit' => 'bag',
                 'charge_amount' => 10.00,
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
+        ];
 
-            // Seller Delivery Fees
-            [
-                'charge_id' => $deliveryFeeCharge->id,
-                'charge_level_id' => $standardPriceLevelSeller->id,
+        // --------------------------------------------------
+        // BUILD INSERT DATA FOR ALL LEVELS
+        // --------------------------------------------------
+        $insertData = [];
 
-                'rule_no' => MstSeqCodeGenerator::getNextRuleNo(),
-                'description' => 'Delivery Fee for Seller',
-              
-                'measure_value' => 20.00,
-                'measure_unit' => 'kg',
-                'pack_type_unit' => 'bag',
-                'charge_amount' => 40.00,
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'charge_id' => $deliveryFeeCharge->id,
-                'charge_level_id' => $standardPriceLevelSeller->id,
+        foreach ($levels as $levelCode => $levelId) {
 
-                'rule_no' => MstSeqCodeGenerator::getNextRuleNo(),
-                'description' => 'Delivery Fee for Seller',
-              
-                'measure_value' => 20.00,
-                'measure_unit' => 'kg',
-                'pack_type_unit' => 'crate',
-                'charge_amount' => 40.00,
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'charge_id' => $deliveryFeeCharge->id,
-                'charge_level_id' => $standardPriceLevelSeller->id,
+            foreach ($ruleMatrix as $rule) {
 
-                'rule_no' => MstSeqCodeGenerator::getNextRuleNo(),
-                'description' => 'Delivery Fee for Seller',
-              
-                'measure_value' => 10.00,
-                'measure_unit' => 'kg',
-                'pack_type_unit' => 'bag',
-                'charge_amount' => 25.00,
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+                $insertData[] = [
+                    'charge_id'       => $deliveryFeeCharge->id,
+                    'charge_level_id' => $levelId,
 
-            [
-                'charge_id' => $deliveryFeeCharge->id,
-                'charge_level_id' => $standardPriceLevelSeller->id,
+                    'rule_no'     => MstSeqCodeGenerator::getNextRuleNo(),
+                    'description' => $rule['description'],
 
-                'rule_no' => MstSeqCodeGenerator::getNextRuleNo(),
-                'description' => 'Delivery Fee for Seller',
-              
-                'measure_value' => 5.00,
-                'measure_unit' => 'kg',
-                'pack_type_unit' => 'bag',
-                'charge_amount' => 10.00,
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+                    'measure_value'   => $rule['measure_value'],
+                    'measure_unit'    => $rule['measure_unit'],
+                    'pack_type_unit'  => $rule['pack_type_unit'],
+                    'charge_amount'   => $rule['charge_amount'],
 
+                    'is_active'  => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+        }
 
-        ]);
+        // --------------------------------------------------
+        // BULK INSERT
+        // --------------------------------------------------
+        DB::table('mst_delivery_charge_rules')->insert($insertData);
     }
 }

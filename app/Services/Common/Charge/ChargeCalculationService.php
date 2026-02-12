@@ -416,4 +416,136 @@ class ChargeCalculationService
             default => false,
         };
     }
+
+
+    //** */
+
+    public function calculatePlatformFee(
+        string $chargeLevelCode,
+        float $orderAmount,
+        array $packages
+    ): array {
+
+        $level = MstChargeLevel::active()
+            ->where('code', $chargeLevelCode)
+            ->firstOrFail();
+
+        $charge = MstCharge::active()
+            ->where('code', ChargesEnum::PLATFORM_FEE->value)
+            ->with([
+                'minimumRuleCharges' => fn($q) =>
+                $q->active()
+                    ->where('charge_level_id', $level->id)
+                    ->orderBy('rule_no')
+            ])
+            ->first();
+
+        if (!$charge || $charge->minimumRuleCharges->isEmpty()) {
+            return [];
+        }
+
+        // Derived totals (same logic as main calculate)
+        $totalQty = 0;
+        $totalWeight = 0;
+
+        foreach ($packages as $pkg) {
+            $qty = (float)($pkg['order_qty'] ?? 0);
+            $size = (float)($pkg['pack_size'] ?? 0);
+
+            $totalQty += $qty;
+            $totalWeight += ($qty * $size);
+        }
+
+        $rule = $this->applyMinimumOrderRule(
+            $charge->minimumRuleCharges,
+            $orderAmount,
+            $totalQty,
+            $totalWeight
+        );
+
+        if (!$rule) {
+            return [];
+        }
+
+        $taxArr = $this->calculateTax($charge, $rule['amount']);
+
+        return [
+            'charge_code'   => $charge->code,
+            'charge_name'   => $charge->name,
+            'rule_no'       => $rule['rule_no'],
+            'rule_desc'     => $rule['description'],
+            'taxable_amount' => round($rule['amount'], 2),
+            'tax_amount'    => round($taxArr['charge_tax'], 2),
+            'total_amount'  => round($rule['amount'] + $taxArr['charge_tax'], 2),
+        ];
+    }
+
+    public function calculateDeliveryCharges(
+        string $chargeLevelCode,
+        array $packages,
+        bool $isBuyerPickup = false,
+        bool $isSellerDropOff = false
+    ): array {
+
+        if ($isBuyerPickup || $isSellerDropOff) {
+            return [];
+        }
+
+        $level = MstChargeLevel::active()
+            ->where('code', $chargeLevelCode)
+            ->firstOrFail();
+
+        $charge = MstCharge::active()
+            ->where('code', ChargesEnum::DELIVERY_FEE->value)
+            ->with([
+                'deliveryRuleCharges' => fn($q) =>
+                $q->active()
+                    ->where('charge_level_id', $level->id)
+                    ->orderBy('rule_no')
+            ])
+            ->first();
+
+        if (!$charge || $charge->deliveryRuleCharges->isEmpty()) {
+            return [];
+        }
+
+        $charges = [];
+        $totalCharge = 0;
+        $totalTax = 0;
+
+        foreach ($packages as $pkg) {
+
+            $rule = $this->applyDeliveryRule(
+                $charge->deliveryRuleCharges,
+                $pkg
+            );
+
+            if (!$rule) {
+                continue;
+            }
+
+            $lineAmount = $rule['amount'] * (float)$pkg['order_qty'];
+            $taxArr = $this->calculateTax($charge, $lineAmount);
+
+            $charges[] = [
+                'charge_code'   => $charge->code,
+                'charge_name'   => $charge->name,
+                'rule_no'       => $rule['rule_no'],
+                'rule_desc'     => $rule['description'],
+                'taxable_amount' => round($lineAmount, 2),
+                'tax_amount'    => round($taxArr['charge_tax'], 2),
+                'total_amount'  => round($lineAmount + $taxArr['charge_tax'], 2),
+            ];
+
+            $totalCharge += $lineAmount;
+            $totalTax += $taxArr['charge_tax'];
+        }
+
+        return [
+            'charges' => $charges,
+            'charge_taxable' => round($totalCharge, 2),
+            'charge_tax' => round($totalTax, 2),
+            'total_charge_amount' => round($totalCharge + $totalTax, 2),
+        ];
+    }
 }

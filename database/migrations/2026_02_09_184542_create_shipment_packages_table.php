@@ -71,6 +71,7 @@ return new class extends Migration
             // Package content
             $table->decimal('pack_size', 10, 2)->nullable();
             $table->string('pack_unit', 20)->nullable();
+            $table->decimal('pack_price', 10, 2)->nullable();
             $table->string('pack_type_unit', 50)->nullable();
 
             // Identifiers

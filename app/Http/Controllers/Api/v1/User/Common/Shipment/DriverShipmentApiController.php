@@ -7,6 +7,8 @@ use App\Enum\Common\Shipment\ShipmentStatusEnum;
 use App\Http\Controllers\ApiResponseWithAuthController;
 use App\Models\Delivery\DriverShipment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use SebastianBergmann\CodeCoverage\Driver\Driver;
 
 class DriverShipmentApiController extends ApiResponseWithAuthController
 {
@@ -36,10 +38,11 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
             'shipment.destinationDepot.address',
 
             // 🔥 ONLY COUNT PURPOSE
-            'shipment.shipmentGroups:id,shipment_id',
+            // 🔥 ADD THIS (missing — causes null)
+            'shipment.shipmentGroups.shipmentPackage',
         ])
             ->where('driver_id', $request->user()->id)
-            ->where('status', '!=', DriverShipmentStatusEnum::CANCELLED->value);
+            ->whereNotIn('status', [DriverShipmentStatusEnum::CANCELLED->value, DriverShipmentStatusEnum::REJECTED->value]);
 
         $start = $request->filled('start_date')
             ? now()->parse($request->start_date)->startOfDay()
@@ -53,16 +56,22 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
             ->whereBetween('assigned_at', [$start, $end])
             ->get();
 
+
         $priority = [
             'pickup'   => 1,
             'transfer' => 2,
             'dispatch' => 3,
         ];
 
+
         $routeList = $driverShipments
             ->map(function ($ds) {
 
                 $shipment = $ds->shipment;
+
+                if (!$shipment) {
+                    return null; // or handle this case as needed
+                }
 
                 return [
                     'driver_shipment_id' => $ds->id,
@@ -76,7 +85,9 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
                     'destination' => $shipment->to_address,
 
                     // 🔥 COUNT ONLY
-                    'total_packages' => $shipment->shipmentGroups->count(),
+                    'total_packages' => $shipment?->total_packages,
+                    'shipment_payable' => $ds->shipment_payable,
+
                 ];
             })
             ->sortBy(function ($item) use ($priority) {
@@ -249,6 +260,10 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
             'status' => DriverShipmentStatusEnum::ACCEPTED->value,
         ]);
 
+        $driverShipment->shipment()->update([
+            'status' =>  DriverShipmentStatusEnum::ACCEPTED->value,
+        ]);
+
         return $this->showSuccessMessage(__('messages.success_messages.success_update'));
     }
 
@@ -274,9 +289,9 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
 
         // Make original shipment available for other drivers by setting driver_id to null 
         $shipment = $driverShipment->shipment;
-        if ($shipment && $shipment->status === ShipmentStatusEnum::ASSIGNED->value) {
-            $shipment->update(['status' => ShipmentStatusEnum::GROUPED->value]);
-        }
+        // if ($shipment && $shipment->status === ShipmentStatusEnum::ASSIGNED->value) {
+        $shipment->update(['status' => ShipmentStatusEnum::GROUPED->value]);
+        // }
 
 
         return $this->showSuccessMessage(__('messages.success_messages.success_update'));
@@ -303,7 +318,7 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
         ]);
 
         $driverShipment->shipment()->update([
-            'status' => 'in_transit'
+            'status' =>  DriverShipmentStatusEnum::IN_TRANSIT->value,
         ]);
 
         return $this->showSuccessMessage(__('messages.success_messages.success_update'));

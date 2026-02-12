@@ -3,12 +3,16 @@
 use App\Enum\Common\Payment\PaymentMethodEnum;
 use App\Enum\Common\Payment\PaymentStatusEnum;
 use App\Enum\Common\Payment\PayoutStatusEnum;
+use App\Enum\Common\Shipment\DriverShipmentStatusEnum;
+use App\Enum\Common\Shipment\ShipmentStatusEnum;
 use App\Models\Common\Payment\Payment;
 use App\Models\Common\Payment\Payout;
+use App\Models\Delivery\DriverShipment;
 use App\Models\Master\Setting\MstPaymentSetting;
 use App\Services\Common\Payment\Handlers\PayoutHandler;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
@@ -94,3 +98,31 @@ if (MstPaymentSetting::payOutMode() == PaymentMethodEnum::RAZORPAY->value) {
             });
     })->everyFiveMinutes();
 }
+
+
+// Check Driver Not accpet withhin 10 min then reset assigned job and look for other driver
+Schedule::call(function () {
+
+    $tenMinutesAgo = now()->subMinutes(10);
+
+    DriverShipment::where('status', DriverShipmentStatusEnum::PENDING->value)
+        ->where('assigned_at', '<=', $tenMinutesAgo)
+        ->each(function ($driverShipment) {
+            // Reset driver assignment
+
+            // original Shipment 
+            $driverShipment->shipment()->update([
+                'status' => ShipmentStatusEnum::GROUPED->value,
+            ]);
+
+            // make cancelled this 
+            $driverShipment->update([
+                'status' => DriverShipmentStatusEnum::CANCELLED->value,
+                'remarks' => 'Driver did not accept within 10 minutes, auto-cancelled.',
+            ]);
+
+
+            // Optionally, you can also log this event or notify someone
+            // Log::info("Driver shipment ID {$driverShipment->id} has been reset due to no acceptance within 10 minutes.");
+        });
+})->everyTenMinutes();

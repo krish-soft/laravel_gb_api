@@ -88,6 +88,7 @@ class OrderPaymentHandler
 
                         'qty'            => 1,
                         'pack_size'      => $item->pack_size,
+                        'pack_price'     => $item->pack_price,
                         'pack_unit'      => $item->pack_unit,
                         'pack_type_unit' => $item->pack_type_unit,
 
@@ -98,7 +99,7 @@ class OrderPaymentHandler
                         'shipping_depot_id' => $order->depot_id, // From order directly
 
                         'is_buyer_pickup' => $order->is_buyer_pickup, // From order directly
-                        'is_seller_dropoff' => $productListing?->is_seller_dropoff,
+                        'is_seller_dropoff' => $productListing?->is_seller_dropoff ?? false, // From product listing if available
                     ]);
                 }
             }

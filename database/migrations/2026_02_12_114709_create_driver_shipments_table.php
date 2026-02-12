@@ -35,6 +35,8 @@ return new class extends Migration
 
             $table->string('status', 30)->default('assigned')->index(); // assigned/accepted/started/completed/cancelled
 
+            $table->string('remarks')->nullable();
+
 
             $table->timestamps();
             $table->softDeletes();

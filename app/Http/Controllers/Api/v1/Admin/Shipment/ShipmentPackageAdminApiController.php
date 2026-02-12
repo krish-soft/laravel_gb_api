@@ -195,27 +195,62 @@ class ShipmentPackageAdminApiController extends ApiResponseWithAdminAuthControll
     | self_handled    → no logistics movement
     */
 
+        // $logisticsActionSummary = collect([
+        //     'pickup_needed' => (clone $base)
+        //         ->where('is_seller_dropoff', false)
+        //         ->get(),
+
+        //     'delivery_needed' => (clone $base)
+        //         ->where('is_buyer_pickup', false)
+        //         ->get(),
+
+        //     'self_handled' => (clone $base)
+        //         ->where('is_seller_dropoff', true)
+        //         ->where('is_buyer_pickup', true)
+        //         ->get(),
+        // ])->map(function ($packages, $key) {
+
+        //     return [
+        //         'action_type'   => $key,
+        //         'total_packages' => $packages->count(),
+        //         'packages'      => $packages,
+        //     ];
+        // })->values();
+
         $logisticsActionSummary = collect([
-            'pickup_needed' => (clone $base)
-                ->where('is_seller_dropoff', false)
-                ->get(),
-
-            'delivery_needed' => (clone $base)
-                ->where('is_buyer_pickup', false)
-                ->get(),
-
-            'self_handled' => (clone $base)
-                ->where('is_seller_dropoff', true)
-                ->where('is_buyer_pickup', true)
-                ->get(),
-        ])->map(function ($packages, $key) {
-
+            [
+                'action_type'   => 'pickup_required',
+                'packages'      => (clone $base)
+                    ->where('is_seller_dropoff', false)
+                    ->where('status', 'pending')
+                    ->get(),
+            ],
+            [
+                'action_type'   => 'dropoff_required',
+                'packages'      => (clone $base)
+                    ->where('is_buyer_pickup', false)
+                    ->where('status', 'in_transit')
+                    ->get(),
+            ],
+            [
+                'action_type'   => 'seller_self_drop',
+                'packages'      => (clone $base)
+                    ->where('is_seller_dropoff', true)
+                    ->get(),
+            ],
+            [
+                'action_type'   => 'buyer_self_pickup',
+                'packages'      => (clone $base)
+                    ->where('is_buyer_pickup', true)
+                    ->get(),
+            ],
+        ])->map(function ($row) {
             return [
-                'action_type'   => $key,
-                'total_packages' => $packages->count(),
-                'packages'      => $packages,
+                'action_type'   => $row['action_type'],
+                'total_packages' => $row['packages']->count(),
+                'packages'      => $row['packages'],
             ];
-        })->values();
+        })->filter(fn($r) => $r['total_packages'] > 0)->values();
 
 
         /*
