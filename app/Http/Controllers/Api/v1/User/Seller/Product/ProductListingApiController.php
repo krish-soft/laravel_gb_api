@@ -52,6 +52,7 @@ class ProductListingApiController extends ApiResponseWithAuthController
     {
         try {
             $data = $request->validate([
+                'is_seller_dropoff' => 'required|boolean',
 
                 'packages' => 'required|array|min:1',
 
@@ -63,6 +64,7 @@ class ProductListingApiController extends ApiResponseWithAuthController
             ]);
 
             $chargeLevelcode = $request->user()->charge_level_code;
+            $isSellerDropOff = $request->is_seller_dropoff;
 
             if (empty($chargeLevelcode)) {
                 throw new RuntimeException(
@@ -73,7 +75,8 @@ class ProductListingApiController extends ApiResponseWithAuthController
 
             $result = $service->preview(
                 $data['packages'],
-                $chargeLevelcode
+                $chargeLevelcode,
+                $isSellerDropOff
             );
 
             return $this->successResponse(

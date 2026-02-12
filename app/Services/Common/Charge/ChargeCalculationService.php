@@ -13,7 +13,8 @@ class ChargeCalculationService
         string $chargeLevelCode,
         float  $orderAmount,
         array  $packages,
-        bool  $isBuyerPickup = false
+        bool  $isBuyerPickup = false,
+        bool   $isSellerDropOff = false
     ): array {
 
         if (!$chargeLevelCode) {
@@ -42,7 +43,7 @@ class ChargeCalculationService
             ])
             ->get();
 
-        if ($isBuyerPickup) {
+        if ($isBuyerPickup || $isSellerDropOff) {
             // Remove Delivery Fee Charge from list
             $chargeMasters = $chargeMasters->filter(function ($charge) {
                 return $charge->code !== ChargesEnum::DELIVERY_FEE->value;

@@ -14,7 +14,7 @@ class ProductListingChargePreviewService
         $this->chargeService = $chargeService;
     }
 
-    public function preview(array $packages, string $chargeLevelCode): array
+    public function preview(array $packages, string $chargeLevelCode, bool   $isSellerDropOff = false): array
     {
         if (empty($packages)) {
             throw new RuntimeException(
@@ -51,7 +51,9 @@ class ProductListingChargePreviewService
         $chargeSummary = $this->chargeService->calculate(
             $chargeLevelCode,
             $grossAmount,
-            $packages
+            $packages,
+            false,
+            $isSellerDropOff
         );
 
         return [
