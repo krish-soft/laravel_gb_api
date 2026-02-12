@@ -13,6 +13,7 @@ enum ShipmentStatusEnum: string
     case IN_TRANSIT = 'in_transit';
     case ARRIVED_AT_DEPOT = 'arrived_at_depot';
     case DISPATCHED_FROM_DEPOT = 'dispatched_from_depot';
+    case INTERNAL_TRANSFER = 'internal_transfer';
 
     case DISPATCHED = 'dispatched';
     case SHIPPED = 'shipped';

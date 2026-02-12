@@ -37,6 +37,8 @@ class Order extends BaseModel
 
         'order_number',
         'order_status',
+        'delivery_status',
+
         'order_date',
         'expected_ship_date',
 

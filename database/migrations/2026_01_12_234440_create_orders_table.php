@@ -40,6 +40,8 @@ return new class extends Migration
             $table->string('order_number', 20)->unique();
 
             $table->string('order_status', 30);
+            $table->string('delivery_status', 30)->nullable();
+            
             $table->date('order_date');
             $table->date('expected_ship_date')->nullable();
 

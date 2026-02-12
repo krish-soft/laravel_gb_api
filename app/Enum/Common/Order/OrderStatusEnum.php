@@ -16,6 +16,7 @@ enum OrderStatusEnum: string
 
         // Keeping for future use
     case SHIPPED = 'shipped';
+    case DELIVERED = 'delivered';
     case COMPLETED = 'completed';
 
     public static function casesAsValues(): array

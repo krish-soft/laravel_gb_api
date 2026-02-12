@@ -80,7 +80,7 @@ return new class extends Migration
 
             // Status flow
             $table->string('status', 50)->default('pending');
-            // pending | packed | ready_for_pickup | shipped | delivered | returned
+            // pending | packed | ready_for_pickup | shipped | delivered | returned | mising | cancelled
 
             // Courier
             $table->string('carrier', 50)->nullable();

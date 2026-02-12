@@ -262,6 +262,8 @@ Route::group([
                     Route::post('reject/{driverShipment}', [DriverShipmentApiController::class, 'reject']);
                     Route::post('start/{driverShipment}', [DriverShipmentApiController::class, 'start']);
                     Route::post('complete/{driverShipment}', [DriverShipmentApiController::class, 'complete']);
+
+                    Route::post('update/shipment-Package/status', [DriverShipmentApiController::class, 'updateShipmentPackageStatus']);
                     //
                 });
 

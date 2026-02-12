@@ -93,6 +93,7 @@ return [
         'unauthorized_action'       => 'You are not authorized to perform this action.',
         'main_resource_cannot_delete'       =>  'Main resource cannot be deleted as it is essential for system operations.',
         'invalid_current_password'  => 'The current password provided is incorrect.',
+        'not_found'                 => 'The requested resource could not be found.',
 
 
         /* File Upload */
