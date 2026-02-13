@@ -67,6 +67,7 @@ class FulfillmentLocationApiController extends ApiResponseWithAuthController
     public function show(FulfillmentLocation $fulfillmentLocation)
     {
         //
+        $fulfillmentLocation = FulfillmentLocation::with('address')->find($fulfillmentLocation->id);
 
         return $this->successResponse(__('messages.success_messages.success_get'), $fulfillmentLocation, 200);
     }
