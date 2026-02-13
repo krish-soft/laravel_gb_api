@@ -58,7 +58,7 @@ class FulfillmentLocationApiController extends ApiResponseWithAuthController
             ]
         );
 
-        return $this->showSuccessMessage(__('messages.success_messages.success_create'), 201);
+        return $this->successResponse(__('messages.success_messages.success_create'), $location, 201);
     }
 
     /**
