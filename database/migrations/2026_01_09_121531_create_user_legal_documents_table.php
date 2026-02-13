@@ -28,6 +28,11 @@ return new class extends Migration
                 ->constrained('user_kycs')
                 ->nullOnDelete();
 
+            $table->foreignId('vehicle_kyc_id')
+                ->nullable()
+                ->constrained('vehicle_kycs')
+                ->nullOnDelete();
+
 
             $table->string('legal_doc_code', 20)->unique();
             // Document type

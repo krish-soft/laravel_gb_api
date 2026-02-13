@@ -23,12 +23,16 @@ class DriverVehicle extends BaseModel
 
         'driver_vehicle_code',
         'license_plate_number',
+        
         'vehicle_color',
+
         'max_load_capacity_kg',
         'max_volume_capacity_cft',
         'max_number_of_packages',
+
         'is_active',
         'inactive_reason',
+
         'is_available_for_delivery',
 
         'last_latitude',

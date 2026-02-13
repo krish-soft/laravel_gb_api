@@ -47,6 +47,7 @@ use App\Http\Controllers\Api\v1\User\Common\Auth\UserResetPasswordApiController;
 use App\Http\Controllers\Api\v1\User\Common\Fulfillment\FulfillmentLocationApiController;
 use App\Http\Controllers\Api\v1\User\Common\Legal\UserBankApiController;
 use App\Http\Controllers\Api\v1\User\Common\Legal\UserKycApiController;
+use App\Http\Controllers\Api\v1\User\Common\Legal\UserVehicleKycApiController;
 use App\Http\Controllers\Api\v1\User\Common\Shipment\DriverShipmentApiController;
 use App\Http\Controllers\Api\v1\User\Seller\Product\ProductListingApiController;
 use App\Http\Controllers\Api\v1\User\UserProfileApiController;
@@ -180,6 +181,11 @@ Route::group([
         // KYC Routes
         Route::post('/kyc', [UserKycApiController::class, 'storeKyc']); // Add KYC
         Route::put('/kyc/update', [UserKycApiController::class, 'updateKyc']); // Update / Re-KYC
+        Route::get('/kyc/signed-url', [UserKycApiController::class, 'signedUserKycUrl']); // Get signed URL for KYC form
+
+        Route::post('/kyc/vehicle', [UserVehicleKycApiController::class, 'storeVehicleKyc'])->middleware('delivery-checker'); // Add Vehicle KYC
+        Route::put('/kyc/vehicle/update', [UserVehicleKycApiController::class, 'updateVehicleKyc'])->middleware('delivery-checker'); // Update / Re-Vehicle KYC
+        Route::get('/kyc/vehicle/signed-url', [UserVehicleKycApiController::class, 'signedVehicleKycUrl'])->middleware('delivery-checker'); // Get signed URL for Vehicle KYC form
 
         // Bank Routes
         Route::apiResource('userBank', UserBankApiController::class);
@@ -250,7 +256,7 @@ Route::group([
                 'delivery-checker' // Custom Middleware to check if user is buyer
             ])->group(function () {
 
-            // Vehicle addition pending & images
+                // Vehicle addition pending & images
 
                 Route::prefix('shipment')->group(function () {
                     // Driver Shipment Routes

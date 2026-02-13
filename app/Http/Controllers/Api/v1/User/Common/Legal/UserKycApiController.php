@@ -4,11 +4,34 @@ namespace App\Http\Controllers\Api\v1\User\Common\Legal;
 
 use App\Http\Controllers\ApiResponseWithAuthController;
 use App\Services\Common\Legal\Kyc\KycService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
 use RuntimeException;
 
 class UserKycApiController extends ApiResponseWithAuthController
 {
+
+    public function signedUserKycUrl(Request $request)
+    {
+        $user = $request->user();
+
+        $signedUrl = URL::temporarySignedRoute(
+            'user.kyc.form',
+            Carbon::now()->addMinutes(30),
+            [
+                'user_id' => $user->id,
+            ]
+        );
+
+        return $this->successResponse(
+            __('messages.success_messages.success_get'),
+            [
+                'user_kyc_signed_url' => $signedUrl
+            ]
+        );
+    }
+
     /**
      * ADD KYC (first time / after expiry / rejected)
      */
@@ -24,7 +47,7 @@ class UserKycApiController extends ApiResponseWithAuthController
             'pan_card_number' => 'nullable|string|max:15',
             'pan_card_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
 
-            'selfie_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048', // optional selfie image
+            'selfie_image' => 'required|image|mimes:jpg,jpeg,png|max:2048', // optional selfie image
 
             'dob' => 'required|date_format:Y-m-d|before:today',
         ]);
