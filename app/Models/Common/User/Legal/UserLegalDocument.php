@@ -22,6 +22,8 @@ class UserLegalDocument extends BaseModel
         'user_id',
         'user_code',
         'user_kyc_id',
+        'vehicle_kyc_id',
+
 
         'legal_doc_code',
         'document_type',

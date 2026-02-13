@@ -183,7 +183,7 @@ class VehicleKycService
 
             $kyc->save();
 
-            UserLegalDocument::where('user_kyc_id', $kyc->id)
+            UserLegalDocument::where('vehicle_kyc_id', $kyc->id)
                 ->update([
                     'status' => $kyc->status,
                     'verified_at' => $kyc->verified_at,
@@ -235,7 +235,7 @@ class VehicleKycService
 
         DB::transaction(function () use ($kyc, $loginAdmin, $reason) {
 
-            UserLegalDocument::where('user_kyc_id', $kyc->id)->delete();
+            UserLegalDocument::where('vehicle_kyc_id', $kyc->id)->delete();
 
             $kyc->is_expired = true;
             $kyc->expired_at = now();
@@ -293,7 +293,7 @@ class VehicleKycService
         UserLegalDocument::updateOrCreate(
             [
                 'user_id' => $user->id,
-                'user_kyc_id' => $kyc->id,
+                'vehicle_kyc_id' => $kyc->id,
                 'document_type' => LegalDocumentTypeEnum::DRIVING_LICENSE->value
             ],
             [
@@ -313,7 +313,7 @@ class VehicleKycService
         UserLegalDocument::updateOrCreate(
             [
                 'user_id' => $user->id,
-                'user_kyc_id' => $kyc->id,
+                'vehicle_kyc_id' => $kyc->id,
                 'document_type' => LegalDocumentTypeEnum::RC_BOOK->value
             ],
             [
@@ -333,7 +333,7 @@ class VehicleKycService
         UserLegalDocument::updateOrCreate(
             [
                 'user_id' => $user->id,
-                'user_kyc_id' => $kyc->id,
+                'vehicle_kyc_id' => $kyc->id,
                 'document_type' => LegalDocumentTypeEnum::INSURANCE_POLICY->value
             ],
             [
@@ -358,7 +358,7 @@ class VehicleKycService
         UserLegalDocument::updateOrCreate(
             [
                 'user_id' => $user->id,
-                'user_kyc_id' => $kyc->id,
+                'vehicle_kyc_id' => $kyc->id,
                 'document_type' => LegalDocumentTypeEnum::VEHICLE_PHOTO->value
             ],
             [
