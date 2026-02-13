@@ -194,12 +194,16 @@ class DriverShipmentAdminApiController extends ApiResponseWithAdminAuthControlle
             return $this->errorResponse("Cannot cancel after start.", 422);
         }
 
+        if (in_array($driverShipment->status, [DriverShipmentStatusEnum::CANCELLED->value, DriverShipmentStatusEnum::REJECTED->value])) {
+            return $this->errorResponse("Already cancelled or rejected.", 422);
+        }
+
         DB::transaction(function () use ($driverShipment) {
             $driverShipment->update([
                 'status' => DriverShipmentStatusEnum::CANCELLED->value,
             ]);
 
-            // Shipment make avaliable for other assignment if needed
+            // Shipment make available for other assignment if needed
             $shipment = $driverShipment->shipment;
             $shipment->update(['status' => ShipmentStatusEnum::GROUPED->value]);
         });

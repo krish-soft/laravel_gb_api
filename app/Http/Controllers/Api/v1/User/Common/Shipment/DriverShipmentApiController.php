@@ -311,8 +311,12 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
             return $this->errorResponse("Unauthorized", 403);
         }
 
-        if (!$driverShipment->accepted_at) {
+        if (!$driverShipment->accepted_at || $driverShipment->status !== DriverShipmentStatusEnum::ACCEPTED->value) {
             return $this->errorResponse("Must accept first.", 422);
+        }
+
+        if ($driverShipment->started_at) {
+            return $this->showSuccessMessage("Already started.");
         }
 
         $driverShipment->update([

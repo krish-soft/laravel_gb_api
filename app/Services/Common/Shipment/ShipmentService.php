@@ -406,7 +406,9 @@ class ShipmentService
                 throw new \Exception("Nothing to split");
             }
 
-            $originalShipment = Shipment::findOrFail($rows->first()->shipment_id);
+            $originalShipment = Shipment::findOrFail(
+                $rows->first()->shipment_id
+            );
 
             // ❌ DO NOT allow split if already assigned
             if (in_array($originalShipment->status, ['assigned', 'in_transit', 'completed'])) {
@@ -415,27 +417,45 @@ class ShipmentService
 
             /*
         |--------------------------------------------------------------------------
-        | CREATE NEW SHIPMENT (CLONE ROUTE)
+        | ✅ CLONE SHIPMENT EXACTLY (NO AUTO ROUTE CHANGE)
         |--------------------------------------------------------------------------
         */
 
-            $newShipment = Shipment::create([
-                'shipment_type'   => $originalShipment->shipment_type,
-                'shipment_date'   => $originalShipment->shipment_date,
-                'seller_id'       => $originalShipment->seller_id,
-                'buyer_id'        => $originalShipment->buyer_id,
-                'origin_type'     => $originalShipment->origin_type,
-                'origin_id'       => $originalShipment->origin_id,
-                'destination_type' => $originalShipment->destination_type,
-                'destination_id'  => $originalShipment->destination_id,
-                'status'          => 'grouped',
+            $cloneData = $originalShipment->only([
+                'shipment_type',
+                'shipment_date',
+                'seller_id',
+                'buyer_id',
+
+                'origin_type',
+                'origin_flmnt_location_id',
+                'origin_depot_id',
+
+                'destination_type',
+                'destination_flmnt_location_id',
+                'destination_depot_id',
+
+                'remarks',
             ]);
+
+            // force new grouped status
+            $cloneData['status'] = 'grouped';
+
+            // 🔥 IMPORTANT: remove id & timestamps if exist
+            unset(
+                $cloneData['id'],
+                $cloneData['created_at'],
+                $cloneData['updated_at'],
+                $cloneData['deleted_at']
+            );
+
+            $newShipment = Shipment::create($cloneData);
 
             $newGroupNumber = ShipmentPackageGroup::generateUniqueGroupNumber();
 
             /*
         |--------------------------------------------------------------------------
-        | MOVE PACKAGES TO NEW SHIPMENT
+        | MOVE PACKAGES
         |--------------------------------------------------------------------------
         */
 
@@ -450,6 +470,7 @@ class ShipmentService
             return $newShipment;
         });
     }
+
 
 
     /*
