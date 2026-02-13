@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('product_listing_packages', function (Blueprint $table) {
             $table->id();
 
+            $table->string('picture')->nullable();
+
             // Product Listing Item
             $table->foreignId('product_listing_item_id')
                 ->nullable()
@@ -32,6 +34,8 @@ return new class extends Migration
             $table->string('pack_type_unit', 50)->nullable(); // bag, crate
             $table->decimal('pack_price', 15, 2); // total_price for the package
             $table->decimal('per_kg_price', 15, 2)->nullable(); // per Kg for future (pack_price / (pack_size in kg))
+
+             $table->string('quality_grade', 20)->nullable();
 
             // Discount
             $table->decimal('discount_amount', 15, 2)->default(0)->nullable();

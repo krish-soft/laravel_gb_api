@@ -55,6 +55,7 @@ class ProductListing extends BaseModel
     }
 
     protected $fillable = [
+        'picture',
         'seller_id',
 
         'fulfillment_location_id',

@@ -201,6 +201,7 @@ class ProductListingApiController extends ApiResponseWithAuthController
             'productListingItems.*.productListingPackages.*.per_kg_price' => 'required|numeric|min:0',
             'productListingItems.*.productListingPackages.*.discount_amount' => 'nullable|numeric|min:0',
             'productListingItems.*.productListingPackages.*.discount_type' => 'nullable|in:flat,percentage',
+            'productListingItems.*.productListingPackages.*.quality_grade' => 'required|string|max:20',
         ];
     }
 
@@ -212,6 +213,7 @@ class ProductListingApiController extends ApiResponseWithAuthController
             'per_kg_price' => 'sometimes|numeric|min:0',
             'discount_amount' => 'nullable|numeric|min:0',
             'discount_type' => 'nullable|in:flat,percentage',
+            'quality_grade' => 'sometimes|string|max:20',
         ];
     }
 }

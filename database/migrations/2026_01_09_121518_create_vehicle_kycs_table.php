@@ -20,9 +20,9 @@ return new class extends Migration
                 ->nullOnDelete();
 
             $table->foreignId('mst_vehicle_id')
-                ->nullable()
-                ->constrained('mst_vehicles')
-                ->nullOnDelete();
+                ->nullable(); // table is not created yet, so we will add foreign key constraint later in a separate migration after the mst_vehicles table is created
+                // ->constrained('mst_vehicles')
+                // ->nullOnDelete();
 
 
             $table->string('user_code', 20)->nullable();

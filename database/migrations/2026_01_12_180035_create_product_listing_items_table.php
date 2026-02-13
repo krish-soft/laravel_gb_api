@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('product_listing_items', function (Blueprint $table) {
             $table->id();
+            
+            $table->string('picture')->nullable();
 
             // Product Listing
             $table->foreignId('product_listing_id')
@@ -33,8 +35,7 @@ return new class extends Migration
                 ->constrained('mst_product_variants')
                 ->restrictOnDelete();
 
-            $table->boolean('is_organic')->default(false)->nullable()->index();
-
+            $table->boolean('is_organic')->default(false)->nullable()->index();           
 
             $table->timestamps();
             $table->softDeletes();

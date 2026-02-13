@@ -10,6 +10,8 @@ class ProductListingPackage extends BaseModel
     //
 
     protected $fillable = [
+        'picture',
+
         'product_listing_item_id',
         'listing_code',
         'qty',
@@ -19,7 +21,10 @@ class ProductListingPackage extends BaseModel
         'pack_type_unit',
         'pack_price',
         'per_kg_price',
-        
+
+        'quality_grade', // A, B, C, etc. (optional)
+
+
         'discount_amount',
         'discount_type',
 
@@ -54,7 +59,7 @@ class ProductListingPackage extends BaseModel
 
     // Relationships
 
-    
+
     public function productListingItem()
     {
         return $this->belongsTo(ProductListingItem::class, 'product_listing_item_id');

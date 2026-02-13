@@ -12,6 +12,7 @@ class ProductListingItem extends BaseModel
     //
 
     protected $fillable = [
+        'picture',
         'product_listing_id',
         'listing_code',
         'product_id',
