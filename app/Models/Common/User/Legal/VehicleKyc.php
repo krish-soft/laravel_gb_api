@@ -26,8 +26,28 @@ class VehicleKyc extends BaseModel
         'driving_license_number',
         'registration_number',
         'insurance_policy_number',
-        'vehicle_color',
 
+
+        // Vehicle details
+        'vehicle_maker',
+        'vehicle_model',
+        'vehicle_color',
+        'vehicle_type',
+        'vehicle_fuel_type',
+        'vehicle_category',
+
+        'seating_capacity',
+        'load_capacity_kg',
+        'engine_cc',
+        'transmission_type',
+        'vehicle_condition',
+
+        'chassis_number',
+        'engine_number',
+        'vehicle_unique_mark',
+        'vehicle_branding',
+
+        // Verification fields
         'status',
 
         'is_verified',
@@ -85,7 +105,7 @@ class VehicleKyc extends BaseModel
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->select('id', 'user_code', 'name', 'nickname');
     }
 
     public function mstVehicle()
@@ -95,11 +115,11 @@ class VehicleKyc extends BaseModel
 
     public function verifiedByUser()
     {
-        return $this->belongsTo(User::class, 'verified_user_id');
+        return $this->belongsTo(User::class, 'verified_user_id')->select('id', 'user_code', 'name', 'nickname');
     }
 
     public function legalDocuments()
     {
-        return $this->hasMany(UserLegalDocument::class, 'user_kyc_id', 'id');
+        return $this->hasMany(UserLegalDocument::class, 'vehicle_kyc_id', 'id');
     }
 }

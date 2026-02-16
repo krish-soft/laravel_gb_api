@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('vehicle_kycs', function (Blueprint $table) {
             $table->id();
 
+            $table->string('picture', 20)->nullable();
+
             $table->foreignId('user_id')
                 ->nullable()
                 ->constrained()
@@ -21,12 +23,10 @@ return new class extends Migration
 
             $table->foreignId('mst_vehicle_id')
                 ->nullable(); // table is not created yet, so we will add foreign key constraint later in a separate migration after the mst_vehicles table is created
-                // ->constrained('mst_vehicles')
-                // ->nullOnDelete();
-
+            // ->constrained('mst_vehicles')
+            // ->nullOnDelete();
 
             $table->string('user_code', 20)->nullable();
-            $table->string('picture')->nullable();
 
             // Reference
             $table->string('vehicle_kyc_code', 20)->unique();
@@ -36,8 +36,23 @@ return new class extends Migration
             $table->string('registration_number', 100)->nullable();
             $table->string('insurance_policy_number', 100)->nullable();
 
+            $table->string('vehicle_maker', 30)->nullable();     // Tata | Hyundai | Mahindra
+            $table->string('vehicle_model', 30)->nullable();     // Ace | i20 | Bolero
+            $table->string('vehicle_type', 20)->nullable();      // bike | car | truck | tempo | van
             $table->string('vehicle_color', 30)->nullable();
+            $table->string('vehicle_fuel_type', 30)->nullable();
+            $table->string('vehicle_category', 30)->nullable();   // goods | passenger
 
+            $table->unsignedInteger('seating_capacity')->nullable();
+            $table->unsignedInteger('load_capacity_kg')->nullable();
+            $table->unsignedInteger('engine_cc')->nullable();
+            $table->string('transmission_type', 20)->nullable();  // manual | automatic
+            $table->string('vehicle_condition', 20)->nullable();  // good | average | poor
+
+            $table->string('chassis_number', 50)->nullable();
+            $table->string('engine_number', 50)->nullable();
+            $table->string('vehicle_unique_mark', 150)->nullable(); // dents / stickers
+            $table->string('vehicle_branding', 100)->nullable();    // company logo
 
             // Status
             $table->string('status', 20)->default('pending')->nullable();    // pending | needs_update | verified | expired
@@ -53,10 +68,6 @@ return new class extends Migration
 
             // USER-VISIBLE FEEDBACK (for re-upload)
             $table->text('review_comment')->nullable();
-            // e.g. "PAN image is blurry, please re-upload"
-
-            // Expiry (for yearly re-KYC)
-
             $table->boolean('is_expired')->default(false)->nullable();
             $table->timestamp('expired_at')->nullable();
 

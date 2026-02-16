@@ -39,17 +39,29 @@ class UserVehicleKycWebController extends Controller
 
         $request->validate([
             'mst_vehicle_id' => 'required|integer|exists:mst_vehicles,id',
+
             'license_plate_number' => 'required|string|max:30',
             'driving_license_number' => 'required|string|max:50',
             'registration_number' => 'required|string|max:50',
             'insurance_policy_number' => 'required|string|max:50',
+
+            'vehicle_maker' => 'required|string|max:50',
             'vehicle_color' => 'required|string|max:50',
 
+
             'driving_license_image' => 'required|image',
+
             'rc_book_image' => 'required|image',
             'insurance_image' => 'required|image',
+
             'vehicle_front_image' => 'required|image',
             'vehicle_back_image' => 'required|image',
+            'vehicle_left_image' => 'nullable|image',
+            'vehicle_right_image' => 'nullable|image',
+            'vehicle_cargo_image' => 'required|image',
+
+            'vehicle_with_driver_image' => 'nullable|image',
+
         ]);
 
         try {

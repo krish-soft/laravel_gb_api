@@ -16,6 +16,15 @@ class DriverVehicle extends BaseModel
     use SoftDeletes;
 
 
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            if (!$model->driver_vehicle_code) {
+                $model->driver_vehicle_code = 'DV-' . strtoupper(uniqid());
+            }
+        });
+    }
+
     protected $fillable = [
         'picture',
         'driver_id',
@@ -23,7 +32,7 @@ class DriverVehicle extends BaseModel
 
         'driver_vehicle_code',
         'license_plate_number',
-        
+
         'vehicle_color',
 
         'max_load_capacity_kg',

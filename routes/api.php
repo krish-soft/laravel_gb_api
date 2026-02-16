@@ -386,6 +386,10 @@ Route::group([
 
                 // Route::get('legaldoc/list', [CustomerLegalActionApiController::class, 'getLegalDocumentList']);
                 // Route::delete('legaldoc/delete/{documentId}', [CustomerLegalActionApiController::class, 'deleteLegalDocument']);
+
+                Route::get('kyc/vehicle/list', [CustomerLegalActionApiController::class, 'getVehicleKycList']);
+                Route::get('kyc/vehicle/details/{id}', [CustomerLegalActionApiController::class, 'getVehicleKycDetails']);
+                Route::put('kyc/vehicle/status/{id}', [CustomerLegalActionApiController::class, 'updateVehicleKycStatus']);
             });
 
 

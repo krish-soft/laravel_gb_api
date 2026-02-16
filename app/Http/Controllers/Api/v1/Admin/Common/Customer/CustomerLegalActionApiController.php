@@ -7,10 +7,12 @@ use App\Http\Controllers\ApiResponseWithAdminAuthController;
 use App\Http\Controllers\Controller;
 use App\Models\Common\User\Legal\UserKyc;
 use App\Models\Common\User\Legal\UserLegalDocument;
+use App\Models\Common\User\Legal\VehicleKyc;
 use App\Models\Common\User\UserDepot;
 use App\Models\User;
 use App\Services\Common\Legal\BankService;
 use App\Services\Common\Legal\Kyc\KycService;
+use App\Services\Common\Legal\Kyc\VehicleKycService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -19,11 +21,13 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
     //
     protected KycService $kycService;
     protected BankService $bankService;
+    protected VehicleKycService $vehicleKycService;
 
-    public function __construct(KycService $kycService, BankService $bankService)
+    public function __construct(KycService $kycService, BankService $bankService, VehicleKycService $vehicleKycService)
     {
         $this->kycService = $kycService;
         $this->bankService = $bankService;
+        $this->vehicleKycService = $vehicleKycService;
     }
 
     /**
@@ -87,7 +91,7 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
     {
         //
 
-        $userKyc = UserKyc::with(['legalDocuments', 'user:id,user_code,name,role'])->where('id', $kycId)->firstOrFail();
+        $userKyc = UserKyc::with(['legalDocuments', 'user'])->where('id', $kycId)->firstOrFail();
 
         // If status is PENDING, change to UNDER_REVIEW
         if ($userKyc->status === KycStatusEnum::PENDING->value) {
@@ -96,7 +100,7 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
         }
 
         // DO CRUD before this
-        $depots = UserDepot::with(['depot', 'user:id,user_code,name,role'])
+        $depots = UserDepot::with(['depot', 'user'])
             ->where('user_id', $userKyc->user_id)
             ->get();
 
@@ -200,8 +204,93 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
 
 
     /**
-     *  Bank List
+     *  Vehicle KYC List
      */
+
+
+    public function getVehicleKycList(Request $request)
+    {
+        //    
+
+        $vehicleKycQuery = VehicleKyc::with('user')->latest();
+
+        if ($request->has('status') && !is_null($request->status)) {
+            $vehicleKycQuery->where('status', $request->status);
+        } else {
+            if (!request()->user()->isSuperAdminGroup()) {
+                $vehicleKycQuery->whereIn('status', [KycStatusEnum::PENDING->value, KycStatusEnum::UNDER_REVIEW->value]);
+            }
+        }
+
+        $vehicleKycList = $vehicleKycQuery->get();
+
+
+        return  $this->successResponse(__('messages.success_messages.success_get'),  $vehicleKycList, 200);
+    }
+
+
+    public function getVehicleKycDetails(Request $request, $kycId)
+    {
+        //
+
+        $vehicleKyc = VehicleKyc::with(['user','legalDocuments'])->where('id', $kycId)->firstOrFail();
+
+        // If status is PENDING, change to UNDER_REVIEW
+        if ($vehicleKyc->status === KycStatusEnum::PENDING->value) {
+            $vehicleKyc->status = KycStatusEnum::UNDER_REVIEW->value;
+            $vehicleKyc->save();
+        }
+
+
+
+        // log Activity
+        logActivity(
+            'admin_user_seen_kyc_details',
+            $request->user(),       // ACTOR (who did it)
+            get_class($vehicleKyc),       // SUBJECT TYPE (what was affected)
+            $vehicleKyc->id,              // SUBJECT ID
+            $vehicleKyc->vehicle_kyc_code,       // SUBJECT CODE (human readable)
+            [
+                'vehicle_kyc_code' => $vehicleKyc->vehicle_kyc_code,
+            ]
+        );
+
+        return $this->successResponse(__('messages.success_messages.success_get'), $vehicleKyc, 200);
+    }
+
+
+
+
+    public function updateVehicleKycStatus(Request $request)
+    {
+        //
+        $request->validate([
+            'vehicle_kyc_id' => 'required|integer',
+            'status' => 'required|string',
+            'review_comment' => 'required|string',
+        ]);
+
+        $kycId = $request->vehicle_kyc_id;
+        $status = $request->status;
+
+        $vehicleKyc = VehicleKyc::where('id', $kycId)->firstOrFail();
+        $user = $vehicleKyc->user;
+
+        $requestData = [
+            'status' => $status,
+            'review_comment' => $request->review_comment,
+        ];
+
+        $this->vehicleKycService->verifyVehicleKyc(
+            $user,
+            $vehicleKyc,
+            $requestData,
+            $request->user()
+        );
+
+        return $this->successResponse(__('messages.success_messages.success_update'), $vehicleKyc, 200);
+    }
+
 
 
 

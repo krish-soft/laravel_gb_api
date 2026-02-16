@@ -59,7 +59,8 @@
                     <select class="form-select mb-3 required-field" name="mst_vehicle_id">
                         <option value="">Select Vehicle</option>
                         @foreach ($mstVehicles as $vehicle)
-                            <option value="{{ $vehicle->id }}" {{ old('mst_vehicle_id') == $vehicle->id ? 'selected' : '' }}>
+                            <option value="{{ $vehicle->id }}"
+                                {{ old('mst_vehicle_id') == $vehicle->id ? 'selected' : '' }}>
                                 {{ $vehicle->vehicle_name }}
                             </option>
                         @endforeach
@@ -67,6 +68,9 @@
 
                     <input class="form-control mb-3 required-field" name="license_plate_number"
                         value="{{ old('license_plate_number') }}" placeholder="License Plate Number *">
+
+                    <input class="form-control mb-3 required-field" name="vehicle_maker" value="{{ old('vehicle_maker') }}"
+                        placeholder="Vehicle Maker (Tata / Eicher / Mahindra / Ashok Leyland) *">
 
                     <input class="form-control mb-3 required-field" name="vehicle_color" value="{{ old('vehicle_color') }}"
                         placeholder="Vehicle Color *">
@@ -89,13 +93,29 @@
                 {{-- ================= STEP 3 ================= --}}
                 <div class="step-section d-none" data-step="3">
 
-                    <h6 class="mb-3">Vehicle Front & Back *</h6>
+                    <h6 class="mb-3">Vehicle Images *</h6>
+
+
+                    <label class="form-label">Vehicle With Driver *</label>
+                    <input type="file" class="form-control mb-3 required-field" name="vehicle_with_driver_image">
+
+                    <label class="form-label">Vehicle Cargo Area *</label>
+                    <input type="file" class="form-control mb-3 required-field" name="vehicle_cargo_image">
 
                     <label class="form-label">Vehicle Front *</label>
                     <input type="file" class="form-control mb-3 required-field" name="vehicle_front_image">
 
                     <label class="form-label">Vehicle Back *</label>
                     <input type="file" class="form-control mb-3 required-field" name="vehicle_back_image">
+
+                    <label class="form-label">Vehicle Left</label>
+                    <input type="file" class="form-control mb-3" name="vehicle_left_image">
+
+                    <label class="form-label">Vehicle Right</label>
+                    <input type="file" class="form-control mb-3" name="vehicle_right_image">
+
+
+
 
                 </div>
 

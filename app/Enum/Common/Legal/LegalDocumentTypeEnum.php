@@ -15,6 +15,8 @@ enum LegalDocumentTypeEnum: string
     case RC_BOOK = 'rc_book';
     case INSURANCE_POLICY = 'insurance_policy';
     case VEHICLE_PHOTO = 'vehicle_photo';
+    case VEHICLE_WITH_DRIVER = 'vehicle_with_driver';
+    case VEHICLE_CARGO = 'vehicle_cargo';
 
     case PHOTO = 'photo';
     case OTHER = 'other';

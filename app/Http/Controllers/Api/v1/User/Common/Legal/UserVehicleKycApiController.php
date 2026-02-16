@@ -46,16 +46,23 @@ class UserVehicleKycApiController extends ApiResponseWithAuthController
             'driving_license_number' => 'required|string|max:50',
             'registration_number'    => 'required|string|max:50',
             'insurance_policy_number' => 'required|string|max:50',
+            'vehicle_maker'          => 'required|string|max:50',
+            'vehicle_model'          => 'nullable|string|max:50',
             'vehicle_color'          => 'required|string|max:50',
 
             // ===== REQUIRED IMAGES =====
-            'driving_license_image' => 'required|image|mimes:jpg,jpeg,png|max:4096',
-            'rc_book_image'         => 'required|image|mimes:jpg,jpeg,png|max:4096',
-            'insurance_image'       => 'required|image|mimes:jpg,jpeg,png|max:4096',
-            'vehicle_front_image'   => 'required|image|mimes:jpg,jpeg,png|max:4096',
-            'vehicle_back_image'    => 'required|image|mimes:jpg,jpeg,png|max:4096',
+            'driving_license_image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            'rc_book_image'         => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            'insurance_image'       => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            'vehicle_front_image'   => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            'vehicle_back_image'    => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            'vehicle_left_image'    => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'vehicle_right_image'   => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'vehicle_cargo_image'   => 'required|image|mimes:jpg,jpeg,png|max:2048',
 
-            'picture' => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
+            'vehicle_with_driver_image'    => 'required|image|mimes:jpg,jpeg,png|max:2048',
+
+            'picture' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
         try {
@@ -92,13 +99,13 @@ class UserVehicleKycApiController extends ApiResponseWithAuthController
             'vehicle_color'          => 'nullable|string|max:50',
 
             // ===== OPTIONAL IMAGES =====
-            'driving_license_image' => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
-            'rc_book_image'         => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
-            'insurance_image'       => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
-            'vehicle_front_image'   => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
-            'vehicle_back_image'    => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
+            'driving_license_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'rc_book_image'         => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'insurance_image'       => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'vehicle_front_image'   => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'vehicle_back_image'    => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
 
-            'picture' => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
+            'picture' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
         try {

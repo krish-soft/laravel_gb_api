@@ -63,6 +63,7 @@ class VehicleKycService
             $this->storeRcBookDoc($user, $vehicleKyc, $files);
             $this->storeInsuranceDoc($user, $vehicleKyc, $files);
             $this->storeVehicleImages($user, $vehicleKyc, $files);
+            $this->storeVehicleExtraImages($user, $vehicleKyc, $files);
 
             return $vehicleKyc;
         });
@@ -106,6 +107,14 @@ class VehicleKycService
 
             if (!empty($files['vehicle_front_image']) || !empty($files['vehicle_back_image'])) {
                 $this->storeVehicleImages($user, $kyc, $files);
+            }
+            if (
+                !empty($files['vehicle_left_image']) ||
+                !empty($files['vehicle_right_image']) ||
+                !empty($files['vehicle_with_driver_image']) ||
+                !empty($files['vehicle_cargo_image'])
+            ) {
+                $this->storeVehicleExtraImages($user, $kyc, $files);
             }
 
             $kyc->status = KycStatusEnum::PENDING->value;
@@ -271,7 +280,8 @@ class VehicleKycService
             empty($files['rc_book_image']) ||
             empty($files['insurance_image']) ||
             empty($files['vehicle_front_image']) ||
-            empty($files['vehicle_back_image'])
+            empty($files['vehicle_back_image']) ||
+            empty($files['vehicle_with_driver_image'])
         ) {
             throw new RuntimeException(
                 __('messages.error_messages.vehicle_documents_required')
@@ -367,5 +377,38 @@ class VehicleKycService
                 'document_path_back' => $back,
             ]
         );
+    }
+
+    protected function storeVehicleExtraImages(User $user, VehicleKyc $kyc, array $files): void
+    {
+        $folder = "vehicle_kyc/{$user->user_code}/vehicle";
+
+        $map = [
+            'vehicle_left_image'  => LegalDocumentTypeEnum::VEHICLE_PHOTO,
+            'vehicle_right_image' => LegalDocumentTypeEnum::VEHICLE_PHOTO,
+            'vehicle_with_driver_image' => LegalDocumentTypeEnum::VEHICLE_WITH_DRIVER,
+            'vehicle_cargo_image' => LegalDocumentTypeEnum::VEHICLE_CARGO,
+        ];
+
+        foreach ($map as $fileKey => $docType) {
+
+            if (empty($files[$fileKey])) {
+                continue;
+            }
+
+            $path = uploadPrivateFile($files[$fileKey], $folder);
+
+            UserLegalDocument::updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'vehicle_kyc_id' => $kyc->id,
+                    'document_type' => $docType->value,
+                ],
+                [
+                    'user_code' => $user->user_code,
+                    'document_path_front' => $path,
+                ]
+            );
+        }
     }
 }
