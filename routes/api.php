@@ -120,10 +120,17 @@ Route::group([
     // Utils
     Route::prefix('utils')->group(function () {
         Route::get('states', [UtilsApiController::class, 'getStateList']);
-
-
         Route::get('app-meta', [UtilsApiController::class, 'getAppMetaInfo']);
         Route::get('enums', [UtilsApiController::class, 'getAlLEnums']);
+
+
+        Route::get('markets', [UtilsApiController::class, 'getMarketList']);
+        Route::get('units', [UtilsApiController::class, 'getUnitList']);
+        Route::get('pack-type-units', [UtilsApiController::class, 'getPackTypeUnitList']);
+
+        Route::get('products', [UtilsApiController::class, 'getProducts']);
+        Route::get('products/variants/{productId}', [UtilsApiController::class, 'getProductVariants']);
+        Route::get('products/packagings/{productId}', [UtilsApiController::class, 'getProductPackagings']);
     });
 
 
@@ -139,22 +146,6 @@ Route::group([
             'user-checker' // Custom Middleware to check token expiry
         ]
     ], function () {
-
-
-        // Utils 
-        Route::prefix('utils')->group(function () {
-
-            //
-            Route::get('units', [UtilsWithAuthApiController::class, 'getUnitList']);
-            Route::get('pack-type-units', [UtilsWithAuthApiController::class, 'getPackTypeUnitList']);
-
-            Route::get('products', [UtilsWithAuthApiController::class, 'getProducts']);
-            Route::get('products/variants/{productId}', [UtilsWithAuthApiController::class, 'getProductVariants']);
-            Route::get('products/packagings/{productId}', [UtilsWithAuthApiController::class, 'getProductPackagings']);
-
-            //
-        });
-
 
 
 

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('zone_id')->nullable()->constrained('mst_zones')->cascadeOnUpdate()->nullOnDelete();
+            $table->foreignId('market_id')->nullable()->constrained('mst_markets')->cascadeOnUpdate()->restrictOnDelete();
 
             $table->string('picture')->nullable();
 

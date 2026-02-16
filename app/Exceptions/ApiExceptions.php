@@ -30,10 +30,10 @@ class ApiExceptions extends Exception
     public function handleException($request, Exception $exception)
     {
         // Default Log here
-        // Log::error($exception->getMessage(), [
-        //     'exception' => $exception,
-        //     'trace' => $exception->getTraceAsString(),
-        // ]);
+        Log::error($exception->getMessage(), [
+            'exception' => $exception,
+            'trace' => $exception->getTraceAsString(),
+        ]);
         // Log::error($exception); // Simple log
 
         // Handle different exception types

@@ -16,10 +16,12 @@ use App\Enum\User\UserRoleEnum;
 use App\Enum\User\UserTypeEnum;
 use App\Http\Controllers\ApiResponseController;
 use App\Http\Controllers\Controller;
+use App\Models\Master\Market\MstMarket;
 use App\Models\Master\MstFinancialYear;
 use App\Models\Master\MstPackType;
 use App\Models\Master\MstState;
 use App\Models\Master\MstUnit;
+use App\Models\Master\Product\MstProduct;
 use App\Models\Master\Setting\MstAppSetting;
 use App\Models\Master\Setting\MstFinanceSetting;
 use App\Models\Setting\AppSetting;
@@ -117,6 +119,49 @@ class UtilsApiController extends ApiResponseController
 
 
         return $this->successResponse(__('messages.success_messages.success_get'), $processData);
+    }
+
+
+
+    public function getMarketList()
+    {
+        $list = [];
+        if (request()->user()) {
+            $list = MstMarket::active()->get();
+        }
+        return $this->successResponse(__('messages.success_messages.success_get'), $list);
+    }
+
+
+    public function getProducts()
+    {
+        $list = [];
+        if (request()->user()) {
+            $list = MstProduct::with('category', 'variants', 'packagings')->active()->get();
+        }
+
+        return $this->successResponse(__('messages.success_messages.success_get'), $list);
+    }
+
+    public function getProductVariants($productId)
+    {
+        $variants = [];
+
+        if (request()->user()) {
+            $product = MstProduct::findOrFail($productId);
+            $variants = $product->variants()->active()->get();
+        }
+        return $this->successResponse(__('messages.success_messages.success_get'), $variants);
+    }
+
+    public function getProductPackagings($productId)
+    {
+        $packagings = [];
+        if (request()->user()) {
+            $product = MstProduct::findOrFail($productId);
+            $packagings = $product->packagings()->active()->get();
+        }
+        return $this->successResponse(__('messages.success_messages.success_get'), $packagings);
     }
 
 

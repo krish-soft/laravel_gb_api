@@ -4,6 +4,7 @@ namespace App\Models\Master\Depot;
 
 use App\Models\BaseModel;
 use App\Models\Common\Address;
+use App\Models\Master\Market\MstMarket;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 
@@ -40,6 +41,7 @@ class MstDepot extends BaseModel
 
     protected $fillable = [
         'zone_id',
+        'market_id',
 
         'picture',
         'name',
@@ -89,6 +91,11 @@ class MstDepot extends BaseModel
     public function zone()
     {
         return $this->belongsTo(MstZone::class, 'zone_id');
+    }
+
+    public function market()
+    {
+        return $this->belongsTo(MstMarket::class, 'market_id');
     }
 
 

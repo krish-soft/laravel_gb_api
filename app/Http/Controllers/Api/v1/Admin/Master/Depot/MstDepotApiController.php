@@ -19,7 +19,7 @@ class MstDepotApiController extends ApiResponseWithAdminAuthController
     public function index()
     {
         //
-        $mstDepots = MstDepot::with('zone', 'zone.state', 'address')->get();
+        $mstDepots = MstDepot::with('zone', 'zone.state', 'address', 'market')->get();
         return $this->successResponse(__('messages.success_messages.success_get'), $mstDepots);
     }
 
@@ -30,7 +30,9 @@ class MstDepotApiController extends ApiResponseWithAdminAuthController
     {
         //
         $request->validate([
-            'zone_id' => 'nullable|exists:mst_zones,id',
+            'zone_id' => 'required|exists:mst_zones,id',
+            'market_id' => 'required|exists:mst_markets,id',
+
             'name' => 'required|string|max:255|unique:mst_depots,name',
             'code' => 'nullable|string|max:50|unique:mst_depots,code',
             'contact_name' => 'required|string|max:100',
@@ -85,6 +87,7 @@ class MstDepotApiController extends ApiResponseWithAdminAuthController
 
         $request->validate([
             'zone_id' => 'required|exists:mst_zones,id',
+            'market_id' => 'required|exists:mst_markets,id',
             'name' => 'required|string|max:255|unique:mst_depots,name,' . $mstDepot->id,
             // 'code' => 'required|string|max:50|unique:mst_depots,code,' . $mstDepot->id,
             'contact_name' => 'required|string|max:100',

@@ -40,6 +40,7 @@ class DatabaseSeeder extends Seeder
             // Depot
             \Database\Seeders\Master\MstStateSeeder::class,
             \Database\Seeders\Master\Depot\MstZoneSeeder::class,
+            \Database\Seeders\Master\Depot\MstMarketSeeder::class,
             \Database\Seeders\Master\Depot\MstDepotSeeder::class,
 
             // Vehicle

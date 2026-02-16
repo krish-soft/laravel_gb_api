@@ -21,7 +21,7 @@ class Address extends BaseModel
         });
     }
 
-    private static function generateUniqueAddrCode(): string
+    public static function generateUniqueAddrCode(): string
     {
         do {
             // 8 digits, India-scale safe

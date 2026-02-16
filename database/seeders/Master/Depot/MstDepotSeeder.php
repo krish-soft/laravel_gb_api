@@ -23,10 +23,14 @@ class MstDepotSeeder extends Seeder
             return; // safety
         }
 
+        $marketId = 1;
+
+
 
         DB::table('mst_depots')->insert([
             [
                 'zone_id' => $southGujaratZoneId,
+                'market_id' => $marketId,
                 'name' => 'Kim Depot',
                 'code' => 'DPT0001',
                 'max_capacity_kg' => 5000,
@@ -39,6 +43,7 @@ class MstDepotSeeder extends Seeder
             ],
             [
                 'zone_id' => $southGujaratZoneId,
+                'market_id' => $marketId,
                 'name' => 'Kosamba Depot',
                 'code' => 'DPT0002',
                 'max_capacity_kg' => 5000,
