@@ -52,8 +52,9 @@ class OrderPaymentHandler
 
             //
             // 2️⃣ Record accounting entries
-            app(OrderAccountingService::class)
-                ->recordPaidOrder($order, $payment);
+            // We will start later reconcile service that time to do
+            // app(OrderAccountingService::class)
+            //     ->recordPaidOrder($order, $payment);
 
             //TODO:: Shipment process can be triggered here or via another service/event
 
@@ -72,10 +73,10 @@ class OrderPaymentHandler
 
                     ShipmentPackage::create([
                         'order_id'       => $order->id,
-                        'order_number'    => $order->order_number,
                         'order_item_id'  => $item->id,
 
                         'shipment_date' => date('Y-m-d'), // Set shipment date to current date, can be adjusted as needed
+                        'order_type' => 'regular', // For future use if we have different order types
 
                         'buyer_id'       => $order->buyer_id,
                         'seller_id'      => $item->seller->id, // Assuming OrderItem has a seller relationship

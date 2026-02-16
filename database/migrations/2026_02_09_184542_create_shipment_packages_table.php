@@ -16,13 +16,25 @@ return new class extends Migration
 
             // Core relations (DENORMALIZED for fast access)
             $table->foreignId('order_id')
-                ->constrained()
+                ->nullable()
+                ->constrained('orders')
                 ->cascadeOnDelete();
 
-            $table->string('order_number', 20)->nullable();
-
             $table->foreignId('order_item_id')
+                ->nullable()
                 ->constrained('order_items')
+                ->cascadeOnDelete();
+
+
+            // Market order relations (if applicable)
+            $table->foreignId('market_order_id')
+                ->nullable()
+                ->constrained('market_orders')
+                ->cascadeOnDelete();
+
+            $table->foreignId('market_order_item_id')
+                ->nullable()
+                ->constrained('market_order_items')
                 ->cascadeOnDelete();
 
             // Direct access (avoid joining orders/users every time)
@@ -59,6 +71,14 @@ return new class extends Migration
                 ->constrained('mst_depots')
                 ->restrictOnDelete();
 
+            $table->foreignId('market_id')
+                ->nullable()
+                ->constrained('mst_markets')
+                ->restrictOnDelete();
+
+
+            $table->string('order_type', 20)->nullable(); // normal, market, etc.
+
 
             $table->date('shipment_date')->nullable();
 
@@ -79,8 +99,9 @@ return new class extends Migration
             $table->string('package_number', 30); // A-1, AA-2 etc.
 
             // Status flow
-            $table->string('status', 50)->default('pending');
-            // pending | packed | ready_for_pickup | shipped | delivered | returned | mising | cancelled
+            $table->string('status', 50)->default('pending');  // pending | packed | ready_for_pickup | shipped | delivered | returned | mising | cancelled
+            $table->string('action_status', 50)->default('pending'); // accept / reject by buyer, or seller send short shipment or buyer pickup fail etc.
+
 
             // Courier
             $table->string('carrier', 50)->nullable();

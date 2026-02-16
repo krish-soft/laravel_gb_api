@@ -3,6 +3,8 @@
 namespace App\Models\Master\Market;
 
 use App\Models\BaseModel;
+use App\Models\Common\Fulfillment\FulfillmentLocation;
+use App\Models\Master\Depot\MstDepot;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -16,7 +18,8 @@ class MstMarket extends BaseModel
     protected $fillable = [
         'name',
         'code',
-        'addr_code',
+        'fulfillment_location_id',
+
         'is_active',
     ];
 
@@ -30,16 +33,17 @@ class MstMarket extends BaseModel
 
 
     // relationships
-    public function address()
+
+    public function fulfillmentLocation()
     {
-        return $this->belongsTo(\App\Models\Common\Address::class, 'addr_code', 'addr_code');
+        return $this->belongsTo(FulfillmentLocation::class, 'fulfillment_location_id');
     }
+
 
     public function depots()
     {
-        return $this->hasMany(\App\Models\Master\Depot\MstDepot::class, 'market_id');
+        return $this->hasMany(MstDepot::class, 'market_id');
     }
-
 
 
     // booted to geenrate code if not provided

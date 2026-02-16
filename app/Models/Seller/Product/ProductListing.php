@@ -97,8 +97,6 @@ class ProductListing extends BaseModel
         return $query->where('is_active', true);
     }
 
-
-
     // Relationships
     public function listingItems()
     {

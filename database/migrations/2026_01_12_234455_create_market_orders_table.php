@@ -1,0 +1,76 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('market_orders', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignId('market_id')
+                ->nullable()
+                ->constrained('mst_markets')
+                ->restrictOnDelete();
+
+            // Seller snapshot (important)
+            $table->foreignId('depot_id')
+                ->nullable()
+                ->constrained('mst_depots')
+                ->nullOnDelete();
+
+            $table->string('market_order_number', 20)->unique();
+
+
+            $table->foreignId('shipping_fulfillment_location_id')
+                ->nullable()
+                ->constrained('fulfillment_locations')
+                ->restrictOnDelete();
+
+            $table->string('order_status', 30);
+            $table->string('delivery_status', 30)->nullable();
+
+            $table->date('order_date');
+
+            $table->decimal('subtotal', 15, 2);
+            $table->decimal('tax_amount', 15, 2)->default(0)->nullable();
+            $table->decimal('total_amount', 15, 2)->default(0);
+            $table->string('currency', 10)->default('INR');
+
+            // Pickup info
+            $table->boolean('is_buyer_pickup')->default(false)->nullable();
+            $table->string('pickup_addr_code', 20)->nullable(); // Pickup Address for Seller Pickup
+
+            // payment
+            $table->string('payment_method', 30)->nullable();
+            $table->string('payment_status', 30)->nullable();
+            $table->string('payment_reference', 100)->nullable();
+
+            $table->string('reference', 100)->nullable(); // internal reference
+
+            $table->boolean('is_partial')->default(false)->nullable();
+            $table->boolean('is_paid')->default(false)->nullable();
+            $table->boolean('is_locked')->default(false)->nullable(); // No one can modify after this
+            $table->boolean('is_manual')->default(false)->nullable(); // when send to market and then we have to create order manually
+
+            $table->string('remarks', 100)->nullable(); // internal reference
+
+            $table->timestamps();
+            $table->softDeletes();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('market_orders');
+    }
+};

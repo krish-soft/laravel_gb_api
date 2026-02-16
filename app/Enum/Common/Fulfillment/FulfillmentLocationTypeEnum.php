@@ -9,9 +9,9 @@ enum FulfillmentLocationTypeEnum: string
     // Producer / Seller side
     case FARM = 'farm';
     case SHOP = 'shop';
-    // case COLLECTION_CENTER = 'collection_center';
 
 
+    case MARKET = 'market';
     // Storage / Processing
     // case WAREHOUSE = 'warehouse';
     // case COLD_STORAGE = 'cold_storage';

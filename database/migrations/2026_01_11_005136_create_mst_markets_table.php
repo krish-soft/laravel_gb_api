@@ -18,7 +18,9 @@ return new class extends Migration
             $table->string('code', 50)->unique();
 
             // Location
-            $table->string('addr_code', 50)->nullable();
+            $table->foreignId('fulfillment_location_id')
+                ->nullable(); // We can have market without fulfillment location, but not the opposite. So nullable is true here.
+
 
             $table->boolean('is_active')->default(true)->nullable();
 

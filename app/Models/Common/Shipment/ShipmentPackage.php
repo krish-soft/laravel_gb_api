@@ -21,8 +21,10 @@ class ShipmentPackage extends Model
 
     protected $fillable = [
         'order_id',
-        'order_number',
         'order_item_id',
+
+        'market_order_id',
+        'market_order_item_id',
 
         'buyer_id',
         'seller_id',
@@ -32,6 +34,9 @@ class ShipmentPackage extends Model
 
         'pickup_depot_id',
         'shipping_depot_id',
+
+        'order_type',
+        'market_id',
 
         'shipment_date',
 
@@ -48,6 +53,7 @@ class ShipmentPackage extends Model
         'package_number',
 
         'status',
+        'action_status',
 
         'carrier',
         'tracking_number',
@@ -190,38 +196,105 @@ class ShipmentPackage extends Model
     */
     protected static array $runtimeSequence = [];
 
-    public static function generatePackageNumber(int $buyerId): string
-    {
+    public static function generatePackageNumber(
+        ?int $buyerId = null,
+        ?int $marketId = null
+    ): string {
+
         [$start, $end] = self::businessWindow();
 
-        // Buyer prefix
-        $buyerIndex = $buyerId % 18278;
-        $prefix = self::alphaSequence($buyerIndex ?: 1);
+        // ✅ PREFIX RESOLVER (separate pattern)
+        // Buyer  → A-5
+        // Market → M-A-5
+        // System → SYS-5
 
-        // Unique runtime key per buyer + window
-        $key = $buyerId . '|' . $start->timestamp . '|' . $end->timestamp;
+        if (!empty($marketId)) {
 
-        // 🔥 Load from DB only once per request
+            $marketIndex = $marketId % 18278;
+            $alpha  = self::alphaSequence($marketIndex ?: 1);
+            $prefix = "M-{$alpha}";
+            $series = 'MKT';
+            $seriesId = $marketId;
+        } elseif (!empty($buyerId)) {
+
+            $buyerIndex = $buyerId % 18278;
+            $prefix = self::alphaSequence($buyerIndex ?: 1);
+            $series = 'BUY';
+            $seriesId = $buyerId;
+        } else {
+
+            $prefix = 'SYS';
+            $series = 'SYS';
+            $seriesId = 0;
+        }
+
+        // ✅ Runtime key (prevents buyer/market collision)
+        $key = $series . '|' . $seriesId . '|' . $start->timestamp . '|' . $end->timestamp;
+
         if (!isset(self::$runtimeSequence[$key])) {
 
-            $lastSeq = self::where('buyer_id', $buyerId)
-                ->whereBetween('created_at', [$start, $end])
-                ->where('package_number', 'like', "{$prefix}-%")
-                ->selectRaw("
-                MAX(
-                    CAST(SUBSTRING_INDEX(package_number, '-', -1) AS UNSIGNED)
-                ) as max_seq
-            ")
-                ->value('max_seq');
+            $query = self::whereBetween('created_at', [$start, $end])
+                ->where('package_number', 'like', "{$prefix}-%");
+
+            // strict scoping
+            if ($series === 'MKT') {
+                $query->where('market_id', $marketId);
+            } elseif ($series === 'BUY') {
+                $query->where('buyer_id', $buyerId);
+            } else {
+                $query->whereNull('buyer_id')->whereNull('market_id');
+            }
+
+            $lastSeq = $query->selectRaw("
+            MAX(
+                CAST(SUBSTRING_INDEX(package_number,'-',-1) AS UNSIGNED)
+            ) as max_seq
+        ")->value('max_seq');
 
             self::$runtimeSequence[$key] = (int) ($lastSeq ?? 0);
         }
 
-        // 🔥 Increment locally (THIS fixes C-1,C-1,C-1 issue)
+        // 🔥 runtime increment
         self::$runtimeSequence[$key]++;
 
         return "{$prefix}-" . self::$runtimeSequence[$key];
     }
+
+
+    // public static function generatePackageNumber(int $buyerId): string
+    // {
+    //     [$start, $end] = self::businessWindow();
+
+    //     // Buyer prefix
+    //     $buyerIndex = $buyerId % 18278;
+    //     $prefix = self::alphaSequence($buyerIndex ?: 1);
+
+    //     // Unique runtime key per buyer + window
+    //     $key = $buyerId . '|' . $start->timestamp . '|' . $end->timestamp;
+
+    //     // 🔥 Load from DB only once per request
+    //     if (!isset(self::$runtimeSequence[$key])) {
+
+    //         $lastSeq = self::where('buyer_id', $buyerId)
+    //             ->whereBetween('created_at', [$start, $end])
+    //             ->where('package_number', 'like', "{$prefix}-%")
+    //             ->selectRaw("
+    //             MAX(
+    //                 CAST(SUBSTRING_INDEX(package_number, '-', -1) AS UNSIGNED)
+    //             ) as max_seq
+    //         ")
+    //             ->value('max_seq');
+
+    //         self::$runtimeSequence[$key] = (int) ($lastSeq ?? 0);
+    //     }
+
+    //     // 🔥 Increment locally (THIS fixes C-1,C-1,C-1 issue)
+    //     self::$runtimeSequence[$key]++;
+
+    //     return "{$prefix}-" . self::$runtimeSequence[$key];
+    // }
+
+
 
 
 

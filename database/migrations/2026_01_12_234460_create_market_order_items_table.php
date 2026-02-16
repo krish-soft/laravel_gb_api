@@ -4,21 +4,22 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::create('order_items', function (Blueprint $table) {
+        Schema::create('market_order_items', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('order_id')
-                ->constrained('orders')
+            $table->foreignId('market_order_id')
+                ->nullable()
+                ->constrained('market_orders')
                 ->cascadeOnDelete();
 
-            $table->string('order_number', 20)->nullable();
-
+            $table->string('market_order_number', 20)->nullable();
 
             // Listing references
             $table->foreignId('product_listing_item_id')
@@ -31,7 +32,6 @@ return new class extends Migration {
                 ->constrained('product_listing_packages')
                 ->nullOnDelete();
 
-
             $table->foreignId('seller_id')
                 ->nullable()
                 ->constrained('users')
@@ -42,7 +42,6 @@ return new class extends Migration {
                 ->nullable()
                 ->constrained('fulfillment_locations')
                 ->restrictOnDelete();
-
 
             $table->string('listing_code', 50)->nullable(); // To Trace all way back to listing
 
@@ -69,12 +68,8 @@ return new class extends Migration {
             $table->decimal('tax_amount', 15, 2)->default(0)->nullable();
             $table->decimal('total_amount', 15, 2);
 
-
             $table->timestamps();
             $table->softDeletes();
-
-            // indexes
-            $table->index(['order_id']);
         });
     }
 
@@ -83,6 +78,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('order_items');
+        Schema::dropIfExists('market_order_items');
     }
 };

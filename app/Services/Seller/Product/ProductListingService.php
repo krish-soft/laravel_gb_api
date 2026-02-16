@@ -380,4 +380,25 @@ class ProductListingService
             array_flip($model->getFillable())
         );
     }
+
+
+    public function markPackageSoldFromCutoff(ProductListingPackage $package): void
+    {
+        DB::transaction(function () use ($package) {
+
+            $listing = $package->productListingItem->productListing;
+
+            // terminal safety
+            if ($listing->is_expired || $listing->is_locked) {
+                return;
+            }
+
+            $package->sold_qty = $package->qty;
+
+            $this->recalculatePackageState($package);
+            $package->save();
+
+            $this->recalculateListingState($listing);
+        });
+    }
 }

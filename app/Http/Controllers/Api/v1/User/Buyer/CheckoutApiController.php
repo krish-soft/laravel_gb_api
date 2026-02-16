@@ -114,7 +114,7 @@ class CheckoutApiController extends ApiResponseWithAuthController
 
         if ($fulfillmentLocation->user_id !== $user->id) {
             return $this->showErrorMessage(
-                __('messages.error_messages.unauthorized_action'),
+                __('messages.error_messages.unauthorized_action' . " - Invalid fulfillment location"),
                 400
             );
         }

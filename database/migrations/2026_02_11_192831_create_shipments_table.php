@@ -30,6 +30,10 @@ return new class extends Migration
             $table->unsignedBigInteger('destination_flmnt_location_id')->nullable(); // destination entity id
             $table->unsignedBigInteger('destination_depot_id')->nullable(); // optional link to depot for easier querying
 
+            $table->unsignedBigInteger('market_id')->nullable(); // optional link to market for easier querying
+
+
+
             $table->string('status', 30)->default('pending')->index(); // pending | grouped | assigned | in_transit | completed | cancelled
 
             $table->text('remarks')->nullable(); // internal note
