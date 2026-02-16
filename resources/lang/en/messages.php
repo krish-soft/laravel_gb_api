@@ -77,6 +77,8 @@ return [
         /* Package */
         'package_updated'   => 'Package updated successfully.',
         'package_cancelled' => 'Package cancelled successfully.',
+
+        'success_upload'    => 'File uploaded successfully.',
     ],
 
     /*

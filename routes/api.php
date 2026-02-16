@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\v1\Admin\Common\Payment\PayoutApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Customer\CustomerApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Customer\CustomerLegalActionApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Payment\AdminPaymentApiController;
+use App\Http\Controllers\Api\v1\Admin\Market\MarketOrderAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Shipment\ShipmentPackageAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeLevelApiController;
@@ -322,6 +323,20 @@ Route::group([
             Route::prefix('order')->group(function () {
                 Route::get('/', [AdminOrderApiController::class, 'getOrdersList']);
                 Route::get('/{orderId}', [AdminOrderApiController::class, 'getOrderDetails']);
+                //
+            });
+
+
+            Route::prefix('market-order')->group(function () {
+                Route::get('/', [MarketOrderAdminApiController::class, 'getOrdersList']);
+                Route::get('/{orderId}', [MarketOrderAdminApiController::class, 'getOrderDetails']);
+                
+                Route::put('/status/{orderId}', [MarketOrderAdminApiController::class, 'updateOrderStatus']);
+                Route::put('/order-amount/{orderId}', [MarketOrderAdminApiController::class, 'updateOrderAmountData']);
+
+                Route::post('/upload-document/{orderId}', [MarketOrderAdminApiController::class, 'uploadOrderDocument']);
+                Route::delete('/delete-document/{documentId}', [MarketOrderAdminApiController::class, 'deleteOrderDocument']);
+
                 //
             });
 

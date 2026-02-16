@@ -36,7 +36,7 @@ class MarketOrderDocument extends BaseModel
 
     public function getDocumentUrlAttribute()
     {
-        return $this->document_path_back && !$this->is_verified
+        return $this->document_path
             ? URL::temporarySignedRoute(
                 'files.view',
                 now()->addMinutes(5),

@@ -4,6 +4,7 @@ namespace App\Models\Market;
 
 use App\Models\BaseModel;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
+use App\Models\Common\Shipment\ShipmentPackage;
 use App\Models\Master\Depot\MstDepot;
 use App\Models\Master\Market\MstMarket;
 use App\Models\Master\Unique\MstSeqCodeGenerator;
@@ -37,7 +38,7 @@ class MarketOrder extends BaseModel
         'shipping_fulfillment_location_id',
 
         'market_order_number',
-        
+
         'order_status',
         'delivery_status',
         'order_date',
@@ -94,10 +95,23 @@ class MarketOrder extends BaseModel
         return $this->hasMany(MarketOrderItem::class, 'market_order_id');
     }
 
+    public function marketOrderDocuments()
+    {
+        return $this->hasMany(MarketOrderDocument::class, 'market_order_id');
+    }
+
     public function shippingFulfillmentLocation()
     {
         return $this->belongsTo(FulfillmentLocation::class, 'shipping_fulfillment_location_id', 'id');
     }
+
+
+    public function shipmentPackages()
+    {
+        return $this->hasMany(ShipmentPackage::class, 'market_order_id');
+    }
+
+
 
 
 
