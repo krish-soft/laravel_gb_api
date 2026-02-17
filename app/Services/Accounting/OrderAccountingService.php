@@ -50,7 +50,7 @@ class OrderAccountingService
             )) {
                 $accounting->createLedger($clearing, [
                     'description' => "Payment received for Order #{$order->order_number}",
-                    'credit' => $order->total_amount,
+                    'credit' => $order->taxable_amount, // we are storing in each accounts  $order->total_amount,
                     'debit'  => 0,
                     'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
                     'status' => LedgerStatusEnum::AVAILABLE->value,
