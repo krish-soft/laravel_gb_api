@@ -172,14 +172,24 @@ class ShipmentPackage extends Model
     {
         $now = now();
 
-        // If before 11 AM → we are still in previous business day
-        if ($now->hour < 11) {
+
+        // If before 2 PM → we are still in previous business day
+        if ($now->hour < 14) {
             $start = $now->copy()->subDay()->setTime(14, 0, 0); // yesterday 2 PM
-            $end   = $now->copy()->setTime(10, 59, 59);        // today 10:59 AM
+            $end   = $now->copy()->setTime(13, 59, 59);         // today 1:59:59 PM
         } else {
-            $start = $now->copy()->setTime(14, 0, 0);          // today 2 PM
-            $end   = $now->copy()->addDay()->setTime(10, 59, 59); // tomorrow 10:59 AM
+            $start = $now->copy()->setTime(14, 0, 0);           // today 2 PM
+            $end   = $now->copy()->addDay()->setTime(13, 59, 59); // tomorrow 1:59:59 PM
         }
+
+        // If before 11 AM → we are still in previous business day
+        // if ($now->hour < 11) {
+        //     $start = $now->copy()->subDay()->setTime(14, 0, 0); // yesterday 2 PM
+        //     $end   = $now->copy()->setTime(10, 59, 59);        // today 10:59 AM
+        // } else {
+        //     $start = $now->copy()->setTime(14, 0, 0);          // today 2 PM
+        //     $end   = $now->copy()->addDay()->setTime(10, 59, 59); // tomorrow 10:59 AM
+        // }
 
         return [$start, $end];
     }
