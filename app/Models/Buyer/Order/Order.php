@@ -6,6 +6,7 @@ use App\Models\BaseModel;
 use App\Models\Buyer\Cart\Cart;
 use App\Models\Common\Address;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
+use App\Models\Common\Payment\Payment;
 use App\Models\Common\Shipment\ShipmentPackage;
 use App\Models\Master\Depot\MstDepot;
 use App\Models\Master\Unique\MstSeqCodeGenerator;
@@ -139,6 +140,15 @@ class Order extends BaseModel
         return $this->belongsTo(Address::class, 'pickup_addr_code', 'address_code');
     }
 
+    public function payment()
+    {
+        return $this->hasOne(Payment::class, 'source_id', 'id')
+            ->where('source_type', self::class)
+            ->where(function ($query) {
+                $query->where('payment_code', $this->reference)
+                    ->orWhere('gateway_order_id', $this->payment_reference);
+            });
+    }
 
 
     //

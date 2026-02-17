@@ -95,7 +95,7 @@ class OrderAccountingService
                     'credit' => $item->taxable_amount,
                     'debit'  => 0,
                     'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
-                    'status' => LedgerStatusEnum::PENDING->value,
+                    'status' => LedgerStatusEnum::AVAILABLE->value,
                     'source_type' => OrderItem::class,
                     'source_id' => $item->id,
                     'source_code' => $order->order_number,
