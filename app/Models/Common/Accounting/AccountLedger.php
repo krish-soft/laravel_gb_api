@@ -39,6 +39,7 @@ class AccountLedger extends BaseModel
 
         'reference',
         'payment_reference',
+        'common_reference',
 
         'parent_ledger_id',
 

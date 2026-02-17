@@ -8,6 +8,7 @@ enum AccountOwnerTypeEnum: string
 
     case PLATFORM = 'platform';
     case SELLER = 'seller';
+    case BUYER = 'buyer';
     case DELIVERY = 'delivery';
     case GOVERNMENT = 'government';
     case BANK = 'bank';

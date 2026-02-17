@@ -10,7 +10,7 @@ use App\Jobs\CutOff\JobCutOffProductListing;
 
 class CutOffProductListing extends Command
 {
-    protected $signature = 'cut-off:product-listing 
+    protected $signature = 'cut-off:product-listing
                             {startDate?} 
                             {endDate?}';
 

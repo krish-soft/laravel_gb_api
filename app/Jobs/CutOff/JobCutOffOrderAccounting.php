@@ -63,6 +63,7 @@ class JobCutOffOrderAccounting implements ShouldQueue
                             OrderStatusEnum::SHIPPED->value,
                             OrderStatusEnum::DELIVERED->value,
                             OrderStatusEnum::CONFIRMED->value,
+                            OrderStatusEnum::COMPLETED->value,
                         ])
                         &&
                         in_array($order->payment_status, [

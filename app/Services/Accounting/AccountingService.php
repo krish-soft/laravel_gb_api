@@ -17,7 +17,7 @@ class AccountingService
         $debit  = $data['debit'] ?? 0;
 
         if (($credit > 0 && $debit > 0) || ($credit <= 0 && $debit <= 0)) {
-            throw new RuntimeException('Invalid credit / debit');
+            throw new RuntimeException('Invalid credit / debit amount');
         }
 
         return DB::transaction(function () use ($account, $data, $credit, $debit) {
@@ -44,6 +44,7 @@ class AccountingService
 
                 'reference'         => $data['reference'] ?? null,
                 'payment_reference' => $data['payment_reference'] ?? null,
+                'common_reference'   => $data['common_reference'] ?? null,
 
                 'parent_ledger_id'  => $data['parent_ledger_id'] ?? null,
                 'remarks'            => $data['remarks'] ?? null,

@@ -4,6 +4,7 @@ namespace App\Models\Common\Shipment;
 
 use App\Models\BaseModel;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
+use App\Models\Delivery\DriverShipment;
 use App\Models\Master\Depot\MstDepot;
 use App\Models\User;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -87,6 +88,11 @@ class Shipment extends BaseModel
     public function destinationDepot()
     {
         return $this->belongsTo(MstDepot::class, 'destination_depot_id');
+    }
+
+    public function driverShipment()
+    {
+        return $this->hasOne(DriverShipment::class, 'shipment_id', 'id');
     }
 
 

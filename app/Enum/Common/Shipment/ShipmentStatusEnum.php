@@ -9,6 +9,7 @@ enum ShipmentStatusEnum: string
     case PENDING = 'pending';
     case READY_TO_PICKUP = 'ready_for_pickup';
     case PICKED_UP = 'picked_up';
+    case NOT_PICKED_UP = 'not_picked_up';
 
     case IN_TRANSIT = 'in_transit';
     case ARRIVED_AT_DEPOT = 'arrived_at_depot';
