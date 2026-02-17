@@ -178,8 +178,8 @@ class MarketOrderAdminApiController extends  ApiResponseWithAdminAuthController
     {
         $request->validate([
             'subtotal'     => 'required|numeric|min:0',
-            'tax_amount'   => 'nullable|numeric|min:0',
-            'total_amount' => 'nullable|numeric|min:0',
+            'tax_amount'   => 'required|numeric|min:0',
+            'total_amount' => 'required|numeric|min:0',
         ]);
 
         $marketOrder = MarketOrder::findOrFail($marketOrderId);
