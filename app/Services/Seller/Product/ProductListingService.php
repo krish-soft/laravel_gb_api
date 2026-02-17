@@ -389,16 +389,19 @@ class ProductListingService
             $listing = $package->productListingItem->productListing;
 
             // terminal safety
-            if ($listing->is_expired || $listing->is_locked) {
-                return;
-            }
-
+            // if ($listing->is_expired || $listing->is_locked) {
+            //     return;
+            // }
             $package->sold_qty = $package->qty;
 
             $this->recalculatePackageState($package);
             $package->save();
 
-            $this->recalculateListingState($listing);
+
+            $listing->is_expired = true;
+            $listing->expires_at = now();
+            $listing->is_locked = true;
+            $listing->save();
         });
     }
 }

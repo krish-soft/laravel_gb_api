@@ -2,10 +2,11 @@
 
 namespace App\Console\Commands\CutOff;
 
+use App\Enum\Queue\QueueEnum;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Bus;
 use App\Models\Seller\Product\ProductListing;
-use App\Jobs\CutOff\JobProductListing;
+use App\Jobs\CutOff\JobCutOffProductListing;
 
 class CutOffProductListing extends Command
 {
@@ -31,15 +32,20 @@ class CutOffProductListing extends Command
             ->select(['id', 'seller_id']) // IMPORTANT → reduce memory
             ->where('is_active', true)
             ->where('is_expired', false)
-            ->whereBetween('created_at', [
-                \Carbon\Carbon::parse($startDate)->startOfDay(),
-                \Carbon\Carbon::parse($endDate)->endOfDay(),
+            // ->whereBetween('created_at', [
+            //     \Carbon\Carbon::parse($startDate)->startOfDay(),
+            //     \Carbon\Carbon::parse($endDate)->endOfDay(),
+            // ])
+            ->whereBetween('doc_date', [
+                $startDate,
+                $endDate
             ])
 
             ->whereHas('listingItems.listingPackages', function ($q) {
-                $q->where('is_locked', false)
-                    ->where('is_sold', false)
-                    ->whereRaw('qty > sold_qty');
+                // $q->where('is_locked', false)
+                //     ->where('is_sold', false)
+                //     ->whereRaw('qty > sold_qty');
+                $q->whereRaw('qty > sold_qty');
             })
             ->orderBy('seller_id')
             ->orderBy('id')
@@ -70,7 +76,7 @@ class CutOffProductListing extends Command
                 ->chunk(5) // batch size per seller
                 ->each(function ($chunk) use (&$jobs) {
 
-                    $jobs[] = new JobProductListing($chunk->toArray());
+                    $jobs[] = new JobCutOffProductListing($chunk->toArray());
                 });
         }
 
@@ -86,6 +92,7 @@ class CutOffProductListing extends Command
     */
         Bus::batch($jobs)
             ->name('CutOff Product Listing Batch (Grouped by Seller)')
+            ->onQueue(QueueEnum::LISTING_CUTOFF->value) // assign entire batch to cutoff queue
             ->dispatch();
 
         $this->info('Batch dispatched successfully.');

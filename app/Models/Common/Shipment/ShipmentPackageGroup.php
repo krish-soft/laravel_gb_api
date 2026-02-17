@@ -50,10 +50,11 @@ class ShipmentPackageGroup extends BaseModel
     // Generate unique group number (e.g. G-20260212-0001)
     public static function generateUniqueGroupNumber(): string
     {
-        $datePart = date('Ymd');
+        // $datePart = date('Ymd');
         $counter = 1;
         do {
-            $groupNumber = sprintf('G-%s-%04d', $datePart, $counter);
+            // $groupNumber = sprintf('G-%s-%04d', $datePart, $counter);
+            $groupNumber = sprintf('G-%04d', $counter);
             $exists = self::withTrashed()->where('group_number', $groupNumber)->exists();
             if (!$exists) {
                 return $groupNumber;
@@ -62,7 +63,7 @@ class ShipmentPackageGroup extends BaseModel
         } while (true);
     }
 
-   
+
 
     //
 }

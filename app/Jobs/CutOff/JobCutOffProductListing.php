@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-class JobProductListing implements ShouldQueue
+class JobCutOffProductListing implements ShouldQueue
 {
     use Queueable, Batchable;
 
@@ -30,7 +30,7 @@ class JobProductListing implements ShouldQueue
 
     public function handle(ProductListingService $listingService): void
     {
-        Log::info('CutOff Job START', ['listingIds' => $this->listingIds]);
+        // Log::info('CutOff Job START', ['listingIds' => $this->listingIds]);
 
         try {
 
@@ -240,7 +240,7 @@ class JobProductListing implements ShouldQueue
                 app(ShipmentService::class)->createShipmentAndGroups(ShipmentStatusEnum::DISPATCH->value);
             });
 
-            Log::info('CutOff Job FINISHED SUCCESS');
+            // Log::info('CutOff Job FINISHED SUCCESS');
         } catch (Throwable $e) {
 
             Log::error('CutOff Job FAILED', [
