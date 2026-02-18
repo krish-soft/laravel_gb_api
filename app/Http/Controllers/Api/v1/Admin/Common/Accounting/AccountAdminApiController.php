@@ -2,14 +2,307 @@
 
 namespace App\Http\Controllers\Api\v1\Admin\Common\Accounting;
 
+use App\Enum\Accounting\AccountOwnerTypeEnum;
 use App\Enum\Accounting\PlatformAccountCodeEnum;
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
 use App\Http\Controllers\Controller;
 use App\Models\Common\Accounting\Account;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class AccountAdminApiController extends ApiResponseWithAdminAuthController
 {
+
+
+
+    public function summary(Request $request)
+    {
+        /*
+    |--------------------------------------------------------------------------
+    | STATUS SQL
+    |--------------------------------------------------------------------------
+    */
+        $statusCase = "
+        CASE
+            WHEN available_balance > 0 THEN 'available'
+            WHEN hold_balance > 0 THEN 'hold'
+            ELSE 'zero'
+        END
+    ";
+
+        /*
+    |--------------------------------------------------------------------------
+    | PLATFORM ACCOUNTS (DETAIL LIST)
+    |--------------------------------------------------------------------------
+    */
+        $platformAccounts = Account::query()
+            ->where('owner_type', AccountOwnerTypeEnum::PLATFORM->value)
+            ->select([
+                'accnt_code',
+                'name',
+                'available_balance',
+                'hold_balance',
+                DB::raw('(available_balance + hold_balance) as total_balance')
+            ])
+            ->get();
+
+
+
+        /*
+    |--------------------------------------------------------------------------
+    | AGGREGATED STATUS SUMMARY
+    |--------------------------------------------------------------------------
+    */
+        $grouped = Account::query()
+            ->selectRaw("
+            owner_type,
+            {$statusCase} as status,
+            SUM(available_balance) as total_available_balance,
+            SUM(hold_balance) as total_hold_balance,
+            SUM(available_balance + hold_balance) as total_balance
+        ")
+            ->groupBy('owner_type', DB::raw($statusCase))
+            ->get();
+
+        $sellerSummary   = $grouped->where('owner_type', AccountOwnerTypeEnum::SELLER->value)->values();
+        $buyerSummary    = $grouped->where('owner_type', AccountOwnerTypeEnum::BUYER->value)->values();
+        $deliverySummary = $grouped->where('owner_type', AccountOwnerTypeEnum::DELIVERY->value)->values();
+
+
+
+        /*
+    |--------------------------------------------------------------------------
+    | REAL ACCOUNTING TOTALS (PAYABLE / RECEIVABLE SPLIT)
+    |--------------------------------------------------------------------------
+    */
+        $balances = Account::query()
+            ->selectRaw("
+            owner_type,
+
+            SUM(
+                CASE
+                    WHEN (available_balance + hold_balance) > 0
+                    THEN (available_balance + hold_balance)
+                    ELSE 0
+                END
+            ) as payable_total,
+
+            SUM(
+                CASE
+                    WHEN (available_balance + hold_balance) < 0
+                    THEN ABS(available_balance + hold_balance)
+                    ELSE 0
+                END
+            ) as receivable_total
+        ")
+            ->groupBy('owner_type')
+            ->get()
+            ->keyBy('owner_type');
+
+        $sellerPayable      = $balances[AccountOwnerTypeEnum::SELLER->value]->payable_total ?? 0;
+        $sellerReceivable   = $balances[AccountOwnerTypeEnum::SELLER->value]->receivable_total ?? 0;
+
+        $deliveryPayable    = $balances[AccountOwnerTypeEnum::DELIVERY->value]->payable_total ?? 0;
+        $deliveryReceivable = $balances[AccountOwnerTypeEnum::DELIVERY->value]->receivable_total ?? 0;
+
+        $buyerPayable       = $balances[AccountOwnerTypeEnum::BUYER->value]->payable_total ?? 0;
+        $buyerReceivable    = $balances[AccountOwnerTypeEnum::BUYER->value]->receivable_total ?? 0;
+
+
+
+        /*
+    |--------------------------------------------------------------------------
+    | PLATFORM ACCOUNT MAP
+    |--------------------------------------------------------------------------
+    */
+        $platformMap = Account::where('owner_type', AccountOwnerTypeEnum::PLATFORM->value)
+            ->selectRaw('accnt_code, (available_balance + hold_balance) as balance')
+            ->pluck('balance', 'accnt_code');
+
+        $platformRevenue  = $platformMap[PlatformAccountCodeEnum::PLATFORM_REVENUE->value] ?? 0;
+        $platformTax      = $platformMap[PlatformAccountCodeEnum::PLATFORM_TAX->value] ?? 0;
+        $platformClearing = $platformMap[PlatformAccountCodeEnum::PLATFORM_CLEARING->value] ?? 0;
+
+        $cash  = $platformMap[PlatformAccountCodeEnum::CASH->value] ?? 0;
+        $bank1 = $platformMap[PlatformAccountCodeEnum::BANK_01->value] ?? 0;
+        $bank2 = $platformMap[PlatformAccountCodeEnum::BANK_02->value] ?? 0;
+
+
+
+        /*
+    |--------------------------------------------------------------------------
+    | FINANCIAL SUMMARY (REAL ACCOUNTING)
+    |--------------------------------------------------------------------------
+    */
+        $financialSummary = [
+
+            // PAYABLES (CREDIT SIDE)
+            'seller_payable'   => $sellerPayable,
+            'delivery_payable' => $deliveryPayable,
+            'buyer_refund'     => $buyerPayable,
+
+            // RECEIVABLES (DEBIT SIDE)
+            'seller_receivable'   => $sellerReceivable,
+            'delivery_receivable' => $deliveryReceivable,
+            'buyer_receivable'    => $buyerReceivable,
+
+            // PLATFORM ACCOUNTS
+            'clearing_balance' => $platformClearing,
+            'platform_revenue' => $platformRevenue,
+            'tax_liability'    => $platformTax,
+
+            // ASSETS
+            'cash_balance' => $cash,
+            'bank_balance' => ($bank1 + $bank2),
+
+            // NET POSITION
+            'net_platform_position' => ($cash + $bank1 + $bank2)
+                - ($sellerPayable + $deliveryPayable + $platformTax)
+                + ($sellerReceivable + $deliveryReceivable + $buyerReceivable),
+        ];
+
+
+
+        /*
+    |--------------------------------------------------------------------------
+    | FINAL RESPONSE
+    |--------------------------------------------------------------------------
+    */
+        $summary = [
+            'financial_summary' => $financialSummary,
+            'platform_accounts' => $platformAccounts,
+            'seller_accounts'   => $sellerSummary,
+            'buyer_accounts'    => $buyerSummary,
+            'delivery_accounts' => $deliverySummary,
+        ];
+
+        return $this->successResponse(
+            __('messages.success_messages.success_get'),
+            $summary
+        );
+    }
+
+
+    // public function summary(Request $request)
+    // {
+
+
+
+    //     $platformAccounts = Account::query()
+    //         ->where('owner_type', AccountOwnerTypeEnum::PLATFORM->value)
+    //         ->get();
+
+    //     $sellerAccounts = Account::query()
+    //         ->where('owner_type', AccountOwnerTypeEnum::SELLER->value)
+    //         ->get();
+
+    //     $buyerAccounts = Account::query()
+    //         ->where('owner_type', AccountOwnerTypeEnum::BUYER->value)
+    //         ->get();
+
+    //     $deliveryAccounts = Account::query()
+    //         ->where('owner_type', AccountOwnerTypeEnum::DELIVERY->value)
+    //         ->get();
+
+
+
+    //     // Platform Balances
+    //     $platformSummary  = $platformAccounts->map(function ($account) {
+    //         return [
+    //             'accnt_code' => $account->accnt_code,
+    //             'name' => $account->name,
+    //             'available_balance' => $account->available_balance,
+    //             'hold_balance' => $account->hold_balance,
+    //             'total_balance' => $account->available_balance + $account->hold_balance,
+    //         ];
+    //     });
+
+    //     // Seller Balances
+    //     $sellerSummary  = [];
+
+    //     // Firsr Group base on on avalible balance and hold balance
+    //     $sellerAccounts->groupBy(function ($account) {
+    //         if ($account->available_balance > 0) {
+    //             return 'available';
+    //         } elseif ($account->hold_balance > 0) {
+    //             return 'hold';
+    //         } else {
+    //             return 'zero';
+    //         }
+    //     })->each(function ($group, $key) use (&$sellerSummary) {
+    //         $totalAvailable = $group->sum('available_balance');
+    //         $totalHold = $group->sum('hold_balance');
+    //         $totalBalance = $totalAvailable + $totalHold;
+
+    //         $sellerSummary[] = [
+    //             'status' => $key,
+    //             'total_available_balance' => $totalAvailable,
+    //             'total_hold_balance' => $totalHold,
+    //             'total_balance' => $totalBalance,
+    //         ];
+    //     });
+
+    //     // Buyer Balances
+    //     $buyerSummary  = [];
+    //     $buyerAccounts->groupBy(function ($account) {
+    //         if ($account->available_balance > 0) {
+    //             return 'available';
+    //         } elseif ($account->hold_balance > 0) {
+    //             return 'hold';
+    //         } else {
+    //             return 'zero';
+    //         }
+    //     })->each(function ($group, $key) use (&$buyerSummary) {
+    //         $totalAvailable = $group->sum('available_balance');
+    //         $totalHold = $group->sum('hold_balance');
+    //         $totalBalance = $totalAvailable + $totalHold;
+
+    //         $buyerSummary[] = [
+    //             'status' => $key,
+    //             'total_available_balance' => $totalAvailable,
+    //             'total_hold_balance' => $totalHold,
+    //             'total_balance' => $totalBalance,
+    //         ];
+    //     });
+
+
+    //     // Delivery Balances
+    //     $deliverySummary  = [];
+    //     $deliveryAccounts->groupBy(function ($account) {
+    //         if ($account->available_balance > 0) {
+    //             return 'available';
+    //         } elseif ($account->hold_balance > 0) {
+    //             return 'hold';
+    //         } else {
+    //             return 'zero';
+    //         }
+    //     })->each(function ($group, $key) use (&$deliverySummary) {
+    //         $totalAvailable = $group->sum('available_balance');
+    //         $totalHold = $group->sum('hold_balance');
+    //         $totalBalance = $totalAvailable + $totalHold;
+
+    //         $deliverySummary[] = [
+    //             'status' => $key,
+    //             'total_available_balance' => $totalAvailable,
+    //             'total_hold_balance' => $totalHold,
+    //             'total_balance' => $totalBalance,
+    //         ];
+    //     });
+
+
+    //     $summary = [
+    //         'platform_accounts' => $platformSummary,
+    //         'seller_accounts' => $sellerSummary,
+    //         'buyer_accounts' => $buyerSummary,
+    //         'delivery_accounts' => $deliverySummary,
+    //     ];
+
+
+    //     return $this->successResponse(__('messages.success_messages.success_get'), $summary);        //
+
+    // }
+
+
     /**
      * Display a listing of the resource.
      */

@@ -81,9 +81,10 @@ class JobCutOffOrderAccounting implements ShouldQueue
                 }
                 //
             });
+            
         } catch (Throwable $e) {
 
-            Log::error('CutOff Accounting Job FAILED', [
+            Log::error('CutOff Accounting Job Failed', [
                 'message' => $e->getMessage(),
                 'file'    => $e->getFile(),
                 'line'    => $e->getLine(),

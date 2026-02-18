@@ -330,7 +330,7 @@ Route::group([
             Route::prefix('market-order')->group(function () {
                 Route::get('/', [MarketOrderAdminApiController::class, 'getOrdersList']);
                 Route::get('/{orderId}', [MarketOrderAdminApiController::class, 'getOrderDetails']);
-                
+
                 Route::put('/status/{orderId}', [MarketOrderAdminApiController::class, 'updateOrderStatus']);
                 Route::put('/order-amount/{orderId}', [MarketOrderAdminApiController::class, 'updateOrderAmountData']);
 
@@ -362,6 +362,7 @@ Route::group([
 
             // Accounting 
             Route::prefix('accounting')->group(function () {
+                Route::get('summary', [AccountAdminApiController::class, 'summary']);
                 Route::apiResource('account', AccountAdminApiController::class);
                 Route::apiResource('ledger', AccountLedgerAdminApiController::class);
             });

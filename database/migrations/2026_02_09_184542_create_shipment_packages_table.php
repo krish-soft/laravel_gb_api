@@ -100,8 +100,12 @@ return new class extends Migration
 
             // Status flow
             $table->string('status', 50)->default('pending');  // pending | packed | ready_for_pickup | shipped | delivered | returned | mising | cancelled
-            $table->string('action_status', 50)->default('pending'); // accept / reject by buyer, or seller send short shipment or buyer pickup fail etc.
+            $table->string('action_status', 50)->default('pending')->nullable();  // From Adming
 
+            $table->string('seller_status', 50)->default('pending')->nullable();
+            $table->string('buyer_status', 50)->default('pending')->nullable();
+            $table->string('transfer_status', 50)->default('pending')->nullable();
+            $table->string('other_status', 50)->default('pending')->nullable();
 
             // Courier
             $table->string('carrier', 50)->nullable();

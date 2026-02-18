@@ -22,161 +22,53 @@ use RuntimeException;
 class OrderAccountingService
 {
 
+    /// PLATFORM + BUYER + SELLER, ORDER RECEIVED LEDGERS
+
 
     public function recordPaidOrder(Order $order, Payment $payment): void
     {
-        DB::transaction(function () use ($order, $payment) {
+        try {
 
-            $accounting = app(AccountingService::class);
-
-            /*
-            |-------------------------------------------------
-            | 1. PLATFORM CLEARING (FULL PAID AMOUNT)
-            |-------------------------------------------------
-            */
-            // $clearing = Account::where('accnt_code', PlatformAccountCodeEnum::PLATFORM_CLEARING->value)->firstOrFail();
-            $clearing = Account::getOrCreateByOwner(
-                AccountOwnerTypeEnum::PLATFORM->value,
-                null,
-                PlatformAccountCodeEnum::PLATFORM_CLEARING->value,
-            );
+            DB::transaction(function () use ($order, $payment) {
 
 
-            if (!$this->ledgerExists(
-                $clearing->id,
-                AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
-                Order::class,
-                $order->id
-            )) {
-                $accounting->createLedger($clearing, [
-                    'description' => "Payment received for Order #{$order->order_number}",
-                    'credit' => $order->taxable_amount, // we are storing in each accounts  $order->total_amount,
-                    'debit'  => 0,
-                    'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
-                    'status' => LedgerStatusEnum::AVAILABLE->value,
-                    'source_type' => Order::class,
-                    'source_id' => $order->id,
-                    'source_code' => $order->order_number,
-                    'reference' => $payment->payment_code,
-                    'payment_reference' => $payment->gateway_order_id,
-                    'common_reference' => $order->order_number,
-                ]);
-            }
-
-            /*
-            |-------------------------------------------------
-            | 2. SELLER EARNINGS (ITEM TAXABLE AMOUNT ONLY)
-            |-------------------------------------------------
-            */
-            foreach ($order->orderItems as $item) {
-
-                // seller 
-                $seller = $item->seller;
-                // if not fail transactions 
-                if (!$seller) {
-                    throw  new RuntimeException("Seller not found for Order Item ID: {$item->id}");
-                    // return;
-                }
-                // $seller = Account::where('owner_type', AccountOwnerTypeEnum::SELLER->value)
-                //     ->where('owner_id', $item->seller_id)
-                //     ->firstOrFail();
-                $seller = Account::getOrCreateByOwner(
-                    AccountOwnerTypeEnum::SELLER->value,
-                    $seller->id
-                );
-
-
-
-                if ($this->ledgerExists(
-                    $seller->id,
-                    AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
-                    OrderItem::class,
-                    $item->id
-                )) {
-                    continue;
+                if (!$order || !$payment) {
+                    throw new RuntimeException("Order or Payment not found for Order ID: {$order->id} and Payment ID: {$payment->id}");
                 }
 
-                $accounting->createLedger($seller, [
-                    'description' => "Earnings for Order #{$order->order_number}: {$item->product_name} x {$item->order_qty}",
-                    'credit' => $item->taxable_amount,
-                    'debit'  => 0,
-                    'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
-                    'status' => LedgerStatusEnum::AVAILABLE->value,
-                    'source_type' => OrderItem::class,
-                    'source_id' => $item->id,
-                    'source_code' => $order->order_number,
-                    'reference' => $payment->payment_code,
-                    'payment_reference' => $payment->gateway_order_id,
-                    'common_reference' => $order->order_number,
-                ]);
-            }
+                $accounting = app(AccountingService::class);
 
-            /*
-            |-------------------------------------------------
-            | 3. PLATFORM REVENUE (CHARGE TAXABLE AMOUNT)
-            |-------------------------------------------------
-            */
-            foreach ($order->orderCharges as $charge) {
+                // get total of taxable orderItems 
+                $taxableItemsAmount = $order->orderItems->sum('taxable_amount');
 
-                // $revenue = Account::where('accnt_code', PlatformAccountCodeEnum::PLATFORM_REVENUE->value)->firstOrFail();
-                $revenue = Account::getOrCreateByOwner(
+                // For clearning we can not use total or sub total because both have inclusive tax and charges total
+                // and we are seperating in multiple accounts so we need to calulate base amount
+
+                /*
+                |-------------------------------------------------
+                | 1. PLATFORM CLEARING (FULL PAID AMOUNT)
+                |-------------------------------------------------
+                */
+
+                // $clearing = Account::where('accnt_code', PlatformAccountCodeEnum::PLATFORM_CLEARING->value)->firstOrFail();
+                $clearing = Account::getOrCreateByOwner(
                     AccountOwnerTypeEnum::PLATFORM->value,
                     null,
-                    PlatformAccountCodeEnum::PLATFORM_REVENUE->value
+                    PlatformAccountCodeEnum::PLATFORM_CLEARING->value,
                 );
-
-                if ($this->ledgerExists(
-                    $revenue->id,
-                    AccountEntryTypeEnum::PLATFORM_CHARGE_BASE->value,
-                    get_class($charge),
-                    $charge->id
-                )) {
-                    continue;
-                }
-
-                $accounting->createLedger($revenue, [
-                    'description' => "Fees for Order #{$order->order_number}: {$charge->charge_name}",
-                    'credit' => $charge->taxable_amount,
-                    'debit'  => 0,
-                    'entry_type' => AccountEntryTypeEnum::PLATFORM_CHARGE_BASE->value,
-                    'status' => LedgerStatusEnum::AVAILABLE->value,
-                    'source_type' => get_class($charge),
-                    'source_id' => $charge->id,
-                    'source_code' => $order->order_number,
-                    'reference' => $payment->payment_code,
-                    'payment_reference' => $payment->gateway_order_id,
-                    'common_reference' => $order->order_number,
-                ]);
-            }
-
-            /*
-            |-------------------------------------------------
-            | 4. GOVERNMENT TAX (ITEM + CHARGE TAX)
-            |-------------------------------------------------
-            */
-            if ($order->tax_amount > 0) {
-
-                // $tax = Account::where('owner_type', AccountOwnerTypeEnum::GOVERNMENT->value)->firstOrFail();
-                $tax = Account::getOrCreateByOwner(
-                    AccountOwnerTypeEnum::GOVERNMENT->value,
-                    null,
-                    PlatformAccountCodeEnum::PLATFORM_TAX->value
-                );
-
 
                 if (!$this->ledgerExists(
-                    $tax->id,
-                    AccountEntryTypeEnum::ORDER_TAX_AMOUNT->value,
+                    $clearing->id,
+                    AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
                     Order::class,
                     $order->id
                 )) {
-                    $accounting->createLedger($tax, [
-                        'description' => "Tax for Order #{$order->order_number}",
-                        'credit' => $order->tax_amount,
+                    $accounting->createLedger($clearing, [
+                        'description' => "Payment received for Order #{$order->order_number}",
+                        'credit' => $order->base_amount ?? $taxableItemsAmount, // we are storing in each accounts  $order->total_amount,
                         'debit'  => 0,
-                        'entry_type' => AccountEntryTypeEnum::ORDER_TAX_AMOUNT->value,
+                        'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
                         'status' => LedgerStatusEnum::AVAILABLE->value,
-                        'is_tax' => true,
                         'source_type' => Order::class,
                         'source_id' => $order->id,
                         'source_code' => $order->order_number,
@@ -185,228 +77,186 @@ class OrderAccountingService
                         'common_reference' => $order->order_number,
                     ]);
                 }
-            }
-            /*
-            |-------------------------------------------------
-            | 5.FINAL CORRECTIONS AND DELIVERT DRIVER TO PAYABLE CONVERSION
-            |-------------------------------------------------
-            | 
-            */
 
-            // Get shipment Packages
+                /*
+                |-------------------------------------------------
+                | 2. SELLER EARNINGS (ITEM TAXABLE AMOUNT ONLY)
+                |-------------------------------------------------
+                */
+                foreach ($order->orderItems as $item) {
 
-            $shipmentPackages = $order->shipmentPackages;
-
-            foreach ($shipmentPackages as $package) {
-
-                // get shipment group and shipment and base on it get driver shipment and driver
-                $shipmentGroup = $package->packageGroup;
-                if (!$shipmentGroup) {
-                    Log::warning("Shipment group not found for Shipment Package ID: {$package->id}");
-                    continue;
-                }
-
-                $shipment = $shipmentGroup->shipment;
-                if (!$shipment) {
-                    Log::warning("Shipment not found for Shipment Group ID: {$shipmentGroup->id}");
-                    continue;
-                }
-
-                // Assume when pacakge is picked up or not base on ship qty or shipment Package status
-                $driverShipment = $shipment->driverShipment;
-
-                if (
-                    !$driverShipment
-                    || in_array(
-                        $driverShipment->status,
-                        [
-                            DriverShipmentStatusEnum::CANCELLED->value,
-                            DriverShipmentStatusEnum::PENDING->value,
-                            // DriverShipmentStatusEnum::COMPLETED->value,
-                        ]
-                    )
-                ) {
-                    Log::warning("Driver shipment status not valid for Shipment ID: {$shipment->id}");
-                    continue;
-                }
-
-                $chargeService = app(ChargeCalculationService::class);
-                $chargesData = $chargeService->calculateDeliveryCharges(
-                    $driverShipment->driver?->charge_level_code,
-                    [
-                        [
-                            'order_qty'  => $package->qty,
-                            'pack_size'  => $package->pack_size,
-                            'pack_price' => $package->pack_price,
-                            'pack_unit'  => $package->pack_unit,
-                            'pack_type_unit' => $package->pack_type_unit,
-                        ]
-                    ],
-                    false,
-                    $package->is_seller_dropoff,
-                );
-                $totalDeliveryCharge = $chargesData['total_charge_amount'];
-
-
-                // For Seller if package didnt picked up by driver and seller dropoff then we need to record negative ledger for seller as well because its like marketplace delivery where seller is responsible for delivery and if driver didnt pickup then its sellers responsibility and we will charge them the delivery fee as well
-                if ($package->is_seller_dropoff || in_array($package->action_status, [null, ShipmentStatusEnum::NOT_PICKED_UP->value])) {
-
-                    $pkgSeller = $package->seller;
+                    // seller 
+                    $seller = $item->seller;
+                    // if not fail transactions 
+                    if (!$seller) {
+                        throw  new RuntimeException("Seller not found for Order Item ID: {$item->id}");
+                        // return;
+                    }
+                    // $seller = Account::where('owner_type', AccountOwnerTypeEnum::SELLER->value)
+                    //     ->where('owner_id', $item->seller_id)
+                    //     ->firstOrFail();
                     $sellerAccount = Account::getOrCreateByOwner(
                         AccountOwnerTypeEnum::SELLER->value,
-                        $pkgSeller->id
+                        $seller->id
                     );
 
                     if ($this->ledgerExists(
                         $sellerAccount->id,
-                        AccountEntryTypeEnum::ORDER_CHARGE_AMOUNT->value,
-                        ShipmentPackage::class,
-                        $package->id
+                        AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
+                        OrderItem::class,
+                        $item->id
                     )) {
-                        Log::warning("Charge Ledger already exists for Seller Account ID: {$sellerAccount->id}, Package ID: {$package->id}");
                         continue;
                     }
 
                     $accounting->createLedger($sellerAccount, [
-                        'description' => "Earning reverse of delivery charges for Order #{$order->order_number}: for Shipment #{$shipment->shipment_number} | Package #{$package->package_number}",
-                        'credit' => 0,
-                        'debit'  => $totalDeliveryCharge,
-                        'entry_type' => AccountEntryTypeEnum::DELIVERY_CHARGE_BASE->value,
-                        'status' => LedgerStatusEnum::AVAILABLE->value,
-                        'source_type' => get_class($package),
-                        'source_id' => $package->id,
-                        'source_code' => $package->shipment_package_number,
-                        'reference' => $package->shipment_package_number,
-                        'common_reference' => $order->order_number,
-                        // 'payment_reference' => null,
-                    ]);
-
-                    if ($this->ledgerExists(
-                        $sellerAccount->id,
-                        AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
-                        ShipmentPackage::class,
-                        $package->id
-                    )) {
-                        Log::warning("Order Ledger already exists for Seller Account ID: {$sellerAccount->id}, Package ID: {$package->id}");
-                        continue;
-                    }
-
-                    $accounting->createLedger($sellerAccount, [
-                        'description' => "Earning reverse of order charge for Order #{$order->order_number}: for Shipment #{$shipment->shipment_number} | Package #{$package->package_number}",
-                        'credit' => 0,
-                        'debit'  => $package->pack_price * $package->qty, // reverse the earning for this package because its not delivered and we are charging delivery fee to seller as well so we need to reverse the earning for this package as well
-                        'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
-                        'status' => LedgerStatusEnum::AVAILABLE->value,
-                        'source_type' => get_class($package),
-                        'source_id' => $package->id,
-                        'source_code' => $package->shipment_package_number,
-                        'reference' => $package->shipment_package_number,
-                        'common_reference' => $order->order_number,
-                        // 'payment_reference' => null,
-                    ]);
-
-
-                    // Same from buyer need to credit delivery charge because if package is not picked up and its seller dropoff then we can consider this delivery charge as platform revenue as well because driver is not involved in this delivery and package is not delivered by driver but still we are charging delivery fee to seller as well so we can record platform revenue ledger for this delivery charge as well
-
-                    $pkgBuyer = $package->buyer;
-                    $buyerAccount = Account::getOrCreateByOwner(
-                        AccountOwnerTypeEnum::BUYER->value,
-                        $pkgBuyer->id
-                    );
-
-                    // Delivery Charge
-                    if ($this->ledgerExists(
-                        $buyerAccount->id,
-                        AccountEntryTypeEnum::ORDER_CHARGE_AMOUNT->value,
-                        ShipmentPackage::class,
-                        $package->id
-                    )) {
-                        Log::warning("Charge Ledger already exists for Buyer Account ID: {$buyerAccount->id}, Package ID: {$package->id}");
-                        continue;
-                    }
-
-                    $accounting->createLedger($buyerAccount, [
-                        'description' => "Reverese delivery charge for Order #{$order->order_number}: for Shipment #{$shipment->shipment_number} | Package #{$package->package_number} ",
-                        'credit' => $totalDeliveryCharge,
-                        'debit'  => 0, // reverse the earning for this package because its not delivered and we are charging delivery fee to seller as well so we need to reverse the earning for this package as well
-                        'entry_type' => AccountEntryTypeEnum::DELIVERY_CHARGE_BASE->value,
-                        'status' => LedgerStatusEnum::AVAILABLE->value,
-                        'source_type' => get_class($package),
-                        'source_id' => $package->id,
-                        'source_code' => $package->shipment_package_number,
-                        'reference' => $package->shipment_package_number,
-                        'common_reference' => $order->order_number,
-                        // 'payment_reference' => null,
-                    ]);
-
-                    if ($this->ledgerExists(
-                        $buyerAccount->id,
-                        AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
-                        ShipmentPackage::class,
-                        $package->id
-                    )) {
-                        Log::warning("Order Ledger already exists for Buyer Account ID: {$buyerAccount->id}, Package ID: {$package->id}");
-                        continue;
-                    }
-
-                    $accounting->createLedger($buyerAccount, [
-                        'description' => "Reverese price charge for Order #{$order->order_number}: for Shipment #{$shipment->shipment_number} | Package #{$package->package_number} ",
-                        'credit' => $package->pack_price * $package->qty, // reverse the earning for this package because its not delivered and we are charging delivery fee to seller as well so we need to reverse the earning for this package as well
-                        'debit'  => 0, // reverse the earning for this package because its not delivered and we are charging delivery fee to seller as well so we need to reverse the earning for this package as well
-                        'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
-                        'status' => LedgerStatusEnum::AVAILABLE->value,
-                        'source_type' => get_class($package),
-                        'source_id' => $package->id,
-                        'source_code' => $package->shipment_package_number,
-                        'reference' => $package->shipment_package_number,
-                        'common_reference' => $order->order_number,
-                        // 'payment_reference' => null,
-                    ]);
-
-
-                    //
-                } else {
-
-                    // Driver has picked up the package so we can consider this delivery charge as platform revenue as well because driver is paid and platform is earning commission on this delivery charge as well so we can record platform revenue ledger for this delivery charge as well
-
-
-                    $driverId = $driverShipment->driver_id;
-
-                    $driverAccount = Account::getOrCreateByOwner(
-                        AccountOwnerTypeEnum::DELIVERY->value,
-                        $driverId
-                    );
-
-                    if ($this->ledgerExists(
-                        $driverAccount->id,
-                        AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
-                        ShipmentPackage::class,
-                        $package->id
-                    )) {
-                        Log::warning("Charge Ledger already exists for Driver Account ID: {$driverAccount->id}, Package ID: {$package->id}");
-                        continue;
-                    }
-
-                    // Driver has picked up the package so we can consider this delivery charge as platform revenue as well because driver is paid and platform is earning commission on this delivery charge as well so we can record platform revenue ledger for this delivery charge as well
-                    $accounting->createLedger($driverAccount, [
-                        'description' => "Earnings of delivery Charges for Order #{$order->order_number}:  for Shipment #{$shipment->shipment_number} | Package #{$package->package_number}",
-                        'credit' => $totalDeliveryCharge,
+                        'description' => "Earnings for Order #{$order->order_number}: {$item->product_name} x {$item->order_qty}",
+                        'credit' => $item->taxable_amount,
                         'debit'  => 0,
-                        'entry_type' => AccountEntryTypeEnum::DELIVERY_CHARGE_BASE->value,
+                        'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
                         'status' => LedgerStatusEnum::AVAILABLE->value,
-                        'source_type' => get_class($package),
-                        'source_id' => $package->id,
-                        'source_code' => $package->shipment_package_number,
-                        'reference' => $package->shipment_package_number,
+                        'source_type' => OrderItem::class,
+                        'source_id' => $item->id,
+                        'source_code' => $order->order_number,
+                        'reference' => $payment->payment_code,
+                        'payment_reference' => $payment->gateway_order_id,
                         'common_reference' => $order->order_number,
-                        // 'payment_reference' => null,
+                    ]);
+                }
+
+                /*
+                |-------------------------------------------------
+                | 3. PLATFORM REVENUE (CHARGE TAXABLE AMOUNT)
+                |-------------------------------------------------
+                */
+                foreach ($order->orderCharges as $charge) {
+
+                    // $revenue = Account::where('accnt_code', PlatformAccountCodeEnum::PLATFORM_REVENUE->value)->firstOrFail();
+                    $revenue = Account::getOrCreateByOwner(
+                        AccountOwnerTypeEnum::PLATFORM->value,
+                        null,
+                        PlatformAccountCodeEnum::PLATFORM_REVENUE->value
+                    );
+
+                    if ($this->ledgerExists(
+                        $revenue->id,
+                        AccountEntryTypeEnum::PLATFORM_CHARGE_BASE->value,
+                        get_class($charge),
+                        $charge->id
+                    )) {
+                        continue;
+                    }
+
+                    $accounting->createLedger($revenue, [
+                        'description' => "Fees for Order #{$order->order_number}: {$charge->charge_name}",
+                        'credit' => $charge->taxable_amount,
+                        'debit'  => 0,
+                        'entry_type' => AccountEntryTypeEnum::PLATFORM_CHARGE_BASE->value,
+                        'status' => LedgerStatusEnum::AVAILABLE->value,
+                        'source_type' => get_class($charge),
+                        'source_id' => $charge->id,
+                        'source_code' => $order->order_number,
+                        'reference' => $payment->payment_code,
+                        'payment_reference' => $payment->gateway_order_id,
+                        'common_reference' => $order->order_number,
+                    ]);
+                }
+
+                /*
+                |-------------------------------------------------
+                | 4. GOVERNMENT TAX (ITEM + CHARGE TAX)
+                |-------------------------------------------------
+                */
+                if ($order->tax_amount > 0) {
+
+                    // $tax = Account::where('owner_type', AccountOwnerTypeEnum::GOVERNMENT->value)->firstOrFail();
+                    $tax = Account::getOrCreateByOwner(
+                        AccountOwnerTypeEnum::GOVERNMENT->value,
+                        null,
+                        PlatformAccountCodeEnum::PLATFORM_TAX->value
+                    );
+
+
+                    if (!$this->ledgerExists(
+                        $tax->id,
+                        AccountEntryTypeEnum::ORDER_TAX_AMOUNT->value,
+                        Order::class,
+                        $order->id
+                    )) {
+                        $accounting->createLedger($tax, [
+                            'description' => "Tax for Order #{$order->order_number}",
+                            'credit' => $order->tax_amount,
+                            'debit'  => 0,
+                            'entry_type' => AccountEntryTypeEnum::ORDER_TAX_AMOUNT->value,
+                            'status' => LedgerStatusEnum::AVAILABLE->value,
+                            'is_tax' => true,
+                            'source_type' => Order::class,
+                            'source_id' => $order->id,
+                            'source_code' => $order->order_number,
+                            'reference' => $payment->payment_code,
+                            'payment_reference' => $payment->gateway_order_id,
+                            'common_reference' => $order->order_number,
+                        ]);
+                    }
+                }
+
+                // Now at the end what buyer total paid to us as debit settled add it 
+
+                $buyerId = $order->buyer_id;
+                $buyerAccount = Account::getOrCreateByOwner(
+                    AccountOwnerTypeEnum::BUYER->value,
+                    $buyerId
+                );
+
+                // Credit Debit TO gether becasue custoemr credit and we debited for order so
+                // Settled means not to update main on Account 
+                if (!$this->ledgerExists(
+                    $buyerAccount->id,
+                    AccountEntryTypeEnum::ORDER_CHARGE_AMOUNT->value,
+                    ShipmentPackage::class,
+                    $order->id
+                )) {
+
+                    $accounting->createLedger($buyerAccount, [
+                        'description' => "Payment received for Order #{$order->order_number}",
+                        'credit' => $order->total_amount, // we are storing in each accounts  ,
+                        'debit'  => 0,
+                        'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
+                        'status' => LedgerStatusEnum::SETTLED->value,
+                        'source_type' => Order::class,
+                        'source_id' => $order->id,
+                        'source_code' => $order->order_number,
+                        'reference' => $payment->payment_code,
+                        'payment_reference' => $payment->gateway_order_id,
+                        'common_reference' => $order->order_number,
+                    ]);
+
+                    $accounting->createLedger($buyerAccount, [
+                        'description' => "Payment paid for Order #{$order->order_number}",
+                        'credit' => 0, // we are storing in each accounts  ,
+                        'debit'  => $order->total_amount,
+                        'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
+                        'status' => LedgerStatusEnum::SETTLED->value,
+                        'source_type' => Order::class,
+                        'source_id' => $order->id,
+                        'source_code' => $order->order_number,
+                        'reference' => $payment->payment_code,
+                        'payment_reference' => $payment->gateway_order_id,
+                        'common_reference' => $order->order_number,
                     ]);
                 }
 
 
-                // calculate driver payable and platform commission for this package and record ledger entries accordingly
-            }
-        });
+                // Regarding reconiliation and settlement, we can have separate processes that run after delivery confirmation, which will then move the ledger entries to settled status and calculate final payouts after considering returns, cancellations, and other adjustments.
+
+
+                //
+            });
+        } catch (\Exception $e) {
+            throw $e;
+            Log::error("Order Accounting for Order ID: {$order->order_number}, Error: {$e->getMessage()}");
+            // You can also choose to rethrow the exception or handle it as per your application's needs
+        }
     }
 
     /**

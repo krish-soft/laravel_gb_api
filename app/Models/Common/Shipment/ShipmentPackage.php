@@ -55,6 +55,11 @@ class ShipmentPackage extends Model
         'status',
         'action_status',
 
+        'seller_status', // When Pickup
+        'buyer_status', // When Delivery
+        'transfer_status', // When transfer between depots or fulfillment locations
+        'other_status', // any other status we want to track like short shipment, pickup fail, delivery fail, damage etc.
+
         'carrier',
         'tracking_number',
         'remarks',

@@ -43,7 +43,8 @@ class Order extends BaseModel
         'order_date',
         'expected_ship_date',
 
-        'subtotal',
+        'base_amount', // base amount without tax and charges, we can use it for accounting and settlement items total only
+        'subtotal', // subtotal is base amount + tax amount, we can use it for accounting and settlement total amount
         'tax_amount',
         'total_amount',
         'currency',

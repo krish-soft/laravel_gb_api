@@ -83,6 +83,7 @@ class CheckoutConfirmService
             ]);
 
             $subtotal = 0;
+            $baseItemTaxableTotal = 0;
 
             /* -------------------------------------------------
              | 2️⃣ Process Cart Items (STRICT)
@@ -147,6 +148,7 @@ class CheckoutConfirmService
 
                 $lineTotal = $cartItem->order_qty * $cartItem->pack_price;
                 $subtotal += $lineTotal;
+                $baseItemTaxableTotal += $lineTotal;
 
                 $listingProduct = $listingItem->product;
                 $listingVariant = $listingItem->productVariant ?? null;
@@ -228,6 +230,7 @@ class CheckoutConfirmService
              | 4️⃣ Update Order Totals (FINAL)
              -------------------------------------------------*/
             $order->update([
+                'base_amount' => $baseItemTaxableTotal, // we can use it for accounting and settlement items total only
                 'subtotal' => $subtotal,
                 'tax_amount' => $taxAmount, // from charges only
                 'total_amount' => $subtotal + $taxAmount,

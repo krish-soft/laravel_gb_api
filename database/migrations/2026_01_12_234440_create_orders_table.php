@@ -45,6 +45,7 @@ return new class extends Migration
             $table->date('order_date');
             $table->date('expected_ship_date')->nullable();
 
+            $table->decimal('base_amount', 15, 2)->nullable();
             $table->decimal('subtotal', 15, 2);
             $table->decimal('tax_amount', 15, 2)->default(0)->nullable();
             $table->decimal('total_amount', 15, 2)->default(0);
