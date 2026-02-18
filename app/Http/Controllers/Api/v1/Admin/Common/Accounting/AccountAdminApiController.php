@@ -13,13 +13,11 @@ use Illuminate\Support\Facades\DB;
 class AccountAdminApiController extends ApiResponseWithAdminAuthController
 {
 
-
-
     public function summary(Request $request)
     {
         /*
     |--------------------------------------------------------------------------
-    | STATUS SQL
+    | 1️⃣ STATUS CLASSIFICATION
     |--------------------------------------------------------------------------
     */
         $statusCase = "
@@ -30,13 +28,14 @@ class AccountAdminApiController extends ApiResponseWithAdminAuthController
         END
     ";
 
+
         /*
     |--------------------------------------------------------------------------
-    | PLATFORM ACCOUNTS (DETAIL LIST)
+    | 2️⃣ LOAD PLATFORM ACCOUNTS FROM DB (REAL DATA)
     |--------------------------------------------------------------------------
     */
-        $platformAccounts = Account::query()
-            ->where('owner_type', AccountOwnerTypeEnum::PLATFORM->value)
+        $platformAccountsDB = Account::query()
+            ->whereIn('owner_type', AccountOwnerTypeEnum::casesAsValues())
             ->select([
                 'accnt_code',
                 'name',
@@ -44,13 +43,63 @@ class AccountAdminApiController extends ApiResponseWithAdminAuthController
                 'hold_balance',
                 DB::raw('(available_balance + hold_balance) as total_balance')
             ])
-            ->get();
-
+            ->get()
+            ->keyBy('accnt_code');
 
 
         /*
     |--------------------------------------------------------------------------
-    | AGGREGATED STATUS SUMMARY
+    | 3️⃣ ENSURE ALL ENUM PLATFORM ACCOUNTS EXIST (UI PURPOSE)
+    |--------------------------------------------------------------------------
+    */
+        $platformAccounts = collect();
+
+        foreach (PlatformAccountCodeEnum::cases() as $case) {
+
+            $code = $case->value;
+
+            $account = $platformAccountsDB[$code] ?? null;
+
+            $platformAccounts->push([
+                'accnt_code'        => $code,
+                'name'              => $account->name ?? $code,
+                'available_balance' => $account->available_balance ?? 0,
+                'hold_balance'      => $account->hold_balance ?? 0,
+                'total_balance'     => ($account->available_balance ?? 0)
+                    + ($account->hold_balance ?? 0),
+            ]);
+        }
+
+
+        /*
+    |--------------------------------------------------------------------------
+    | 4️⃣ PLATFORM SUMMARY (ROLE + DIRECTION)
+    |--------------------------------------------------------------------------
+    */
+        $platformSummary = $platformAccounts->map(function ($row) {
+
+            $balance = $row['total_balance'];
+
+            return [
+                'account_code' => $row['accnt_code'],
+                'balance'      => $balance,
+                'direction'    => $balance < 0 ? 'receivable' : 'payable',
+                'type' => match ($row['accnt_code']) {
+                    PlatformAccountCodeEnum::PLATFORM_REVENUE->value => 'income',
+                    PlatformAccountCodeEnum::PLATFORM_TAX->value => 'government_payable',
+                    PlatformAccountCodeEnum::PLATFORM_CLEARING->value => 'escrow',
+                    PlatformAccountCodeEnum::CASH->value,
+                    PlatformAccountCodeEnum::BANK_01->value,
+                    PlatformAccountCodeEnum::BANK_02->value => 'asset',
+                    default => 'platform'
+                }
+            ];
+        });
+
+
+        /*
+    |--------------------------------------------------------------------------
+    | 5️⃣ STATUS TABLE SUMMARY (SELLER / BUYER / DELIVERY)
     |--------------------------------------------------------------------------
     */
         $grouped = Account::query()
@@ -69,31 +118,18 @@ class AccountAdminApiController extends ApiResponseWithAdminAuthController
         $deliverySummary = $grouped->where('owner_type', AccountOwnerTypeEnum::DELIVERY->value)->values();
 
 
-
         /*
     |--------------------------------------------------------------------------
-    | REAL ACCOUNTING TOTALS (PAYABLE / RECEIVABLE SPLIT)
+    | 6️⃣ PAYABLE / RECEIVABLE TOTALS
     |--------------------------------------------------------------------------
     */
         $balances = Account::query()
             ->selectRaw("
             owner_type,
-
-            SUM(
-                CASE
-                    WHEN (available_balance + hold_balance) > 0
-                    THEN (available_balance + hold_balance)
-                    ELSE 0
-                END
-            ) as payable_total,
-
-            SUM(
-                CASE
-                    WHEN (available_balance + hold_balance) < 0
-                    THEN ABS(available_balance + hold_balance)
-                    ELSE 0
-                END
-            ) as receivable_total
+            SUM(CASE WHEN (available_balance + hold_balance) > 0
+                THEN (available_balance + hold_balance) ELSE 0 END) as payable_total,
+            SUM(CASE WHEN (available_balance + hold_balance) < 0
+                THEN ABS(available_balance + hold_balance) ELSE 0 END) as receivable_total
         ")
             ->groupBy('owner_type')
             ->get()
@@ -109,15 +145,14 @@ class AccountAdminApiController extends ApiResponseWithAdminAuthController
         $buyerReceivable    = $balances[AccountOwnerTypeEnum::BUYER->value]->receivable_total ?? 0;
 
 
-
         /*
     |--------------------------------------------------------------------------
-    | PLATFORM ACCOUNT MAP
+    | 7️⃣ PLATFORM TOTAL MAP (REAL DB VALUES — FIXED)
     |--------------------------------------------------------------------------
     */
-        $platformMap = Account::where('owner_type', AccountOwnerTypeEnum::PLATFORM->value)
-            ->selectRaw('accnt_code, (available_balance + hold_balance) as balance')
-            ->pluck('balance', 'accnt_code');
+        $platformMap = $platformAccountsDB->mapWithKeys(fn($a) => [
+            $a->accnt_code => ($a->available_balance + $a->hold_balance)
+        ]);
 
         $platformRevenue  = $platformMap[PlatformAccountCodeEnum::PLATFORM_REVENUE->value] ?? 0;
         $platformTax      = $platformMap[PlatformAccountCodeEnum::PLATFORM_TAX->value] ?? 0;
@@ -128,49 +163,42 @@ class AccountAdminApiController extends ApiResponseWithAdminAuthController
         $bank2 = $platformMap[PlatformAccountCodeEnum::BANK_02->value] ?? 0;
 
 
-
         /*
     |--------------------------------------------------------------------------
-    | FINANCIAL SUMMARY (REAL ACCOUNTING)
+    | 8️⃣ FINANCIAL SUMMARY
     |--------------------------------------------------------------------------
     */
         $financialSummary = [
-
-            // PAYABLES (CREDIT SIDE)
             'seller_payable'   => $sellerPayable,
             'delivery_payable' => $deliveryPayable,
             'buyer_refund'     => $buyerPayable,
 
-            // RECEIVABLES (DEBIT SIDE)
             'seller_receivable'   => $sellerReceivable,
             'delivery_receivable' => $deliveryReceivable,
             'buyer_receivable'    => $buyerReceivable,
 
-            // PLATFORM ACCOUNTS
             'clearing_balance' => $platformClearing,
             'platform_revenue' => $platformRevenue,
             'tax_liability'    => $platformTax,
 
-            // ASSETS
             'cash_balance' => $cash,
             'bank_balance' => ($bank1 + $bank2),
 
-            // NET POSITION
             'net_platform_position' => ($cash + $bank1 + $bank2)
                 - ($sellerPayable + $deliveryPayable + $platformTax)
                 + ($sellerReceivable + $deliveryReceivable + $buyerReceivable),
         ];
 
 
-
         /*
     |--------------------------------------------------------------------------
-    | FINAL RESPONSE
+    | 9️⃣ FINAL RESPONSE
     |--------------------------------------------------------------------------
     */
         $summary = [
             'financial_summary' => $financialSummary,
-            'platform_accounts' => $platformAccounts,
+            'platform_summary'  => $platformSummary,
+            'platform_accounts' => $platformAccounts->values(),
             'seller_accounts'   => $sellerSummary,
             'buyer_accounts'    => $buyerSummary,
             'delivery_accounts' => $deliverySummary,
