@@ -121,7 +121,7 @@ class Shipment extends BaseModel
 
     protected $appends = [
         'total_packages',
-        'total_weight',
+        // 'total_weight',
         'group_number',
 
         // NEW
@@ -138,11 +138,29 @@ class Shipment extends BaseModel
 
     public function getTotalWeightAttribute()
     {
-        return $this->shipmentGroups()
-            ->with('shipmentPackage:id,pack_size,qty')
-            ->get()
-            ->sum(fn($g) => ($g->shipmentPackage->pack_size ?? 0) * ($g->shipmentPackage->qty ?? 0));
+        // $groups = $this->shipmentGroups()
+        //     ->with('shipmentPackage:id,pack_size,qty')
+        //     ->get();
+
+        // if ($groups->isEmpty()) {
+        //     return null;
+        // }
+
+        // $total = $groups->sum(
+        //     fn($g) => ($g?->shipmentPackage?->pack_size ?? 0)
+        //         * ($g?->shipmentPackage?->qty ?? 0)
+        // );
+
+        // return $total ?: null; // also returns null if calculated weight = 0
+
+        // $total = $this->shipmentGroups()
+        //     ->join('shipment_packages', 'shipment_packages.id', '=', 'shipment_package_groups.shipment_package_id')
+        //     ->selectRaw('SUM(shipment_packages.pack_size * shipment_packages.qty) as total')
+        //     ->value('total');
+
+        // return $total ?: null;
     }
+
 
 
 

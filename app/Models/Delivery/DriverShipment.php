@@ -4,6 +4,8 @@ namespace App\Models\Delivery;
 
 use App\Models\BaseModel;
 use App\Models\Common\Shipment\Shipment;
+use App\Models\Common\Shipment\ShipmentPackage;
+use App\Models\Common\Shipment\ShipmentPackageGroup;
 use App\Models\User;
 use App\Services\Common\Charge\ChargeCalculationService;
 use Illuminate\Database\Eloquent\Model;
@@ -49,9 +51,9 @@ class DriverShipment extends BaseModel
         return $this->belongsTo(Shipment::class, 'shipment_id');
     }
 
-    public function driverShipmentPackages()
+    public function shipmentGroups()
     {
-        return $this->shipment()->with('shipmentGroups.driverShipmentPackages');
+        return $this->shipment()->with('shipmentGroups');
     }
 
     public function driver()
@@ -68,6 +70,8 @@ class DriverShipment extends BaseModel
     {
         return $this->belongsTo(User::class, 'assigned_by')->select('id', 'name', 'user_code', 'nickname');
     }
+
+
 
     protected $appends = [
 
@@ -139,7 +143,7 @@ class DriverShipment extends BaseModel
             // 'platform_commission' => $commissionEstimate,
 
             'delivery_charge_amount' => round($driverPayableEstimate, 2),
-            'platform_commission_amount' => round($platformCommissionEstimate, 2),     
+            'platform_commission_amount' => round($platformCommissionEstimate, 2),
 
 
             // final approx number

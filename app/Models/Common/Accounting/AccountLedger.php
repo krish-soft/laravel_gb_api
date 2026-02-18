@@ -40,6 +40,7 @@ class AccountLedger extends BaseModel
         'reference',
         'payment_reference',
         'common_reference',
+        'other_reference', // for driver charges reversal or any other use
 
         'parent_ledger_id',
 

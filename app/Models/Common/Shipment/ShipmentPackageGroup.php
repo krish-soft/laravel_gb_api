@@ -26,12 +26,12 @@ class ShipmentPackageGroup extends BaseModel
     // relationships
     public function shipment()
     {
-        return $this->belongsTo(Shipment::class);
+        return $this->belongsTo(Shipment::class, 'shipment_id');
     }
 
     public function shipmentPackage()
     {
-        return $this->belongsTo(ShipmentPackage::class);
+        return $this->belongsTo(ShipmentPackage::class, 'shipment_package_id');
     }
 
 

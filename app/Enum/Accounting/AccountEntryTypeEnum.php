@@ -15,6 +15,7 @@ enum AccountEntryTypeEnum: string
 
         // 🔹 Delivery charges (order-level)
     case DELIVERY_CHARGE_BASE    = 'delivery_charge_base';
+    case DELIVERY_CHARGE_RETURN  = 'delivery_charge_return';
     case DELIVERY_CHARGE_TAX     = 'delivery_charge_tax';
 
         // 🔹 Adjustments

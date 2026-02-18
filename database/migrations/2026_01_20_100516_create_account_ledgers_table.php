@@ -46,6 +46,7 @@ return new class extends Migration
             $table->string('reference', 100)->nullable(); // intenal
             $table->string('payment_reference', 100)->nullable(); //
             $table->string('common_reference', 100)->nullable(); // intenal
+            $table->string('other_reference', 100)->nullable(); // intenal
 
             // Recovery / adjustment linking
             $table->unsignedBigInteger('parent_ledger_id')->nullable();

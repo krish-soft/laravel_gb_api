@@ -5,6 +5,8 @@ namespace App\Models\Common\Shipment;
 use App\Models\Buyer\Order\Order;
 use App\Models\Buyer\Order\OrderItem;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
+use App\Models\Market\MarketOrder;
+use App\Models\Market\MarketOrderItem;
 use App\Models\Master\Depot\MstDepot;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
@@ -100,12 +102,22 @@ class ShipmentPackage extends Model
 
     public function order()
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(Order::class, 'order_id');
     }
 
     public function orderItem()
     {
-        return $this->belongsTo(OrderItem::class);
+        return $this->belongsTo(OrderItem::class, 'order_item_id');
+    }
+
+    public function marketOrder()
+    {
+        return $this->belongsTo(MarketOrder::class, 'market_order_id');
+    }
+
+    public function marketOrderItem()
+    {
+        return $this->belongsTo(MarketOrderItem::class, 'market_order_item_id');
     }
 
     public function buyer()
