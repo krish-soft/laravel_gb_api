@@ -21,7 +21,7 @@ enum AppModuleEnum: int
     case ORDER_ITEMS         = 303;
     case PAYMENTS            = 304; // USED
     // case WALLETS             = 305;
-    case SETTLEMENTS         = 306;
+    case SETTLEMENTS         = 306; // USED
     case REFUNDS             = 307;
     case COMMISSIONS         = 308; // USED
     case ACCOUNTINGS         = 309; // USED

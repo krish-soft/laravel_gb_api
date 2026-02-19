@@ -79,6 +79,7 @@ return [
         'package_cancelled' => 'Package cancelled successfully.',
 
         'success_upload'    => 'File uploaded successfully.',
+        'settlement_batch_created' => 'Settlement batch created successfully.',
     ],
 
     /*

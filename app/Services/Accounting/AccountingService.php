@@ -121,11 +121,14 @@ class AccountingService
         DB::transaction(function () use ($ledger) {
 
             $ledger  = AccountLedger::lockForUpdate()->findOrFail($ledger->id);
-            $account = Account::lockForUpdate()->findOrFail($ledger->account_id);
 
-            if (!$ledger->is_tax && $ledger->debit > 0) {
-                $account->decrement('available_balance', $ledger->debit);
-            }
+            // We don not to chagne here because settlement means we alrrady add entry of credit or debit in account snapshot, so we can not change it here other wise balance will be wrong, we just need to mark it as settled
+            // so settlement means need to chagne status only nothing else 
+            
+            // $account = Account::lockForUpdate()->findOrFail($ledger->account_id);
+            // if (!$ledger->is_tax && $ledger->debit > 0) {
+            //     $account->decrement('available_balance', $ledger->debit);
+            // }
 
 
             $ledger->update([

@@ -36,6 +36,7 @@ use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstPaymentSettingApiControl
 use App\Http\Controllers\Api\v1\Admin\Master\Vehicle\MstVehicleApiController;
 use App\Http\Controllers\Api\v1\Admin\Report\Order\OrderReportAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Seller\Product\AdminProductListingApiController;
+use App\Http\Controllers\Api\v1\Admin\Settlment\SettlementAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Shipment\DriverShipmentAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Shipment\ShipmentAdminApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\BuyerProductListingApiController;
@@ -340,19 +341,16 @@ Route::group([
                 //
             });
 
-            // Payments  
+            // Razorpay Payments  
             Route::prefix('payment')->group(function () {
                 Route::get('/', [AdminPaymentApiController::class, 'getPaymentsList']);
                 Route::get('/{paymentId}', [AdminPaymentApiController::class, 'getPaymentDetails']);
-                //
-
-                // reconcile
                 Route::post('/reconcile', [PaymentReconcileApiController::class, 'reconcile']);
             });
 
 
 
-            // Payouts
+            // Razorpay Payouts
             Route::prefix('payouts')->group(function () {
                 Route::get('/', [PayoutApiController::class, 'index']);
                 Route::post('{payout}/approve', [PayoutApiController::class, 'approve']);
@@ -362,9 +360,15 @@ Route::group([
 
             // Accounting 
             Route::prefix('accounting')->group(function () {
+
                 Route::get('summary', [AccountAdminApiController::class, 'summary']);
                 Route::apiResource('account', AccountAdminApiController::class);
                 Route::apiResource('ledger', AccountLedgerAdminApiController::class);
+
+                // Settlement Preview
+                Route::prefix('settlement')->group(function () {
+                    Route::get('preview', [SettlementAdminApiController::class, 'getPayoutSettlementPreview']);
+                });
             });
 
 
