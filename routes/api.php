@@ -133,6 +133,8 @@ Route::group([
         Route::get('products', [UtilsApiController::class, 'getProducts']);
         Route::get('products/variants/{productId}', [UtilsApiController::class, 'getProductVariants']);
         Route::get('products/packagings/{productId}', [UtilsApiController::class, 'getProductPackagings']);
+
+        Route::get('platform-accounts', [UtilsApiController::class, 'getPlatformAccountsList']);
     });
 
 

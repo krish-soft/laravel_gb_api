@@ -63,7 +63,7 @@ class AccountSeeder extends Seeder
 
         Account::create([
             'name' => 'Platform Market Liability Account',
-            'accnt_code' => PlatformAccountCodeEnum::PLATFORM_TO_MARKET->value, // 'PLATFORM_MARKET',
+            'accnt_code' => PlatformAccountCodeEnum::PLATFORM_MARKET->value, // 'PLATFORM_MARKET',
             'owner_type' => AccountOwnerTypeEnum::PLATFORM->value,
             'owner_id' => null,
             'currency' => MstFinanceSetting::currency() ?? 'INR',

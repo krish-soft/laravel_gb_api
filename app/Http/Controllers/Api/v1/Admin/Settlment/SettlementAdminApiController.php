@@ -6,6 +6,7 @@ use App\Enum\Accounting\AccountOwnerTypeEnum;
 use App\Enum\Accounting\LedgerStatusEnum;
 use App\Enum\Accounting\PlatformAccountCodeEnum;
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
+use App\Models\Common\Accounting\Account;
 use App\Models\Common\Accounting\AccountLedger;
 use Illuminate\Http\Request;
 
@@ -23,13 +24,17 @@ class SettlementAdminApiController extends ApiResponseWithAdminAuthController
             'cut_off_date' => 'required|date',
             'owner_type'   => 'nullable|in:seller,buyer,delivery',
             'filter_type'  => 'nullable|in:need_to_pay_online,need_to_pay_cash,need_to_receive_online',
-            // 'source_account_id' => 'required|integer|exists:accounts,id',
+            'platform_account_id' => 'required|integer|exists:accounts,id',
         ]);
 
         $cutOffDate = $request->cut_off_date;
 
         $ledgerData  = $this->getAccountLedgerDataByCutOffDate($cutOffDate);
         $previewData = $ledgerData['preview'] ?? [];
+
+        $platformAccountId = $request->platform_account_id;
+        $platformAccount = Account::findOrFail($platformAccountId);
+
 
         /*
     |--------------------------------------------------------------------------
@@ -44,6 +49,10 @@ class SettlementAdminApiController extends ApiResponseWithAdminAuthController
                 $request->filter_type
             );
 
+            $platformBalance = $platformAccount->available_balance;
+
+
+
             /*
         |--------------------------------------------------------------------------
         | 🔥 REBUILD SUMMARY FROM FILTERED DATA (THIS WAS MISSING)
@@ -51,11 +60,23 @@ class SettlementAdminApiController extends ApiResponseWithAdminAuthController
         */
             $totalCredit = array_sum(array_column($previewData, 'calc_total_credit'));
             $totalDebit  = array_sum(array_column($previewData, 'calc_total_debit'));
+            $netAmount   = $totalCredit - $totalDebit;
+
+            $platformRemainBalance = 0;
+            if ($request->filter_type == 'need_to_receive_online' && $netAmount < 0) {
+
+                $platformRemainBalance = $platformBalance + $netAmount; // since netAmount is negative here
+            } else {
+
+                $platformRemainBalance = $platformBalance - $netAmount;
+            }
 
             $summary = [
                 'total_credit' => (float)$totalCredit,
                 'total_debit'  => (float)$totalDebit,
-                'net_amount'   => (float)($totalCredit - $totalDebit),
+                'net_amount'   => (float)$netAmount,
+                'platform_current_balance' => (float)$platformBalance,
+                'platform_remaining_balance_after_settlement' => (float)$platformRemainBalance,
             ];
         } else {
 

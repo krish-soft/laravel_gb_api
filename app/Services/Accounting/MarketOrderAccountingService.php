@@ -51,7 +51,7 @@ class MarketOrderAccountingService
             $clearing = Account::getOrCreateByOwner(
                 AccountOwnerTypeEnum::PLATFORM->value,
                 null,
-                PlatformAccountCodeEnum::PLATFORM_TO_MARKET->value,
+                PlatformAccountCodeEnum::PLATFORM_MARKET->value,
             );
 
             if (!$this->ledgerExists(

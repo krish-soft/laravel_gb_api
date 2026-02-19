@@ -53,6 +53,11 @@ class Account extends BaseModel
         'is_active' => 'boolean',
     ];
 
+    // scopes
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
 
 
     public static function getOrCreateByOwner(

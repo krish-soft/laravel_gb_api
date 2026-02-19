@@ -16,6 +16,7 @@ use App\Enum\User\UserRoleEnum;
 use App\Enum\User\UserTypeEnum;
 use App\Http\Controllers\ApiResponseController;
 use App\Http\Controllers\Controller;
+use App\Models\Common\Accounting\Account;
 use App\Models\Master\Market\MstMarket;
 use App\Models\Master\MstFinancialYear;
 use App\Models\Master\MstPackType;
@@ -162,6 +163,17 @@ class UtilsApiController extends ApiResponseController
             $packagings = $product->packagings()->active()->get();
         }
         return $this->successResponse(__('messages.success_messages.success_get'), $packagings);
+    }
+
+
+    public function getPlatformAccountsList()
+    {
+        $list = [];
+        if (request()->user()) {
+            $list = Account::active()->where('owner_type', AccountOwnerTypeEnum::PLATFORM->value)
+                ->select('id', 'name', 'owner_type', 'available_balance', 'accnt_code')->get();
+        }
+        return $this->successResponse(__('messages.success_messages.success_get'), $list);
     }
 
 
