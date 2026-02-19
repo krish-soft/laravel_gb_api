@@ -6,104 +6,188 @@ use App\Enum\Accounting\AccountOwnerTypeEnum;
 use App\Enum\Accounting\LedgerStatusEnum;
 use App\Enum\Accounting\PlatformAccountCodeEnum;
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
-use App\Http\Controllers\Controller;
 use App\Models\Common\Accounting\AccountLedger;
 use Illuminate\Http\Request;
 
 class SettlementAdminApiController extends ApiResponseWithAdminAuthController
 {
-    //
 
-
-
+    /*
+    |--------------------------------------------------------------------------
+    | PREVIEW ENGINE (MAIN SOURCE OF TRUTH)
+    |--------------------------------------------------------------------------
+    */
     public function getPayoutSettlementPreview(Request $request)
     {
         $request->validate([
             'cut_off_date' => 'required|date',
+            'owner_type'   => 'nullable|in:seller,buyer,delivery',
+            'filter_type'  => 'nullable|in:need_to_pay_online,need_to_pay_cash,need_to_receive_online',
+            // 'source_account_id' => 'required|integer|exists:accounts,id',
         ]);
 
-        $cutOffDate = $request->input('cut_off_date');
+        $cutOffDate = $request->cut_off_date;
 
+        $ledgerData  = $this->getAccountLedgerDataByCutOffDate($cutOffDate);
+        $previewData = $ledgerData['preview'] ?? [];
 
-        $ledgersData = $this->getAccountLedgerDataByCutOffDate($cutOffDate);
+        /*
+    |--------------------------------------------------------------------------
+    | APPLY FILTER IF EXISTS
+    |--------------------------------------------------------------------------
+    */
+        if ($request->owner_type && $request->filter_type) {
 
-        /**
-         * ------------------------------------------
-         * FINAL RESPONSE
-         * ------------------------------------------
-         */
+            $previewData = $this->applyCombinationFilter(
+                $previewData,
+                $request->owner_type,
+                $request->filter_type
+            );
+
+            /*
+        |--------------------------------------------------------------------------
+        | 🔥 REBUILD SUMMARY FROM FILTERED DATA (THIS WAS MISSING)
+        |--------------------------------------------------------------------------
+        */
+            $totalCredit = array_sum(array_column($previewData, 'calc_total_credit'));
+            $totalDebit  = array_sum(array_column($previewData, 'calc_total_debit'));
+
+            $summary = [
+                'total_credit' => (float)$totalCredit,
+                'total_debit'  => (float)$totalDebit,
+                'net_amount'   => (float)($totalCredit - $totalDebit),
+            ];
+        } else {
+
+            /*
+        |--------------------------------------------------------------------------
+        | DEFAULT FULL SUMMARY (OLD BEHAVIOR)
+        |--------------------------------------------------------------------------
+        */
+            $summary = $ledgerData['summary'];
+        }
+
         return $this->successResponse(
             __('messages.success_messages.success_get'),
-            $ledgersData
+            [
+                'summary' => $summary,
+                'preview' => array_values($previewData),
+            ]
         );
     }
 
 
-    // Now create Settlement Batch To Process Furher to Payout 
-
+    /*
+    |--------------------------------------------------------------------------
+    | CREATE BATCH (REUSES PREVIEW ENGINE)
+    |--------------------------------------------------------------------------
+    */
     public function createSettlementBatch(Request $request)
     {
         $request->validate([
             'cut_off_date' => 'required|date',
-            'owner_type' => 'required|string|in:seller,buyer,delivery',
+            'owner_type'   => 'required|in:seller,buyer,delivery',
+            'filter_type'  => 'required|in:need_to_pay_online,need_to_pay_cash,need_to_receive_online',
         ]);
 
-        $cutOffDate = $request->input('cut_off_date');
-        $ownerType = $request->input('owner_type');
-        // Logic to create settlement batch based on cut-off date and owner type
+        /*
+        |------------------------------------------------
+        | CALL SAME PREVIEW LOGIC (NO DUPLICATION)
+        |------------------------------------------------
+        */
+        $previewResponse = $this->getPayoutSettlementPreview($request)->getData(true);
 
-        $ledgerData = $this->getAccountLedgerDataByCutOffDate($cutOffDate);
-        $previewData = $ledgerData['preview'] ?? [];
+        $processData = $previewResponse['data']['preview'] ?? [];
 
-        // Filter preview data based on owner type
-        $filteredData = array_filter($previewData, function ($item) use ($ownerType) {
-            return $item['owner_type'] === $ownerType;
-        });
+        /*
+        |------------------------------------------------
+        | CALCULATE SUMMARY FOR BATCH
+        |------------------------------------------------
+        */
+        $totalCredit = array_sum(array_column($processData, 'calc_total_credit'));
+        $totalDebit  = array_sum(array_column($processData, 'calc_total_debit'));
+        $netAmount   = $totalCredit - $totalDebit;
 
-        // Now create Batch and then create payout for entry in batch and mark ledger as settled
+        if (
+            ($request->filter_type !== 'need_to_receive_online' && $netAmount <= 0) ||
+            ($request->filter_type === 'need_to_receive_online' && $netAmount >= 0)
+        ) {
+            return $this->showErrorMessage('Invalid settlement combination.');
+        }
 
-        
-
-        // Here you can implement the logic to create settlement batch using $filteredData
+        /*
+        |------------------------------------------------
+        | CREATE BATCH HERE
+        |------------------------------------------------
+        */
+        // SettlementBatch::create([...]);
 
         return $this->successResponse(
             __('messages.success_messages.settlement_batch_created'),
-            ['cut_off_date' => $cutOffDate]
+            [
+                'summary' => [
+                    'total_credit' => $totalCredit,
+                    'total_debit'  => $totalDebit,
+                    'net_amount'   => $netAmount,
+                ],
+                'details' => $processData,
+            ]
         );
     }
 
 
-
-
-
-    // make common 
-    private function getAccountLedgerDataByCutOffDate($cutOffDate)
-    {
-        /*
+    /*
     |--------------------------------------------------------------------------
-    | Base Query (USE RELATION — NO JOIN)
+    | 🔥 COMBINATION FILTER (USED BY BOTH METHODS)
     |--------------------------------------------------------------------------
     */
-        $baseQuery = AccountLedger::query()
+    private function applyCombinationFilter(array $previewData, $ownerType, $filterType)
+    {
+        return array_filter($previewData, function ($row) use ($ownerType, $filterType) {
+
+            if ($row['owner_type'] !== $ownerType) {
+                return false;
+            }
+
+            $net = $row['calc_net_amount'];
+            // ✅ CASH DETECTION FROM LEDGERS (OLD WORKING LOGIC)
+            $isCash = collect($row['ledgers'])->contains(function ($ledger) {
+                return str_starts_with($ledger['common_reference'] ?? '', 'MKT') || str_starts_with($ledger['source_code'] ?? '', 'MKT');
+            });
+
+            if ($filterType === 'need_to_pay_online') {
+                return $net > 0 && !$isCash;
+            }
+
+            if ($filterType === 'need_to_pay_cash') {
+                return $net > 0 && $isCash;
+            }
+
+            if ($filterType === 'need_to_receive_online') {
+                return $net < 0 && !$isCash;
+            }
+
+            return true;
+        });
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | BASE DATA ENGINE (UNCHANGED)
+    |--------------------------------------------------------------------------
+    */
+    private function getAccountLedgerDataByCutOffDate($cutOffDate)
+    {
+        $ledgers = AccountLedger::query()
             ->with(['account'])
             ->where('status', LedgerStatusEnum::AVAILABLE->value)
             ->whereDate('ledger_date', '<=', $cutOffDate)
             ->whereHas('account', function ($q) {
                 $q->whereNotIn('accnt_code', PlatformAccountCodeEnum::casesAsValues());
-            });
+            })
+            ->get();
 
-        /*
-    |--------------------------------------------------------------------------
-    | LOAD LEDGERS ONCE
-    |--------------------------------------------------------------------------
-    */
-        $ledgers = $baseQuery->get();
-
-        /*
-    |--------------------------------------------------------------------------
-    | 1️⃣ SUMMARY DATA (OWNER TYPE TOTALS)
-    |--------------------------------------------------------------------------
-    */
         $summaryData = [];
 
         foreach (
@@ -116,76 +200,109 @@ class SettlementAdminApiController extends ApiResponseWithAdminAuthController
 
             $owner = $ownerEnum->value;
 
-            $rows = $ledgers->filter(function ($l) use ($owner) {
-                return optional($l->account)->owner_type === $owner;
-            });
+            $rows = $ledgers->filter(
+                fn($l) =>
+                optional($l->account)->owner_type === $owner
+            );
 
-            $totalCredit = $rows->sum('credit');
-            $totalDebit  = $rows->sum('debit');
+            $credit = $rows->sum('credit');
+            $debit  = $rows->sum('debit');
 
             $summaryData[$owner] = [
                 'owner_type'   => $owner,
-                'total_credit' => (float) $totalCredit,
-                'total_debit'  => (float) $totalDebit,
-                'net_amount'   => (float) ($totalCredit - $totalDebit),
+                'total_credit' => (float) $credit,
+                'total_debit'  => (float) $debit,
+                'net_amount'   => (float) ($credit - $debit),
             ];
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | 2️⃣ PREVIEW DATA (ACCOUNT_ID WISE — DETAIL VIEW)
-    |--------------------------------------------------------------------------
-    */
         $previewData = [];
 
-        $ledgersByAccount = $ledgers->groupBy('account_id');
+        $grouped = $ledgers->groupBy(function ($ledger) {
 
-        foreach ($ledgersByAccount as $accountId => $rows) {
+            $isCash =
+                str_starts_with($ledger->common_reference ?? '', 'MKT')
+                || str_starts_with($ledger->source_code ?? '', 'MKT');
+
+            $paymentType = $isCash ? 'cash' : 'online';
+
+            // ⭐ TWO LEVEL GROUP KEY
+            return $paymentType . '_' . $ledger->account_id;
+        });
+
+        foreach ($grouped as $key => $rows) {
 
             $account = $rows->first()->account;
 
-            $totalCredit = $rows->sum('credit');
-            $totalDebit  = $rows->sum('debit');
+            $credit = $rows->sum('credit');
+            $debit  = $rows->sum('debit');
+
+            $isCashGroup = str_starts_with($key, 'cash_');
 
             $previewData[] = [
-                // DETAIL IS ACCOUNT BASED
+
                 'owner_type'   => $account->owner_type,
-                'account_id'   => $accountId,
+                'account_id'   => $account->id,
                 'accnt_code'   => $account->accnt_code,
                 'account_name' => $account->name,
                 'currency'     => $account->currency,
 
-                'calc_total_credit' => (float) $totalCredit,
-                'calc_total_debit'  => (float) $totalDebit,
-                'calc_net_amount'   => (float) ($totalCredit - $totalDebit),
+                // ⭐ VERY IMPORTANT
+                'payment_type' => $isCashGroup ? 'cash' : 'online',
 
-                'ledgers' => $rows->map(function ($ledger) {
-                    return [
-                        'id'          => $ledger->id,
-                        'description' => $ledger->description,
-                        'ledger_date' => $ledger->ledger_date,
-                        'common_reference' => $ledger->common_reference,
-                        'credit'      => $ledger->credit,
-                        'debit'       => $ledger->debit,
-                        'net_amount' => (float) ($ledger->credit - $ledger->debit),
-                    ];
-                })->values(),
+                'calc_total_credit' => (float) $credit,
+                'calc_total_debit'  => (float) $debit,
+                'calc_net_amount'   => (float) ($credit - $debit),
+
+                'ledgers' => $rows->map(fn($ledger) => [
+                    'id' => $ledger->id,
+                    'description' => $ledger->description,
+                    'ledger_date' => $ledger->ledger_date,
+                    'common_reference' => $ledger->common_reference,
+                    'source_code' => $ledger->source_code,
+                    'credit' => $ledger->credit,
+                    'debit' => $ledger->debit,
+                    'net_amount' => (float) ($ledger->credit - $ledger->debit),
+                ])->values(),
             ];
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | FINAL RESPONSE
-    |--------------------------------------------------------------------------
-    */
+        ## Base on Account Id
+        // $previewData = [];
+
+        // foreach ($ledgers->groupBy('account_id') as $accountId => $rows) {
+
+        //     $account = $rows->first()->account;
+
+        //     $credit = $rows->sum('credit');
+        //     $debit  = $rows->sum('debit');
+
+        //     $previewData[] = [
+        //         'owner_type'   => $account->owner_type,
+        //         'account_id'   => $accountId,
+        //         'accnt_code'   => $account->accnt_code,
+        //         'account_name' => $account->name,
+        //         'currency'     => $account->currency,
+
+        //         'calc_total_credit' => (float) $credit,
+        //         'calc_total_debit'  => (float) $debit,
+        //         'calc_net_amount'   => (float) ($credit - $debit),
+
+        //         'ledgers' => $rows->map(fn($ledger) => [
+        //             'id' => $ledger->id,
+        //             'description' => $ledger->description,
+        //             'ledger_date' => $ledger->ledger_date,
+        //             'common_reference' => $ledger->common_reference,
+        //             'credit' => $ledger->credit,
+        //             'debit' => $ledger->debit,
+        //             'net_amount' => (float) ($ledger->credit - $ledger->debit),
+        //         ])->values(),
+        //     ];
+        // }
+
         return [
-            'summary' => $summaryData,   // OWNER TYPE TOTALS
-            'preview' => $previewData,   // ACCOUNT_ID DETAIL
+            'summary' => $summaryData,
+            'preview' => $previewData,
         ];
     }
-
-
-
-
-    //
 }

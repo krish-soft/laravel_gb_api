@@ -368,6 +368,7 @@ Route::group([
                 // Settlement Preview
                 Route::prefix('settlement')->group(function () {
                     Route::get('preview', [SettlementAdminApiController::class, 'getPayoutSettlementPreview']);
+                    Route::post('create-batch', [SettlementAdminApiController::class, 'createSettlementBatch']);
                 });
             });
 
