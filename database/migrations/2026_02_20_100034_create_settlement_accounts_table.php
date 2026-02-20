@@ -17,7 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('settlement_batch_id')->nullable()
                 ->constrained('settlement_batches')
                 ->cascadeOnUpdate()
-                ->resetrictOnDelete();
+                ->cascadeOnDelete();
 
             $table->unsignedBigInteger('finance_year_id')->nullable();
 
@@ -25,13 +25,13 @@ return new class extends Migration
                 ->nullable()
                 ->constrained('accounts')
                 ->cascadeOnUpdate()
-                ->restrictOnDelete();
+                ->nullOnDelete();
 
             $table->foreignId('platform_account_id')
                 ->nullable()
                 ->constrained('accounts')
                 ->cascadeOnUpdate()
-                ->restrictOnDelete();
+                ->nullOnDelete();
 
             $table->unsignedBigInteger('payout_id')->nullable();
 

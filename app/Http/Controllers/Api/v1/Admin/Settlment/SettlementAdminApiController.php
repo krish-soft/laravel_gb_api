@@ -8,9 +8,12 @@ use App\Enum\Accounting\PlatformAccountCodeEnum;
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
 use App\Models\Common\Accounting\Account;
 use App\Models\Common\Accounting\AccountLedger;
+use App\Models\Common\Accounting\Settlement\SettlementAccountLedger;
 use App\Models\Common\Accounting\Settlement\SettlementBatch;
+use App\Models\Master\MstFinancialYear;
 use App\Models\Master\Setting\MstFinanceSetting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SettlementAdminApiController extends ApiResponseWithAdminAuthController
 {
@@ -23,13 +26,13 @@ class SettlementAdminApiController extends ApiResponseWithAdminAuthController
     public function getPayoutSettlementPreview(Request $request)
     {
         $request->validate([
-            'cut_off_date' => 'required|date',
+            'cutoff_date' => 'required|date',
             'owner_type'   => 'nullable|in:seller,buyer,delivery',
             'filter_type'  => 'nullable|in:need_to_pay_online,need_to_pay_cash,need_to_receive_online',
             'platform_account_id' => 'required|integer|exists:accounts,id',
         ]);
 
-        $cutOffDate = $request->cut_off_date;
+        $cutOffDate = $request->cutoff_date;
 
         $ledgerData  = $this->getAccountLedgerDataByCutOffDate($cutOffDate);
         $previewData = $ledgerData['preview'] ?? [];
@@ -108,27 +111,103 @@ class SettlementAdminApiController extends ApiResponseWithAdminAuthController
     public function createSettlementBatch(Request $request)
     {
         $request->validate([
-            'cut_off_date' => 'required|date',
+            'cutoff_date' => 'required|date',
             'owner_type'   => 'required|in:seller,buyer,delivery',
             'filter_type'  => 'required|in:need_to_pay_online,need_to_pay_cash,need_to_receive_online',
         ]);
 
         /*
-        |------------------------------------------------
-        | CALL SAME PREVIEW LOGIC (NO DUPLICATION)
-        |------------------------------------------------
-        */
+    |------------------------------------------------
+    | PREVIEW DATA
+    |------------------------------------------------
+    */
         $previewResponse = $this->getPayoutSettlementPreview($request)->getData(true);
-
         $processData = $previewResponse['data']['preview'] ?? [];
 
+        if (empty($processData)) {
+            return $this->showErrorMessage('No settlement data found. Batch not created.');
+        }
+
         /*
-        |------------------------------------------------
-        | CALCULATE SUMMARY FOR BATCH
-        |------------------------------------------------
-        */
-        $totalCredit = array_sum(array_column($processData, 'calc_total_credit'));
-        $totalDebit  = array_sum(array_column($processData, 'calc_total_debit'));
+    |------------------------------------------------
+    | COLLECT ALL LEDGER IDS
+    |------------------------------------------------
+    */
+        $allLedgerIds = [];
+
+        foreach ($processData as $pData) {
+            foreach ($pData['ledgers'] ?? [] as $ledger) {
+                $allLedgerIds[] = $ledger['id'];
+            }
+        }
+
+        $allLedgerIds = array_unique($allLedgerIds);
+
+        if (empty($allLedgerIds)) {
+            return $this->showErrorMessage('No valid ledgers available for settlement.');
+        }
+
+        /*
+    |------------------------------------------------
+    | FETCH EXISTING SETTLED LEDGERS
+    |------------------------------------------------
+    */
+        $existingLedgerIds = SettlementAccountLedger::whereIn(
+            'account_ledger_id',
+            $allLedgerIds
+        )->pluck('account_ledger_id')
+            ->toArray();
+
+        /*
+    |------------------------------------------------
+    | FILTER PROCESS DATA (REMOVE DUPLICATES)
+    |------------------------------------------------
+    */
+        $filteredProcessData = [];
+
+        foreach ($processData as $pData) {
+
+            $validLedgers = collect($pData['ledgers'] ?? [])
+                ->reject(fn($ledger) => in_array($ledger['id'], $existingLedgerIds))
+                ->values()
+                ->toArray();
+
+            // skip account if no valid ledgers left
+            if (empty($validLedgers)) {
+                continue;
+            }
+
+            // recalc totals for remaining ledgers
+            $calcTotalCredit = array_sum(array_column($validLedgers, 'credit'));
+            $calcTotalDebit  = array_sum(array_column($validLedgers, 'debit'));
+            $calcNetAmount   = $calcTotalCredit - $calcTotalDebit;
+
+            $pData['ledgers'] = $validLedgers;
+            $pData['calc_total_credit'] = $calcTotalCredit;
+            $pData['calc_total_debit']  = $calcTotalDebit;
+            $pData['calc_net_amount']   = $calcNetAmount;
+
+            $filteredProcessData[] = $pData;
+        }
+
+        /*
+    |------------------------------------------------
+    | STOP IF AFTER FILTER NOTHING LEFT
+    |------------------------------------------------
+    */
+        if (empty($filteredProcessData)) {
+            return $this->showErrorMessage(
+                'All ledgers are already settled. Nothing new to create.'
+            );
+        }
+
+        /*
+    |------------------------------------------------
+    | RECALCULATE FINAL TOTALS
+    |------------------------------------------------
+    */
+        $totalCredit = array_sum(array_column($filteredProcessData, 'calc_total_credit'));
+        $totalDebit  = array_sum(array_column($filteredProcessData, 'calc_total_debit'));
         $netAmount   = $totalCredit - $totalDebit;
 
         if (
@@ -139,42 +218,57 @@ class SettlementAdminApiController extends ApiResponseWithAdminAuthController
         }
 
         /*
-        |------------------------------------------------
-        | CREATE BATCH HERE
-        |------------------------------------------------
-        */
+    |------------------------------------------------
+    | CREATE BATCH (TRANSACTION SAFE)
+    |------------------------------------------------
+    */
+        DB::beginTransaction();
 
+        try {
 
-        $settlementBatch = SettlementBatch::create([
-            'finance_year_id' => MstFinanceSetting::appFinancialYearId(),
-            'batch_date' => date('Y-m-d'),
-            'cut_off_date' => $request->cut_off_date,
+            $settlementBatch = SettlementBatch::create([
+                'finance_year_id' => MstFinancialYear::currentFinancialYear()->id,
+                'batch_date'      => date('Y-m-d'),
+                'cutoff_date'     => $request->cutoff_date,
+                'total_credit'    => $totalCredit,
+                'total_debit'     => $totalDebit,
+                'net_amount'      => $netAmount,
+            ]);
 
-            'total_credit' => $totalCredit,
-            'total_debit'  => $totalDebit,
-            'net_amount'   => $netAmount,
-        ]);
-        
-        // Now account then ledger inside
-        foreach(  $processData as $pData){
-            // 
+            foreach ($filteredProcessData as $pData) {
 
+                $settlementAccount = $settlementBatch->settlementAccounts()->create([
+                    'finance_year_id'     => $settlementBatch->finance_year_id,
+                    'user_account_id'     => $pData['account_id'],
+                    'platform_account_id' => $request->platform_account_id,
+                    'amount'              => $pData['calc_net_amount'],
+                    'status'              => 'pending',
+                ]);
+
+                foreach ($pData['ledgers'] as $ledger) {
+
+                    $settlementAccount->settlementAccountLedgers()->create([
+                        'settlement_batch_id'   => $settlementBatch->id,
+                        'settlement_account_id' => $settlementAccount->id,
+                        'account_ledger_id'     => $ledger['id'],
+                        'credit'                => $ledger['credit'],
+                        'debit'                 => $ledger['debit'],
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return $this->successResponse(
+                __('messages.success_messages.success_create'),
+                ['settlement_batch_id' => $settlementBatch->id]
+            );
+        } catch (\Throwable $e) {
+
+            DB::rollBack();
+            throw $e;
         }
-
-
-        return $this->successResponse(
-            __('messages.success_messages.settlement_batch_created'),
-            [
-                'summary' => [
-                    'total_credit' => $totalCredit,
-                    'total_debit'  => $totalDebit,
-                    'net_amount'   => $netAmount,
-                ],
-                'details' => $processData,
-            ]
-        );
     }
-
 
     /*
     |--------------------------------------------------------------------------

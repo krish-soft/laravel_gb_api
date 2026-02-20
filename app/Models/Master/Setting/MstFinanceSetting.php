@@ -74,21 +74,21 @@ class MstFinanceSetting extends BaseModel
             return null;
         }
 
-        return Cache::rememberForever('mst_finance_settings', function () {
-            return self::firstOrCreate([
-                // Default values
-                'setting_code' => 'SETTING_001',
+        // return Cache::rememberForever('mst_finance_settings', function () {
+        return self::firstOrCreate([
+            // Default values
+            'setting_code' => 'SETTING_001',
 
-            ], [
-                'currency' => 'INR',
-                'currency_symbol' => '₹',
-                'currency_position' => 'left',
-                'thousand_separator' => ',',
-                'decimal_separator' => '.',
-                'decimal_places' => 2,
-                'financial_year_id' => MstFinancialYear::currentFinancialYear()->id ?? null,
-            ]);
-        });
+        ], [
+            'currency' => 'INR',
+            'currency_symbol' => '₹',
+            'currency_position' => 'left',
+            'thousand_separator' => ',',
+            'decimal_separator' => '.',
+            'decimal_places' => 2,
+            'financial_year_id' => MstFinancialYear::currentFinancialYear()->id ?? null,
+        ]);
+        // });
     }
 
     // Create Helper function to clear cache after save
