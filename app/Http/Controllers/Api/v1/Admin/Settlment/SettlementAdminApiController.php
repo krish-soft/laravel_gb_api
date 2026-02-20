@@ -8,6 +8,8 @@ use App\Enum\Accounting\PlatformAccountCodeEnum;
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
 use App\Models\Common\Accounting\Account;
 use App\Models\Common\Accounting\AccountLedger;
+use App\Models\Common\Accounting\Settlement\SettlementBatch;
+use App\Models\Master\Setting\MstFinanceSetting;
 use Illuminate\Http\Request;
 
 class SettlementAdminApiController extends ApiResponseWithAdminAuthController
@@ -141,7 +143,24 @@ class SettlementAdminApiController extends ApiResponseWithAdminAuthController
         | CREATE BATCH HERE
         |------------------------------------------------
         */
-        // SettlementBatch::create([...]);
+
+
+        $settlementBatch = SettlementBatch::create([
+            'finance_year_id' => MstFinanceSetting::appFinancialYearId(),
+            'batch_date' => date('Y-m-d'),
+            'cut_off_date' => $request->cut_off_date,
+
+            'total_credit' => $totalCredit,
+            'total_debit'  => $totalDebit,
+            'net_amount'   => $netAmount,
+        ]);
+        
+        // Now account then ledger inside
+        foreach(  $processData as $pData){
+            // 
+
+        }
+
 
         return $this->successResponse(
             __('messages.success_messages.settlement_batch_created'),

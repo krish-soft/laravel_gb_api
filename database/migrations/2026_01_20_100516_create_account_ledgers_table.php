@@ -62,6 +62,10 @@ return new class extends Migration
 
             $table->string('remarks')->nullable();
 
+            $table->string('settlement_batch_no', 20)->nullable();
+            $table->unsignedBigInteger('settlement_batch_id')->nullable();
+
+
 
             $table->timestamps();
             $table->softDeletes();

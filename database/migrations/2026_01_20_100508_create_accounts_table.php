@@ -34,6 +34,8 @@ return new class extends Migration
             $table->boolean('is_active')->default(true)->nullable();
             $table->string('inactive_reason')->nullable();
 
+            $table->boolean('is_closed')->default(false)->nullable();
+
             $table->string('remarks')->nullable();
 
             $table->timestamps();
