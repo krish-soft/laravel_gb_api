@@ -212,7 +212,7 @@ class OrderAccountingService
                 // Settled means not to update main on Account 
                 if (!$this->ledgerExists(
                     $buyerAccount->id,
-                    AccountEntryTypeEnum::ORDER_CHARGE_AMOUNT->value,
+                    AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
                     Order::class,
                     $order->id
                 )) {
