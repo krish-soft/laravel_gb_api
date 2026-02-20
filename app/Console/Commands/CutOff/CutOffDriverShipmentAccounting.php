@@ -36,9 +36,13 @@ class CutOffDriverShipmentAccounting extends Command
         //
 
         // we can proceed with driver shipment accounting cutoff around 13 once all shipments reached
+        // Driver command was manage manually so do not auto 
+
+        $this->info('Command aborted. Please use cut-off:order-accounting for order accounting cutoff.');
+        return;
+
 
         // 1. All Orders
-
         $startDate = $this->argument('startDate') ?? now()->subDay()->toDateString();
         $endDate   = $this->argument('endDate')   ?? now()->toDateString();
 
