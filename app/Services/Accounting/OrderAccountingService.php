@@ -213,7 +213,7 @@ class OrderAccountingService
                 if (!$this->ledgerExists(
                     $buyerAccount->id,
                     AccountEntryTypeEnum::ORDER_CHARGE_AMOUNT->value,
-                    ShipmentPackage::class,
+                    Order::class,
                     $order->id
                 )) {
 
