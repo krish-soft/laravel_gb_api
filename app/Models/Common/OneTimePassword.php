@@ -30,6 +30,12 @@ class OneTimePassword extends BaseModel
         'user_agent',
     ];
 
+    // casts
+    protected $casts = [
+        'expires_at' => 'datetime',
+        'verified_at' => 'datetime',
+    ];
+
 
 
     // Relationships

@@ -4,6 +4,7 @@ namespace App\Services\Common\Auth;
 
 use App\Models\Common\OneTimePassword;
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
@@ -82,6 +83,7 @@ class OneTimePasswordService
         string $otpCode,
         ?string $phoneNumber = null
     ): bool {
+
         $query = OneTimePassword::where('purpose', $purpose)
             ->where('request_id', $requestId)
             ->whereNull('verified_at');
@@ -94,6 +96,8 @@ class OneTimePasswordService
 
         $otp = $query->latest()->first();
 
+        // Log::info("Attempting OTP verification: request_id={$requestId}, user_id={$user?->id}, phone_number={$phoneNumber}, otp_code={$otpCode}");
+
         if (
             !$otp ||
             $otp->expires_at->isPast() ||
@@ -102,9 +106,12 @@ class OneTimePasswordService
             return false;
         }
 
+        // Log::info("Verifying OTP: request_id={$requestId}, user_id={$user?->id}, phone_number={$phoneNumber}, attempts={$otp->attempts}");
+
         $otp->increment('attempts');
 
-        if (!hash_equals($otp->otp_code, $otpCode)) {
+        if ($otp->otp_code !== $otpCode) {
+            // if (!hash_equals($otp->otp_code, $otpCode)) {
             return false;
         }
 

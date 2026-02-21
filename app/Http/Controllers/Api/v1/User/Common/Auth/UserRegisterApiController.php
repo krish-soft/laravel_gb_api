@@ -82,7 +82,8 @@ class UserRegisterApiController extends ApiResponseController
             null,
             'user_registration',
             $request->request_id,
-            $request->otp
+            $request->otp,
+            $request->phone_number
         )) {
             // return $this->showErrorMessage('Invalid or expired OTP', 422);
             return $this->showErrorMessage(__('messages.error_messages.invalid_or_expired_otp'), 422);
