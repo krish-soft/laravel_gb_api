@@ -24,6 +24,8 @@ class AppChecker
 
             $locale = strtolower(trim($request->header('Accept-Language')));
 
+            // Log::info("Requested locale: " . $locale);
+
             if (!in_array($locale, LocaleEnum::casesAsValues(), true)) {
                 return $this->showErrorMessage(
                     __('messages.error_messages.invalid_locale'),

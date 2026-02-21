@@ -7,7 +7,7 @@ return [
     | App
     |--------------------------------------------------------------------------
     */
-    'app_name' => 'Green Bazar',
+    'app_name' => 'Khet Bajar',
 
     'success' => 'Success',
     'error'   => 'Error',
