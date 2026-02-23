@@ -123,4 +123,28 @@ class MstAppSetting extends BaseModel
     {
         return self::getOrCreate()->maintenance_message;
     }
+
+
+    public static function isForceAndroidUpdate(): bool
+    {
+        return (bool)(
+            self::getOrCreate()->is_force_app_android_update
+            ?? false
+        );
+    }
+
+
+    public static function getAndroidAppVersion(): ?string
+    {
+        return self::getOrCreate()->mobile_app_android_version;
+    }
+
+
+    public static function isForceIosUpdate(): bool
+    {
+        return (bool)(
+            self::getOrCreate()->is_force_app_ios_update
+            ?? false
+        );
+    }
 }
