@@ -196,9 +196,17 @@ class User extends Authenticatable
         return $this->hasOne(UserKyc::class, 'user_id', 'id');
     }
 
-    public function bank()
+    public function banks()
     {
-        return $this->hasOne(UserBank::class, 'user_id', 'id'); // Limiting only one Bank
+        return $this->hasMany(UserBank::class, 'user_id', 'id'); // Limiting only one Bank
+    }
+
+    public function primaryBank()
+    {
+        // primary bank or first bank if no primary marked, or null if no banks
+        return $this->hasOne(UserBank::class, 'user_id', 'id')->where('is_primary', true)->orWhere(function ($query) {
+            $query->where('is_primary', false)->orderBy('created_at')->limit(1);
+        });
     }
 
     public function legalDocuments()

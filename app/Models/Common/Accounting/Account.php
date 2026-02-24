@@ -142,7 +142,7 @@ class Account extends BaseModel
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'owner_id', 'id');
+        return $this->belongsTo(User::class, 'owner_id', 'id')->select('id', 'name', 'user_code','nickname');
     }
 
     // generate unique account code

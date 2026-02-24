@@ -3,6 +3,7 @@
 namespace App\Models\Common\Accounting\Settlement;
 
 use App\Models\BaseModel;
+use App\Models\Master\MstFinancialYear;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -22,6 +23,12 @@ class SettlementBatch extends BaseModel
 
     ];
 
+    // casts
+    protected $casts = [
+        'batch_date' => 'date:Y-m-d',
+        'cutoff_date' => 'date:Y-m-d',
+    ];
+
 
     // Relationships
 
@@ -33,6 +40,11 @@ class SettlementBatch extends BaseModel
     public function settlementAccountLedgers()
     {
         return $this->hasMany(SettlementAccountLedger::class, 'settlement_batch_id');
+    }
+
+    public function financialYear()
+    {
+        return $this->belongsTo(MstFinancialYear::class, 'finance_year_id');
     }
 
     // booted method to generate batch number

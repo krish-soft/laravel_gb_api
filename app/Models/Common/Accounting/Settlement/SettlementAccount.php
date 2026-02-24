@@ -43,12 +43,12 @@ class SettlementAccount extends BaseModel
 
     public function userAccount()
     {
-        return $this->belongsTo(Account::class, 'user_account_id', 'id');
+        return $this->belongsTo(Account::class, 'user_account_id', 'id')->select('id', 'accnt_code', 'name', 'owner_type', 'owner_id');
     }
 
     public function platformAccount()
     {
-        return $this->belongsTo(Account::class, 'platform_account_id', 'id');
+        return $this->belongsTo(Account::class, 'platform_account_id', 'id')->select('id', 'accnt_code', 'name', 'owner_type', 'owner_id');
     }
 
     public function payout()

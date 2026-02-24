@@ -36,7 +36,8 @@ use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstPaymentSettingApiControl
 use App\Http\Controllers\Api\v1\Admin\Master\Vehicle\MstVehicleApiController;
 use App\Http\Controllers\Api\v1\Admin\Report\Order\OrderReportAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Seller\Product\AdminProductListingApiController;
-use App\Http\Controllers\Api\v1\Admin\Settlment\SettlementAdminApiController;
+use App\Http\Controllers\Api\v1\Admin\Settlement\SettlementAdminApiController;
+use App\Http\Controllers\Api\v1\Admin\Settlement\SettlementBatchAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Shipment\DriverShipmentAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Shipment\ShipmentAdminApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\BuyerProductListingApiController;
@@ -369,8 +370,15 @@ Route::group([
 
                 // Settlement Preview
                 Route::prefix('settlement')->group(function () {
+                    // Settlement Batch Creation 
                     Route::get('preview', [SettlementAdminApiController::class, 'getPayoutSettlementPreview']);
                     Route::post('create-batch', [SettlementAdminApiController::class, 'createSettlementBatch']);
+
+                    // Settlement Batch Management
+                    Route::get('batch', [SettlementBatchAdminApiController::class, 'getSettlementBatchList']);
+                    Route::get('batch/{id}', [SettlementBatchAdminApiController::class, 'getSettlementBatchDetails']);
+                    Route::get('account-bank-details/{settlementAccountId}', [SettlementBatchAdminApiController::class, 'getAccountBankDetails']);
+                    Route::post('account/status/{settlementAccountId}', [SettlementBatchAdminApiController::class, 'changeSettlementAccountStatus']);
                 });
             });
 

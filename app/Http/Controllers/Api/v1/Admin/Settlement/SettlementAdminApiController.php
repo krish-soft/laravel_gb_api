@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\v1\Admin\Settlment;
+namespace App\Http\Controllers\Api\v1\Admin\Settlement;
 
 use App\Enum\Accounting\AccountOwnerTypeEnum;
 use App\Enum\Accounting\LedgerStatusEnum;
