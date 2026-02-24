@@ -378,7 +378,7 @@ Route::group([
                     Route::get('batch', [SettlementBatchAdminApiController::class, 'getSettlementBatchList']);
                     Route::get('batch/{id}', [SettlementBatchAdminApiController::class, 'getSettlementBatchDetails']);
                     Route::get('account-bank-details/{settlementAccountId}', [SettlementBatchAdminApiController::class, 'getAccountBankDetails']);
-                    Route::post('account/status/{settlementAccountId}', [SettlementBatchAdminApiController::class, 'changeSettlementAccountStatus']);
+                    Route::put('account/status/{settlementAccountId}', [SettlementBatchAdminApiController::class, 'changeSettlementAccountStatus']);
                 });
             });
 

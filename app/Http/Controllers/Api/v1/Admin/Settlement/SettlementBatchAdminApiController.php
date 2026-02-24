@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Api\v1\Admin\Settlement;
 
+use App\Enum\Accounting\AccountEntryTypeEnum;
+use App\Enum\Accounting\LedgerStatusEnum;
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
 use App\Http\Controllers\Controller;
 use App\Models\Common\Accounting\Settlement\SettlementAccount;
 use App\Models\Common\Accounting\Settlement\SettlementBatch;
+use App\Services\Accounting\AccountingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -65,11 +68,24 @@ class SettlementBatchAdminApiController extends ApiResponseWithAdminAuthControll
             'userAccount.user.primaryBank'
         ])->findOrFail($settlementAccountId);
 
+
+        if ($settlementAccount->status !== 'pending') {
+            return $this->errorResponse('Bank details are only available for pending settlements.', 400);
+        }
+
         $account = $settlementAccount->userAccount;
         $userBank = $account?->user?->primaryBank;
 
         if (!$account) {
             return $this->errorResponse(__('messages.error_messages.not_found'), 404);
+        }
+
+        // if bank details not found, return empty response with message
+        if (!$userBank || is_null($userBank->ifsc_code)) {
+            return $this->successResponse(
+                'No bank details found for this account.',
+                null
+            );
         }
 
         $bankDetails = [
@@ -96,15 +112,33 @@ class SettlementBatchAdminApiController extends ApiResponseWithAdminAuthControll
             'status' => 'required|in:pending,settled,failed',
         ]);
 
+        $accountingService = app(AccountingService::class);
+
+
+        $settlementAccount = SettlementAccount::findOrFail($id);
+        $settlementAccountLedgers = $settlementAccount->settlementAccountLedgers;
+
+        if (!$settlementAccountLedgers->isEmpty() || $request->input('status') === 'settled') {
+            return $this->errorResponse('Cannot mark as settled. There are ledger entries that are not marked as settled.', 400);
+        }
+
+        // Check total of ledgers and settlement account amount should be same for settlement otherwise we have to do reversal entry for that ledger which is not marked as settled and then mark settlement account as settled
+
+        if ($settlementAccount->amount != $settlementAccountLedgers->sum(fn($sal) => $sal->credit - $sal->debit)) {
+            return $this->errorResponse('Cannot mark as settled. Total of ledger entries does not match settlement account amount.', 400);
+        }
+
+
+
         DB::beginTransaction();
 
         try {
 
-            $account = SettlementAccount::findOrFail($id);
-            $account->status = $request->input('status');
-            $account->save();
 
-            $batch = $account->settlementBatch;
+            $settlementAccount->status = $request->input('status');
+            $settlementAccount->save();
+
+            $batch = $settlementAccount->settlementBatch;
 
             if ($batch) {
 
@@ -113,6 +147,59 @@ class SettlementBatchAdminApiController extends ApiResponseWithAdminAuthControll
 
                 if ($statuses->every(fn($s) => $s === 'settled')) {
                     $batch->status = 'settled';
+
+
+                    ## When settled we have to make entry of credit as debit like reverse of both debit then credi and credit as debit
+
+                    $ledgerExist = $accountingService->ledgerExists(
+                        $settlementAccount->userAccount->id,
+                        AccountEntryTypeEnum::SETTLEMENT->value,
+                        SettlementAccount::class,
+                        $settlementAccount->id
+                    );
+
+                    if (!$ledgerExist) {
+
+                        // Settlement Account Ledger entry for User Account (Debit)
+                        // its reverse base on what we have to do so do not change here
+                        $debitOrCredit = $settlementAccount->amount > 0 ? 'debit' : 'credit';
+
+                        // First settlement Account Ledger entry for User Account (Debit)
+                        $ledger =   $accountingService->createLedger(
+                            $settlementAccount->userAccount,
+                            [
+                                'entry_type' => AccountEntryTypeEnum::SETTLEMENT->value,
+                                'source_type' => SettlementAccount::class,
+                                'source_id' => $settlementAccount->id,
+                                'debit' => $debitOrCredit === 'debit' ? $settlementAccount->amount : 0,
+                                'credit' => $debitOrCredit === 'credit' ? $settlementAccount->amount : 0,
+                                'status' => LedgerStatusEnum::AVAILABLE->value,
+                                'description' => "Settlement for Account Code: {$settlementAccount->userAccount->accnt_code}, Settlement Batch: {$batch->batch_no}",
+
+                            ]
+                        );
+
+                        // Now settlement Account Ledger entry for Platform Account (Credit)
+                        $accountingService->markStatusSettled($ledger);
+
+
+                        // here we have to mark all account ledger realted to that so 
+
+
+
+                        foreach ($settlementAccountLedgers as $sal) {
+                            // if parent ledger is empty then add 
+                            if (!$sal->accountLedger->parent_ledger_id) {
+                                $sal->accountLedger->parent_ledger_id = $ledger->id;
+                                $sal->accountLedger->save();
+                            }
+                            $accountingService->markStatusSettled($sal->accountLedger);
+                        }
+                    }
+
+
+
+                    //
                 } elseif ($statuses->every(fn($s) => $s === 'failed')) {
                     $batch->status = 'failed';
                 } else {

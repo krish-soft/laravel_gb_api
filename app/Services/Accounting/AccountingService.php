@@ -112,8 +112,10 @@ class AccountingService
         });
     }
 
-    public function markSettled(AccountLedger $ledger): void
+    public function markStatusSettled(AccountLedger $ledger): void
     {
+
+        // Only Status chagne not any value update
         if ($ledger->status === LedgerStatusEnum::SETTLED->value) {
             return;
         }
@@ -122,13 +124,6 @@ class AccountingService
 
             $ledger  = AccountLedger::lockForUpdate()->findOrFail($ledger->id);
 
-            // We don not to chagne here because settlement means we alrrady add entry of credit or debit in account snapshot, so we can not change it here other wise balance will be wrong, we just need to mark it as settled
-            // so settlement means need to chagne status only nothing else 
-            
-            // $account = Account::lockForUpdate()->findOrFail($ledger->account_id);
-            // if (!$ledger->is_tax && $ledger->debit > 0) {
-            //     $account->decrement('available_balance', $ledger->debit);
-            // }
 
 
             $ledger->update([
@@ -235,4 +230,32 @@ class AccountingService
             $account->increment('available_balance', $net);
         }
     }
+
+
+
+
+
+    public function ledgerExists(
+        int $accountId,
+        string $entryType,
+        string $sourceType,
+        int $sourceId,
+        string $otherReference = null
+    ): bool {
+        return AccountLedger::where('account_id', $accountId)
+            ->where('entry_type', $entryType)
+            ->where('source_type', $sourceType)
+            ->where('source_id', $sourceId)
+            ->where('other_reference', $otherReference) // for driver charges reversal or any other use
+            ->exists();
+    }
+
+
+
+
+
+
+
+
+    //
 }

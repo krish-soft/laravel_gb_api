@@ -28,6 +28,7 @@ enum AccountEntryTypeEnum: string
 
         // 🔹 Settlement
     case PAYOUT                     = 'payout';
+    case SETTLEMENT                 = 'settlement';
 
         // 🔹 Reversal
     case ORDER_CANCEL               = 'order_cancel';
