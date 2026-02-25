@@ -95,6 +95,11 @@ class Order extends BaseModel
         return $this->hasMany(OrderCharge::class, 'order_id', 'id');
     }
 
+    public function orderInvoice()
+    {
+        return $this->hasOne(OrderInvoice::class, 'order_id', 'id');
+    }
+
     public function buyer()
     {
         return $this->belongsTo(User::class, 'buyer_id', 'id');

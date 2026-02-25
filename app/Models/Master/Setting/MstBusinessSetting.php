@@ -77,17 +77,17 @@ class MstBusinessSetting extends BaseModel
 
     public static function getOrCreate(): Model
     {
-        return Cache::rememberForever('mst_business_settings', function () {
-            return self::firstOrCreate(
-                [
-                    'setting_code' => 'SETTING_001',
-                ],
-                [
-                    'legal_name' => 'Krishna Software Pvt Ltd',
-                    'trade_name' => 'Green Bazar'
-                ]
-            );
-        });
+        // return Cache::rememberForever('mst_business_settings', function () {
+        return self::firstOrCreate(
+            [
+                'setting_code' => 'SETTING_001',
+            ],
+            [
+                'legal_name' => 'Krishna Software Pvt Ltd',
+                'trade_name' => 'Khet Bajar'
+            ]
+        );
+        // });
     }
 
 

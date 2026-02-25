@@ -16,6 +16,7 @@ class MstSeqCodeGenerator extends Model
         'seq_no',
         'ref_no',
         'order_no',
+        'invoice_no',
         'doc_no',
         'rule_no',
         'other_no',
@@ -59,6 +60,11 @@ class MstSeqCodeGenerator extends Model
     public static function getNextOrderNo(): int
     {
         return self::nextValue('order_no');
+    }
+
+    public static function getNextInvoiceNo(): int
+    {
+        return self::nextValue('invoice_no');
     }
 
     public static function getNextMarketOrderNo(): int

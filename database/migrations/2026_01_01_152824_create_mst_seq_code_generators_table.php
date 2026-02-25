@@ -18,6 +18,7 @@ return new class extends Migration
             $table->unsignedBigInteger('ref_no')->default(0); // General Sequence
 
             $table->unsignedBigInteger('order_no')->default(0); // For Orders
+            $table->unsignedBigInteger('invoice_no')->default(0); // For Invoices
             $table->unsignedBigInteger('market_order_no')->default(0); // For Orders
             $table->unsignedBigInteger('doc_no')->default(0); // For any documents
 
