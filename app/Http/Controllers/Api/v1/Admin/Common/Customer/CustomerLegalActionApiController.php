@@ -75,9 +75,9 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
         if ($request->has('status') && !is_null($request->status)) {
             $userKycQuery->where('status', $request->status);
         } else {
-            if (!request()->user()->isSuperAdminGroup()) {
-                $userKycQuery->whereIn('status', [KycStatusEnum::PENDING->value, KycStatusEnum::UNDER_REVIEW->value]);
-            }
+            // if (!request()->user()->isSuperAdminGroup()) {
+            $userKycQuery->whereIn('status', [KycStatusEnum::PENDING->value, KycStatusEnum::UNDER_REVIEW->value]);
+            // }
         }
 
         $userKycList = $userKycQuery->get();
@@ -233,7 +233,7 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
     {
         //
 
-        $vehicleKyc = VehicleKyc::with(['user','legalDocuments'])->where('id', $kycId)->firstOrFail();
+        $vehicleKyc = VehicleKyc::with(['user', 'legalDocuments'])->where('id', $kycId)->firstOrFail();
 
         // If status is PENDING, change to UNDER_REVIEW
         if ($vehicleKyc->status === KycStatusEnum::PENDING->value) {
