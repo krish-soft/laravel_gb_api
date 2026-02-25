@@ -6,6 +6,7 @@ use App\Models\BaseModel;
 use App\Models\Master\Unique\MstSeqCodeGenerator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\URL;
 
 class OrderInvoice extends BaseModel
 {
@@ -45,6 +46,29 @@ class OrderInvoice extends BaseModel
         });
     }
 
+    protected $appends = ['invoice_url'];
+
+    public function getInvoiceUrlAttribute()
+    {
+
+        $url = $this->invoice_path
+            ? URL::temporarySignedRoute(
+                'files.view',
+                now()->addMinutes(5),
+                [
+                    'path' => $this->invoice_path,
+                    'download' => 0
+                ]
+            )
+            : null;
+
+        // this one default append on each model retrieval, so we can not increment count here, otherwise it will increment count on each retrieval, we should increment count only when the url is accessed, so we can handle that in the route that serves the file, and we can pass the invoice id in the route and increment count there when the file is accessed.
+        // if ($url) {
+        //     $this->increment('count');
+        // }
+
+        return $url;
+    }
 
 
     //

@@ -70,12 +70,28 @@ Route::post('/webhooks/razorpay/payouts', [RazorpayPayoutWebhookController::clas
 Route::post('/webhooks/razorpay/bankAccount', [RazorpayBankVerificationWebhookHandler::class, 'handle']);
 
 // Serve Private Files
+// Route::get('/files/{path}', function ($path) {
+//     abort_unless(Storage::disk('private')->exists($path), 404);
+
+//     return response()->file(
+//         Storage::disk('private')->path($path)
+//     );
+// })
+//     ->where('path', '.*')
+//     ->name('files.view')
+//     ->middleware('signed');
+
 Route::get('/files/{path}', function ($path) {
+
     abort_unless(Storage::disk('private')->exists($path), 404);
 
-    return response()->file(
-        Storage::disk('private')->path($path)
-    );
+    $file = Storage::disk('private')->path($path);
+
+    if (request()->boolean('download')) {
+        return response()->download($file);
+    }
+
+    return response()->file($file);
 })
     ->where('path', '.*')
     ->name('files.view')

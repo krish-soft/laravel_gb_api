@@ -67,7 +67,8 @@ class AdminProductListingApiController extends ApiResponseWithAuthController
             'fulfillmentLocation.address',
             'listingItems',
             'listingItems.product',
-            'listingItems.listingPackages'
+            'listingItems.listingPackages',
+            'productListingInvoice',
         ])
             ->where('id', $listingId)
             ->first();
