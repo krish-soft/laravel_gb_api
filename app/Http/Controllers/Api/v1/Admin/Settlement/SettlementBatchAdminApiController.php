@@ -128,6 +128,11 @@ class SettlementBatchAdminApiController extends ApiResponseWithAdminAuthControll
             return $this->errorResponse('Cannot mark as settled. Total of ledger entries does not match settlement account amount.', 400);
         }
 
+        // Check Platform account balance should be sufficient for settlement otherwise we can not mark as settled because we have to create ledger entry for platform account when we mark settlement account as settled so if platform account balance is not sufficient then we can not mark settlement account as settled because it will create problem in future when we will try to settle that ledger entry because it will be already marked as settled and we can not mark it as settled again so we have to check platform account balance before marking settlement account as settled
+        if ($settlementAccount->platformAccount->available_balance < $settlementAccount->amount) {
+            return $this->errorResponse('Cannot mark as settled. Platform account balance is not sufficient for settlement.', 400);
+        }
+
 
 
         DB::beginTransaction();
