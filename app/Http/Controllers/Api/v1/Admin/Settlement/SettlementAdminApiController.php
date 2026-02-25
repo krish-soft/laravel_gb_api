@@ -42,10 +42,10 @@ class SettlementAdminApiController extends ApiResponseWithAdminAuthController
 
 
         /*
-    |--------------------------------------------------------------------------
-    | APPLY FILTER IF EXISTS
-    |--------------------------------------------------------------------------
-    */
+        |--------------------------------------------------------------------------
+        | APPLY FILTER IF EXISTS
+        |--------------------------------------------------------------------------
+        */
         if ($request->owner_type && $request->filter_type) {
 
             $previewData = $this->applyCombinationFilter(
@@ -59,10 +59,10 @@ class SettlementAdminApiController extends ApiResponseWithAdminAuthController
 
 
             /*
-        |--------------------------------------------------------------------------
-        | 🔥 REBUILD SUMMARY FROM FILTERED DATA (THIS WAS MISSING)
-        |--------------------------------------------------------------------------
-        */
+            |--------------------------------------------------------------------------
+            | 🔥 REBUILD SUMMARY FROM FILTERED DATA (THIS WAS MISSING)
+            |--------------------------------------------------------------------------
+            */
             $totalCredit = array_sum(array_column($previewData, 'calc_total_credit'));
             $totalDebit  = array_sum(array_column($previewData, 'calc_total_debit'));
             $netAmount   = $totalCredit - $totalDebit;
@@ -86,10 +86,10 @@ class SettlementAdminApiController extends ApiResponseWithAdminAuthController
         } else {
 
             /*
-        |--------------------------------------------------------------------------
-        | DEFAULT FULL SUMMARY (OLD BEHAVIOR)
-        |--------------------------------------------------------------------------
-        */
+            |--------------------------------------------------------------------------
+            | DEFAULT FULL SUMMARY (OLD BEHAVIOR)
+            |--------------------------------------------------------------------------
+            */
             $summary = $ledgerData['summary'];
         }
 
@@ -117,10 +117,10 @@ class SettlementAdminApiController extends ApiResponseWithAdminAuthController
         ]);
 
         /*
-    |------------------------------------------------
-    | PREVIEW DATA
-    |------------------------------------------------
-    */
+        |------------------------------------------------
+        | PREVIEW DATA
+        |------------------------------------------------
+        */
         $previewResponse = $this->getPayoutSettlementPreview($request)->getData(true);
         $processData = $previewResponse['data']['preview'] ?? [];
 
@@ -129,10 +129,10 @@ class SettlementAdminApiController extends ApiResponseWithAdminAuthController
         }
 
         /*
-    |------------------------------------------------
-    | COLLECT ALL LEDGER IDS
-    |------------------------------------------------
-    */
+        |------------------------------------------------
+        | COLLECT ALL LEDGER IDS
+        |------------------------------------------------
+        */
         $allLedgerIds = [];
 
         foreach ($processData as $pData) {
@@ -148,10 +148,10 @@ class SettlementAdminApiController extends ApiResponseWithAdminAuthController
         }
 
         /*
-    |------------------------------------------------
-    | FETCH EXISTING SETTLED LEDGERS
-    |------------------------------------------------
-    */
+        |------------------------------------------------
+        | FETCH EXISTING SETTLED LEDGERS
+        |------------------------------------------------
+        */
         $existingLedgerIds = SettlementAccountLedger::whereIn(
             'account_ledger_id',
             $allLedgerIds
@@ -159,10 +159,10 @@ class SettlementAdminApiController extends ApiResponseWithAdminAuthController
             ->toArray();
 
         /*
-    |------------------------------------------------
-    | FILTER PROCESS DATA (REMOVE DUPLICATES)
-    |------------------------------------------------
-    */
+        |------------------------------------------------
+        | FILTER PROCESS DATA (REMOVE DUPLICATES)
+        |------------------------------------------------
+        */
         $filteredProcessData = [];
 
         foreach ($processData as $pData) {
@@ -191,10 +191,10 @@ class SettlementAdminApiController extends ApiResponseWithAdminAuthController
         }
 
         /*
-    |------------------------------------------------
-    | STOP IF AFTER FILTER NOTHING LEFT
-    |------------------------------------------------
-    */
+        |------------------------------------------------
+        | STOP IF AFTER FILTER NOTHING LEFT
+        |------------------------------------------------
+        */
         if (empty($filteredProcessData)) {
             return $this->showErrorMessage(
                 'All ledgers are already settled. Nothing new to create.'
@@ -202,10 +202,10 @@ class SettlementAdminApiController extends ApiResponseWithAdminAuthController
         }
 
         /*
-    |------------------------------------------------
-    | RECALCULATE FINAL TOTALS
-    |------------------------------------------------
-    */
+        |------------------------------------------------
+        | RECALCULATE FINAL TOTALS
+        |------------------------------------------------
+        */
         $totalCredit = array_sum(array_column($filteredProcessData, 'calc_total_credit'));
         $totalDebit  = array_sum(array_column($filteredProcessData, 'calc_total_debit'));
         $netAmount   = $totalCredit - $totalDebit;
@@ -218,10 +218,10 @@ class SettlementAdminApiController extends ApiResponseWithAdminAuthController
         }
 
         /*
-    |------------------------------------------------
-    | CREATE BATCH (TRANSACTION SAFE)
-    |------------------------------------------------
-    */
+        |------------------------------------------------
+        | CREATE BATCH (TRANSACTION SAFE)
+        |------------------------------------------------
+        */
         DB::beginTransaction();
 
         try {

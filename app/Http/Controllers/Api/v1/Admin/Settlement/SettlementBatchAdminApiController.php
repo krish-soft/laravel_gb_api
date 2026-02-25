@@ -185,8 +185,6 @@ class SettlementBatchAdminApiController extends ApiResponseWithAdminAuthControll
 
                         // here we have to mark all account ledger realted to that so 
 
-
-
                         foreach ($settlementAccountLedgers as $sal) {
                             // if parent ledger is empty then add 
                             if (!$sal->accountLedger->parent_ledger_id) {
@@ -195,6 +193,36 @@ class SettlementBatchAdminApiController extends ApiResponseWithAdminAuthControll
                             }
                             $accountingService->markStatusSettled($sal->accountLedger);
                         }
+
+
+                        ## FOr Platformaccount we have to mark as settled when user account is marked as settled because we are creating ledger entry for platform account when user account is marked as settled so we can not mark platform account ledger entry as settled before that because it will create problem in case if user account ledger entry is not created due to any reason and we have marked platform account ledger entry as settled then it will create problem in future when we will try to settle that ledger entry because it will be already marked as settled and we can not mark it as settled again so we have to mark it as settled when user account is marked as settled
+                        $platformLedgerExist = $accountingService->ledgerExists(
+                            $settlementAccount->platformAccount->id,
+                            AccountEntryTypeEnum::SETTLEMENT->value,
+                            SettlementAccount::class,
+                            $settlementAccount->id
+                        );
+
+                        if (!$platformLedgerExist) {
+                            $platformLedger =   $accountingService->createLedger(
+                                $settlementAccount->platformAccount,
+                                [
+                                    'entry_type' => AccountEntryTypeEnum::SETTLEMENT->value,
+                                    'source_type' => SettlementAccount::class,
+                                    'source_id' => $settlementAccount->id,
+                                    'debit' => $debitOrCredit === 'credit' ? $settlementAccount->amount : 0,
+                                    'credit' => $debitOrCredit === 'debit' ? $settlementAccount->amount : 0,
+                                    'status' => LedgerStatusEnum::AVAILABLE->value, // directly mark as settled because it will be marked as settled when user account is marked as settled
+                                    'description' => "Settlement for Account Code: {$settlementAccount->platformAccount->accnt_code}, Settlement Batch: {$batch->batch_no}",
+                                    'parent_ledger_id' => $ledger->id, // set parent ledger id to user account ledger entry id because it will be marked as settled when user account is marked as settled so we can easily track that which platform account ledger entry is related to which user account ledger entry
+                                ]
+                            );
+
+                            $accountingService->markStatusSettled($platformLedger);
+                        }
+
+
+                        // 
                     }
 
 
