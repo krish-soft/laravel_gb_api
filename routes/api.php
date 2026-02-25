@@ -411,6 +411,11 @@ Route::group([
                 ## Customers Actions 
                 Route::post('addDepot', [CustomerApiController::class, 'addDepot']);
                 Route::delete('removeDepot/{userDepot}', [CustomerApiController::class, 'removeDepot']);
+
+
+                ## Others for searching
+                Route::post('/details-by-code', [CustomerApiController::class, 'getUserDataByCode']);
+
                 //
             });
 

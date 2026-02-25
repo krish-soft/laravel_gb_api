@@ -5,8 +5,9 @@ namespace App\Enum\Common\Module;
 enum AppModuleEnum: int
 {
     //
-    // User & Access (100–199)
+        // User & Access (100–199)
     case USERS               = 101; // Login, OTP, KYC, roles, permissions
+    case CUSTOMERS           = 102; // Sellers, Buyers, Delivery Partners, Affiliates // USED
 
         // Catalog & Supply (200–299)
     case CATEGORIES          = 201;
@@ -20,7 +21,7 @@ enum AppModuleEnum: int
     case ORDERS              = 302; // USED
     case ORDER_ITEMS         = 303;
     case PAYMENTS            = 304; // USED
-    // case WALLETS             = 305;
+        // case WALLETS             = 305;
     case SETTLEMENTS         = 306; // USED
     case REFUNDS             = 307;
     case COMMISSIONS         = 308; // USED

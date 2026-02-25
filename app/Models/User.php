@@ -9,12 +9,14 @@ use App\Enum\Common\Legal\BankStatusEnum;
 use App\Enum\Common\Legal\KycStatusEnum;
 use App\Enum\User\UserRoleEnum;
 use App\Models\Buyer\Cart\Cart;
+use App\Models\Buyer\Order\Order;
 use App\Models\Common\Address;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
 use App\Models\Common\User\Legal\UserBank;
 use App\Models\Common\User\Legal\UserKyc;
 use App\Models\Common\User\Legal\UserLegalDocument;
 use App\Models\Common\User\UserDepot;
+use App\Models\Delivery\DriverShipment;
 use App\Models\Seller\Product\ProductListing;
 use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -94,18 +96,7 @@ class User extends Authenticatable
         'password',
         'remember_token',
         'user_key',
-        'kyc_code',
-
-        'is_available_for_delivery',
-
-        // relations to hide
-        'kyc', // to prevent N+1 issue
-        'bank', // to prevent N+1 issue
-        'legalDocuments', // to prevent N+1 issue
-        'depots', // to prevent N+1 issue
-        'fulfillmentLocations', // to prevent N+1 issue
-        'buyerCart',
-        'sellerProductListings',
+        'kyc_code',       
 
     ];
 
@@ -234,14 +225,19 @@ class User extends Authenticatable
         return $this->hasOne(UserDepot::class, 'user_id', 'id')->where('is_primary', true);
     }
 
-    public function buyerCart()
+    public function buyerOrders()
     {
-        return $this->hasMany(Cart::class, 'buyer_id', 'id');
+        return $this->hasMany(Order::class, 'buyer_id', 'id');
     }
 
     public function sellerProductListings()
     {
         return $this->hasMany(ProductListing::class, 'seller_id', 'id');
+    }
+
+    public function deliveryShipments()
+    {
+        return $this->hasMany(DriverShipment::class, 'driver_id', 'id');
     }
 
     public function fulfillmentLocations()
@@ -289,24 +285,26 @@ class User extends Authenticatable
 
     public function isKycApproved(): bool
     {
-        return $this->kyc && $this->kyc->status === KycStatusEnum::APPROVED->value;
+        $result =  $this->kyc && $this->kyc->status === KycStatusEnum::APPROVED->value;
+
+        // unload relation to prevent N+1 issue
+        $this->unsetRelation('kyc');
+
+        return $result;
     }
 
     public function isBankVerified(): bool
     {
-        return $this->bank && $this->bank->status === BankStatusEnum::VERIFIED->value;
+        // return $this->bank && $this->bank->status === BankStatusEnum::VERIFIED->value;
+        $bank = $this->primaryBank()->first();
+        $result = $bank && $bank->status === BankStatusEnum::VERIFIED->value;
+
+        // unload relation to prevent N+1 issue
+        $this->unsetRelation('primaryBank');
+        return $result;
     }
 
 
-    // Check That they are ready for transactions
-    public function isUserReadyForOrderManagement(): bool
-    {
-        //
-        return $this->isKycApproved()
-            //            && $this->isBankVerified() // Optional when money need they will do
-            && $this->depots()->exists()
-            && $this->fulfillmentLocations()->exists();
-    }
 
 
 
@@ -343,15 +341,20 @@ class User extends Authenticatable
         return $this->isBankVerified();
     }
 
-    public function getIsUserReadyForOrderManagementAttribute(): bool
-    {
-        return $this->isUserReadyForOrderManagement();
-    }
-
     public function getIsDepotAssignedAttribute(): bool
     {
         return $this->depots()->exists();
     }
+
+
+    public function getIsUserReadyForOrderManagementAttribute(): bool
+    {
+        return  $this->is_kyc_approved
+            // && $this->is_bank_verified
+            && $this->is_depot_assigned
+            && $this->is_fulfillment_location_exist;
+    }
+
 
     public function getIsFulfillmentLocationExistAttribute(): bool
     {

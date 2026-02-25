@@ -216,6 +216,8 @@ return [
         'invalid_fulfillment_location' => 'The specified fulfillment location is invalid or inactive.',
 
         'driver_vehicle_not_available' => 'No available driver vehicles found for delivery.',
+
+        'user_depot_delete_prohibited' => 'User depot association cannot be deleted as it is essential for system operations.',
     ],
 
 ];

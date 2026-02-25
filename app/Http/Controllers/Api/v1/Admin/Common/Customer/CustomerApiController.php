@@ -11,6 +11,7 @@ use App\Models\Common\Address;
 use App\Models\Common\User\UserDepot;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class CustomerApiController extends ApiResponseWithAdminAuthController
@@ -40,24 +41,65 @@ class CustomerApiController extends ApiResponseWithAdminAuthController
     }
 
 
+    public function getUserDataByCode(Request $request)
+    {
+
+        $request->validate([
+            'user_code' => 'required|string|exists:users,user_code',
+        ]);
+
+        $user = User::with([
+            'depots.user',
+            'depots.depot',
+            'address',
+            'fulfillmentLocations.address',
+
+        ])
+            ->where('user_code', $request->user_code)
+            ->whereIn('role', UserRoleEnum::casesAsValues())
+            ->firstOrFail();
+
+
+        // Now get its all summary from all tables if there
+        $totalProductListings = $user->isSeller() ? $user->sellerProductListings()->count() : null;
+        $totalOrders = $user->isBuyer() ? $user->buyerOrders()->count() : null;
+        $totalDeliveries = $user->isDelivery() ? $user->deliveryShipments()->count() : null;
+
+        $user->summary = (object)[
+            'total_product_listings' => $totalProductListings,
+            'total_orders' => $totalOrders,
+            'total_deliveries' => $totalDeliveries,
+        ];
+
+
+
+
+        return $this->successResponse(__('messages.success_messages.success_get'), $user, 200);
+        //
+    }
+
+    /**
+     *  Base on From Front Get Other Details base on requriements orders,listings, 
+     */
+
 
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
-    {
-        //
-        $userQuery = User::latest()->whereIn('role', UserRoleEnum::casesAsValues());
+    // public function index(Request $request)
+    // {
+    //     //
+    //     $userQuery = User::latest()->whereIn('role', UserRoleEnum::casesAsValues());
 
-        // Apply filters if any
-        if ($request->user()->isSuperAdminGroup()) {
-            $users = $userQuery->get();
-        } else {
-            $users = $userQuery->limit(100)->get();
-        }
+    //     // Apply filters if any
+    //     if ($request->user()->isSuperAdminGroup()) {
+    //         $users = $userQuery->get();
+    //     } else {
+    //         $users = $userQuery->limit(100)->get();
+    //     }
 
-        return $this->successResponse(__('messages.success_messages.success_get'), $users, 200);
-    }
+    //     return $this->successResponse(__('messages.success_messages.success_get'), $users, 200);
+    // }
 
     /**
      * Store a newly created resource in storage.
@@ -136,25 +178,34 @@ class CustomerApiController extends ApiResponseWithAdminAuthController
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, User $user)
+    public function update(Request $request, $id)
     {
         //
+        $user = User::where('id', $id)
+            ->firstOrFail();
 
+        Log::info('Updating user', ['user_id' => $user->id, 'user_code' => $user->user_code]);
         $request->validate([
-            'phone_number' => 'sometimes|unique:users,phone_number,' . $user->id,
-            'name' => 'sometimes|string|max:100',
-            'email' => 'sometimes|email|max:255|unique:users,email,' . $user->id,
-            'role' => 'sometimes|string|in:' . implode(',', array_map(fn($case) => $case->value, UserRoleEnum::cases())),
-            'user_type' => 'sometimes|string|in:' . implode(',', array_map(fn($case) => $case->value, UserTypeEnum::cases())),
+            // 'phone_number' => 'sometimes|unique:users,phone_number,' . $user->id,
+            // 'name' => 'sometimes|string|max:100',
+            // 'email' => 'sometimes|email|max:255|unique:users,email,' . $user->id,
+            // 'role' => 'sometimes|string|in:' . implode(',', array_map(fn($case) => $case->value, UserRoleEnum::cases())),
+            // 'user_type' => 'sometimes|string|in:' . implode(',', array_map(fn($case) => $case->value, UserTypeEnum::cases())),
+            'is_active' => 'sometimes|boolean',
+            'inactive_reason' => 'required_if:is_active,false|nullable|string|max:255',
+            'is_important' => 'sometimes|boolean',
         ]);
 
 
         $user->update($request->only([
-            'phone_number',
-            'name',
-            'email',
-            'role',
-            'user_type',
+            // 'phone_number',
+            // 'name',
+            // 'email',
+            // 'role',
+            // 'user_type',
+            'is_active',
+            'inactive_reason',
+            'is_important',
         ]));
 
         // Log activity
@@ -282,6 +333,11 @@ class CustomerApiController extends ApiResponseWithAdminAuthController
 
         $wasPrimary = $userDepot->is_primary;
 
+        // only one depot remain then do not delete it and return error
+        if ($user->depots()->count() == 1) {
+            return $this->errorResponse(__('messages.error_messages.user_depot_delete_prohibited'), 403);
+        }
+
         $userDepot->delete();
 
         // If primary depot was removed, promote another one
@@ -294,6 +350,8 @@ class CustomerApiController extends ApiResponseWithAdminAuthController
                 ]);
             }
         }
+
+
 
         // Log activity
         logActivity(
