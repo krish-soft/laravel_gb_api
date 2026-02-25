@@ -3,6 +3,8 @@
 namespace App\Models\Seller\Product;
 
 use App\Models\BaseModel;
+use App\Models\Buyer\Order\OrderItem;
+use App\Models\Market\MarketOrderItem;
 use Illuminate\Database\Eloquent\Model;
 
 class ProductListingPackage extends BaseModel
@@ -84,4 +86,21 @@ class ProductListingPackage extends BaseModel
     {
         return $this->productListingItem->productListing->fulfillmentLocation();
     }
+
+
+    // Order Item relationship through order item package
+    public function orderItem()
+    {
+        return $this->hasOne(OrderItem::class, 'product_listing_package_id');
+    }
+
+    public function marketOrderItem()
+    {
+
+        return $this->hasOne(MarketOrderItem::class, 'product_listing_package_id');
+    }
+
+
+
+    //
 }

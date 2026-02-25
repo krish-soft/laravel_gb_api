@@ -11,19 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('order_invoices', function (Blueprint $table) {
+        Schema::create('product_listing_invoices', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('order_id')
+            $table->foreignId('product_listing_id')
                 ->nullable()
-                ->constrained('orders')
+                ->constrained('product_listings')
                 ->cascadeOnDelete();
 
             $table->string('invoice_number', 20)->unique();
             $table->date('invoice_date'); // what is order date that time invoice generated
 
             $table->string('invoice_path')->nullable(); // file path of invoice
-            $table->string('order_type')->nullable(); // order/refund
 
             $table->string('status', 20)->default('generated')->nullable();
 
@@ -39,6 +38,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('order_invoices');
+        Schema::dropIfExists('product_listing_invoices');
     }
 };

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Jobs\Order;
+namespace App\Jobs\Invoice;
 
 use App\Models\Buyer\Order\Order;
 use App\Services\Buyer\Order\OrderInvoiceService;

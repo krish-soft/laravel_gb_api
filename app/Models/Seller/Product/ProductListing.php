@@ -113,6 +113,11 @@ class ProductListing extends BaseModel
         return $this->belongsTo(FulfillmentLocation::class, 'fulfillment_location_id');
     }
 
+    public function productListingInvoice()
+    {
+        return $this->hasOne(ProductListingInvoice::class, 'product_listing_id');
+    }
+
 
     // Logs
     public function activityLogs()

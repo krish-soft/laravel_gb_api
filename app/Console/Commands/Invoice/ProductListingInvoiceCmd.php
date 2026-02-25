@@ -1,22 +1,24 @@
 <?php
 
-namespace App\Console\Commands\Order;
+namespace App\Console\Commands\Invoice;
 
 use App\Enum\Common\Order\OrderStatusEnum;
 use App\Enum\Queue\QueueEnum;
-use App\Jobs\Order\JobOrderInvoice;
+use App\Jobs\Invoice\JobOrderInvoice;
+use App\Jobs\Invoice\JobProductListingInvoice;
 use App\Models\Buyer\Order\Order;
+use App\Models\Seller\Product\ProductListing;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Bus;
 
-class OrderInvoiceCmd extends Command
+class ProductListingInvoiceCmd extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'order:invoice-generate
+    protected $signature = 'invoice:product-listing
                             {startDate?} 
                             {endDate?}';
 
@@ -25,7 +27,7 @@ class OrderInvoiceCmd extends Command
      *
      * @var string
      */
-    protected $description = 'Generate invoices for orders that do not have invoices yet';
+    protected $description = 'Generate invoices for product listings that do not have invoices yet';
 
     /**
      * Execute the console command.
@@ -37,46 +39,42 @@ class OrderInvoiceCmd extends Command
         $startDate = $this->argument('startDate') ?? now()->subDay()->toDateString();
         $endDate   = $this->argument('endDate')   ?? now()->toDateString();
 
-        $this->info("Orders from {$startDate} to {$endDate}");
+        $this->info("Product listings from {$startDate} to {$endDate}");
 
 
         // 
-        $orders = Order::query()
+        $productListings = ProductListing::query()
             // ->whereBetween('created_at', [
             //     \Carbon\Carbon::parse($startDate)->startOfDay(),
             //     \Carbon\Carbon::parse($endDate)->endOfDay(),
             // ])
-            ->whereBetween('order_date', [
+            ->whereBetween('doc_date', [
                 \Carbon\Carbon::parse($startDate)->startOfDay(),
                 \Carbon\Carbon::parse($endDate)->endOfDay(),
             ])
-            ->whereIn('order_status', [
-                OrderStatusEnum::SHIPPED->value,
-                OrderStatusEnum::DELIVERED->value,
-                OrderStatusEnum::COMPLETED->value
-            ])
-            ->orderBy('buyer_id')
+
+            ->orderBy('seller_id')
             ->orderBy('id')
             ->get();
 
 
-        if ($orders->isEmpty()) {
-            $this->warn('No orders eligible for cutoff.');
+        if ($productListings->isEmpty()) {
+            $this->warn('No product listings eligible for cutoff.');
             return;
         }
 
-        $groupedByBuyers = $orders->groupBy('buyer_id');
+        $groupedBySellers = $productListings->groupBy('seller_id');
 
         $jobs = [];
 
         //
 
-        foreach ($groupedByBuyers as $buyerId => $buyerOrders) {
+        foreach ($groupedBySellers as $sellerId => $sellerProductListings) {
 
-            $buyerOrders->pluck('id')
-                ->chunk(10) // batch size per buyer
+            $sellerProductListings->pluck('id')
+                ->chunk(10) // batch size per seller
                 ->each(function ($chunk) use (&$jobs) {
-                    $jobs[] = new JobOrderInvoice($chunk->toArray());
+                    $jobs[] = new JobProductListingInvoice($chunk->toArray());
                 });
         }
 
@@ -86,8 +84,8 @@ class OrderInvoiceCmd extends Command
         }
 
         Bus::batch($jobs)
-            ->name('Order Invoice Generation Batch (Grouped by Buyer)')
-            ->onQueue(QueueEnum::ORDER_INVOICE->value) // assign entire batch to cutoff queue
+            ->name('Product Listing Invoice Generation Batch (Grouped by Seller)')
+            ->onQueue(QueueEnum::INVOICE->value) // assign entire batch to cutoff queue
             ->dispatch();
 
         $this->info('Batch dispatched successfully.');
