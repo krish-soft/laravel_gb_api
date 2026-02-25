@@ -37,6 +37,10 @@
             color: #2e7d32;
         }
 
+        .orange {
+            color: #ef6c00;
+        }
+
         /* ===== HEADER ===== */
 
         .header {
@@ -53,7 +57,7 @@
         .invoice-title {
             font-size: 18px;
             font-weight: bold;
-            color: #ef6c00;
+            /* color: #ef6c00; */
         }
 
         .right {
@@ -70,7 +74,7 @@
 
         .contact {
             font-size: 10.5px;
-            line-height: 1.35;
+            /* line-height: 1.35; */
             color: #222;
         }
 
@@ -85,7 +89,7 @@
             border: 1px solid #2e7d32;
             padding: 7px;
             min-height: 65px;
-            line-height: 1.35;
+            /* line-height: 1.35; */
             word-break: break-word;
         }
 
@@ -176,7 +180,7 @@
             <td width="35%">
 
                 {{-- <div class="bold">{{ $business->legal_name }}</div> --}}
-                <div class="green bold">{{ $business->trade_name }}</div>
+                <div class="orange invoice-title">{{ strtoupper($business->trade_name) }}</div>
 
                 @if ($business->billAddress)
 
@@ -201,6 +205,7 @@
                             $bizLine2 = collect([
                                 $business->billAddress->village,
                                 $business->billAddress->city,
+                                '-' . $business->billAddress->postal_code,
                                 $business->billAddress->state,
                             ])
                                 ->filter()
@@ -212,21 +217,28 @@
 
 
                         {{-- LINE 3 --}}
-                        @php
-                            $bizLine3 = collect([$business->billAddress->postal_code, $business->billAddress->country])
+                        {{-- @php
+                            $bizLine3 = collect([$business->billAddress->country])
                                 ->filter()
                                 ->implode(', ');
                         @endphp
                         @if ($bizLine3)
                             {{ $bizLine3 }}
-                        @endif
+                        @endif --}}
 
 
                         {{-- PHONE SEPARATE --}}
                         @if ($business->billAddress->phone_number)
-                            <br><b>Ph:</b> {{ $business->billAddress->phone_number }}
+                            <b>Ph:</b> {{ $business->billAddress->phone_number }}
+                        @endif
+                        {{-- GSTIN if there --}}
+                        @if ($business->gst_number)
+                            <br><b>GSTIN:</b> {{ $business->gst_number }}
                         @endif
 
+                        @if ($business->cin_number)
+                            <br><b>CIN:</b> {{ $business->cin_number }}
+                        @endif
                     </div>
 
                 @endif
@@ -239,7 +251,7 @@
 
             <td width="35%" class="right">
 
-                <div class="invoice-title">TAX INVOICE</div>
+                <div class="invoice-title green">INVOICE</div>
 
                 <b>Invoice No:</b> {{ $invoice->invoice_number }}<br>
                 <b>Date:</b> {{ $invoice->invoice_date->format('d M Y') }}<br>
@@ -256,7 +268,8 @@
     <table width="100%" style="margin-top:6px;">
         <tr>
 
-            <td width="50%" style="padding-right:4px;">
+            {{-- Will not coming --}}
+            {{-- <td width="50%" style="padding-right:4px;">
                 <div class="addr">
                     <div class="bold green">Bill To</div>
 
@@ -299,11 +312,11 @@
                     @endif
 
                 </div>
-            </td>
+            </td> --}}
 
-            <td width="50%" style="padding-left:4px;">
+            <td width="100%" style="padding-left:4px;">
                 <div class="addr">
-                    <div class="bold green">Ship To</div>
+                    <div class="bold green">Buyer</div>
 
                     @php
                         $shipLine1 = collect([$shippingAddress?->address_line1, $shippingAddress?->address_line2])
@@ -313,14 +326,15 @@
                         $shipLine2 = collect([
                             $shippingAddress?->village,
                             $shippingAddress?->city,
+                            $shippingAddress?->postal_code,
                             $shippingAddress?->state,
                         ])
                             ->filter()
                             ->implode(', ');
-
-                        $shipLine3 = collect([$shippingAddress?->postal_code, $shippingAddress?->country])
-                            ->filter()
-                            ->implode(', ');
+                        $shipLine3 = null;
+                        // $shipLine3 = collect([$shippingAddress?->country])
+                        //     ->filter()
+                        //     ->implode(', ');
                     @endphp
 
                     @if ($shippingAddress?->addr_name)
@@ -340,7 +354,7 @@
                     @endif
 
                     @if ($shippingAddress?->phone_number)
-                        <br><b>Ph:</b> {{ $shippingAddress->phone_number }}
+                        <b>Ph:</b> {{ $shippingAddress->phone_number }}
                     @endif
 
                 </div>
