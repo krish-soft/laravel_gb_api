@@ -20,7 +20,8 @@ class ProductListingInvoiceCmd extends Command
      */
     protected $signature = 'invoice:product-listing
                             {startDate?} 
-                            {endDate?}';
+                            {endDate?} 
+                            {isEnforce=false}';
 
     /**
      * The console command description.
@@ -39,7 +40,10 @@ class ProductListingInvoiceCmd extends Command
         $startDate = $this->argument('startDate') ?? now()->subDay()->toDateString();
         $endDate   = $this->argument('endDate')   ?? now()->toDateString();
 
-        $this->info("Product listings from {$startDate} to {$endDate}");
+        $isEnforce = filter_var($this->argument('isEnforce'), FILTER_VALIDATE_BOOLEAN); // To Rebuild again in case setltment done again or any reason to enforce rebuild
+
+
+        $this->info("Product listings from {$startDate} to {$endDate} " . ($isEnforce ? '(Enforce Rebuild)' : ''));
 
 
         // 
@@ -73,8 +77,8 @@ class ProductListingInvoiceCmd extends Command
 
             $sellerProductListings->pluck('id')
                 ->chunk(10) // batch size per seller
-                ->each(function ($chunk) use (&$jobs) {
-                    $jobs[] = new JobProductListingInvoice($chunk->toArray());
+                ->each(function ($chunk) use (&$jobs, $isEnforce) {
+                    $jobs[] = new JobProductListingInvoice($chunk->toArray(), $isEnforce);
                 });
         }
 

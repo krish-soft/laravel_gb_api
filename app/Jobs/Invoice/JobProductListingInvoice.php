@@ -15,10 +15,12 @@ class JobProductListingInvoice implements ShouldQueue
     use Queueable, Batchable;
 
     protected array $productListingIds;
+    protected bool $isEnforce;
 
-    public function __construct(array $productListingIds)
+    public function __construct(array $productListingIds, bool $isEnforce = false)
     {
         $this->productListingIds = $productListingIds;
+        $this->isEnforce = $isEnforce;
     }
 
     /**
@@ -38,7 +40,7 @@ class JobProductListingInvoice implements ShouldQueue
 
                 // INDUSTRY SAFE:
                 // this will create OR repair automatically
-                $invoice = $invoiceService->repairOrGenerateInvoiceForListing($productListing);
+                $invoice = $invoiceService->repairOrGenerateInvoiceForListing($productListing, $this->isEnforce);
 
 
 

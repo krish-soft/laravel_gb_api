@@ -18,9 +18,9 @@ class OrderInvoiceService
      * - If missing file → rebuild PDF
      * - Else create new invoice
      */
-    public function generateInvoiceForOrder(Order $order): OrderInvoice
+    public function generateInvoiceForOrder(Order $order, bool $isEnforce = false): OrderInvoice
     {
-        return DB::transaction(function () use ($order) {
+        return DB::transaction(function () use ($order, $isEnforce) {
 
             $order->load([
                 'orderInvoice',
@@ -38,6 +38,7 @@ class OrderInvoiceService
                 if (
                     !$invoice->invoice_path ||
                     !Storage::disk('private')->exists($invoice->invoice_path)
+                    || $isEnforce
                 ) {
                     return $this->rebuildPdf($invoice, $order);
                 }

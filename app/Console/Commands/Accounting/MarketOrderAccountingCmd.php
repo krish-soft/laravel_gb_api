@@ -1,21 +1,21 @@
 <?php
 
-namespace App\Console\Commands\CutOff;
+namespace App\Console\Commands\Accounting;
 
 use App\Enum\Queue\QueueEnum;
-use App\Jobs\CutOff\JobCutOffOrderAccounting;
-use App\Models\Buyer\Order\Order;
+use App\Jobs\Accounting\JobMarketOrderAccounting;
+use App\Models\Market\MarketOrder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Bus;
 
-class CutOffOrderAccounting extends Command
+class MarketOrderAccountingCmd extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
-     */
-    protected $signature = 'cut-off:order-accounting
+        */
+        protected $signature = 'accounting:market-order
                             {startDate?} 
                             {endDate?}';
 
@@ -24,7 +24,7 @@ class CutOffOrderAccounting extends Command
      *
      * @var string
      */
-    protected $description = 'Cut off order accounting process.';
+    protected $description = 'Cut off market order accounting process.';
 
     /**
      * Execute the console command.
@@ -43,7 +43,7 @@ class CutOffOrderAccounting extends Command
         $this->info("Cutoff from {$startDate} to {$endDate}");
 
 
-        $orders = Order::query()
+        $orders = MarketOrder::query()
             // ->whereBetween('created_at', [
             //     \Carbon\Carbon::parse($startDate)->startOfDay(),
             //     \Carbon\Carbon::parse($endDate)->endOfDay(),
@@ -52,7 +52,7 @@ class CutOffOrderAccounting extends Command
                 \Carbon\Carbon::parse($startDate)->startOfDay(),
                 \Carbon\Carbon::parse($endDate)->endOfDay(),
             ])
-            ->orderBy('buyer_id')
+            ->orderBy('market_id')
             ->orderBy('id')
             ->get();
 
@@ -63,18 +63,17 @@ class CutOffOrderAccounting extends Command
         }
 
 
-        $groupedByBuyers = $orders->groupBy('buyer_id');
+        $groupedByMarkets = $orders->groupBy('market_id');
 
         $jobs = [];
 
         //
 
-        foreach ($groupedByBuyers as $buyerId => $buyerOrders) {
-
-            $buyerOrders->pluck('id')
-                ->chunk(10) // batch size per buyer
+        foreach ($groupedByMarkets as $marketId => $marketOrders) {
+             $marketOrders->pluck('id')
+                ->chunk(10) // batch size per market
                 ->each(function ($chunk) use (&$jobs) {
-                    $jobs[] = new JobCutOffOrderAccounting($chunk->toArray());
+                    $jobs[] = new JobMarketOrderAccounting($chunk->toArray());
                 });
         }
 
@@ -84,10 +83,12 @@ class CutOffOrderAccounting extends Command
         }
 
         Bus::batch($jobs)
-            ->name('CutOff Order Accounting Batch (Grouped by Buyer)')
+            ->name('CutOff Market Order Accounting Batch (Grouped by Market)')  
             ->onQueue(QueueEnum::ACCOUNTING_CUTOFF->value) // assign entire batch to cutoff queue
             ->dispatch();
 
         $this->info('Batch dispatched successfully.');
+    
+
     }
 }

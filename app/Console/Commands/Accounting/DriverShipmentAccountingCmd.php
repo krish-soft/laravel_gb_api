@@ -1,23 +1,21 @@
 <?php
 
-namespace App\Console\Commands\CutOff;
+namespace App\Console\Commands\Accounting;
 
 use App\Enum\Queue\QueueEnum;
-use App\Jobs\CutOff\JobCutOffDriverShipmentAccounting;
-use App\Jobs\CutOff\JobCutOffOrderAccounting;
-use App\Models\Buyer\Order\Order;
+use App\Jobs\Accounting\JobDriverShipmentAccounting;
 use App\Models\Delivery\DriverShipment;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Bus;
 
-class CutOffDriverShipmentAccounting extends Command
+class DriverShipmentAccountingCmd extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'cut-off:driver-shipment-accounting
+    protected $signature = 'accounting:driver-shipment
                             {startDate?} 
                             {endDate?}';
 
@@ -26,8 +24,7 @@ class CutOffDriverShipmentAccounting extends Command
      *
      * @var string
      */
-    protected $description = 'Cut off driver shipment accounting process.';
-
+    protected $description = 'Driver shipment accounting process.';
     /**
      * Execute the console command.
      */
@@ -80,7 +77,7 @@ class CutOffDriverShipmentAccounting extends Command
             $driverShipments->pluck('id')
                 ->chunk(10) // batch size per driver
                 ->each(function ($chunk) use (&$jobs) {
-                    $jobs[] = new JobCutOffDriverShipmentAccounting($chunk->toArray());
+                    $jobs[] = new JobDriverShipmentAccounting($chunk->toArray());
                 });
         }
 

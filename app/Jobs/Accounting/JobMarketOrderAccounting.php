@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Jobs\CutOff;
+namespace App\Jobs\Accounting;
 
 use App\Enum\Common\Order\OrderStatusEnum;
 use App\Enum\Common\Payment\PaymentStatusEnum;
@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-class JobCutOffMarketOrderAccounting implements ShouldQueue
+class JobMarketOrderAccounting implements ShouldQueue
 {
     use Queueable, Batchable;
 
@@ -50,25 +50,15 @@ class JobCutOffMarketOrderAccounting implements ShouldQueue
 
                 foreach ($marketOrders as $order) {
 
-
                     if (
-                        in_array($order->order_status, [
-                            OrderStatusEnum::SHIPPED->value,
-                            OrderStatusEnum::DELIVERED->value,
-                            OrderStatusEnum::CONFIRMED->value,
-                            OrderStatusEnum::COMPLETED->value,
-                        ])
-                        // &&
-                        // in_array($order->payment_status, [
-                        //     PaymentStatusEnum::PAID->value,
-                        // ])
+                        (in_array($order->order_status, [OrderStatusEnum::CONFIRMED->value, OrderStatusEnum::SETTLED->value]) &&  in_array($order->delivery_status, [OrderStatusEnum::DELIVERED->value]))
+                        && in_array($order->payment_status, [PaymentStatusEnum::PAID->value])
                     ) {
 
                         app(MarketOrderAccountingService::class)
                             ->recordPaidOrder($order, $order->payment);
-
                         // 
-                        $order->order_status = OrderStatusEnum::COMPLETED->value;
+                        $order->order_status = OrderStatusEnum::SETTLED->value;
                         $order->save();
                     }
                 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Jobs\CutOff;
+namespace App\Jobs\Accounting;
 
 use App\Enum\Common\Order\OrderStatusEnum;
 use App\Enum\Common\Payment\PaymentStatusEnum;
@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-class JobCutOffDriverShipmentAccounting implements ShouldQueue
+class JobDriverShipmentAccounting implements ShouldQueue
 {
     use Queueable, Batchable;
 

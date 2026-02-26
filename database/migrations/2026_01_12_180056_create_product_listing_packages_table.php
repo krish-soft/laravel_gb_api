@@ -32,10 +32,11 @@ return new class extends Migration
             $table->decimal('pack_size', 10, 2);
             $table->string('pack_unit', 20); //  kg, g, L, ml, pcs
             $table->string('pack_type_unit', 50)->nullable(); // bag, crate
-            $table->decimal('pack_price', 15, 2); // total_price for the package
+            $table->decimal('pack_base_price', 15, 2)->nullable(); // total_price for the package
+            $table->decimal('pack_price', 15, 2); // total_price for the package // if discount
             $table->decimal('per_kg_price', 15, 2)->nullable(); // per Kg for future (pack_price / (pack_size in kg))
 
-             $table->string('quality_grade', 20)->nullable();
+            $table->string('quality_grade', 20)->nullable();
 
             // Discount
             $table->decimal('discount_amount', 15, 2)->default(0)->nullable();

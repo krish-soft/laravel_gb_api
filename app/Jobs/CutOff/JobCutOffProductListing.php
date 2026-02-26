@@ -50,8 +50,8 @@ class JobCutOffProductListing implements ShouldQueue
                     /* ---------------------------------------------
                      | EXPIRE LISTING
                      ---------------------------------------------*/
-                    if ($listing->is_active && !$listing->is_expired) {
-                        $listing->is_active  = false;
+                    if (!$listing->is_expired) {
+                        // $listing->is_active  = false; // keep active so can understand it was created and expired via cutoff
                         $listing->is_expired = true;
                         $listing->expires_at = now();
                     }

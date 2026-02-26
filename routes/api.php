@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\v1\Admin\Buyer\Order\AdminOrderApiController;
+use App\Http\Controllers\Api\v1\Admin\CmdAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Accounting\AccountAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Accounting\AccountLedgerAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserLoginApiController;
@@ -468,6 +469,23 @@ Route::group([
                 Route::get('driver-shipments', [DriverShipmentAdminApiController::class, 'getDriverShipments']);
 
                 //  
+            });
+
+            Route::prefix('cmd')->group(function () {
+
+                // Cutoff Command
+                Route::post('cutoff/product-listing', [CmdAdminApiController::class, 'cmdCutoffProductListing']);
+
+                // accounting commands        
+                Route::post('accounting/order', [CmdAdminApiController::class, 'cmdAccountingOrder']);
+                Route::post('accounting/market-order', [CmdAdminApiController::class, 'cmdAccountingMarketOrder']);
+                Route::post('accounting/driver-shipment', [CmdAdminApiController::class, 'cmdAccountingDriverShipment']);
+
+                // Invoice Generation Commands
+                Route::post('invoice/product-listing', [CmdAdminApiController::class, 'cmdProductListingInvoiceGeneration']);
+                Route::post('invoice/buyer-order', [CmdAdminApiController::class, 'cmdBuyerOrderInvoiceGeneration']);
+
+                //
             });
 
             ## Report

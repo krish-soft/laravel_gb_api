@@ -16,16 +16,16 @@ class OrderInvoiceCmd extends Command
      *
      * @var string
      */
-    protected $signature = 'invoice:order
+    protected $signature = 'invoice:buyer-order
                             {startDate?} 
-                            {endDate?}';
+                            {endDate?} {isEnforce=false}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Generate invoices for orders that do not have invoices yet';
+    protected $description = 'Generate invoices for buyer orders that do not have invoices yet';
 
     /**
      * Execute the console command.
@@ -37,7 +37,9 @@ class OrderInvoiceCmd extends Command
         $startDate = $this->argument('startDate') ?? now()->subDay()->toDateString();
         $endDate   = $this->argument('endDate')   ?? now()->toDateString();
 
-        $this->info("Orders from {$startDate} to {$endDate}");
+        $isEnforce = filter_var($this->argument('isEnforce'), FILTER_VALIDATE_BOOLEAN); // To Rebuild again in case setltment done again or any reason to enforce rebuild
+
+        $this->info("Buyer  Orders from {$startDate} to {$endDate} " . ($isEnforce ? '(Enforce Rebuild)' : ''));
 
 
         // 
@@ -51,9 +53,11 @@ class OrderInvoiceCmd extends Command
                 \Carbon\Carbon::parse($endDate)->endOfDay(),
             ])
             ->whereIn('order_status', [
+                OrderStatusEnum::SETTLED->value,
+                OrderStatusEnum::INVOICED->value
+            ])->WhereIn('delivery_status', [
                 OrderStatusEnum::SHIPPED->value,
                 OrderStatusEnum::DELIVERED->value,
-                OrderStatusEnum::COMPLETED->value
             ])
             ->orderBy('buyer_id')
             ->orderBy('id')
@@ -61,7 +65,7 @@ class OrderInvoiceCmd extends Command
 
 
         if ($orders->isEmpty()) {
-            $this->warn('No orders eligible for cutoff.');
+            $this->warn('No buyer orders eligible for cutoff.');
             return;
         }
 
@@ -75,8 +79,8 @@ class OrderInvoiceCmd extends Command
 
             $buyerOrders->pluck('id')
                 ->chunk(10) // batch size per buyer
-                ->each(function ($chunk) use (&$jobs) {
-                    $jobs[] = new JobOrderInvoice($chunk->toArray());
+                ->each(function ($chunk) use (&$jobs, $isEnforce) {
+                    $jobs[] = new JobOrderInvoice($chunk->toArray(), $isEnforce);
                 });
         }
 

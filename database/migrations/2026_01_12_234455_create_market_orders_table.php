@@ -33,8 +33,8 @@ return new class extends Migration
                 ->constrained('fulfillment_locations')
                 ->restrictOnDelete();
 
-            $table->string('order_status', 30);
-            $table->string('delivery_status', 30)->nullable();
+            $table->string('order_status', 30)->default('pending');
+            $table->string('delivery_status', 30)->default('pending')->nullable();
 
             $table->date('order_date');
 

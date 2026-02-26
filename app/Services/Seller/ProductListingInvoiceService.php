@@ -34,7 +34,7 @@ class ProductListingInvoiceService
     }
 
 
-    public function repairOrGenerateInvoiceForListing(ProductListing $productListing): ProductListingInvoice
+    public function repairOrGenerateInvoiceForListing(ProductListing $productListing, bool $isEnforce = false): ProductListingInvoice
     {
         $existing = $productListing->productListingInvoice;
 
@@ -43,6 +43,7 @@ class ProductListingInvoiceService
             if (
                 $existing->invoice_path &&
                 Storage::disk('private')->exists($existing->invoice_path)
+                && !$isEnforce
             ) {
                 return $existing;
             }

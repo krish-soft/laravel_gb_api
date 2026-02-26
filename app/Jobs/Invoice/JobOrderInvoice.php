@@ -2,6 +2,7 @@
 
 namespace App\Jobs\Invoice;
 
+use App\Enum\Common\Order\OrderStatusEnum;
 use App\Models\Buyer\Order\Order;
 use App\Services\Buyer\Order\OrderInvoiceService;
 use Illuminate\Bus\Batchable;
@@ -15,10 +16,12 @@ class JobOrderInvoice implements ShouldQueue
     use Queueable, Batchable;
 
     protected array $orderIds;
+    protected bool $isEnforce;
 
-    public function __construct(array $orderIds)
+    public function __construct(array $orderIds,  $isEnforce = false)
     {
         $this->orderIds = $orderIds;
+        $this->isEnforce = $isEnforce;
     }
 
     public function handle(): void
@@ -33,7 +36,11 @@ class JobOrderInvoice implements ShouldQueue
 
                 // INDUSTRY SAFE:
                 // this will create OR repair automatically
-                $invoice = $invoiceService->generateInvoiceForOrder($order);
+                $invoice = $invoiceService->generateInvoiceForOrder($order, $this->isEnforce);
+
+                // Mark Order Invoice
+                $order->order_status = OrderStatusEnum::INVOICED->value;
+                $order->save();
 
                 // optional log
                 // Log::info("Invoice ready for {$order->order_number}");
