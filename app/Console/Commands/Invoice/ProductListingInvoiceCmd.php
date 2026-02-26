@@ -2,11 +2,8 @@
 
 namespace App\Console\Commands\Invoice;
 
-use App\Enum\Common\Order\OrderStatusEnum;
 use App\Enum\Queue\QueueEnum;
-use App\Jobs\Invoice\JobOrderInvoice;
 use App\Jobs\Invoice\JobProductListingInvoice;
-use App\Models\Buyer\Order\Order;
 use App\Models\Seller\Product\ProductListing;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Bus;

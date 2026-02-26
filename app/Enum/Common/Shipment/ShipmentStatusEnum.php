@@ -19,12 +19,13 @@ enum ShipmentStatusEnum: string
     case DISPATCHED = 'dispatched';
     case SHIPPED = 'shipped';
     case DELIVERED = 'delivered';
+    case OUT_FOR_DELIVERY = 'out_for_delivery';
 
     case RETURNED = 'returned';
     case CANCELLED = 'cancelled';
     case DAMAGED = 'damaged';
     case LOST = 'lost';
-    
+
     case ASSIGNED = 'assigned';
 
         //  grouping status
@@ -40,6 +41,11 @@ enum ShipmentStatusEnum: string
             self::cases()
         );
     }
+
+
+
+
+
 
     //
 }

@@ -282,8 +282,10 @@ Route::group([
                     Route::post('start/{driverShipment}', [DriverShipmentApiController::class, 'start']);
                     Route::post('complete/{driverShipment}', [DriverShipmentApiController::class, 'complete']);
 
-                    Route::post('update/shipment-Package/status', [DriverShipmentApiController::class, 'updateShipmentPackageStatus']);
-                    //
+                    // Route::post('update/shipment-Package/status', [DriverShipmentApiController::class, 'updateShipmentPackageStatus']);            
+                    Route::post('package/update-status/buyer', [DriverShipmentApiController::class, 'updateShipmentPackageBuyerStatus']);
+                    Route::post('package/update-status/seller', [DriverShipmentApiController::class, 'updateShipmentPackageSellerStatus']);
+                    Route::post('package/update-status/transfer', [DriverShipmentApiController::class, 'updateShipmentPackageTransferStatus']);
                 });
 
                 //

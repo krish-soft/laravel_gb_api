@@ -6,10 +6,12 @@ use App\Enum\Common\Order\OrderStatusEnum;
 use App\Enum\Common\Shipment\DriverShipmentStatusEnum;
 use App\Enum\Common\Shipment\ShipmentStatusEnum;
 use App\Http\Controllers\ApiResponseWithAuthController;
+use App\Models\Common\Shipment\ShipmentPackage;
 use App\Models\Delivery\DriverShipment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 use SebastianBergmann\CodeCoverage\Driver\Driver;
 
 class DriverShipmentApiController extends ApiResponseWithAuthController
@@ -157,9 +159,16 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
                     $p = $g->shipmentPackage;
 
                     return [
-                        'shipment_group_id' => $g->id,     // 🔥 IMPORTANT
-                        'shipment_package_id' => $p->id,   // 🔥 IMPORTANT
-                        'shipment_package_status' => $p->status, // 🔥 IMPORTANT
+                        'shipment_group_id' => $g->id,
+                        'shipment_package_id' => $p->id,
+
+                        'shipment_package_number' => $p->shipment_package_number,
+                        'shipment_package_status' => $p->status,
+                        'shipment_package_seller_status' => $p->seller_status,
+                        'shipment_package_buyer_status' => $p->buyer_status,
+                        'shipment_package_transfer_status' => $p->transfer_status,
+
+
                         'package_number' => $p->package_number,
                         'qty' => $p->qty,
                         'pack_size' => $p->pack_size,
@@ -336,6 +345,7 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
     | COMPLETE DELIVERY
     |--------------------------------------------------------------------------
     */
+
     public function complete(DriverShipment $driverShipment)
     {
         if ($driverShipment->driver_id !== request()->user()->id) {
@@ -347,175 +357,439 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
             return $this->showErrorMessage(__('messages.error_messages.not_found'), 404);
         }
 
-        $shipmentType = $shipment->shipment_type;
+        if (in_array($driverShipment->status, [
+            DriverShipmentStatusEnum::CANCELLED->value,
+            ShipmentStatusEnum::RETURNED->value,
+            DriverShipmentStatusEnum::COMPLETED->value,
+        ])) {
+            return $this->errorResponse("This shipment has been cancelled/returned/completed. Cannot complete.", 410);
+        }
 
+        DB::transaction(function () use ($driverShipment, $shipment) {
 
+            $type = $shipment->shipment_type;
 
-        DB::transaction(function () use ($driverShipment, $shipment, $shipmentType) {
+            $packages = $shipment->shipmentGroups
+                ->pluck('shipmentPackage')
+                ->filter();
 
-            // Get Original Order here 
-            // per shipment package group andper package get order and make order status completed if all shipment completed for that order
+            /*
+        |--------------------------------------------------------------------------
+        | 1️⃣ FIRST CHECK — BLOCK IF ALL PENDING
+        |--------------------------------------------------------------------------
+        */
 
-            // TODO: Trigger any post-delivery processes like notifications, payments, etc.
+            if ($type === ShipmentStatusEnum::PICKUP->value) {
 
+                $allPending = $packages->every(function ($package) {
+                    return $package->seller_status === ShipmentStatusEnum::PENDING->value;
+                });
 
-            // 1. If Pickup (Seller To Depot)
-            if ($shipmentType === ShipmentStatusEnum::PICKUP->value) {
-
-                foreach ($shipment->shipmentGroups as $group) {
-                    $package = $group->shipmentPackage;
-
-                    if (!$package) {
-                        continue; // Skip if no package found, though ideally should not happen
-                    }
-
-                    $order = $package->order;
-
-                    if (!$order) {
-                        continue; // Skip if no order found, though ideally should not happen
-                    }
-
-                    // Update package too 
-                    if (!in_array($package->status, [
-                        ShipmentStatusEnum::LOST->value,
-                        ShipmentStatusEnum::DAMAGED->value,
-                        ShipmentStatusEnum::ARRIVED_AT_DEPOT->value,
-                        ShipmentStatusEnum::DELIVERED->value
-                    ])) {
-                        $package->update([
-                            'status' =>  ShipmentStatusEnum::ARRIVED_AT_DEPOT->value,
-                            'picked_up_at' => now(),
-                        ]);
-                    }
-
-                    // Order only update on last dispatch (final delivery to customer), so no order status update here for pickup and transfer, only for dispatch
-
-
+                if ($allPending) {
+                    throw new RuntimeException("Cannot complete pickup. All packages are still pending.");
                 }
             }
 
-            // 2. Transfer (Depot To Depot) - if needed
-            // if ($shipmentType === ShipmentStatusEnum::TRANSFER->value) {
+            if ($type === ShipmentStatusEnum::DISPATCH->value) {
 
-            //     foreach ($shipment->shipmentGroups as $group) {
-            //         $package = $group->shipmentPackage;
+                $allPending = $packages->every(function ($package) {
+                    return $package->buyer_status !== ShipmentStatusEnum::DELIVERED->value;
+                });
 
-            //         if (!$package) {
-            //             continue; // Skip if no package found, though ideally should not happen
-            //         }
+                if ($allPending) {
+                    throw new RuntimeException("Cannot complete dispatch. No package delivered.");
+                }
+            }
 
-            //         $order = $package->order;
+            /*
+        |--------------------------------------------------------------------------
+        | 2️⃣ NORMAL FLOW
+        |--------------------------------------------------------------------------
+        */
 
-            //         if (!$order) {
-            //             continue; // Skip if no order found, though ideally should not happen
-            //         }
+            foreach ($packages as $package) {
 
-            //         // Update package too 
-            //         if (!in_array($package->status, [ShipmentStatusEnum::LOST->value, ShipmentStatusEnum::DAMAGED->value])) {
-            //             $package->update([
-            //                 'status' => ShipmentStatusEnum::INTERNAL_TRANSFER->value,
-            //             ]);
-            //         }
-            //     }
-            // }
+                if ($type === ShipmentStatusEnum::PICKUP->value) {
 
-            // 3. Dipatch (Depot To Customer Final Delivery)
-            if ($shipmentType === ShipmentStatusEnum::DISPATCH->value) {
+                    // Only process if package is picked and not already arrived
+                    if (
+                        $package->seller_status === ShipmentStatusEnum::PICKED_UP->value &&
+                        $package->status !== ShipmentStatusEnum::ARRIVED_AT_DEPOT->value
+                    ) {
 
-                foreach ($shipment->shipmentGroups as $group) {
-                    $package = $group->shipmentPackage;
-
-                    if (!$package) {
-                        continue; // Skip if no package found, though ideally should not happen
-                    }
-
-                    $order = $package->order;
-
-                    if (!$order) {
-                        continue; // Skip if no order found, though ideally should not happen
-                    }
-
-                    // Update package too 
-                    if (!in_array($package->status, [
-                        ShipmentStatusEnum::LOST->value,
-                        ShipmentStatusEnum::DAMAGED->value,
-                        ShipmentStatusEnum::DELIVERED->value
-                    ])) {
                         $package->update([
-                            'status' =>  ShipmentStatusEnum::DELIVERED->value,
-                            'delivered_at' => now()
+                            'status' => ShipmentStatusEnum::ARRIVED_AT_DEPOT->value,
+                        ]);
+
+                        $orderItem = $package?->orderItem;
+                        $marketOrderItem = $package?->marketOrderItem;
+
+                        if ($orderItem) {
+                            $orderItem->increment('ship_qty', $package->qty);
+                        }
+
+                        if ($marketOrderItem) {
+                            $marketOrderItem->increment('ship_qty', $package->qty);
+                        }
+                    }
+
+                    // Otherwise just sync status (optional)
+                    elseif ($package->status !== $package->seller_status) {
+                        $package->update([
+                            'status' => $package->seller_status,
+                        ]);
+                    }
+                }
+
+                if ($type === ShipmentStatusEnum::TRANSFER->value) {
+
+                    if ($package->status === ShipmentStatusEnum::ARRIVED_AT_DEPOT->value) {
+                        $package->update([
+                            'status' => ShipmentStatusEnum::INTERNAL_TRANSFER->value,
+                        ]);
+                    }
+                }
+
+                if ($type === ShipmentStatusEnum::DISPATCH->value) {
+
+                    if ($package->buyer_status === ShipmentStatusEnum::DELIVERED->value) {
+                        $package->update([
+                            'status' => ShipmentStatusEnum::DELIVERED->value,
+                            'delivered_at' => now(),
                         ]);
                     } else {
-
                         $package->update([
-                            'delivered_at' => now()
-                        ]);
-                    }
-
-                    if (!in_array($package->status, [
-                        OrderStatusEnum::CANCELLED->value,
-                        OrderStatusEnum::FAILED_PAYMENT->value,
-                        OrderStatusEnum::REFUNDED->value,
-                        ShipmentStatusEnum::DELIVERED->value
-                    ])) {
-
-                        // Update order delivery status based on shipment type and flow
-                        $order->update([
-                            'delivery_status' => ShipmentStatusEnum::DELIVERED->value,
+                            'status' => $package->buyer_status,
                         ]);
                     }
                 }
             }
 
-
+            /*
+        |--------------------------------------------------------------------------
+        | 3️⃣ COMPLETE SHIPMENT
+        |--------------------------------------------------------------------------
+        */
 
             $driverShipment->update([
                 'completed_at' => now(),
                 'status' => DriverShipmentStatusEnum::COMPLETED->value,
             ]);
 
-            $driverShipment->shipment()->update([
-                'status' => DriverShipmentStatusEnum::COMPLETED->value
+            $shipment->update([
+                'status' => DriverShipmentStatusEnum::COMPLETED->value,
             ]);
         });
 
         return $this->showSuccessMessage(__('messages.success_messages.success_update'));
     }
 
+    // public function complete(DriverShipment $driverShipment)
+    // {
+    //     if ($driverShipment->driver_id !== request()->user()->id) {
+    //         return $this->errorResponse("Unauthorized", 403);
+    //     }
+
+    //     $shipment = $driverShipment->shipment;
+    //     if (!$shipment) {
+    //         return $this->showErrorMessage(__('messages.error_messages.not_found'), 404);
+    //     }
+
+    //     $shipmentType = $shipment->shipment_type;
+
+
+
+    //     DB::transaction(function () use ($driverShipment, $shipment, $shipmentType) {
+
+    //         // Get Original Order here 
+    //         // per shipment package group andper package get order and make order status completed if all shipment completed for that order
+
+    //         // TODO: Trigger any post-delivery processes like notifications, payments, etc.
+
+
+    //         // 1. If Pickup (Seller To Depot)
+    //         if ($shipmentType === ShipmentStatusEnum::PICKUP->value) {
+
+    //             foreach ($shipment->shipmentGroups as $group) {
+    //                 $package = $group->shipmentPackage;
+
+    //                 if (!$package) {
+    //                     continue; // Skip if no package found, though ideally should not happen
+    //                 }
+
+    //                 // Update package too 
+    //                 if (!in_array($package->seller_status, [
+    //                     // ShipmentStatusEnum::PENDING->value,
+    //                     ShipmentStatusEnum::PENDING->value,
+    //                     // ShipmentStatusEnum::READY_TO_PICKUP->value
+    //                 ])) {
+
+    //                     throw new RuntimeException("Package status must be 'picked_up/not_picked_up/lost/damaged' to complete pickup. Package number: {$package->package_number}");
+    //                 }
+
+    //                 if (!in_array($package->seller_status, [
+    //                     ShipmentStatusEnum::PICKED_UP->value,
+    //                 ])) {
+
+    //                     $package->update([
+    //                         'status' =>  ShipmentStatusEnum::ARRIVED_AT_DEPOT->value,
+    //                         'picked_up_at' => now(),
+    //                     ]);
+    //                 } else {
+    //                     $package->update([
+    //                         'status' =>  $package->seller_status,
+    //                     ]);
+    //                 }
+    //             }
+    //         }
+
+    //         // 2. Transfer (Depot To Depot) - if needed
+    //         if ($shipmentType === ShipmentStatusEnum::TRANSFER->value) {
+
+    //             foreach ($shipment->shipmentGroups as $group) {
+    //                 $package = $group->shipmentPackage;
+
+    //                 if (!$package) {
+    //                     continue; // Skip if no package found, though ideally should not happen
+    //                 }
+
+    //                 // Update package too 
+    //                 if (in_array($package->status, [
+    //                     // ShipmentStatusEnum::PENDING->value,
+    //                     ShipmentStatusEnum::ARRIVED_AT_DEPOT->value,
+    //                     ShipmentStatusEnum::INTERNAL_TRANSFER->value,
+    //                 ])) {
+    //                     $package->update([
+    //                         'status' => ShipmentStatusEnum::INTERNAL_TRANSFER->value,
+    //                     ]);
+    //                 }
+    //             }
+    //         }
+
+    //         // 3. Dipatch (Depot To Customer Final Delivery)
+    //         if ($shipmentType === ShipmentStatusEnum::DISPATCH->value) {
+
+    //             foreach ($shipment->shipmentGroups as $group) {
+
+    //                 $package = $group->shipmentPackage;
+
+    //                 if (!$package) {
+    //                     continue; // Skip if no package found, though ideally should not happen
+    //                 }
+
+    //                 // Update package too 
+    //                 if (in_array($package->status, [
+    //                     ShipmentStatusEnum::INTERNAL_TRANSFER->value,
+    //                     ShipmentStatusEnum::ARRIVED_AT_DEPOT->value,
+    //                     ShipmentStatusEnum::DELIVERED->value // need to give same because same repeat
+    //                 ])) {
+    //                     $package->update([
+    //                         'status' =>  ShipmentStatusEnum::DELIVERED->value,
+    //                         'delivered_at' => now()
+    //                     ]);
+    //                 }
+
+    //                 //  Which not picked up never gone a delivered status, so we can say delivered status must be there to complete dispatch
+    //                 // if (!in_array($package->buyer_status, [
+    //                 //     ShipmentStatusEnum::DELIVERED->value
+    //                 // ])) {
+    //                 //     throw new RuntimeException("Package status must be 'delivered' to complete dispatch. Package number: {$package->package_number}");
+    //                 // }
+    //             }
+
+
+    //             // After delivery of all packages, we can mark order as completed if all packages of that order delivered
+    //         }
+
+    //         $driverShipment->update([
+    //             'completed_at' => now(),
+    //             'status' => DriverShipmentStatusEnum::COMPLETED->value,
+    //         ]);
+
+    //         $driverShipment->shipment()->update([
+    //             'status' => DriverShipmentStatusEnum::COMPLETED->value
+    //         ]);
+    //     });
+
+    //     return $this->showSuccessMessage(__('messages.success_messages.success_update'));
+    // }
+
 
     // TO Confiorm All We pickedup
-    public function updateShipmentPackageStatus(Request $request)
+    // public function updateShipmentPackageStatus(Request $request)
+    // {
+
+    //     $request->validate([
+    //         'status' => 'required|in:' . implode(',', ShipmentStatusEnum::casesAsValues()),
+    //         'shipment_package_id' => 'required|exists:shipment_packages,id',
+    //         'driver_shipment_id' => 'required|exists:driver_shipments,id',
+    //     ]);
+
+    //     $driverShipment = DriverShipment::findOrFail($request->driver_shipment_id);
+    //     $shipmentPackageId = $request->shipment_package_id;
+
+    //     if ($driverShipment->driver_id !== request()->user()->id) {
+    //         return $this->errorResponse(__('messages.error_messages.unauthorized_action'), 403);
+    //     }
+
+    //     $shipmentPackage = $driverShipment->shipment
+    //         ->shipmentGroups()
+    //         ->whereHas('shipmentPackage', function ($q) use ($shipmentPackageId) {
+    //             $q->where('id', $shipmentPackageId);
+    //         })
+    //         ->first()
+    //         ?->shipmentPackage;
+
+    //     if (!$shipmentPackage) {
+    //         return $this->errorResponse(__('messages.error_messages.not_found'), 404);
+    //     }
+
+
+
+    //     $shipmentPackage->update([
+    //         'status' => $request->status,
+    //     ]);
+
+    //     return $this->showSuccessMessage(__('messages.success_messages.success_update'));
+    // }
+
+
+    // Update shipment package status (e.g. picked up, delivered) - optional, can be done by driver or system based on delivery confirmation
+
+    /* =========================================================
+| COMMON GUARD
+========================================================= */
+    private function guardDriverShipment($driverShipmentId, $packageId)
     {
-
-        $request->validate([
-            'status' => 'required|in:' . implode(',', ShipmentStatusEnum::casesAsValues()),
-            'shipment_package_id' => 'required|exists:shipment_packages,id',
-            'driver_shipment_id' => 'required|exists:driver_shipments,id',
-        ]);
-
-        $driverShipment = DriverShipment::findOrFail($request->driver_shipment_id);
-        $shipmentPackageId = $request->shipment_package_id;
+        $driverShipment = DriverShipment::with('shipment.shipmentGroups')
+            ->findOrFail($driverShipmentId);
 
         if ($driverShipment->driver_id !== request()->user()->id) {
-            return $this->errorResponse(__('messages.error_messages.unauthorized_action'), 403);
+            throw new RuntimeException(__('messages.error_messages.unauthorized_action'), 403);
         }
 
-        $shipmentPackage = $driverShipment->shipment
-            ->shipmentGroups()
-            ->whereHas('shipmentPackage', function ($q) use ($shipmentPackageId) {
-                $q->where('id', $shipmentPackageId);
-            })
-            ->first()
-            ?->shipmentPackage;
-
-        if (!$shipmentPackage) {
-            return $this->errorResponse(__('messages.error_messages.not_found'), 404);
+        if (in_array($driverShipment->status, [
+            DriverShipmentStatusEnum::CANCELLED->value,
+            DriverShipmentStatusEnum::COMPLETED->value,
+            ShipmentStatusEnum::RETURNED->value,
+        ])) {
+            throw new RuntimeException("This shipment has been cancelled/returned/completed.", 410);
         }
 
+        $belongs = $driverShipment->shipment->shipmentGroups
+            ->pluck('shipment_package_id')
+            ->contains($packageId);
+
+        if (!$belongs) {
+            throw new RuntimeException('Shipment package not belongs to this shipment.', 404);
+        }
+
+        return $driverShipment;
+    }
 
 
-        $shipmentPackage->update([
-            'status' => $request->status,
+    /* =========================================================
+| SELLER STATUS UPDATE
+========================================================= */
+    public function updateShipmentPackageSellerStatus(Request $request)
+    {
+        $allowed = [
+            ShipmentStatusEnum::PENDING->value,
+            ShipmentStatusEnum::PICKED_UP->value,
+            ShipmentStatusEnum::NOT_PICKED_UP->value,
+            ShipmentStatusEnum::RETURNED->value,
+            ShipmentStatusEnum::LOST->value,
+            ShipmentStatusEnum::DAMAGED->value,
+        ];
+
+        $request->validate([
+            'driver_shipment_id' => 'required|exists:driver_shipments,id',
+            'shipment_package_id' => 'required|exists:shipment_packages,id',
+            'status' => 'required|in:' . implode(',', $allowed),
+        ]);
+
+        $this->guardDriverShipment(
+            $request->driver_shipment_id,
+            $request->shipment_package_id
+        );
+
+        $package = ShipmentPackage::findOrFail($request->shipment_package_id);
+
+        $package->update([
+            'seller_status' => $request->status,
+            'picked_up_at'  => $request->status === ShipmentStatusEnum::PICKED_UP->value ? now() : null,
+        ]);
+
+        return $this->showSuccessMessage(__('messages.success_messages.success_update'));
+    }
+
+
+    /* =========================================================
+| BUYER STATUS UPDATE
+========================================================= */
+    public function updateShipmentPackageBuyerStatus(Request $request)
+    {
+        $allowed = [
+            ShipmentStatusEnum::PENDING->value,
+            ShipmentStatusEnum::OUT_FOR_DELIVERY->value,
+            ShipmentStatusEnum::DELIVERED->value,
+            ShipmentStatusEnum::RETURNED->value,
+            ShipmentStatusEnum::LOST->value,
+            ShipmentStatusEnum::DAMAGED->value,
+        ];
+
+        $request->validate([
+            'driver_shipment_id' => 'required|exists:driver_shipments,id',
+            'shipment_package_id' => 'required|exists:shipment_packages,id',
+            'status' => 'required|in:' . implode(',', $allowed),
+        ]);
+
+        $this->guardDriverShipment(
+            $request->driver_shipment_id,
+            $request->shipment_package_id
+        );
+
+        $package = ShipmentPackage::findOrFail($request->shipment_package_id);
+
+        $status = $request->status;
+
+        // Prevent delivering if not picked up
+        if (
+            $status === ShipmentStatusEnum::DELIVERED->value &&
+            $package->seller_status !== ShipmentStatusEnum::PICKED_UP->value
+        ) {
+            $status = $package->seller_status;
+        }
+
+        $package->update([
+            'buyer_status' => $status,
+        ]);
+
+        return $this->showSuccessMessage(__('messages.success_messages.success_update'));
+    }
+
+
+    /* =========================================================
+| TRANSFER STATUS UPDATE
+========================================================= */
+    public function updateShipmentPackageTransferStatus(Request $request)
+    {
+        $request->validate([
+            'driver_shipment_id' => 'required|exists:driver_shipments,id',
+            'shipment_package_id' => 'required|exists:shipment_packages,id',
+            'status' => 'required|in:' . implode(',', ShipmentStatusEnum::casesAsValues()),
+        ]);
+
+        $this->guardDriverShipment(
+            $request->driver_shipment_id,
+            $request->shipment_package_id
+        );
+
+        $package = ShipmentPackage::findOrFail($request->shipment_package_id);
+
+        $package->update([
+            'transfer_status' => $request->status,
+            'in_transit_at'   => $request->status === ShipmentStatusEnum::INTERNAL_TRANSFER->value ? now() : null,
         ]);
 
         return $this->showSuccessMessage(__('messages.success_messages.success_update'));

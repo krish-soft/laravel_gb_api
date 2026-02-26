@@ -372,7 +372,8 @@
             <tr>
                 <th>#</th>
                 <th>Description</th>
-                <th>Qty</th>
+                <th>Order Qty</th>
+                <th>Ship Qty</th>
                 <th>Pack Size</th>
                 <th>Pack Price</th>
                 <th>Discount</th>
@@ -396,6 +397,7 @@
                     </td>
 
                     <td class="center">{{ $item->order_qty }}</td>
+                    <td class="center">{{ $item->ship_qty }}</td>
 
                     <td class="right">{{ number_format($item->pack_size, 2) }} {{ $item->pack_unit }}</td>
 
@@ -419,6 +421,7 @@
                 <tr>
                     <td></td>
                     <td>{{ $charge->charge_name }}</td>
+                    <td></td>
                     <td></td>
                     <td></td>
                     <td></td>

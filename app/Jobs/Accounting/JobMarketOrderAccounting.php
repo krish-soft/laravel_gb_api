@@ -51,8 +51,8 @@ class JobMarketOrderAccounting implements ShouldQueue
                 foreach ($marketOrders as $order) {
 
                     if (
-                        (in_array($order->order_status, [OrderStatusEnum::CONFIRMED->value, OrderStatusEnum::SETTLED->value]) &&  in_array($order->delivery_status, [OrderStatusEnum::DELIVERED->value]))
-                        && in_array($order->payment_status, [PaymentStatusEnum::PAID->value])
+                        in_array($order->order_status, [OrderStatusEnum::CONFIRMED->value, OrderStatusEnum::SETTLED->value])
+                        &&  in_array($order->delivery_status, [OrderStatusEnum::DELIVERED->value])
                     ) {
 
                         app(MarketOrderAccountingService::class)
