@@ -4,6 +4,7 @@ namespace App\Models\Seller\Product;
 
 use App\Models\BaseModel;
 use App\Models\Buyer\Order\OrderItem;
+use App\Models\Common\Shipment\ShipmentPackage;
 use App\Models\Market\MarketOrderItem;
 use Illuminate\Database\Eloquent\Model;
 
@@ -100,6 +101,11 @@ class ProductListingPackage extends BaseModel
         return $this->hasOne(MarketOrderItem::class, 'product_listing_package_id');
     }
 
+
+    public function shipmentPackages()
+    {
+        return $this->hasMany(ShipmentPackage::class, 'product_listing_package_id');
+    }
 
 
     //

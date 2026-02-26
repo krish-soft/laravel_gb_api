@@ -52,29 +52,39 @@ return new class extends Migration
             $table->foreignId('pickup_fulfillment_location_id')
                 ->nullable()
                 ->constrained('fulfillment_locations')
-                ->restrictOnDelete();
+                ->nullOnDelete();
 
             $table->foreignId('shipping_fulfillment_location_id')
                 ->nullable()
                 ->constrained('fulfillment_locations')
-                ->restrictOnDelete();
+                ->nullOnDelete();
 
             // depots
 
             $table->foreignId('pickup_depot_id')
                 ->nullable()
                 ->constrained('mst_depots')
-                ->restrictOnDelete();
+                ->nullOnDelete();
 
             $table->foreignId('shipping_depot_id')
                 ->nullable()
                 ->constrained('mst_depots')
-                ->restrictOnDelete();
+                ->nullOnDelete();
 
             $table->foreignId('market_id')
                 ->nullable()
                 ->constrained('mst_markets')
-                ->restrictOnDelete();
+                ->nullOnDelete();
+
+            $table->foreignId('product_listing_package_id')
+                ->nullable()
+                ->constrained('product_listing_packages')
+                ->nullOnDelete();
+
+            $table->foreignId('product_listing_id')
+                ->nullable()
+                ->constrained('product_listings')
+                ->nullOnDelete();
 
 
             $table->string('order_type', 20)->nullable(); // normal, market, etc.

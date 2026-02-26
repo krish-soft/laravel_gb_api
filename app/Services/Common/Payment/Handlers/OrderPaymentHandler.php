@@ -70,7 +70,9 @@ class OrderPaymentHandler
                 for ($i = 0; $i < $toCreate; $i++) {
 
                     $productListing = $item->productListingItem?->productListing;
+                    $pkg = $item->productListingPackage;
 
+                    // Regular Orders
                     ShipmentPackage::create([
                         'order_id'       => $order->id,
                         'order_item_id'  => $item->id,
@@ -80,6 +82,9 @@ class OrderPaymentHandler
 
                         'buyer_id'       => $order->buyer_id,
                         'seller_id'      => $item->seller->id, // Assuming OrderItem has a seller relationship
+
+                        'product_listing_package_id' => $pkg?->id, // Assuming OrderItem has this field
+                        'product_listing_id' => $productListing?->id, // Assuming OrderItem has this field
 
                         'pickup_fulfillment_location_id' => $item->pickup_fulfillment_location_id, // Assuming OrderItem has pickupFulfillmentLocation relationship
                         'shipping_fulfillment_location_id' => $order->shipping_fulfillment_location_id, // Assuming same as order's shipping location for now

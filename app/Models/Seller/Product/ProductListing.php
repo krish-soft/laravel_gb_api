@@ -5,6 +5,7 @@ namespace App\Models\Seller\Product;
 use App\Models\BaseModel;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
 use App\Models\Common\Log\ActivityLog;
+use App\Models\Common\Shipment\ShipmentPackage;
 use App\Models\Master\Unique\MstSeqCodeGenerator;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -116,6 +117,11 @@ class ProductListing extends BaseModel
     public function productListingInvoice()
     {
         return $this->hasOne(ProductListingInvoice::class, 'product_listing_id');
+    }
+
+    public function shipmentPackages()
+    {
+        return $this->hasMany(ShipmentPackage::class, 'product_listing_id');
     }
 
 

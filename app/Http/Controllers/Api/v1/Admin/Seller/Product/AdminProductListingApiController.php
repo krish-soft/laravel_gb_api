@@ -61,14 +61,15 @@ class AdminProductListingApiController extends ApiResponseWithAuthController
     public function getListingDetails(Request $request, $listingId)
     {
 
-        $listingDetails = ProductListing::with([     
+        $listingDetails = ProductListing::with([
             'seller',
-            'fulfillmentLocation',
             'fulfillmentLocation.address',
             'listingItems',
             'listingItems.product',
             'listingItems.listingPackages',
             'productListingInvoice',
+            'shipmentPackages.order',
+            'shipmentPackages.marketOrder',
         ])
             ->where('id', $listingId)
             ->first();

@@ -207,6 +207,9 @@ class JobCutOffProductListing implements ShouldQueue
                                 'pickup_fulfillment_location_id' => $listing->fulfillment_location_id,
                                 'shipping_fulfillment_location_id' => $marketOrder->shipping_fulfillment_location_id,
 
+                                'product_listing_package_id' => $pkg->id, // Assuming OrderItem has this field
+                                'product_listing_id' => $listing->id, // Assuming OrderItem has this field
+
                                 'product_code' => $marketItem->product_code,
                                 'product_name' => $marketItem->product_name,
 

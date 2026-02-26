@@ -73,23 +73,23 @@ class MstPaymentSetting extends BaseModel
             return null;
         }
 
-        return Cache::rememberForever('mst_payment_settings', function () {
-            return self::firstOrCreate([
-                'setting_code' => 'SETTING_001',
-            ], [
-                'payment_in_mode' => PaymentMethodEnum::RAZORPAY->value,
-                'payment_out_mode' => PaymentMethodEnum::MANUAL->value,
-                'min_cart_order_amount' => 2500,
-                'max_cart_order_amount' => 15000,
-                'min_payout_amount' => 100,
-                'max_payout_amount' => 15000,
-                'payout_cycle' => 'weekly',
-                'refund_window_days' => 7,
-                'max_payment_attempts' => 2,
-                'cart_expiry_minutes' => 120, // 2 hours
+        // return Cache::rememberForever('mst_payment_settings', function () {
+        return self::firstOrCreate([
+            'setting_code' => 'SETTING_001',
+        ], [
+            'payment_in_mode' => PaymentMethodEnum::RAZORPAY->value,
+            'payment_out_mode' => PaymentMethodEnum::MANUAL->value,
+            'min_cart_order_amount' => 2500,
+            'max_cart_order_amount' => 15000,
+            'min_payout_amount' => 100,
+            'max_payout_amount' => 15000,
+            'payout_cycle' => 'weekly',
+            'refund_window_days' => 7,
+            'max_payment_attempts' => 2,
+            'cart_expiry_minutes' => 120, // 2 hours
 
-            ]);
-        });
+        ]);
+        // });
     }
 
     // Create Helper function to clear cache after save

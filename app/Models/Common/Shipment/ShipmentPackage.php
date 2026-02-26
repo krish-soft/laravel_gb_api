@@ -8,6 +8,8 @@ use App\Models\Common\Fulfillment\FulfillmentLocation;
 use App\Models\Market\MarketOrder;
 use App\Models\Market\MarketOrderItem;
 use App\Models\Master\Depot\MstDepot;
+use App\Models\Seller\Product\ProductListing;
+use App\Models\Seller\Product\ProductListingPackage;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -36,6 +38,9 @@ class ShipmentPackage extends Model
 
         'pickup_depot_id',
         'shipping_depot_id',
+
+        'product_listing_package_id',
+        'product_listing_id',
 
         'order_type',
         'market_id',
@@ -153,6 +158,16 @@ class ShipmentPackage extends Model
     public function packageGroup()
     {
         return $this->hasOne(ShipmentPackageGroup::class, 'shipment_package_id');
+    }
+
+    public function productListingPackage()
+    {
+        return $this->belongsTo(ProductListingPackage::class, 'product_listing_package_id');
+    }
+
+    public function productListing()
+    {
+        return $this->belongsTo(ProductListing::class, 'product_listing_id');
     }
 
     /*

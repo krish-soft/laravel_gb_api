@@ -17,7 +17,7 @@ class AppSettingSeeder extends Seeder
             // App identity
 
             'setting_code' => 'SETTING_001',
-            'app_name' => 'Green Bazar',
+            'app_name' => 'Khet Bajar',
 
             // Localization
             'timezone' => 'Asia/Kolkata',

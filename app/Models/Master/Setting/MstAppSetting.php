@@ -82,7 +82,7 @@ class MstAppSetting extends BaseModel
         return Cache::rememberForever('mst_app_settings', function () {
             return MstAppSetting::firstOrCreate(
                 [
-                    'app_name' => 'Green Bazar',
+                    'app_name' => 'Khet Bajar',
                     'setting_code' => 'SETTING_001'
                 ],
                 [
