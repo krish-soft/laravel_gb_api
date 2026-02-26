@@ -9,9 +9,9 @@ enum QueueEnum: string
     case ACCOUNTING_CUTOFF   = 'accounting_cutoff';   // accounting lifecycle / expiry // USED
     case INVOICE   = 'invoice';   // order invoice generation // USED
 
-    case ORDER_PROCESS = 'order_process'; // order creation, updates, status sync
-    case PAYMENT_PROCESS  = 'payment_process';  // capture, refund, settlement
+    // case ORDER_PROCESS = 'order_process'; // order creation, updates, status sync
+    // case PAYMENT_PROCESS  = 'payment_process';  // capture, refund, settlement
 
-    case FULFILLMENT      = 'fulfillment';      // packing, shipment, logistics
+    // case FULFILLMENT      = 'fulfillment';      // packing, shipment, logistics
 
 }

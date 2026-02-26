@@ -22,7 +22,7 @@ class CmdAdminApiController extends ApiResponseWithAdminAuthController
 
     public function cmdCutoffProductListing(Request $request)
     {
-        $this->validate($request, [
+        $request->validate([
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
@@ -70,7 +70,7 @@ class CmdAdminApiController extends ApiResponseWithAdminAuthController
 
     public function cmdAccountingOrder(Request $request)
     {
-        $this->validate($request, [
+        $request->validate([
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
@@ -109,7 +109,7 @@ class CmdAdminApiController extends ApiResponseWithAdminAuthController
 
     public function cmdAccountingMarketOrder(Request $request)
     {
-        $this->validate($request, [
+        $request->validate([
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
@@ -147,7 +147,7 @@ class CmdAdminApiController extends ApiResponseWithAdminAuthController
 
     public function cmdAccountingDriverShipment(Request $request)
     {
-        $this->validate($request, [
+        $request->validate([
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
         ]);
@@ -159,7 +159,8 @@ class CmdAdminApiController extends ApiResponseWithAdminAuthController
         //                     {startDate?} 
         //                     {endDate?}';
 
-        $command = "accounting:driver-shipment {$startDate} {$endDate}";
+        // $command = "accounting:driver-shipment {$startDate} {$endDate}";
+        return $this->errorResponse('The accounting:driver-shipment command is currently disabled and cannot be executed.', 403);
 
         // Log activity
         logActivity(
@@ -189,7 +190,7 @@ class CmdAdminApiController extends ApiResponseWithAdminAuthController
 
     public function cmdBuyerOrderInvoiceGeneration(Request $request)
     {
-        $this->validate($request, [
+        $request->validate([
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'is_enforce' => 'nullable|boolean',
@@ -232,7 +233,7 @@ class CmdAdminApiController extends ApiResponseWithAdminAuthController
 
     public function cmdProductListingInvoiceGeneration(Request $request)
     {
-        $this->validate($request, [
+        $request->validate([
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'is_enforce' => 'nullable|boolean',
