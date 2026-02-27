@@ -7,7 +7,7 @@ use App\Enum\Common\Payment\PaymentStatusEnum;
 use App\Models\Buyer\Order\Order;
 use App\Models\Delivery\DriverShipment;
 use App\Services\Accounting\OrderAccountingService;
-use App\Services\Accounting\ShipmentAccountingService;
+use App\Services\Accounting\DriverShipmentAccountingService;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -63,7 +63,7 @@ class JobDriverShipmentAccounting implements ShouldQueue
 
                     ) {
 
-                        app(ShipmentAccountingService::class)
+                        app(DriverShipmentAccountingService::class)
                             ->recordDriverShipmentAccount($driverShipment);
 
                         // 

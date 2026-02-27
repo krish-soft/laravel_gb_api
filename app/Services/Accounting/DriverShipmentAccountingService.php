@@ -16,7 +16,7 @@ use App\Services\Common\Charge\ChargeCalculationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class ShipmentAccountingService
+class DriverShipmentAccountingService
 {
 
 
