@@ -11,14 +11,16 @@ use App\Models\Buyer\Order\OrderItem;
 use App\Models\Common\Accounting\Account;
 use App\Models\Common\Accounting\AccountLedger;
 use App\Models\Common\Shipment\ShipmentPackage;
+use App\Models\Market\MarketOrder;
 use App\Models\Market\MarketOrderItem;
 use App\Services\Common\Charge\ChargeCalculationService;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 class ShipmentPackageAccountingService
 {
 
-
+    // Buyer Order 
     public function processOrderShipmentPackageAccounting(Order $order)
     {
 
@@ -224,6 +226,111 @@ class ShipmentPackageAccountingService
     }
 
 
+    // Market Order
+
+    public function processMarketOrderShipmentPackageAccounting(MarketOrder $order)
+    {
+
+        //
+        $accountingService = app(AccountingService::class);
+
+        DB::transaction(function () use ($order, $accountingService) {
+
+            // we can have multiple packages for an order, so we need to process each package separately
+
+            // Market Order there is no buyer directly going to 
+
+            foreach ($order->shipmentPackages as $package) {
+
+                // $orderItem = $package->orderItem;
+
+                $seller = $package->seller;
+
+                if (!$seller) {
+                    throw new RuntimeException("Seller not found for Shipment Package ID: {$package->id}");
+                }
+
+                $sellerAccount = Account::getOrCreateByOwner(
+                    AccountOwnerTypeEnum::SELLER->value,
+                    $seller->id
+                );
+
+                // 
+                // 1. Scenario : if package is not picked up or pending from farmer
+                if (in_array($package->seller_status, [
+                    ShipmentStatusEnum::PENDING->value,
+                    ShipmentStatusEnum::NOT_PICKED_UP->value,
+                ])) {
+
+                    // $packageAmount = $package->qty * $package->pack_price;
+
+                    // For market order we do not have to reverse order item 
+
+
+                    /**
+                     *  Seller Account -> Credit (Hold)
+                     */
+                    $sellerDeliveryCharges = $this->getDeliveryCharge($sellerAccount, $package);
+
+                    // Delivery Charge Reversal
+                    if ($sellerDeliveryCharges > 0) {
+
+                        if (!$this->ledgerExists(
+                            $sellerAccount->id,
+                            AccountEntryTypeEnum::DELIVERY_CHARGE_REVERSAL->value,
+                            ShipmentPackage::class,
+                            $package->id
+                        )) {
+                            $accountingService->createLedger($sellerAccount, [
+                                'description' => "Reversal for delivery charge for undelivered item for Order #{$order->order_number}: Package #{$package->package_number}",
+                                'credit' => 0,
+                                'debit'  => $sellerDeliveryCharges,
+                                'entry_type' => AccountEntryTypeEnum::DELIVERY_CHARGE_REVERSAL->value,
+                                'status' => LedgerStatusEnum::AVAILABLE->value,
+                                'source_type' => ShipmentPackage::class,
+                                'source_id' => $package->id,
+                                'source_code' => $order->order_number,
+                                'common_reference' => $order->order_number,
+                            ]);
+
+                            $productListingPackage = $package->productListingPackage()->lockForUpdate()->first();
+                            $maxReversible = $productListingPackage->sold_qty - $productListingPackage->reverse_qty;
+                            $allowedQty = min($package->qty, max(0, $maxReversible));
+                            if ($allowedQty > 0) {
+                                $productListingPackage->increment('reverse_qty', $allowedQty);
+                            }
+                        }
+                    }
+
+
+
+
+                    // main loop
+                }
+
+                // 2. Scenario : if package is picked up but not delivered yet
+                // Manually due to whos fault
+                // if (!in_array($package->buyer_status, [
+                //     ShipmentStatusEnum::DELIVERED->value,
+                // ])) {
+
+                //     /**
+                //      *  Buyer Payment Account -> Debit (Hold)
+                //      */
+
+                //     //
+                // }
+            }
+        });
+
+
+
+
+        //
+    }
+
+
+
 
     private function reverseOrderItemExists($orderId, $shipmentPackageNumber)
     {
@@ -233,13 +340,13 @@ class ShipmentPackageAccountingService
             ->exists();
     }
 
-    // private function reverseMarketOrderItemExists($orderId, $shipmentPackageNumber)
-    // {
-    //     return MarketOrderItem::where('order_id', $orderId)
-    //         ->where('is_reverse', true)
-    //         ->where('reverse_reference', $shipmentPackageNumber)
-    //         ->exists();
-    // }
+    private function reverseMarketOrderItemExists($orderId, $shipmentPackageNumber)
+    {
+        return MarketOrderItem::where('order_id', $orderId)
+            ->where('is_reverse', true)
+            ->where('reverse_reference', $shipmentPackageNumber)
+            ->exists();
+    }
 
 
 
@@ -261,8 +368,8 @@ class ShipmentPackageAccountingService
         $deliveryChargesData  = $chargeService->calculateDeliveryCharges(
             $account->user->charge_level_code,
             $pkg,
-            $shipmentPackage->is_buyer_pickup,
-            $shipmentPackage->is_seller_dropoff
+            $shipmentPackage->is_buyer_pickup ?? false,
+            $shipmentPackage->is_seller_dropoff ?? false
         );
 
         $totalDeliveryCharge = $deliveryChargesData['total_charge_amount'];

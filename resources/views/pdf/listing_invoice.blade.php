@@ -350,7 +350,7 @@
                     <td class="center">{{ $i + 1 }}</td>
 
                     <td>
-                        {{ $pkg?->listingItem?->product_name ?? '' }}
+                        {{ $pkg?->productListingItem?->product_name ?? '' }}
                     </td>
 
                     <td class="center">{{ $pkg->order_qty ?? $pkg->qty }}</td>

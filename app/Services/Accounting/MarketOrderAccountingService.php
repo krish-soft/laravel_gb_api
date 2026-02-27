@@ -80,45 +80,85 @@ class MarketOrderAccountingService
             | 2. SELLER EARNINGS (ITEM TAXABLE AMOUNT ONLY)
             |-------------------------------------------------
             */
-            foreach ($marketOrder->marketOrderItems as $item) {
 
-                // seller 
-                $seller = $item->seller;
-                // if not fail transactions 
-                if (!$seller) {
-                    throw  new RuntimeException("Seller not found for Order Item ID: {$item->id}");
-                    // return;
-                }
+            // Per item we can not do it 
+            $seller = $marketOrder->marketOrderItems->first()?->seller;
+            // if not fail transactions 
+            if (!$seller) {
+                throw  new RuntimeException("Seller not found for Order Item ID: {$marketOrder->marketOrderItems->first()?->id}");
+                // return;
+            }
 
-                $sellerAccount = Account::getOrCreateByOwner(
-                    AccountOwnerTypeEnum::SELLER->value,
-                    $seller->id
-                );
+            $sellerAccount = Account::getOrCreateByOwner(
+                AccountOwnerTypeEnum::SELLER->value,
+                $seller->id
+            );
 
 
-                if ($this->ledgerExists(
-                    $sellerAccount->id,
-                    AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
-                    MarketOrderItem::class,
-                    $item->id
-                )) {
-                    continue;
-                }
+            if (!$this->ledgerExists(
+                $sellerAccount->id,
+                AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
+                MarketOrder::class,
+                $marketOrder->id
+            )) {
 
                 $accounting->createLedger($sellerAccount, [
-                    'description' => "Earnings for Order #{$marketOrder->market_order_number}: {$item->product_name} x {$item->order_qty}",
-                    'credit' => $item->taxable_amount,
+                    'description' => "Earnings for Market Order #{$marketOrder->market_order_number}",
+                    'credit' => $marketOrder->total_amount,
                     'debit'  => 0,
                     'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
                     'status' => LedgerStatusEnum::AVAILABLE->value,
-                    'source_type' => MarketOrderItem::class,
-                    'source_id' => $item->id,
+                    'source_type' => MarketOrder::class,
+                    'source_id' => $marketOrder->id,
                     'source_code' => $marketOrder->market_order_number,
                     'reference' => null,
                     'payment_reference' => null,
                     'common_reference' => $marketOrder->market_order_number,
                 ]);
             }
+
+            // We can also do it per item basis if we want to track earnings per item, but for now we are doing it on order basis.
+            app(ShipmentPackageAccountingService::class)->processMarketOrderShipmentPackageAccounting($marketOrder);
+
+
+            // foreach ($marketOrder->marketOrderItems as $item) {
+
+            //     // seller 
+            //     $seller = $item->seller;
+            //     // if not fail transactions 
+            //     if (!$seller) {
+            //         throw  new RuntimeException("Seller not found for Order Item ID: {$item->id}");
+            //         // return;
+            //     }
+
+            //     $sellerAccount = Account::getOrCreateByOwner(
+            //         AccountOwnerTypeEnum::SELLER->value,
+            //         $seller->id
+            //     );
+
+
+            //     if (!$this->ledgerExists(
+            //         $sellerAccount->id,
+            //         AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
+            //         MarketOrderItem::class,
+            //         $item->id
+            //     )) {
+
+            //         $accounting->createLedger($sellerAccount, [
+            //             'description' => "Earnings for Order #{$marketOrder->market_order_number}: {$item->product_name} x {$item->order_qty}",
+            //             'credit' => $item->taxable_amount,
+            //             'debit'  => 0,
+            //             'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
+            //             'status' => LedgerStatusEnum::AVAILABLE->value,
+            //             'source_type' => MarketOrderItem::class,
+            //             'source_id' => $item->id,
+            //             'source_code' => $marketOrder->market_order_number,
+            //             'reference' => null,
+            //             'payment_reference' => null,
+            //             'common_reference' => $marketOrder->market_order_number,
+            //         ]);
+            //     }
+            // }
 
             //
         });
