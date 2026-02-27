@@ -128,62 +128,6 @@ class OrderAccountingService
                             'common_reference' => $order->order_number,
                         ]);
                     }
-
-
-
-                    // To Optimize accoutning base on shipment package which not delivered 
-                    // Because we also need to refund delivery charge too so moving to other shipmen package accounting service
-                    // if ($item->ship_qty < $item->order_qty) {
-
-                    //     Log::info("Order Item ID: {$item->id} has undelivered quantity. Ordered: {$item->order_qty}, Shipped: {$item->ship_qty}");
-                    //     // we can create pending ledger for remaining amount which will be converted to available once delivery is confimed for that package
-                    //     $remainAmount = $item->taxable_amount * ($item->order_qty - $item->ship_qty) / $item->order_qty;
-
-                    //     // Need to deduct from seller  and refund to buyer
-                    //     // its not pending  it undeliverable so 
-                    //     if (!$this->ledgerExists(
-                    //         $sellerAccount->id,
-                    //         AccountEntryTypeEnum::UNDELIVERED_ITEM->value,
-                    //         OrderItem::class,
-                    //         $item->id
-                    //     )) {
-                    //         $accounting->createLedger($sellerAccount, [
-                    //             'description' => "Undelivered item deduction for Order #{$order->order_number}: {$item->product_name} x " . ($item->order_qty - $item->ship_qty),
-                    //             'credit' => 0,
-                    //             'debit'  => $remainAmount,
-                    //             'entry_type' => AccountEntryTypeEnum::UNDELIVERED_ITEM->value,
-                    //             'status' => LedgerStatusEnum::AVAILABLE->value,
-                    //             'source_type' => OrderItem::class,
-                    //             'source_id' => $item->id,
-                    //             'source_code' => $order->order_number,
-                    //             'reference' => $payment->payment_code,
-                    //             'payment_reference' => $payment->gateway_order_id,
-                    //             'common_reference' => $order->order_number,
-                    //         ]);
-                    //     }
-
-                    //     // refund to buyer for undelivered item
-                    //     if (!$this->ledgerExists(
-                    //         $buyerAccount->id,
-                    //         AccountEntryTypeEnum::UNDELIVERED_ITEM->value,
-                    //         OrderItem::class,
-                    //         $item->id
-                    //     )) {
-                    //         $accounting->createLedger($buyerAccount, [
-                    //             'description' => "Refund for undelivered item for Order #{$order->order_number}: {$item->product_name} x " . ($item->order_qty - $item->ship_qty),
-                    //             'credit' => $remainAmount,
-                    //             'debit'  => 0,
-                    //             'entry_type' => AccountEntryTypeEnum::UNDELIVERED_ITEM->value,
-                    //             'status' => LedgerStatusEnum::AVAILABLE->value,
-                    //             'source_type' => OrderItem::class,
-                    //             'source_id' => $item->id,
-                    //             'source_code' => $order->order_number,
-                    //             'reference' => $payment->payment_code,
-                    //             'payment_reference' => $payment->gateway_order_id,
-                    //             'common_reference' => $order->order_number,
-                    //         ]);
-                    //     }
-                    // }
                 }
 
                 /*
@@ -302,7 +246,12 @@ class OrderAccountingService
                 }
 
 
-                // Regarding reconiliation and settlement, we can have separate processes that run after delivery confirmation, which will then move the ledger entries to settled status and calculate final payouts after considering returns, cancellations, and other adjustments.
+
+                ## Now to Reconcile regarding package base 
+
+                app(ShipmentPackageAccountingService::class)
+                    ->processOrderShipmentPackageAccounting($order);
+
 
 
                 //

@@ -93,10 +93,10 @@ return new class extends Migration
             $table->date('shipment_date')->nullable();
 
             $table->string('product_code', 50)->nullable();
-            $table->string('product_name', 100)->nullable();
+            $table->string('product_name')->nullable();
 
             // One row = one physical package
-            $table->unsignedInteger('qty')->default(1);
+            $table->decimal('qty', 10, 2)->default(1);
 
             // Package content
             $table->decimal('pack_size', 10, 2)->nullable();

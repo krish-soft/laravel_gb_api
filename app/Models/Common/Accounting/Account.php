@@ -86,6 +86,7 @@ class Account extends BaseModel
 
         // else create new
         return self::create([
+            'name' => $accountCode ?? $ownerType . ' Account for settlements',
             'owner_type' => $ownerType,
             'owner_id'   => $ownerId,
             'accnt_code' => $accountCode ?? self::generateAccountCode(),
@@ -142,7 +143,7 @@ class Account extends BaseModel
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'owner_id', 'id')->select('id', 'name', 'user_code','nickname');
+        return $this->belongsTo(User::class, 'owner_id', 'id')->select('id', 'name', 'user_code', 'nickname', 'charge_level_code');
     }
 
     // generate unique account code

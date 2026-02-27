@@ -328,7 +328,8 @@
                 <th>#</th>
                 <th>Description</th>
                 <th>Order Qty</th>
-                <th>Ship Qty</th>
+                <th>Sold Qty</th>
+                <th>Reverse Qty</th>
                 <th>Pack Size</th>
                 <th>Pack Price</th>
                 <th>Discount</th>
@@ -340,28 +341,35 @@
 
         <tbody>
 
-            @foreach ($combineItems as $i => $item)
+            @foreach ($productListingPackages as $i => $pkg)
+                @php
+                    $subtotal = ($pkg->sold_qty - $pkg->reverse_qty) * $pkg->pack_price - ($pkg->discount_amount ?? 0);
+                @endphp
+
                 <tr>
                     <td class="center">{{ $i + 1 }}</td>
 
                     <td>
-                        {{ $item?->product_name }}
+                        {{ $pkg?->listingItem?->product_name ?? '' }}
                     </td>
 
-                    <td class="center">{{ $item->order_qty ?? $item->qty }}</td>
-                    <td class="center">{{ $item->ship_qty ?? 0 }}</td>
+                    <td class="center">{{ $pkg->order_qty ?? $pkg->qty }}</td>
+                    <td class="center">{{ $pkg->sold_qty ?? 0 }}</td>
+                    <td class="center">{{ $pkg->reverse_qty ?? 0 }}</td>
 
-                    <td class="right">{{ number_format($item->pack_size, 2) }} {{ $item->pack_unit }}</td>
+                    <td class="right">{{ number_format($pkg->pack_size, 2) }} {{ $pkg->pack_unit }}</td>
 
-                    <td class="right">{{ number_format($item->pack_price, 2) }}</td>
+                    <td class="right">{{ number_format($pkg->pack_price, 2) }}</td>
 
-                    <td class="right">{{ number_format($item->discount_amount ?? 0, 2) }}</td>
+                    <td class="right">{{ number_format($pkg->discount_amount ?? 0, 2) }}</td>
 
-                    <td class="right">{{ number_format($item->taxable_amount ?? 0, 2) }}</td>
-
-                    <td class="right">{{ number_format($item->tax_amount ?? 0, 2) }}</td>
-
-                    <td class="right bold">{{ number_format($item->total_amount, 2) }}</td>
+                    <td class="right">
+                        {{ number_format($subtotal, 2) }}
+                    </td>
+                    <td class="right">{{ number_format(0, 2) }}</td>
+                    <td class="right bold">
+                        {{ number_format($subtotal, 2) }}
+                    </td>
                 </tr>
             @endforeach
 

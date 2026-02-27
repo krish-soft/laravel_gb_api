@@ -65,6 +65,17 @@ class JobCutOffProductListing implements ShouldQueue
                     $listing->save();
 
                     if (!$listing->is_sell_to_market) {
+
+                        // then if listing not to sold to market 
+                        // we have to make qty sold and qty same
+                        foreach ($listing->listingItems as $item) {
+                            foreach ($item->listingPackages as $pkg) {
+                               // Sold qty is equal to qty to settle
+                                
+                            }
+                        }
+
+
                         continue;
                     }
 

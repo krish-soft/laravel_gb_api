@@ -56,6 +56,7 @@ class ShipmentPackage extends Model
         'pack_unit',
         'pack_type_unit',
 
+        
         'shipment_package_number',
         'package_number',
 

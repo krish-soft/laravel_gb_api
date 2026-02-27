@@ -51,8 +51,8 @@ return new class extends Migration
             $table->string('variant_code', 20)->nullable();
             $table->string('variant_name', 100)->nullable();
 
-            $table->unsignedInteger('order_qty');
-            $table->unsignedInteger('ship_qty')->default(0);
+            $table->decimal('order_qty', 10, 2);
+            $table->decimal('ship_qty', 10, 2)->default(0);
 
             $table->decimal('pack_size', 10, 2);
             $table->string('pack_unit', 20);
@@ -67,6 +67,12 @@ return new class extends Migration
             $table->decimal('taxable_amount', 15, 2); // ship_qty * per_unit_price - discount_amount = taxable_amount
             $table->decimal('tax_amount', 15, 2)->default(0)->nullable();
             $table->decimal('total_amount', 15, 2);
+
+            $table->string('reference', 100)->nullable();
+            $table->string('remarks', 100)->nullable();
+
+            $table->boolean('is_reverse')->default(false)->nullable();
+            $table->string('reverse_reference', 100)->nullable();
 
             $table->timestamps();
             $table->softDeletes();

@@ -251,11 +251,11 @@
 
             <td width="35%" class="right">
 
-                <div class="invoice-title green">INVOICE</div>
+                <div class="invoice-title green">LISTING INVOICE</div>
 
                 <b>Invoice No:</b> {{ $invoice->invoice_number }}<br>
-                <b>Date:</b> {{ $invoice->invoice_date->format('d M Y') }}<br>
-                <b>Order:</b> {{ $order->order_number }}
+                <b>Date:</b> {{ \Carbon\Carbon::parse($invoice->invoice_date)->format('d M Y') }}<br>
+                <b>Listing Code:</b> {{ $productListing->order_number }}
 
             </td>
 
@@ -268,55 +268,10 @@
     <table width="100%" style="margin-top:6px;">
         <tr>
 
-            {{-- Will not coming --}}
-            {{-- <td width="50%" style="padding-right:4px;">
-                <div class="addr">
-                    <div class="bold green">Bill To</div>
-
-                    @php
-                        $billLine1 = collect([$billingAddress?->address_line1, $billingAddress?->address_line2])
-                            ->filter()
-                            ->implode(', ');
-
-                        $billLine2 = collect([
-                            $billingAddress?->village,
-                            $billingAddress?->city,
-                            $billingAddress?->state,
-                        ])
-                            ->filter()
-                            ->implode(', ');
-
-                        $billLine3 = collect([$billingAddress?->postal_code, $billingAddress?->country])
-                            ->filter()
-                            ->implode(', ');
-                    @endphp
-
-                    @if ($billingAddress?->addr_name)
-                        {{ $billingAddress->addr_name }}<br>
-                    @endif
-
-                    @if ($billLine1)
-                        {{ $billLine1 }}<br>
-                    @endif
-
-                    @if ($billLine2)
-                        {{ $billLine2 }}<br>
-                    @endif
-
-                    @if ($billLine3)
-                        {{ $billLine3 }}
-                    @endif
-
-                    @if ($billingAddress?->phone_number)
-                        <br><b>Ph:</b> {{ $billingAddress->phone_number }}
-                    @endif
-
-                </div>
-            </td> --}}
 
             <td width="100%" style="padding-left:4px;">
                 <div class="addr">
-                    <div class="bold green">Buyer</div>
+                    <div class="bold green">Seller</div>
 
                     @php
                         $shipLine1 = collect([$shippingAddress?->address_line1, $shippingAddress?->address_line2])
@@ -385,19 +340,16 @@
 
         <tbody>
 
-            @foreach ($order->orderItems as $i => $item)
+            @foreach ($combineItems as $i => $item)
                 <tr>
                     <td class="center">{{ $i + 1 }}</td>
 
                     <td>
-                        {{ $item->product_name }}
-                        @if ($item->variant_name)
-                            <br><span class="small">{{ $item->variant_name }}</span>
-                        @endif
+                        {{ $item?->product_name }}
                     </td>
 
-                    <td class="center">{{ $item->order_qty }}</td>
-                    <td class="center">{{ $item->ship_qty }}</td>
+                    <td class="center">{{ $item->order_qty ?? $item->qty }}</td>
+                    <td class="center">{{ $item->ship_qty ?? 0 }}</td>
 
                     <td class="right">{{ number_format($item->pack_size, 2) }} {{ $item->pack_unit }}</td>
 
@@ -417,10 +369,10 @@
                 <td colspan="9" style="border:none;height:6px;"></td>
             </tr>
 
-            @foreach ($order->orderCharges as $charge)
+            @foreach ($charges as $charge)
                 <tr>
                     <td></td>
-                    <td>{{ $charge->charge_name }}</td>
+                    <td>{{ $charge->charge_name ?? '' }}</td>
                     <td></td>
                     <td></td>
                     <td></td>
@@ -446,43 +398,27 @@
 
             <td width="55%" style="padding-right:6px;">
 
-                @if ($order->payment)
-                    <div class="payment-mini">
-                        <div class="bold green">Payment</div>
 
-                        Amount Paid : {{ number_format($order->payment->amount, 2) }}<br>
-
-                        Status : {{ strtoupper($order->payment->status ?? '-') }}
-
-                        @if ($order->payment->payment_code)
-                            <br>Ref : {{ $order->payment->payment_code }}
-                        @endif
-
-                        @if ($order->payment->paid_at)
-                            <br>{{ $order->payment->paid_at->format('d M Y H:i') }}
-                        @endif
-                    </div>
-                @endif
 
             </td>
 
             <td width="45%">
 
-
                 <table class="total">
                     <tr>
                         <td>Product Value</td>
-                        <td class="right">{{ number_format($order->orderItems->sum('total_amount'), 2) }}</td>
+                        <td class="right">{{ number_format($totalRecevableData->gross_amount, 2) }}</td>
                     </tr>
 
                     <tr>
                         <td>Platform Charges</td>
-                        <td class="right">{{ number_format($order->orderCharges->sum('total_amount'), 2) }}</td>
+                        <td class="right"> - {{ abs(number_format($totalRecevableData->total_charge_amount, 2)) }}
+                        </td>
                     </tr>
 
                     <tr class="grand">
-                        <td>Grand Total</td>
-                        <td class="right">{{ number_format($order->total_amount, 2) }}</td>
+                        <td>Receivable Total</td>
+                        <td class="right">{{ number_format($totalRecevableData->net_receivable, 2) }}</td>
                     </tr>
                 </table>
 
@@ -502,22 +438,8 @@
                 <li>Agricultural produce items may be non-taxable as per applicable regulations.</li>
                 <li>Platform service charges may include applicable taxes.</li>
                 <li>This invoice is system generated and issued by the platform operator.</li>
-                <li>Amounts shown here represent the customer order transaction only.</li>
-                <li>Final payable or receivable amounts may vary due to delivery adjustments, returns, reversals,
-                    service fees, commissions, or other applicable deductions.</li>
-                <li>Final balances are calculated according to the platform’s defined settlement cycle and official
-                    accounting records.</li>
-                <li>All disputes are subject to platform policies and applicable jurisdiction.</li>
-                <li>For any queries regarding this invoice, please contact our support team.</li>
-            </ul>
-
-            {{-- <ul class="legal">
-                <li>Agricultural produce items may be non-taxable as per applicable regulations.</li>
-                <li>Platform service charges may include applicable taxes.</li>
-                <li>This invoice is system generated and issued by the platform operator.</li>
                 <li>All disputes subject to platform policies and jurisdiction.</li>
-                <li>For any queries regarding this invoice, please contact our support team.</li>
-            </ul> --}}
+            </ul>
 
         </div>
 

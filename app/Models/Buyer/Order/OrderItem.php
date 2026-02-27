@@ -47,12 +47,18 @@ class OrderItem extends BaseModel
         'taxable_amount',
         'tax_amount',
         'total_amount',
+
+        'reference',
+        'remarks',
+
+        'is_reverse',
+        'reverse_reference',
     ];
 
     // casts
     protected $casts = [
-        'order_qty' => 'integer',
-        'ship_qty' => 'integer',
+        'order_qty' => 'decimal:2',
+        'ship_qty' => 'decimal:2',
 
     ];
 

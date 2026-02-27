@@ -43,24 +43,23 @@ return new class extends Migration {
                 ->constrained('fulfillment_locations')
                 ->restrictOnDelete();
 
-
             $table->string('listing_code', 50)->nullable(); // To Trace all way back to listing
 
             $table->string('product_code', 20)->nullable();
-            $table->string('product_name', 100);
+            $table->string('product_name');
 
             $table->string('variant_code', 20)->nullable();
-            $table->string('variant_name', 100)->nullable();
+            $table->string('variant_name')->nullable();
 
-            $table->unsignedInteger('order_qty');
-            $table->unsignedInteger('ship_qty')->default(0);
+            $table->decimal('order_qty', 10, 2);
+            $table->decimal('ship_qty', 10, 2)->default(0);
 
             $table->decimal('pack_size', 10, 2);
             $table->string('pack_unit', 20);
             $table->string('pack_type_unit', 50)->nullable();
 
-            $table->decimal('pack_price', 15, 2);
-            $table->decimal('per_unit_price', 15, 2);
+            $table->decimal('pack_price', 15, 2)->default(0);
+            $table->decimal('per_unit_price', 15, 2)->default(0)->nullable();
 
             $table->decimal('discount_amount', 15, 2)->default(0);
             $table->string('discount_type', 30)->nullable();
@@ -69,6 +68,11 @@ return new class extends Migration {
             $table->decimal('tax_amount', 15, 2)->default(0)->nullable();
             $table->decimal('total_amount', 15, 2);
 
+            $table->string('reference', 100)->nullable();
+            $table->string('remarks', 100)->nullable();
+
+            $table->boolean('is_reverse')->default(false)->nullable();
+            $table->string('reverse_reference', 100)->nullable();
 
             $table->timestamps();
             $table->softDeletes();

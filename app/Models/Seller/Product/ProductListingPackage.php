@@ -17,8 +17,14 @@ class ProductListingPackage extends BaseModel
 
         'product_listing_item_id',
         'listing_code',
+
         'qty',
         'sold_qty',
+
+        'reverse_qty',
+        'actual_qty',
+
+
         'pack_size',
         'pack_unit',
         'pack_type_unit',
@@ -27,7 +33,6 @@ class ProductListingPackage extends BaseModel
 
         'quality_grade', // A, B, C, etc. (optional)
 
-
         'discount_amount',
         'discount_type',
 
@@ -35,6 +40,7 @@ class ProductListingPackage extends BaseModel
         'is_sold',
         'is_locked',
     ];
+
 
     // Casts
 

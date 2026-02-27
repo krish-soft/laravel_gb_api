@@ -28,6 +28,12 @@ return new class extends Migration
             $table->decimal('qty', 10, 2); // total qty in the package
             $table->decimal('sold_qty', 10, 2)->default(0); // qty sold from the package
 
+            // for accounting 
+            $table->decimal('reverse_qty', 10, 2)->default(0); // qty reversed back to available
+
+            // when cutoff we have to store what actual qty listed in the package for future reference, as qty can be updated due to returns and cancellations
+            $table->decimal('actual_qty', 10, 2)->nullable(); // total qty in the package
+
             // Package Details
             $table->decimal('pack_size', 10, 2);
             $table->string('pack_unit', 20); //  kg, g, L, ml, pcs

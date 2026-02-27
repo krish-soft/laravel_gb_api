@@ -54,8 +54,8 @@ class MarketOrderItem extends BaseModel
 
     // casts
     protected $casts = [
-        'order_qty' => 'integer',
-        'ship_qty' => 'integer',
+        'order_qty' => 'decimal:2',
+        'ship_qty' => 'decimal:2',
         'pack_size' => 'decimal:2',
         'pack_price' => 'decimal:2',
         'per_unit_price' => 'decimal:2',
