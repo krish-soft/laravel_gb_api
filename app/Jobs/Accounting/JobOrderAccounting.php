@@ -56,6 +56,19 @@ class JobOrderAccounting implements ShouldQueue
 
 
                 foreach ($orders as $order) {
+
+
+                    ## We are not checking any status of packages in any cutfoff so first we have to check the delivery status of each pacakges its delivered and tehre is no pending then mark order as Delivered and then we can check the payment status and order status for accounting entry.
+                    $packages = $order->shipmentPackages;
+                    $pendingPackageCount = $packages->where('status', OrderStatusEnum::PENDING->value)->count();
+                    $deliveredPackageCount = $packages->where('status', OrderStatusEnum::DELIVERED->value)->count();
+
+                    if ($pendingPackageCount <= 0 && $deliveredPackageCount > 0) {
+                        $order->delivery_status = OrderStatusEnum::DELIVERED->value;
+                        $order->save();
+                    }
+
+
                     if (
                         (in_array($order->order_status, [OrderStatusEnum::CONFIRMED->value, OrderStatusEnum::SETTLED->value]) &&  in_array($order->delivery_status, [OrderStatusEnum::DELIVERED->value]))
                         && in_array($order->payment_status, [PaymentStatusEnum::PAID->value])

@@ -139,9 +139,10 @@ class ProductListingInvoiceService
                     $orderItems[] = $package->orderItem;
                 }
 
-                if ($package->marketOrderItem && $productListing->is_sell_to_market) {
-                    $marketOrderItems[] = $package->marketOrderItem;
-                }
+                // market Order we ignoring due to market bill photo directly need to show 
+                // if ($package->marketOrderItem && $productListing->is_sell_to_market) {
+                //     $marketOrderItems[] = $package->marketOrderItem;
+                // }
             }
         }
 

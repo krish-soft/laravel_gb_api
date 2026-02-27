@@ -381,6 +381,7 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
 
             if ($type === ShipmentStatusEnum::PICKUP->value) {
 
+                // all or one of pending then cannot complete pickup because if all pending then there is no action taken by driver and if one of them not pending then we can say driver has taken action for pickup so we can allow to complete pickup and move to next step which is internal transfer or dispatch based on shipment type.
                 $allPending = $packages->every(function ($package) {
                     return $package->seller_status === ShipmentStatusEnum::PENDING->value;
                 });
@@ -668,12 +669,20 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
             throw new RuntimeException(__('messages.error_messages.unauthorized_action'), 403);
         }
 
+        // if driver shipment not accepted do not change any status of packages
+        if (
+            (!$driverShipment->accepted_at && !in_array($driverShipment->status, [DriverShipmentStatusEnum::ACCEPTED->value, DriverShipmentStatusEnum::IN_TRANSIT->value]))
+        ) {
+            throw new RuntimeException("Must accept/start shipment first.", 422);
+        }
+
         if (in_array($driverShipment->status, [
             DriverShipmentStatusEnum::CANCELLED->value,
             DriverShipmentStatusEnum::COMPLETED->value,
+            DriverShipmentStatusEnum::REJECTED->value,
             ShipmentStatusEnum::RETURNED->value,
         ])) {
-            throw new RuntimeException("This shipment has been cancelled/returned/completed.", 410);
+            throw new RuntimeException("This shipment has been cancelled/rejected/returned/completed.", 410);
         }
 
         $belongs = $driverShipment->shipment->shipmentGroups

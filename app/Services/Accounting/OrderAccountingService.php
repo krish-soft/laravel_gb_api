@@ -41,6 +41,13 @@ class OrderAccountingService
                 // get total of taxable orderItems 
                 $taxableItemsAmount = $order->orderItems->sum('taxable_amount');
 
+
+                $buyerId = $order->buyer_id;
+                $buyerAccount = Account::getOrCreateByOwner(
+                    AccountOwnerTypeEnum::BUYER->value,
+                    $buyerId
+                );
+
                 // For clearning we can not use total or sub total because both have inclusive tax and charges total
                 // and we are seperating in multiple accounts so we need to calulate base amount
 
@@ -100,28 +107,83 @@ class OrderAccountingService
                         $seller->id
                     );
 
-                    if ($this->ledgerExists(
+                    if (!$this->ledgerExists(
                         $sellerAccount->id,
                         AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
                         OrderItem::class,
                         $item->id
                     )) {
-                        continue;
+
+                        $accounting->createLedger($sellerAccount, [
+                            'description' => "Earnings for Order #{$order->order_number}: {$item->product_name} x {$item->order_qty}",
+                            'credit' => $item->taxable_amount,
+                            'debit'  => 0,
+                            'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
+                            'status' => LedgerStatusEnum::AVAILABLE->value,
+                            'source_type' => OrderItem::class,
+                            'source_id' => $item->id,
+                            'source_code' => $order->order_number,
+                            'reference' => $payment->payment_code,
+                            'payment_reference' => $payment->gateway_order_id,
+                            'common_reference' => $order->order_number,
+                        ]);
                     }
 
-                    $accounting->createLedger($sellerAccount, [
-                        'description' => "Earnings for Order #{$order->order_number}: {$item->product_name} x {$item->order_qty}",
-                        'credit' => $item->taxable_amount,
-                        'debit'  => 0,
-                        'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
-                        'status' => LedgerStatusEnum::AVAILABLE->value,
-                        'source_type' => OrderItem::class,
-                        'source_id' => $item->id,
-                        'source_code' => $order->order_number,
-                        'reference' => $payment->payment_code,
-                        'payment_reference' => $payment->gateway_order_id,
-                        'common_reference' => $order->order_number,
-                    ]);
+
+
+                    // To Optimize accoutning base on shipment package which not delivered 
+                    // Because we also need to refund delivery charge too so moving to other shipmen package accounting service
+                    // if ($item->ship_qty < $item->order_qty) {
+
+                    //     Log::info("Order Item ID: {$item->id} has undelivered quantity. Ordered: {$item->order_qty}, Shipped: {$item->ship_qty}");
+                    //     // we can create pending ledger for remaining amount which will be converted to available once delivery is confimed for that package
+                    //     $remainAmount = $item->taxable_amount * ($item->order_qty - $item->ship_qty) / $item->order_qty;
+
+                    //     // Need to deduct from seller  and refund to buyer
+                    //     // its not pending  it undeliverable so 
+                    //     if (!$this->ledgerExists(
+                    //         $sellerAccount->id,
+                    //         AccountEntryTypeEnum::UNDELIVERED_ITEM->value,
+                    //         OrderItem::class,
+                    //         $item->id
+                    //     )) {
+                    //         $accounting->createLedger($sellerAccount, [
+                    //             'description' => "Undelivered item deduction for Order #{$order->order_number}: {$item->product_name} x " . ($item->order_qty - $item->ship_qty),
+                    //             'credit' => 0,
+                    //             'debit'  => $remainAmount,
+                    //             'entry_type' => AccountEntryTypeEnum::UNDELIVERED_ITEM->value,
+                    //             'status' => LedgerStatusEnum::AVAILABLE->value,
+                    //             'source_type' => OrderItem::class,
+                    //             'source_id' => $item->id,
+                    //             'source_code' => $order->order_number,
+                    //             'reference' => $payment->payment_code,
+                    //             'payment_reference' => $payment->gateway_order_id,
+                    //             'common_reference' => $order->order_number,
+                    //         ]);
+                    //     }
+
+                    //     // refund to buyer for undelivered item
+                    //     if (!$this->ledgerExists(
+                    //         $buyerAccount->id,
+                    //         AccountEntryTypeEnum::UNDELIVERED_ITEM->value,
+                    //         OrderItem::class,
+                    //         $item->id
+                    //     )) {
+                    //         $accounting->createLedger($buyerAccount, [
+                    //             'description' => "Refund for undelivered item for Order #{$order->order_number}: {$item->product_name} x " . ($item->order_qty - $item->ship_qty),
+                    //             'credit' => $remainAmount,
+                    //             'debit'  => 0,
+                    //             'entry_type' => AccountEntryTypeEnum::UNDELIVERED_ITEM->value,
+                    //             'status' => LedgerStatusEnum::AVAILABLE->value,
+                    //             'source_type' => OrderItem::class,
+                    //             'source_id' => $item->id,
+                    //             'source_code' => $order->order_number,
+                    //             'reference' => $payment->payment_code,
+                    //             'payment_reference' => $payment->gateway_order_id,
+                    //             'common_reference' => $order->order_number,
+                    //         ]);
+                    //     }
+                    // }
                 }
 
                 /*
@@ -138,28 +200,26 @@ class OrderAccountingService
                         PlatformAccountCodeEnum::PLATFORM_REVENUE->value
                     );
 
-                    if ($this->ledgerExists(
+                    if (!$this->ledgerExists(
                         $revenue->id,
                         AccountEntryTypeEnum::PLATFORM_CHARGE_BASE->value,
                         get_class($charge),
                         $charge->id
                     )) {
-                        continue;
+                        $accounting->createLedger($revenue, [
+                            'description' => "Fees for Order #{$order->order_number}: {$charge->charge_name}",
+                            'credit' => $charge->taxable_amount,
+                            'debit'  => 0,
+                            'entry_type' => AccountEntryTypeEnum::PLATFORM_CHARGE_BASE->value,
+                            'status' => LedgerStatusEnum::AVAILABLE->value,
+                            'source_type' => get_class($charge),
+                            'source_id' => $charge->id,
+                            'source_code' => $order->order_number,
+                            'reference' => $payment->payment_code,
+                            'payment_reference' => $payment->gateway_order_id,
+                            'common_reference' => $order->order_number,
+                        ]);
                     }
-
-                    $accounting->createLedger($revenue, [
-                        'description' => "Fees for Order #{$order->order_number}: {$charge->charge_name}",
-                        'credit' => $charge->taxable_amount,
-                        'debit'  => 0,
-                        'entry_type' => AccountEntryTypeEnum::PLATFORM_CHARGE_BASE->value,
-                        'status' => LedgerStatusEnum::AVAILABLE->value,
-                        'source_type' => get_class($charge),
-                        'source_id' => $charge->id,
-                        'source_code' => $order->order_number,
-                        'reference' => $payment->payment_code,
-                        'payment_reference' => $payment->gateway_order_id,
-                        'common_reference' => $order->order_number,
-                    ]);
                 }
 
                 /*
@@ -202,11 +262,6 @@ class OrderAccountingService
 
                 // Now at the end what buyer total paid to us as debit settled add it 
 
-                $buyerId = $order->buyer_id;
-                $buyerAccount = Account::getOrCreateByOwner(
-                    AccountOwnerTypeEnum::BUYER->value,
-                    $buyerId
-                );
 
                 // Credit Debit TO gether becasue custoemr credit and we debited for order so
                 // Settled means not to update main on Account 

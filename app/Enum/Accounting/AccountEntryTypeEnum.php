@@ -18,6 +18,8 @@ enum AccountEntryTypeEnum: string
     case DELIVERY_CHARGE_RETURN  = 'delivery_charge_return';
     case DELIVERY_CHARGE_TAX     = 'delivery_charge_tax';
 
+    case UNDELIVERED_ITEM = 'undelivered_item';
+
         // 🔹 Adjustments
     case ORDER_PENALTY              = 'order_penalty';
     case ORDER_PROMOTION            = 'order_promotion';
