@@ -482,7 +482,9 @@
 
                     <tr class="grand">
                         <td>Grand Total</td>
-                        <td class="right">{{ number_format($order->total_amount, 2) }}</td>
+                        <td class="right">
+                            {{ number_format($order->orderItems->sum('total_amount') + $order->orderCharges->sum('total_amount'), 2) }}
+                        </td>
                     </tr>
                 </table>
 
@@ -491,6 +493,28 @@
         </tr>
     </table>
 
+    {{-- Make Table Regarding if Paid amount vs total amount not match then show that value forwarded next cycle --}}
+
+    @if (
+        $order->payment &&
+            $order->payment->amount != $order->orderItems->sum('total_amount') + $order->orderCharges->sum('total_amount'))
+        <table class="total" style="margin-top:10px;">
+            @php
+                $remainAmt = number_format(
+                    $order->orderItems->sum('total_amount') +
+                        $order->orderCharges->sum('total_amount') -
+                        $order->payment->amount,
+                    2,
+                );
+            @endphp
+            <tr>
+                <td>Amount {{ $remainAmt < 0 ? 'Overpaid (Will be adjusted in next cycle)' : 'Due' }}</td>
+                <td class="right fw-bold">
+                    <span class="text-primary">{{ abs($remainAmt) }}</span>
+                </td>
+            </tr>
+        </table>
+    @endif
 
     <!-- ================= NEW FOOTER DESIGN ================= -->
 
