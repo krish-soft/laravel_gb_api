@@ -18,7 +18,7 @@ class MstBusinessSetting extends BaseModel
     protected static function booted()
     {
         static::deleting(function () {
-            throw new \Exception('Business settings cannot be deleted.');
+            throw new \RuntimeException('Business settings cannot be deleted.');
         });
 
 

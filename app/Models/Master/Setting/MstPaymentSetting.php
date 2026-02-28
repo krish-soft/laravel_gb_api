@@ -15,7 +15,7 @@ class MstPaymentSetting extends BaseModel
     protected static function booted()
     {
         static::deleting(function () {
-            throw new \Exception('Payment settings cannot be deleted.');
+            throw new \RuntimeException('Payment settings cannot be deleted.');
         });
 
         static::updated(function () {

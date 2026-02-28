@@ -25,13 +25,13 @@ class MstProductVariant extends BaseModel
             }
 
             if (empty($variant->product_id)) {
-                throw new \Exception('Product is required to generate variant code.');
+                throw new \RuntimeException('Product is required to generate variant code.');
             }
 
             $product = MstProduct::find($variant->product_id);
 
             if (! $product || empty($product->product_code)) {
-                throw new \Exception('Invalid product or missing product code.');
+                throw new \RuntimeException('Invalid product or missing product code.');
             }
 
             $prefix = $product->product_code . 'V';

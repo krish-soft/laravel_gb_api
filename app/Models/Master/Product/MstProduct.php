@@ -8,6 +8,7 @@ use App\Models\Seller\Product\ProductListingItem;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 class MstProduct extends BaseModel
 {
@@ -25,13 +26,13 @@ class MstProduct extends BaseModel
             }
 
             if (empty($product->category_id)) {
-                throw new \Exception('Category is required to generate product code.');
+                throw new \RuntimeException('Category is required to generate product code.');
             }
 
             $category = MstProductCategory::find($product->category_id);
 
             if (!$category || empty($category->hsn_chapter)) {
-                throw new \Exception('Invalid category or missing HSN chapter.');
+                throw new \RuntimeException('Invalid category or missing HSN chapter.');
             }
 
             $prefix = $category->hsn_chapter . 'P';

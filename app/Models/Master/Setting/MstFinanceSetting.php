@@ -15,7 +15,7 @@ class MstFinanceSetting extends BaseModel
     protected static function booted()
     {
         static::deleting(function () {
-            throw new \Exception('Finance settings cannot be deleted.');
+            throw new \RuntimeException('Finance settings cannot be deleted.');
         });
 
 

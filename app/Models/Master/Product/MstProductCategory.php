@@ -23,7 +23,7 @@ class MstProductCategory extends BaseModel
             }
 
             if (empty($category->hsn_chapter)) {
-                throw new \Exception('HSN chapter is required to generate category code.');
+                throw new \RuntimeException('HSN chapter is required to generate category code.');
             }
 
             // Find last category code for this HSN chapter

@@ -403,7 +403,7 @@ class ShipmentService
                 ->get();
 
             if ($rows->isEmpty()) {
-                throw new \Exception("Nothing to split");
+                throw new \RuntimeException("Nothing to split");
             }
 
             $originalShipment = Shipment::findOrFail(

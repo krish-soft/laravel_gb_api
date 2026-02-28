@@ -12,7 +12,7 @@ class MstFinancialYear extends BaseModel
     protected static function booted()
     {
         static::deleting(function () {
-            throw new \Exception('Financial settings cannot be deleted.');
+            throw new \RuntimeException('Financial settings cannot be deleted.');
         });
 
 

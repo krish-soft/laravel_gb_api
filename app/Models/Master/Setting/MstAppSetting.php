@@ -18,7 +18,7 @@ class MstAppSetting extends BaseModel
     protected static function booted()
     {
         static::deleting(function () {
-            throw new \Exception('App settings cannot be deleted.');
+            throw new \RuntimeException('App settings cannot be deleted.');
         });
 
         static::saving(function () {
