@@ -70,13 +70,14 @@ class JobOrderAccounting implements ShouldQueue
 
 
                     if (
-                        (in_array($order->order_status, [OrderStatusEnum::CONFIRMED->value, OrderStatusEnum::SETTLED->value]) &&  in_array($order->delivery_status, [OrderStatusEnum::DELIVERED->value]))
+                        (in_array($order->order_status, [OrderStatusEnum::CONFIRMED->value,  OrderStatusEnum::ACCOUNTED->value, OrderStatusEnum::SETTLED->value]) &&  in_array($order->delivery_status, [OrderStatusEnum::DELIVERED->value]))
                         && in_array($order->payment_status, [PaymentStatusEnum::PAID->value])
+                        // && !in_array($order->order_status, [OrderStatusEnum::REFUNDED->value, OrderStatusEnum::CANCELLED->value])
                     ) {
                         app(OrderAccountingService::class)
                             ->recordPaidOrder($order, $order->payment);
                         // 
-                        $order->order_status = OrderStatusEnum::SETTLED->value;
+                        $order->order_status =  OrderStatusEnum::ACCOUNTED->value;
                         $order->save();
                     }
                 }

@@ -26,6 +26,8 @@ return new class extends Migration
 
             $table->string('status', 20)->default('generated')->nullable();
 
+            $table->string('business_bill_addr_code')->nullable(); // file path of invoice
+
             $table->tinyInteger('count')->default(0)->nullable();
 
             $table->timestamps();

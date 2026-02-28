@@ -10,6 +10,7 @@ use App\Enum\Common\Legal\KycStatusEnum;
 use App\Enum\User\UserRoleEnum;
 use App\Models\Buyer\Cart\Cart;
 use App\Models\Buyer\Order\Order;
+use App\Models\Common\Accounting\Account;
 use App\Models\Common\Address;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
 use App\Models\Common\User\Legal\UserBank;
@@ -96,7 +97,7 @@ class User extends Authenticatable
         'password',
         'remember_token',
         'user_key',
-        'kyc_code',       
+        'kyc_code',
 
     ];
 
@@ -244,6 +245,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(FulfillmentLocation::class, 'user_id', 'id');
     }
+
+    public function account()
+    {
+        return $this->hasOne(Account::class, 'owner_id', 'id');
+    }
+
 
 
     /* ---------------- BOOLEAN METHODS (AUTH / LOGIC) ---------------- */

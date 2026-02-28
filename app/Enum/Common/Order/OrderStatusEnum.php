@@ -14,6 +14,8 @@ enum OrderStatusEnum: string
     case CANCELLED = 'cancelled';
     case FAILED_PAYMENT = 'failed_payment';
     case REFUNDED = 'refunded';
+    case RECONCILED = 'reconciled';
+    case ACCOUNTED = 'accounted';
 
 
         // Keeping for future use

@@ -255,7 +255,7 @@
 
                 <b>Invoice No:</b> {{ $invoice->invoice_number }}<br>
                 <b>Date:</b> {{ \Carbon\Carbon::parse($invoice->invoice_date)->format('d M Y') }}<br>
-                <b>Listing Code:</b> {{ $productListing->order_number }}
+                <b>Listing Code:</b> {{ $productListing->listing_code }}
 
             </td>
 
@@ -341,6 +341,9 @@
         <tbody>
 
             @foreach ($combineItems as $i => $item)
+                @php
+                    $subTotal = $item->ship_qty * $item->pack_price - ($item->discount_amount ?? 0);
+                @endphp
                 <tr>
                     <td class="center">{{ $i + 1 }}</td>
 
@@ -357,11 +360,11 @@
 
                     <td class="right">{{ number_format($item->discount_amount ?? 0, 2) }}</td>
 
-                    <td class="right">{{ number_format($item->taxable_amount ?? 0, 2) }}</td>
+                    <td class="right">{{ number_format($subTotal ?? 0, 2) }}</td>
 
-                    <td class="right">{{ number_format($item->tax_amount ?? 0, 2) }}</td>
+                    <td class="right">{{ number_format(0, 2) }}</td>
 
-                    <td class="right bold">{{ number_format($item->total_amount, 2) }}</td>
+                    <td class="right bold">{{ number_format($subTotal, 2) }}</td>
                 </tr>
             @endforeach
 

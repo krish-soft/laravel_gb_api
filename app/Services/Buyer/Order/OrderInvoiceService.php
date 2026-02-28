@@ -49,11 +49,13 @@ class OrderInvoiceService
             // =========================
             // CREATE NEW INVOICE
             // =========================
+            $business = MstBusinessSetting::getOrCreate();
 
             $invoice = OrderInvoice::create([
                 'order_id'     => $order->id,
                 'invoice_date' => now(),
                 'invoice_path' => null,
+                'business_bill_addr_code' => $business->bill_addr_code,
             ]);
 
             return $this->rebuildPdf($invoice, $order);

@@ -5,6 +5,7 @@ namespace App\Services\Accounting;
 use App\Enum\Accounting\AccountEntryTypeEnum;
 use App\Enum\Accounting\AccountOwnerTypeEnum;
 use App\Enum\Accounting\LedgerStatusEnum;
+use App\Enum\Accounting\PlatformAccountCodeEnum;
 use App\Enum\Common\Shipment\ShipmentStatusEnum;
 use App\Models\Buyer\Order\Order;
 use App\Models\Buyer\Order\OrderItem;
@@ -48,19 +49,22 @@ class ShipmentPackageAccountingService
                     $seller->id
                 );
 
+
+
                 // 
                 // 1. Scenario : if package is not picked up or pending from farmer
-                if (in_array($package->seller_status, [
-                    ShipmentStatusEnum::PENDING->value,
-                    ShipmentStatusEnum::NOT_PICKED_UP->value,
-                ])) {
+                if (in_array($package->seller_status, [ShipmentStatusEnum::PENDING->value, ShipmentStatusEnum::NOT_PICKED_UP->value])) {
 
-                    $buyerDeliveryCharges = $this->getDeliveryCharge($buyerAccount, $package);
+                    $buyerDeliveryCharges = $this->getDeliveryCharge($buyerAccount, $package)->total_delivery_charge;
+                    $buyerDeliveryChargeTax = $this->getDeliveryCharge($buyerAccount, $package)->total_charge_tax;
                     $packageAmount = $package->qty * $package->pack_price;
+
+
 
                     /**
                      *  Buyer Payment Account -> Debit
                      */
+
                     if (!$this->ledgerExists(
                         $buyerAccount->id,
                         AccountEntryTypeEnum::UNDELIVERED_ITEM->value,
@@ -87,7 +91,9 @@ class ShipmentPackageAccountingService
                             $buyerAccount->id,
                             AccountEntryTypeEnum::DELIVERY_CHARGE_REVERSAL->value,
                             ShipmentPackage::class,
-                            $package->id
+                            $package->id,
+                            'buyer_delivery_charge_reversal' // to make it different from buyer reversal in case of market order
+
                         )) {
                             $accountingService->createLedger($buyerAccount, [
                                 'description' => "Refund for delivery charge for undelivered item for Order #{$order->order_number}: Package #{$package->package_number}",
@@ -101,10 +107,39 @@ class ShipmentPackageAccountingService
                                 'common_reference' => $order->order_number,
                             ]);
                         }
+
+
+
+                        // tax if > 0
+                        if ($buyerDeliveryChargeTax > 0) {
+
+                            if (!$this->ledgerExists(
+                                $buyerAccount->id,
+                                AccountEntryTypeEnum::DELIVERY_CHARGE_REVERSAL->value,
+                                ShipmentPackage::class,
+                                $package->id,
+                                'buyer_delivery_charge_tax_reversal' // to make it different from buyer reversal in case of market order
+
+                            )) {
+                                $accountingService->createLedger($buyerAccount, [
+                                    'description' => "Refund for delivery charge tax for undelivered item for Order #{$order->order_number}: Package #{$package->package_number}",
+                                    'credit' => $buyerDeliveryChargeTax,
+                                    'debit'  => 0,
+                                    'entry_type' => AccountEntryTypeEnum::DELIVERY_CHARGE_REVERSAL->value,
+                                    'status' => LedgerStatusEnum::AVAILABLE->value,
+                                    'source_type' => ShipmentPackage::class,
+                                    'source_id' => $package->id,
+                                    'source_code' => $order->order_number,
+                                    'common_reference' => $order->order_number,
+                                ]);
+                            }
+                        }
                     }
 
+                    // Order Item Table
                     // So We have to create orderItem same to revert and reflect on invoice
                     if (!$this->reverseOrderItemExists($order->id, $package->shipment_package_number)) {
+
                         $reverseItem = $orderItem->replicate();
                         $reverseItem->fill([
                             'seller_id' => $package->seller_id,
@@ -122,31 +157,32 @@ class ShipmentPackageAccountingService
                             'is_reverse' => true,
                             'reverse_reference' => $package->shipment_package_number,
                         ]);
+
                         $order->orderItems()->save($reverseItem);
 
                         // also need to revert delviery charge on charges invoice so 
 
                         if ($buyerDeliveryCharges > 0) {
+
                             $order->orderCharges()->create([
                                 'charge_name' => 'Delivery Charge Reversal',
                                 'charge_code' => 'DELIVERY_CHARGE_REVERSAL',
                                 'rule_type' => null,
                                 'rule_no' => null,
                                 'rule_desc' => "Reversal of delivery charge for undelivered package #{$package->shipment_package_number}",
-                                'taxable_amount' => -1 * $buyerDeliveryCharges,
-                                'tax_amount' => 0,
-                                'total_amount' => -1 * $buyerDeliveryCharges,
+                                'taxable_amount' => -1 * ($buyerDeliveryCharges - $buyerDeliveryChargeTax),
+                                'tax_amount' => -1 * $buyerDeliveryChargeTax,
+                                'total_amount' => -1 * ($buyerDeliveryCharges),
                             ]);
                         }
 
-
                         // for seller to prevent duplications 
-
                         $productListingPackage = $package->productListingPackage()->lockForUpdate()->first();
                         $maxReversible = $productListingPackage->sold_qty - $productListingPackage->reverse_qty;
                         $allowedQty = min($package->qty, max(0, $maxReversible));
                         if ($allowedQty > 0) {
                             $productListingPackage->increment('reverse_qty', $allowedQty);
+                            $productListingPackage->increment('reverse_amount', $packageAmount);
                         }
                     }
 
@@ -154,7 +190,8 @@ class ShipmentPackageAccountingService
                      *  Seller Account -> Credit (Hold)
                      */
 
-                    $sellerDeliveryCharges = $this->getDeliveryCharge($sellerAccount, $package);
+                    $sellerDeliveryCharges = $this->getDeliveryCharge($sellerAccount, $package)->total_delivery_charge;
+                    $sellerDeliveryChargeTax = $this->getDeliveryCharge($sellerAccount, $package)->total_charge_tax;
 
                     if (!$this->ledgerExists(
                         $sellerAccount->id,
@@ -182,7 +219,9 @@ class ShipmentPackageAccountingService
                             $sellerAccount->id,
                             AccountEntryTypeEnum::DELIVERY_CHARGE_REVERSAL->value,
                             ShipmentPackage::class,
-                            $package->id
+                            $package->id,
+                            'seller_delivery_charge_reversal' // to make it different from buyer reversal in case of market order
+
                         )) {
                             $accountingService->createLedger($sellerAccount, [
                                 'description' => "Reversal for delivery charge for undelivered item for Order #{$order->order_number}: Package #{$package->package_number}",
@@ -195,6 +234,32 @@ class ShipmentPackageAccountingService
                                 'source_code' => $order->order_number,
                                 'common_reference' => $order->order_number,
                             ]);
+                        }
+
+
+                        // tax if > 0
+                        if ($sellerDeliveryChargeTax > 0) {
+
+                            if (!$this->ledgerExists(
+                                $sellerAccount->id,
+                                AccountEntryTypeEnum::DELIVERY_CHARGE_REVERSAL->value,
+                                ShipmentPackage::class,
+                                $package->id,
+                                'seller_delivery_charge_tax_reversal' // to make it different from buyer reversal in case of market order
+
+                            )) {
+                                $accountingService->createLedger($sellerAccount, [
+                                    'description' => "Reversal for delivery charge tax  for undelivered item for Order #{$order->order_number}: Package #{$package->package_number}",
+                                    'credit' => 0,
+                                    'debit'  => $sellerDeliveryChargeTax,
+                                    'entry_type' => AccountEntryTypeEnum::DELIVERY_CHARGE_REVERSAL->value,
+                                    'status' => LedgerStatusEnum::AVAILABLE->value,
+                                    'source_type' => ShipmentPackage::class,
+                                    'source_id' => $package->id,
+                                    'source_code' => $order->order_number,
+                                    'common_reference' => $order->order_number,
+                                ]);
+                            }
                         }
                     }
 
@@ -238,7 +303,6 @@ class ShipmentPackageAccountingService
 
             // we can have multiple packages for an order, so we need to process each package separately
 
-            // Market Order there is no buyer directly going to 
 
             foreach ($order->shipmentPackages as $package) {
 
@@ -262,15 +326,18 @@ class ShipmentPackageAccountingService
                     ShipmentStatusEnum::NOT_PICKED_UP->value,
                 ])) {
 
-                    // $packageAmount = $package->qty * $package->pack_price;
+                    // Package amount can not be rever becasue what data ented is what we recived from market
 
-                    // For market order we do not have to reverse order item 
+                    $packageAmount = $package->qty * $package->pack_price;
+
+                    // // For market order we do not have to reverse order item 
 
 
                     /**
                      *  Seller Account -> Credit (Hold)
                      */
-                    $sellerDeliveryCharges = $this->getDeliveryCharge($sellerAccount, $package);
+                    $sellerDeliveryCharges = $this->getDeliveryCharge($sellerAccount, $package)->total_delivery_charge;
+                    $sellerDeliveryChargeTax = $this->getDeliveryCharge($sellerAccount, $package)->total_charge_tax;
 
                     // Delivery Charge Reversal
                     if ($sellerDeliveryCharges > 0) {
@@ -280,9 +347,10 @@ class ShipmentPackageAccountingService
                             AccountEntryTypeEnum::DELIVERY_CHARGE_REVERSAL->value,
                             ShipmentPackage::class,
                             $package->id
+
                         )) {
                             $accountingService->createLedger($sellerAccount, [
-                                'description' => "Reversal for delivery charge for undelivered item for Order #{$order->order_number}: Package #{$package->package_number}",
+                                'description' => "Reversal for delivery charge for undelivered item for market Order #{$order->order_number}: Package #{$package->package_number}",
                                 'credit' => 0,
                                 'debit'  => $sellerDeliveryCharges,
                                 'entry_type' => AccountEntryTypeEnum::DELIVERY_CHARGE_REVERSAL->value,
@@ -293,11 +361,40 @@ class ShipmentPackageAccountingService
                                 'common_reference' => $order->order_number,
                             ]);
 
+                            // seller listing
                             $productListingPackage = $package->productListingPackage()->lockForUpdate()->first();
                             $maxReversible = $productListingPackage->sold_qty - $productListingPackage->reverse_qty;
                             $allowedQty = min($package->qty, max(0, $maxReversible));
                             if ($allowedQty > 0) {
                                 $productListingPackage->increment('reverse_qty', $allowedQty);
+                                $productListingPackage->increment('reverse_amount', $packageAmount);
+                            }
+                        }
+
+
+
+                        // tax if > 0
+                        if ($sellerDeliveryChargeTax > 0) {
+
+                            if (!$this->ledgerExists(
+                                $sellerAccount->id,
+                                AccountEntryTypeEnum::DELIVERY_CHARGE_REVERSAL->value,
+                                ShipmentPackage::class,
+                                $package->id,
+                                'market_order_seller_delivery_charge_tax_reversal' // to make it different from buyer reversal in case of market order
+
+                            )) {
+                                $accountingService->createLedger($sellerAccount, [
+                                    'description' => "Reversal for delivery charge for undelivered item for market Order #{$order->order_number}: Package #{$package->package_number}",
+                                    'credit' => 0,
+                                    'debit'  => $sellerDeliveryChargeTax,
+                                    'entry_type' => AccountEntryTypeEnum::DELIVERY_CHARGE_REVERSAL->value,
+                                    'status' => LedgerStatusEnum::AVAILABLE->value,
+                                    'source_type' => ShipmentPackage::class,
+                                    'source_id' => $package->id,
+                                    'source_code' => $order->order_number,
+                                    'common_reference' => $order->order_number,
+                                ]);
                             }
                         }
                     }
@@ -373,7 +470,8 @@ class ShipmentPackageAccountingService
         );
 
         $totalDeliveryCharge = $deliveryChargesData['total_charge_amount'];
-        return $totalDeliveryCharge;
+        $totalChargeTax = $deliveryChargesData['charge_tax'];
+        return (object) ['total_delivery_charge' => $totalDeliveryCharge, 'total_charge_tax' => $totalChargeTax];
     }
 
     /**
@@ -383,12 +481,14 @@ class ShipmentPackageAccountingService
         int $accountId,
         string $entryType,
         string $sourceType,
-        int $sourceId
+        int $sourceId,
+        ?string $otherReference = null
     ): bool {
         return AccountLedger::where('account_id', $accountId)
             ->where('entry_type', $entryType)
             ->where('source_type', $sourceType)
             ->where('source_id', $sourceId)
+            ->where('other_reference', $otherReference) // for driver charge reversal or any other use
             ->exists();
     }
 

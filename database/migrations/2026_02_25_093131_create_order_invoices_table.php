@@ -27,6 +27,10 @@ return new class extends Migration
 
             $table->string('status', 20)->default('generated')->nullable();
 
+            // To keep record on which company we use for billing, in case of multiple companies
+            $table->string('business_bill_addr_code')->nullable(); // file path of invoice
+
+
             $table->tinyInteger('count')->default(0)->nullable();
 
             $table->timestamps();

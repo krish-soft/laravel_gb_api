@@ -21,7 +21,9 @@ class ProductListingInvoice extends BaseModel
         'invoice_date',
         'invoice_path',
         'status',
-        'count',
+        
+        'business_bill_addr_code',
+        'count'
     ];
 
     // casts

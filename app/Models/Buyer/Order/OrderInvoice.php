@@ -20,11 +20,16 @@ class OrderInvoice extends BaseModel
         'invoice_number',
         'invoice_date',
         'invoice_path',
+        'status',
+        'business_bill_addr_code',
+        'count'
+
     ];
 
     // casts    
     protected $casts = [
         'invoice_date' => 'date:Y-m-d',
+        'count' => 'integer',
     ];
 
     // Relationships

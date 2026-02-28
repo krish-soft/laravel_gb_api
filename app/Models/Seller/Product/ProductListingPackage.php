@@ -22,6 +22,8 @@ class ProductListingPackage extends BaseModel
         'sold_qty',
 
         'reverse_qty',
+        'reverse_amount',
+        
         'actual_qty',
 
 

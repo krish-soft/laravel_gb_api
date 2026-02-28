@@ -3,6 +3,8 @@
 namespace App\Models\Common\Accounting;
 
 use App\Models\BaseModel;
+use App\Models\Master\MstFinancialYear;
+use App\Models\Master\Setting\MstFinanceSetting;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -17,6 +19,9 @@ class AccountLedger extends BaseModel
         static::creating(function ($model) {
             if (empty($model->ledger_txn_code)) {
                 $model->ledger_txn_code = self::generateLedgerTxnCode();
+            }
+            if (empty($model->finance_year_id) && isset(MstFinancialYear::currentFinancialYear()->id)) {
+                $model->finance_year_id =  MstFinancialYear::currentFinancialYear()->id;
             }
         });
     }

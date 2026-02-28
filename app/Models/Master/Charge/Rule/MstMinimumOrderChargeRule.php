@@ -37,17 +37,23 @@ class MstMinimumOrderChargeRule extends BaseModel
         'calc_type',
         'calc_base',
         'calc_condition',
-        'min_order_price',      
+
+        'min_order_price',
         'min_order_qty',
         'min_order_weight',
+
         'charge_amount',
         'is_active',
     ];
 
-    protected $guarded = ['rule_no'];
+    // protected $guarded = ['rule_no'];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'min_order_price' => 'decimal:2',
+        'min_order_qty' => 'decimal:2',
+        'min_order_weight' => 'decimal:2',
+        'charge_amount' => 'decimal:2',
     ];
 
     // Scope

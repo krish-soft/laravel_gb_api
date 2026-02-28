@@ -61,7 +61,8 @@ class JobCutOffProductListing implements ShouldQueue
                         continue;
                     }
 
-                    $listing->is_locked = true;
+                    $listing->is_cutoff = true;
+                    // $listing->is_locked = true; // is locked at end of day
                     $listing->save();
 
                     if (!$listing->is_sell_to_market) {
@@ -70,8 +71,8 @@ class JobCutOffProductListing implements ShouldQueue
                         // we have to make qty sold and qty same
                         foreach ($listing->listingItems as $item) {
                             foreach ($item->listingPackages as $pkg) {
-                               // Sold qty is equal to qty to settle
-                                
+                                // Sold qty is equal to qty to settle
+
                             }
                         }
 

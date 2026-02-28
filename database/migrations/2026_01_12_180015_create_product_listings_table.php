@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
 
             $table->string('picture')->nullable();
-            
+
             // Seller
             $table->foreignId('seller_id')
                 ->nullable()
@@ -29,15 +29,17 @@ return new class extends Migration
                 ->restrictOnDelete();
 
             $table->string('listing_code', 50)->unique();
+            $table->string('status', 50)->nullable();
 
-            $table->unsignedBigInteger('doc_no'); // sequential number per seller
-            $table->date('doc_date');
+            $table->date('listing_date');
 
             $table->boolean('is_sell_to_market')->default(false)->nullable(); //             
             $table->boolean('is_seller_dropoff')->default(false)->nullable();
 
             $table->boolean('is_active')->default(true)->nullable(); // Active after 2 mins of creation
             $table->string('inactive_reason', 100)->nullable();
+
+            $table->boolean('is_cutoff')->default(false)->nullable();
 
             $table->boolean('is_partial')->default(false)->nullable();
             $table->boolean('is_sold')->default(false)->nullable();
@@ -51,7 +53,7 @@ return new class extends Migration
             $table->softDeletes();
 
             // indexes & uniques
-            $table->unique(['seller_id', 'doc_no']);
+            $table->index(['seller_id', 'listing_date']);
             $table->index(['seller_id', 'is_active']);
             $table->index(['is_sell_to_market', 'is_active']);
             $table->index(['is_sold', 'is_partial']);

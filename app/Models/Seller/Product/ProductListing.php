@@ -43,15 +43,6 @@ class ProductListing extends BaseModel
             if (is_null($model->expires_at)) {
                 $model->expires_at = now()->addHours(24);
             }
-
-            // Check already exists doc_no for today
-            do {
-                $docNo = MstSeqCodeGenerator::getNextDocNo();
-            } while (
-                self::where('doc_no', $docNo)->exists()
-            );
-
-            $model->doc_no = $docNo;
         });
     }
 
@@ -62,8 +53,7 @@ class ProductListing extends BaseModel
         'fulfillment_location_id',
         'listing_code',
 
-        'doc_no',
-        'doc_date',
+        'listing_date',
 
         'is_sell_to_market',
         'is_seller_dropoff',
@@ -71,6 +61,7 @@ class ProductListing extends BaseModel
         'is_active',
         'inactive_reason',
 
+        'is_cutoff',
         'is_partial',
         'is_sold',
         'is_locked',
@@ -81,7 +72,7 @@ class ProductListing extends BaseModel
 
     // casts
     protected $casts = [
-        'doc_date' => 'date',
+        'listing_date' => 'date:Y-m-d',
         'expires_at' => 'datetime',
         'is_sell_to_market' => 'boolean',
         'is_seller_dropoff' => 'boolean',
@@ -90,6 +81,7 @@ class ProductListing extends BaseModel
         'is_sold' => 'boolean',
         'is_locked' => 'boolean',
         'is_expired' => 'boolean',
+        'is_cutoff' => 'boolean',
     ];
 
     // scope

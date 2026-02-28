@@ -481,7 +481,7 @@ Route::group([
                 // accounting commands        
                 Route::post('accounting/order', [CmdAdminApiController::class, 'cmdAccountingOrder']);
                 Route::post('accounting/market-order', [CmdAdminApiController::class, 'cmdAccountingMarketOrder']);
-                Route::post('accounting/driver-shipment', [CmdAdminApiController::class, 'cmdAccountingDriverShipment']);
+                Route::post('accounting/product-listing', [CmdAdminApiController::class, 'cmdAccountingProductListing']);
 
                 // Invoice Generation Commands
                 Route::post('invoice/product-listing', [CmdAdminApiController::class, 'cmdProductListingInvoiceGeneration']);

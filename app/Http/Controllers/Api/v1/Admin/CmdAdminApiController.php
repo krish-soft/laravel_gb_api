@@ -145,7 +145,7 @@ class CmdAdminApiController extends ApiResponseWithAdminAuthController
         }
     }
 
-    public function cmdAccountingDriverShipment(Request $request)
+    public function cmdAccountingProductListing(Request $request)
     {
         $request->validate([
             'start_date' => 'nullable|date',
@@ -155,16 +155,15 @@ class CmdAdminApiController extends ApiResponseWithAdminAuthController
         $startDate = $request->filled('start_date') ? $request->input('start_date') : null;
         $endDate = $request->filled('end_date') ? $request->input('end_date') : null;
 
-        // 'accounting:driver-shipment
+        // 'accounting:product-listing
         //                     {startDate?} 
         //                     {endDate?}';
 
-        // $command = "accounting:driver-shipment {$startDate} {$endDate}";
-        return $this->errorResponse('The accounting:driver-shipment command is currently disabled and cannot be executed.', 403);
+        $command = "accounting:product-listing {$startDate} {$endDate}";
 
         // Log activity
         logActivity(
-            'cmd_accounting_driver_shipment', // ACTIVITY TYPE
+            'cmd_accounting_product_listing', // ACTIVITY TYPE
             $request->user(),       // ACTOR (who did it)
             null,       // SUBJECT TYPE (what was affected)
             null,              // SUBJECT ID
@@ -180,7 +179,7 @@ class CmdAdminApiController extends ApiResponseWithAdminAuthController
             $output = Artisan::output();
             return $this->showSuccessMessage($output);
         } catch (\Exception $e) {
-            return $this->errorResponse('Failed to execute accounting driver shipment command: ' . $e->getMessage(), 500);
+            return $this->errorResponse('Failed to execute accounting product listing command: ' . $e->getMessage(), 500);
         }
     }
 

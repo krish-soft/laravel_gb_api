@@ -6,11 +6,15 @@ use App\Enum\Accounting\AccountEntryTypeEnum;
 use App\Enum\Accounting\AccountOwnerTypeEnum;
 use App\Enum\Accounting\LedgerStatusEnum;
 use App\Enum\Accounting\PlatformAccountCodeEnum;
+use App\Enum\Common\Shipment\DriverShipmentStatusEnum;
+use App\Enum\Common\Shipment\ShipmentStatusEnum;
 use App\Models\Buyer\Order\Order;
 use App\Models\Buyer\Order\OrderItem;
 use App\Models\Common\Accounting\Account;
 use App\Models\Common\Accounting\AccountLedger;
 use App\Models\Common\Payment\Payment;
+use App\Models\Common\Shipment\ShipmentPackage;
+use App\Services\Common\Charge\ChargeCalculationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -54,20 +58,20 @@ class OrderAccountingService
                 */
 
                 // $clearing = Account::where('accnt_code', PlatformAccountCodeEnum::PLATFORM_CLEARING->value)->firstOrFail();
-                $clearingAccount = Account::getOrCreateByOwner(
+                $clearing = Account::getOrCreateByOwner(
                     AccountOwnerTypeEnum::PLATFORM->value,
                     null,
                     PlatformAccountCodeEnum::PLATFORM_CLEARING->value,
                 );
 
                 if (!$this->ledgerExists(
-                    $clearingAccount->id,
+                    $clearing->id,
                     AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
                     Order::class,
                     $order->id
                 )) {
-                    $accounting->createLedger($clearingAccount, [
-                        'description' => "Payment received (taxable amount) for Order #{$order->order_number}",
+                    $accounting->createLedger($clearing, [
+                        'description' => "Payment received for Order #{$order->order_number}",
                         'credit' => $order->base_amount ?? $taxableItemsAmount, // we are storing in each accounts  $order->total_amount,
                         'debit'  => 0,
                         'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
@@ -95,7 +99,9 @@ class OrderAccountingService
                         throw  new RuntimeException("Seller not found for Order Item ID: {$item->id}");
                         // return;
                     }
-
+                    // $seller = Account::where('owner_type', AccountOwnerTypeEnum::SELLER->value)
+                    //     ->where('owner_id', $item->seller_id)
+                    //     ->firstOrFail();
                     $sellerAccount = Account::getOrCreateByOwner(
                         AccountOwnerTypeEnum::SELLER->value,
                         $seller->id
@@ -107,10 +113,10 @@ class OrderAccountingService
                         OrderItem::class,
                         $item->id
                     )) {
-                        // Not Taxable base on ship qty * price because we are recording tax in separate ledger for better reporting and future use
+
                         $accounting->createLedger($sellerAccount, [
                             'description' => "Earnings for Order #{$order->order_number}: {$item->product_name} x {$item->order_qty}",
-                            'credit' => $item->taxable_amount, // we are storing in each accounts  ,
+                            'credit' => $item->taxable_amount,
                             'debit'  => 0,
                             'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
                             'status' => LedgerStatusEnum::AVAILABLE->value,
@@ -132,19 +138,19 @@ class OrderAccountingService
                 foreach ($order->orderCharges as $charge) {
 
                     // $revenue = Account::where('accnt_code', PlatformAccountCodeEnum::PLATFORM_REVENUE->value)->firstOrFail();
-                    $revenueAccount = Account::getOrCreateByOwner(
+                    $revenue = Account::getOrCreateByOwner(
                         AccountOwnerTypeEnum::PLATFORM->value,
                         null,
                         PlatformAccountCodeEnum::PLATFORM_REVENUE->value
                     );
 
                     if (!$this->ledgerExists(
-                        $revenueAccount->id,
+                        $revenue->id,
                         AccountEntryTypeEnum::PLATFORM_CHARGE_BASE->value,
                         get_class($charge),
                         $charge->id
                     )) {
-                        $accounting->createLedger($revenueAccount, [
+                        $accounting->createLedger($revenue, [
                             'description' => "Fees for Order #{$order->order_number}: {$charge->charge_name}",
                             'credit' => $charge->taxable_amount,
                             'debit'  => 0,

@@ -1,55 +1,53 @@
 <?php
 
-namespace App\Console\Commands\CutOff;
+namespace App\Console\Commands\Accounting;
 
 use App\Enum\Queue\QueueEnum;
+use App\Jobs\Accounting\JobProductListingAccounting;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Bus;
 use App\Models\Seller\Product\ProductListing;
 use App\Jobs\CutOff\JobCutOffProductListing;
+use Illuminate\Support\Facades\Log;
 
-class CutOffProductListing extends Command
+class ProductListingAccountingCmd extends Command
 {
-    protected $signature = 'cut-off:product-listing
+    protected $signature = 'accounting:product-listing
                             {startDate?} 
                             {endDate?}';
 
-    protected $description = 'Batch cutoff for product listings.';
+    protected $description = 'Batch accounting for product listings.';
 
     public function handle()
     {
         $startDate = $this->argument('startDate') ?? now()->subDay()->toDateString();
         $endDate   = $this->argument('endDate')   ?? now()->toDateString();
 
-        $this->info("Cutoff from {$startDate} to {$endDate}");
+        $this->info("Product Listing accounting from {$startDate} to {$endDate}");
 
         /*
     |--------------------------------------------------------------------------
-    | STEP 1 — Pull ONLY listings eligible for cutoff
+    | STEP 1 — Pull ONLY listings eligible for accounting
     |--------------------------------------------------------------------------
     */
         $listings = ProductListing::query()
             ->select(['id', 'seller_id']) // IMPORTANT → reduce memory
             ->where('is_active', true)
-            // ->where('is_expired', false)
-            ->where('is_cutoff', false)
+            ->where('is_cutoff', true)
+            // ->whereBetween('created_at', [
+            //     \Carbon\Carbon::parse($startDate)->startOfDay(),
+            //     \Carbon\Carbon::parse($endDate)->endOfDay(),
+            // ])
             ->whereBetween('listing_date', [
                 $startDate,
                 $endDate
             ])
-
-            ->whereHas('listingItems.listingPackages', function ($q) {
-                // $q->where('is_locked', false)
-                //     ->where('is_sold', false)
-                //     ->whereRaw('qty > sold_qty');
-                $q->whereRaw('qty > sold_qty');
-            })
             ->orderBy('seller_id')
             ->orderBy('id')
             ->get();
 
         if ($listings->isEmpty()) {
-            $this->warn('No listings eligible for cutoff.');
+            $this->warn('No product listings eligible for cutoff.');
             return;
         }
 
@@ -62,6 +60,8 @@ class CutOffProductListing extends Command
 
         $jobs = [];
 
+        // Log::info("Total product listings for accounting: {$listings->count()} across " . $groupedBySeller->count() . " sellers.");
+
         /*
     |--------------------------------------------------------------------------
     | STEP 3 — Chunk per seller
@@ -73,7 +73,7 @@ class CutOffProductListing extends Command
                 ->chunk(5) // batch size per seller
                 ->each(function ($chunk) use (&$jobs) {
 
-                    $jobs[] = new JobCutOffProductListing($chunk->toArray());
+                    $jobs[] = new JobProductListingAccounting($chunk->toArray());
                 });
         }
 
@@ -88,8 +88,8 @@ class CutOffProductListing extends Command
     |--------------------------------------------------------------------------
     */
         Bus::batch($jobs)
-            ->name('CutOff Product Listing Batch (Grouped by Seller)')
-            ->onQueue(QueueEnum::LISTING_CUTOFF->value) // assign entire batch to cutoff queue
+            ->name('Accounting Product Listing Batch (Grouped by Seller)')
+            ->onQueue(QueueEnum::ACCOUNTING_CUTOFF->value) // assign entire batch to accounting queue
             ->dispatch();
 
         $this->info('Batch dispatched successfully.');

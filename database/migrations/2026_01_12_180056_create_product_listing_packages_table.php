@@ -30,6 +30,7 @@ return new class extends Migration
 
             // for accounting 
             $table->decimal('reverse_qty', 10, 2)->default(0); // qty reversed back to available
+            $table->decimal('reverse_amount', 15, 2)->default(0); // amount reversed back to available
 
             // when cutoff we have to store what actual qty listed in the package for future reference, as qty can be updated due to returns and cancellations
             $table->decimal('actual_qty', 10, 2)->nullable(); // total qty in the package

@@ -255,7 +255,7 @@
 
                 <b>Invoice No:</b> {{ $invoice->invoice_number }}<br>
                 <b>Date:</b> {{ \Carbon\Carbon::parse($invoice->invoice_date)->format('d M Y') }}<br>
-                <b>Listing Code:</b> {{ $productListing->order_number }}
+                <b>Listing Code:</b> {{ $productListing->listing_code }}
 
             </td>
 
@@ -343,7 +343,9 @@
 
             @foreach ($productListingPackages as $i => $pkg)
                 @php
+                
                     $subtotal = ($pkg->sold_qty - $pkg->reverse_qty) * $pkg->pack_price - ($pkg->discount_amount ?? 0);
+
                 @endphp
 
                 <tr>

@@ -45,11 +45,7 @@ class ProductListingInvoiceCmd extends Command
 
         // 
         $productListings = ProductListing::query()
-            // ->whereBetween('created_at', [
-            //     \Carbon\Carbon::parse($startDate)->startOfDay(),
-            //     \Carbon\Carbon::parse($endDate)->endOfDay(),
-            // ])
-            ->whereBetween('doc_date', [
+            ->whereBetween('listing_date', [
                 \Carbon\Carbon::parse($startDate)->startOfDay(),
                 \Carbon\Carbon::parse($endDate)->endOfDay(),
             ])

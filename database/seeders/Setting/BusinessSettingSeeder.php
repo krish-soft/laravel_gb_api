@@ -52,12 +52,12 @@ class BusinessSettingSeeder extends Seeder
 
             'setting_code' => 'SETTING_001',
             'legal_name' => 'Krishna Software Pvt Ltd',
-            'trade_name' => 'Green Bazar',
+            'trade_name' => 'Khet Bajar',
 
             'bill_addr_code' =>  $addrCode,
 
             //
-            'website' => 'https://greenbazar.net.in',
+            'website' => 'https://khetbajar.in',
 
             'is_active' => true,
 

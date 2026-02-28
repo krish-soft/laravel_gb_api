@@ -27,7 +27,7 @@ class ProductListingService
             $listing = new ProductListing();
             $listing->fill($this->onlyFillable($listing, $data));
             $listing->seller_id = $user->id;
-            $listing->doc_date = now()->toDateString();
+            $listing->listing_date = now()->toDateString();
             $listing->is_active = true;
             $listing->is_sold = false;
             $listing->is_partial = false;

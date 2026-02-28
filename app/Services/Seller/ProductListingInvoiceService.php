@@ -9,6 +9,7 @@ use App\Services\Seller\Product\ProductListingChargePreviewService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 class ProductListingInvoiceService
 {
@@ -23,10 +24,13 @@ class ProductListingInvoiceService
     {
         return DB::transaction(function () use ($productListing) {
 
+            $business = MstBusinessSetting::getOrCreate();
+
             $invoice = ProductListingInvoice::create([
                 'product_listing_id' => $productListing->id,
                 'invoice_date' => now(),
                 'invoice_path' => null,
+                'business_bill_addr_code' => $business->bill_addr_code,
             ]);
 
             return $this->buildInvoicePdf($invoice, $productListing);
@@ -75,27 +79,32 @@ class ProductListingInvoiceService
         $seller = $productListing->seller;
 
         // We dont want to use order Base 
-        // $combineItems = $this->extractSoldItems($productListing);
-        // if (empty($combineItems)) {
-        //     throw new \Exception('No sold package found for this product listing.');
-        // }        // [$charges, $totalRecevableData] = $this->buildChargesByOrderItems(
-        //     $combineItems,
-        //     $seller->charge_level_code,
-        //     $productListing->is_seller_dropoff
-        // );
+        $combineItems = $this->extractSoldItems($productListing);
+
+        if (empty($combineItems)) {
+            throw new RuntimeException('No sold package found for this product listing.');
+        }
+
+        [$charges, $totalRecevableData] = $this->buildChargesByOrderItems(
+            $combineItems,
+            $seller->charge_level_code,
+            $productListing->is_seller_dropoff
+        );
 
 
+
+        // Get Summary only to show 
         $productListingPackages = $productListing->listingItems
             ->flatMap(fn($item) => $item->listingPackages)
             ->filter(fn($pkg) => ($pkg->sold_qty - $pkg->reverse_qty) ?? 0 > 0) // Only consider packages with sold quantity
             ->values()
             ->all();
 
-        [$charges, $totalRecevableData] = $this->buildChargesByListingPackage(
-            $productListingPackages,
-            $seller->charge_level_code,
-            $productListing->is_seller_dropoff
-        );
+        // [$charges, $totalRecevableData] = $this->buildChargesByListingPackage(
+        //     $productListingPackages,
+        //     $seller->charge_level_code,
+        //     $productListing->is_seller_dropoff
+        // );
 
         $shippingAddress = $productListing->fulfillmentLocation->address;
         $billingAddress  = $shippingAddress;
@@ -104,15 +113,16 @@ class ProductListingInvoiceService
             ->load(['billAddress', 'address']);
 
         $pdf = Pdf::loadView(
-            'pdf.listing_invoice',
+            // 'pdf.listing_invoice',
+            'pdf.listing_invoice_by_order',
             [
                 'productListing'    => $productListing,
                 'invoice'           => $invoice,
                 'business'          => $business,
                 'billingAddress'    => $billingAddress,
                 'shippingAddress'   => $shippingAddress,
-                // 'combineItems'      => $combineItems,
-                'productListingPackages' => $productListingPackages,
+                'combineItems'      => $combineItems,
+                // 'productListingPackages' => $productListingPackages,
                 'charges'           => $charges,
                 'totalRecevableData' => $totalRecevableData,
             ]
@@ -144,7 +154,7 @@ class ProductListingInvoiceService
         foreach ($productListing->listingItems as $item) {
             foreach ($item->listingPackages as $package) {
 
-                if ($package->sold_qty <= 0) continue;
+                if ($package->sold_qty - $package->reverse_qty <= 0) continue;
 
                 if ($package->orderItem) {
                     $orderItems[] = $package->orderItem;
@@ -202,37 +212,37 @@ class ProductListingInvoiceService
 
 
 
-    // protected function buildChargesByOrderItem(array $combineItems, string $chargeLevelCode, bool $isSellerDropoff): array
-    // {
-    //     $previewService = app(ProductListingChargePreviewService::class);
+    protected function buildChargesByOrderItems(array $combineItems, string $chargeLevelCode, bool $isSellerDropoff): array
+    {
+        $previewService = app(ProductListingChargePreviewService::class);
 
-    //     $previewData = $previewService->preview(
-    //         collect($combineItems)->map(fn($item) => [
-    //             'order_qty'       => $item->order_qty,
-    //             'pack_size'       => $item->pack_size,
-    //             'pack_unit'       => $item->pack_unit,
-    //             'pack_type_unit'  => $item->pack_type_unit,
-    //             'pack_price'      => $item->pack_price,
-    //             'per_kg_price'    => $item->per_kg_price,
-    //         ])->toArray(),
-    //         $chargeLevelCode,
-    //         $isSellerDropoff
-    //     );
+        $previewData = $previewService->preview(
+            collect($combineItems)->map(fn($item) => [
+                'order_qty'       => $item->order_qty,
+                'pack_size'       => $item->pack_size,
+                'pack_unit'       => $item->pack_unit,
+                'pack_type_unit'  => $item->pack_type_unit,
+                'pack_price'      => $item->pack_price,
+                'per_kg_price'    => $item->per_kg_price,
+            ])->toArray(),
+            $chargeLevelCode,
+            $isSellerDropoff
+        );
 
-    //     // SAFE INIT (your earlier bug fixed)
-    //     $charges = collect($previewData['charges'] ?? [])
-    //         ->map(fn($c) => (object)$c)
-    //         ->all();
+        // SAFE INIT (your earlier bug fixed)
+        $charges = collect($previewData['charges'] ?? [])
+            ->map(fn($c) => (object)$c)
+            ->all();
 
-    //     $totalRecevableData = (object)[
-    //         'gross_amount'        => $previewData['gross_amount'] ?? 0,
-    //         'charge_tax'          => $previewData['charge_tax'] ?? 0,
-    //         'total_charge_amount' => $previewData['total_charge_amount'] ?? 0,
-    //         'net_receivable'      => $previewData['net_receivable'] ?? 0,
-    //     ];
+        $totalRecevableData = (object)[
+            'gross_amount'        => $previewData['gross_amount'] ?? 0,
+            'charge_tax'          => $previewData['charge_tax'] ?? 0,
+            'total_charge_amount' => $previewData['total_charge_amount'] ?? 0,
+            'net_receivable'      => $previewData['net_receivable'] ?? 0,
+        ];
 
-    //     return [$charges, $totalRecevableData];
-    // }
+        return [$charges, $totalRecevableData];
+    }
 
 
     /*
