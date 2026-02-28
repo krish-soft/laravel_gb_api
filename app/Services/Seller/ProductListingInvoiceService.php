@@ -114,7 +114,7 @@ class ProductListingInvoiceService
                 }
 
                 return [
-                    'product_name' => $listingItem->product->product_name,
+                    'product_name' => $listingItem->product->name,
                     'pack_size' => $pkg->pack_size,
                     'pack_unit' => $pkg->pack_unit,
                     'pack_type_unit' => $pkg->pack_type_unit,

@@ -431,7 +431,7 @@
     </table>
 
     {{-- listingSummary table --}}
-
+    <h5>Listing Qty Summary <span> [Regular order + Market Order]</span></h5>
     <table class="table" style="margin-top:12px;">
         <thead>
             <tr>
