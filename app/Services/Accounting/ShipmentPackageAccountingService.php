@@ -347,15 +347,15 @@ class ShipmentPackageAccountingService
                             $package->id
                         )) {
                             $accountingService->createLedger($sellerAccount, [
-                                'description' => "Reversal for delivery charge for undelivered item for market Order #{$order->order_number}: Package #{$package->package_number}",
+                                'description' => "Reversal for delivery charge for undelivered item for market Order #{$order->market_order_number}: Package #{$package->package_number}",
                                 'credit' => 0,
                                 'debit'  => $sellerDeliveryCharges,
                                 'entry_type' => AccountEntryTypeEnum::DELIVERY_CHARGE_REVERSAL->value,
                                 'status' => LedgerStatusEnum::AVAILABLE->value,
                                 'source_type' => ShipmentPackage::class,
                                 'source_id' => $package->id,
-                                'source_code' => $order->order_number,
-                                'common_reference' => $order->order_number,
+                                'source_code' => $order->market_order_number,
+                                'common_reference' => $order->market_order_number,
                             ]);
 
                             // seller listing

@@ -340,7 +340,7 @@
 
         <tbody>
 
-            @foreach ($combineItems as $i => $item)
+            @foreach ($regularOrderItems as $i => $item)
                 @php
                     $subTotal = $item->ship_qty * $item->pack_price - ($item->discount_amount ?? 0);
                 @endphp
@@ -367,6 +367,44 @@
                     <td class="right bold">{{ number_format($subTotal, 2) }}</td>
                 </tr>
             @endforeach
+
+            <tr>
+                <td colspan="9" style="border:none;height:6px;"></td>
+            </tr>
+
+            {{-- Market Order --}}
+            @if ($marketOrderItems->count() > 0)
+                <tr>
+                    <td colspan="11" class="center bold orange">Market Order Items</td>
+                </tr>
+                @foreach ($marketOrderItems as $i => $item)
+                    @php
+                        $subMarketTotal = $item->ship_qty * $item->pack_price - ($item->discount_amount ?? 0);
+                    @endphp
+                    <tr>
+                        <td class="center">{{ $i + 1 }}</td>
+
+                        <td>
+                            {{ $item?->product_name }}
+                        </td>
+
+                        <td class="center">{{ $item->order_qty ?? $item->qty }}</td>
+                        <td class="center">{{ $item->ship_qty ?? 0 }}</td>
+
+                        <td class="right">{{ number_format(0, 2) }} {{ $item->pack_unit }}</td>
+
+                        <td class="right">{{ number_format(0, 2) }}</td>
+
+                        <td class="right">{{ number_format(0, 2) }}</td>
+
+                        <td class="right">As Per Market</td>
+
+                        <td class="right">{{ number_format(0, 2) }}</td>
+
+                        <td class="right bold">As Per Market</td>
+                    </tr>
+                @endforeach
+            @endif
 
             <tr>
                 <td colspan="9" style="border:none;height:6px;"></td>
@@ -431,7 +469,7 @@
     </table>
 
     {{-- listingSummary table --}}
-    <h5>Listing Qty Summary <span> [Regular order + Market Order]</span></h5>
+    <div class="h5">Listing Qty Summary <span> [Regular order + Market Order]</span></div>
     <table class="table" style="margin-top:12px;">
         <thead>
             <tr>

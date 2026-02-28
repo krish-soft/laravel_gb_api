@@ -91,7 +91,9 @@ class ProductListingInvoiceService
             $productListing->is_seller_dropoff
         );
 
-
+        // To Show view seprate both 
+        $regularOrderItems = collect($combineItems)->filter(fn($item) => $item->type === 'REGULAR');
+        $marketOrderItems = collect($combineItems)->filter(fn($item) => $item->type === 'MARKET');
 
         // Get Summary only to show 
         $productListing->loadMissing('listingItems.listingPackages.productListingItem.product');
@@ -164,6 +166,9 @@ class ProductListingInvoiceService
                 // 'productListingPackages' => $productListingPackages,
                 'charges'           => $charges,
                 'totalRecevableData' => $totalRecevableData,
+
+                'regularOrderItems' => $regularOrderItems,
+                'marketOrderItems' => $marketOrderItems,
             ]
         )->setPaper('a4', 'portrait');
 
@@ -196,13 +201,15 @@ class ProductListingInvoiceService
                 if ($package->sold_qty - $package->reverse_qty <= 0) continue;
 
                 if ($package->orderItem) {
+                    $package->orderItem->type = 'REGULAR';
                     $orderItems[] = $package->orderItem;
                 }
 
                 // market Order we ignoring due to market bill photo directly need to show 
-                // if ($package->marketOrderItem && $productListing->is_sell_to_market) {
-                //     $marketOrderItems[] = $package->marketOrderItem;
-                // }
+                if ($package->marketOrderItem && $productListing->is_sell_to_market) {
+                    $package->marketOrderItem->type = 'MARKET';
+                    $marketOrderItems[] = $package->marketOrderItem;
+                }
             }
         }
 
