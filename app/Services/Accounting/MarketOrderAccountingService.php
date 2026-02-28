@@ -48,19 +48,19 @@ class MarketOrderAccountingService
             |-------------------------------------------------
             */
             // $clearing = Account::where('accnt_code', PlatformAccountCodeEnum::PLATFORM_CLEARING->value)->firstOrFail();
-            $clearing = Account::getOrCreateByOwner(
+            $platformMarketAccount = Account::getOrCreateByOwner(
                 AccountOwnerTypeEnum::PLATFORM->value,
                 null,
                 PlatformAccountCodeEnum::PLATFORM_MARKET->value,
             );
 
             if (!$this->ledgerExists(
-                $clearing->id,
+                $platformMarketAccount->id,
                 AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
                 MarketOrder::class,
                 $marketOrder->id
             )) {
-                $accounting->createLedger($clearing, [
+                $accounting->createLedger($platformMarketAccount, [
                     'description' => "Payment received for Order #{$marketOrder->market_order_number}",
                     'credit' => $marketOrder->total_amount,
                     'debit'  => 0,

@@ -216,7 +216,7 @@ class MarketOrderAdminApiController extends  ApiResponseWithAdminAuthController
         // DISTRIBUTE ONLY SUBTOTAL TO ITEMS
         // ---------------------------------------
         $items    = $marketOrder->marketOrderItems()->get();
-        $totalQty = (float) $items->sum('order_qty');
+        $totalQty = (float) $items->sum('ship_qty');
 
         if ($totalQty > 0 && $items->count() > 0 && $baseAmount > 0) {
 
@@ -225,7 +225,8 @@ class MarketOrderAdminApiController extends  ApiResponseWithAdminAuthController
 
             foreach ($items->values() as $i => $item) {
 
-                $ratio = $item->order_qty / $totalQty;
+                // $ratio = $item->order_qty / $totalQty;
+                $ratio = $item->ship_qty / $totalQty;
 
                 // last item handles rounding balance
                 if ($i === $lastIndex) {

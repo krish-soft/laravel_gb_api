@@ -6,6 +6,7 @@ use App\Models\BaseModel;
 use App\Models\Buyer\Order\OrderItem;
 use App\Models\Common\Shipment\ShipmentPackage;
 use App\Models\Market\MarketOrderItem;
+use App\Models\Master\Product\MstProduct;
 use Illuminate\Database\Eloquent\Model;
 
 class ProductListingPackage extends BaseModel
@@ -23,7 +24,7 @@ class ProductListingPackage extends BaseModel
 
         'reverse_qty',
         'reverse_amount',
-        
+
         'actual_qty',
 
 
@@ -76,11 +77,22 @@ class ProductListingPackage extends BaseModel
         return $this->belongsTo(ProductListingItem::class, 'product_listing_item_id');
     }
 
+    // public function product()
+    // {
+    //     return $this->productListingItem->product();
+    // }
+
     public function product()
     {
-        return $this->productListingItem->product();
+        return $this->hasOneThrough(
+            MstProduct::class,
+            ProductListingItem::class,
+            'id', // Foreign key on listing item
+            'id', // Foreign key on product
+            'product_listing_item_id', // Local key
+            'product_id' // Local key on listing item
+        );
     }
-
     public function productVariant()
     {
         return $this->productListingItem->productVariant();

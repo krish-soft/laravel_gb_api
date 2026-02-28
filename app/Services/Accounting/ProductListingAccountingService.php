@@ -50,12 +50,9 @@ class ProductListingAccountingService
                 $seller->id
             );
 
-
-
             foreach ($productListing->listingItems as $listingItem) {
                 foreach ($listingItem->listingPackages as $package) {
                     // We only need to record delivery charges
-
                     $packageArr[] =
                         [
                             'order_qty'  => $package->sold_qty, // only what is sold.
@@ -64,21 +61,16 @@ class ProductListingAccountingService
                             'pack_unit'  => $package->pack_unit,
                             'pack_type_unit' => $package->pack_type_unit,
                         ];
-
-
-
                     // Calculate total selling amount for this package (for future use, e.g., revenue recognition)
                     $totalSellingAmount += ($package->sold_qty * $package->pack_price);
                 }
             }
-
 
             $platformChargesData  = $chargeService->calculatePlatformFee(
                 $seller->charge_level_code,
                 $totalSellingAmount,
                 $packageArr
             );
-
             $totalPlatformChargeAmount = $platformChargesData['total_amount'] ?? 0;
 
             ##          
@@ -109,8 +101,8 @@ class ProductListingAccountingService
              * - If it's seller dropoff → calculate delivery charge and record as receivable from seller
              */
 
-
-            if ($productListing->is_seller_dropoff) {
+            // If not drop off we have to pickup
+            if (!$productListing->is_seller_dropoff) {
 
                 $deliveryChargesData  = $chargeService->calculateDeliveryCharges(
                     $seller->charge_level_code,

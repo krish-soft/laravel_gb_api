@@ -94,9 +94,47 @@ class ProductListingInvoiceService
 
 
         // Get Summary only to show 
+        $productListing->loadMissing('listingItems.listingPackages.productListingItem.product');
+
         $productListingPackages = $productListing->listingItems
             ->flatMap(fn($item) => $item->listingPackages)
-            ->filter(fn($pkg) => ($pkg->sold_qty - $pkg->reverse_qty) ?? 0 > 0) // Only consider packages with sold quantity
+            ->filter(fn($pkg) => ($pkg->sold_qty - $pkg->reverse_qty) > 0)
+            ->values();
+
+        /// Just loop listed qty, sold qty and reverse qty for summary in invoice, we are not using this for charge calculation so no issue of order item or market order item. We can directly use listing package data.
+        $listingSummary = collect($productListingPackages)
+            ->map(function ($pkg) {
+
+                $pkg->loadMissing('productListingItem.product');
+
+                $listingItem = $pkg->productListingItem;
+
+                if (!$listingItem || !$listingItem->product) {
+                    return null; // skip broken row safely
+                }
+
+                return [
+                    'product_name' => $listingItem->product->product_name,
+                    'pack_size' => $pkg->pack_size,
+                    'pack_unit' => $pkg->pack_unit,
+                    'pack_type_unit' => $pkg->pack_type_unit,
+                    'listed_qty' => $pkg->qty,
+                    'sold_qty' => $pkg->sold_qty,
+                    'reverse_qty' => $pkg->reverse_qty,
+                ];
+            })
+            ->filter()
+            ->groupBy(fn($item) => "{$item['product_name']}-{$item['pack_size']}-{$item['pack_unit']}-{$item['pack_type_unit']}")
+            ->map(fn($group) => (object) [
+                'product_name' => $group->first()['product_name'],
+                'pack_size' => $group->first()['pack_size'],
+                'pack_unit' => $group->first()['pack_unit'],
+                'pack_type_unit' => $group->first()['pack_type_unit'],
+                'listed_qty' => $group->sum('listed_qty'),
+                'sold_qty' => $group->sum('sold_qty'),
+                'reverse_qty' => $group->sum('reverse_qty'),
+                'net_sold_qty' => $group->sum('sold_qty') - $group->sum('reverse_qty'),
+            ])
             ->values()
             ->all();
 
@@ -122,6 +160,7 @@ class ProductListingInvoiceService
                 'billingAddress'    => $billingAddress,
                 'shippingAddress'   => $shippingAddress,
                 'combineItems'      => $combineItems,
+                'listingSummary'      => $listingSummary,
                 // 'productListingPackages' => $productListingPackages,
                 'charges'           => $charges,
                 'totalRecevableData' => $totalRecevableData,
@@ -218,7 +257,7 @@ class ProductListingInvoiceService
 
         $previewData = $previewService->preview(
             collect($combineItems)->map(fn($item) => [
-                'order_qty'       => $item->order_qty,
+                'order_qty'       => $item->ship_qty, // we only care about shipped qty for charge calculation
                 'pack_size'       => $item->pack_size,
                 'pack_unit'       => $item->pack_unit,
                 'pack_type_unit'  => $item->pack_type_unit,

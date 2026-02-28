@@ -22,6 +22,7 @@ class ShipmentPackageAccountingService
 {
 
     // Buyer Order 
+    // Working Everything
     public function processOrderShipmentPackageAccounting(Order $order)
     {
 
@@ -292,6 +293,7 @@ class ShipmentPackageAccountingService
 
 
     // Market Order
+    // Have problem
 
     public function processMarketOrderShipmentPackageAccounting(MarketOrder $order)
     {
@@ -302,14 +304,10 @@ class ShipmentPackageAccountingService
         DB::transaction(function () use ($order, $accountingService) {
 
             // we can have multiple packages for an order, so we need to process each package separately
-
-
             foreach ($order->shipmentPackages as $package) {
 
                 // $orderItem = $package->orderItem;
-
                 $seller = $package->seller;
-
                 if (!$seller) {
                     throw new RuntimeException("Seller not found for Shipment Package ID: {$package->id}");
                 }
@@ -347,7 +345,6 @@ class ShipmentPackageAccountingService
                             AccountEntryTypeEnum::DELIVERY_CHARGE_REVERSAL->value,
                             ShipmentPackage::class,
                             $package->id
-
                         )) {
                             $accountingService->createLedger($sellerAccount, [
                                 'description' => "Reversal for delivery charge for undelivered item for market Order #{$order->order_number}: Package #{$package->package_number}",
@@ -371,32 +368,30 @@ class ShipmentPackageAccountingService
                             }
                         }
 
-
-
                         // tax if > 0
-                        if ($sellerDeliveryChargeTax > 0) {
+                        // if ($sellerDeliveryChargeTax > 0) {
 
-                            if (!$this->ledgerExists(
-                                $sellerAccount->id,
-                                AccountEntryTypeEnum::DELIVERY_CHARGE_REVERSAL->value,
-                                ShipmentPackage::class,
-                                $package->id,
-                                'market_order_seller_delivery_charge_tax_reversal' // to make it different from buyer reversal in case of market order
+                        //     if (!$this->ledgerExists(
+                        //         $sellerAccount->id,
+                        //         AccountEntryTypeEnum::DELIVERY_CHARGE_REVERSAL->value,
+                        //         ShipmentPackage::class,
+                        //         $package->id,
+                        //         'market_order_seller_delivery_charge_tax_reversal' // to make it different from buyer reversal in case of market order
 
-                            )) {
-                                $accountingService->createLedger($sellerAccount, [
-                                    'description' => "Reversal for delivery charge for undelivered item for market Order #{$order->order_number}: Package #{$package->package_number}",
-                                    'credit' => 0,
-                                    'debit'  => $sellerDeliveryChargeTax,
-                                    'entry_type' => AccountEntryTypeEnum::DELIVERY_CHARGE_REVERSAL->value,
-                                    'status' => LedgerStatusEnum::AVAILABLE->value,
-                                    'source_type' => ShipmentPackage::class,
-                                    'source_id' => $package->id,
-                                    'source_code' => $order->order_number,
-                                    'common_reference' => $order->order_number,
-                                ]);
-                            }
-                        }
+                        //     )) {
+                        //         $accountingService->createLedger($sellerAccount, [
+                        //             'description' => "Reversal for delivery charge for undelivered item for market Order #{$order->order_number}: Package #{$package->package_number}",
+                        //             'credit' => 0,
+                        //             'debit'  => $sellerDeliveryChargeTax,
+                        //             'entry_type' => AccountEntryTypeEnum::DELIVERY_CHARGE_REVERSAL->value,
+                        //             'status' => LedgerStatusEnum::AVAILABLE->value,
+                        //             'source_type' => ShipmentPackage::class,
+                        //             'source_id' => $package->id,
+                        //             'source_code' => $order->order_number,
+                        //             'common_reference' => $order->order_number,
+                        //         ]);
+                        //     }
+                        // }
                     }
 
 

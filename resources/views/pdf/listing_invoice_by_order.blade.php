@@ -430,6 +430,36 @@
         </tr>
     </table>
 
+    {{-- listingSummary table --}}
+
+    <table class="table" style="margin-top:12px;">
+        <thead>
+            <tr>
+                <th>Product Name</th>
+                <th>Pack Size</th>
+                <th>Pack Unit</th>
+                <th>Pack Type</th>
+                <th>Listed Qty</th>
+                <th>Sold Qty</th>
+                <th>Reverse Qty</th>
+                <th>Net Sold Qty</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($listingSummary as $summary)
+                <tr>
+                    <td class="start">{{ $summary->product_name }}</td>
+                    <td class="center">{{ $summary->pack_size }}</td>
+                    <td class="center">{{ $summary->pack_unit }}</td>
+                    <td class="center">{{ $summary->pack_type_unit }}</td>
+                    <td class="center">{{ $summary->listed_qty }}</td>
+                    <td class="center">{{ $summary->sold_qty }}</td>
+                    <td class="center">{{ $summary->reverse_qty }}</td>
+                    <td class="center bold">{{ $summary->net_sold_qty }}</td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
 
     <!-- ================= NEW FOOTER DESIGN ================= -->
 
