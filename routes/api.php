@@ -133,7 +133,7 @@ Route::group([
     Route::post('/signup/register', [UserRegisterApiController::class, 'verifyOtpAndRegister']);
 
     // Login
-    Route::post('/signin', [UserLoginApiController::class, 'login']);
+    Route::post('/signin', [UserLoginApiController::class, 'login'])->name('login');
 
     // Forget Password
     Route::post('/forget/otp/send', [UserResetPasswordApiController::class, 'sendForgotPasswordOtp']);
@@ -501,6 +501,7 @@ Route::group([
                 // accounting commands        
                 Route::post('accounting/order', [CmdAdminApiController::class, 'cmdAccountingOrder']);
                 Route::post('accounting/market-order', [CmdAdminApiController::class, 'cmdAccountingMarketOrder']);
+                Route::post('accounting/invoice', [CmdAdminApiController::class, 'cmdAccountingInvoice']);
 
                 // Invoice Generation Commands
                 Route::post('invoice/product-listing', [CmdAdminApiController::class, 'cmdProductListingInvoiceGeneration']);

@@ -3,6 +3,7 @@
 namespace App\Console\Commands\Accounting;
 
 use App\Enum\Common\Invoice\InvoiceStatusEnum;
+use App\Enum\Common\Order\OrderStatusEnum;
 use App\Enum\Queue\QueueEnum;
 use App\Jobs\Accounting\JobInvoiceAccounting;
 use App\Models\Common\Invoice\Invoice;
@@ -43,7 +44,7 @@ class InvoiceAccountingCmd extends Command
         $invoices = Invoice::query()
             ->select(['id', 'user_id']) // IMPORTANT → reduce memory         
             // ->where('is_locked', false)          
-            ->whereNotIn('status', [InvoiceStatusEnum::ACCOUNTED->value]) // only unaccounted invoices
+            ->whereNotIn('status', [InvoiceStatusEnum::ACCOUNTED->value, OrderStatusEnum::INVOICED->value]) // only unaccounted invoices
             ->whereBetween('invoice_date', [
                 $startDate,
                 $endDate

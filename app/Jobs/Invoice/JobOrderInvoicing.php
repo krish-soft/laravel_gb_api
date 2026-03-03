@@ -51,7 +51,8 @@ class JobOrderInvoicing implements ShouldQueue
                 if (
                     (in_array($order->order_status, [
                         OrderStatusEnum::CONFIRMED->value,
-                        OrderStatusEnum::INVOICED->value
+                        OrderStatusEnum::INVOICED->value,
+                        OrderStatusEnum::ACCOUNTED->value, // added to include accounted orders as well
                     ]) && in_array($order->delivery_status, [OrderStatusEnum::DELIVERED->value]))
                     && in_array($order->payment_status, [PaymentStatusEnum::PAID->value])
                     // && !in_array($order->order_status, [OrderStatusEnum::REFUNDED->value, OrderStatusEnum::CANCELLED->value])

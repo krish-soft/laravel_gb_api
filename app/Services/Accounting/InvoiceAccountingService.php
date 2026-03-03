@@ -118,12 +118,14 @@ class InvoiceAccountingService
 
 
                     ## We need to collect tax on platform for reporting
-                    if (($owner->isSeller() || $owner->isDelivery()) && $taxAmount > 0) {
+                    if (($owner->isSeller() || $owner->isDelivery()) && $taxAmount != 0) {
+
                         $taxAccount = Account::getOrCreateByOwner(
                             AccountOwnerTypeEnum::GOVERNMENT->value,
                             null,
                             PlatformAccountCodeEnum::PLATFORM_TAX->value
                         );
+
                         if (!$accountingService->ledgerExists(
                             $taxAccount->id,
                             AccountEntryTypeEnum::INVOICE_TAX_AMOUNT->value,

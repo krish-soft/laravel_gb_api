@@ -51,7 +51,7 @@ class OrderInvoicingCmd extends Command
             ])
             ->whereIn('order_status', [
                 OrderStatusEnum::CONFIRMED->value,
-                // OrderStatusEnum::ACCOUNTED->value,
+                OrderStatusEnum::ACCOUNTED->value,
                 OrderStatusEnum::INVOICED->value
             ])->WhereIn('delivery_status', [
                 OrderStatusEnum::SHIPPED->value,

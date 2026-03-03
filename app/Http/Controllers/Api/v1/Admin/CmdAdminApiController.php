@@ -6,6 +6,7 @@ use App\Http\Controllers\ApiResponseWithAdminAuthController;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 
 class CmdAdminApiController extends ApiResponseWithAdminAuthController
 {
@@ -146,6 +147,46 @@ class CmdAdminApiController extends ApiResponseWithAdminAuthController
     }
 
 
+    public function cmdAccountingInvoice(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+        ]);
+
+        $startDate = $request->filled('start_date') ? $request->input('start_date') : null;
+        $endDate = $request->filled('end_date') ? $request->input('end_date') : null;
+
+        // 'accounting:market-order
+        //                     {startDate?} 
+        //                     {endDate?}';
+
+        $command = "accounting:invoice {$startDate} {$endDate}";
+
+        // Log activity
+        logActivity(
+            'cmd_accounting_invoice', // ACTIVITY TYPE
+            $request->user(),       // ACTOR (who did it)
+            null,       // SUBJECT TYPE (what was affected)
+            null,              // SUBJECT ID
+            null,       // SUBJECT CODE (human readable)
+            [
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+            ]
+        );
+
+        try {
+            Artisan::call($command);
+            $output = Artisan::output();
+            return $this->showSuccessMessage($output);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to execute accounting invoice command: ' . $e->getMessage(), 500);
+        }
+    }
+
+
+
 
     /**
      *  Invoice Generation Commands
@@ -153,6 +194,12 @@ class CmdAdminApiController extends ApiResponseWithAdminAuthController
 
     public function cmdBuyerOrderInvoiceGeneration(Request $request)
     {
+        // Log::info('Received request for buyer order invoice generation command', [
+        //     'request_data' => $request->all(),
+        //     'user_id' => $request->user()->id,
+        // ]);
+
+
         $request->validate([
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
