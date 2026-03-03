@@ -35,7 +35,7 @@ class AccountingService
                 'debit'             => abs($debit), // alwasy positive in ledger, we will use entry_type to determine how to apply
 
                 'entry_type'        => $data['entry_type'],
-                'status'            => $data['status'] ?? LedgerStatusEnum::PENDING->value,
+                'status'            => $data['status'] ?? LedgerStatusEnum::AVAILABLE->value,
                 'is_tax'            => $data['is_tax'] ?? false,
 
                 'source_type'       => $data['source_type'] ?? null,
@@ -191,16 +191,39 @@ class AccountingService
 
     public function reverseLedger(AccountLedger $ledger, string $remark = 'Reversal'): AccountLedger
     {
+
+        $ledger->load('account');
+
+
+
+        $ledger = AccountLedger::lockForUpdate()->findOrFail($ledger->id);
+
+        if ($ledger->status === LedgerStatusEnum::SETTLED->value) {
+            throw new RuntimeException('Cannot reverse a settled ledger entry.');
+        }
+
+        // Check alrady reveresed or not by checking if any reversal entry exists with parent_ledger_id
+        if (AccountLedger::where('parent_ledger_id', $ledger->id)->where('entry_type', 'reversal')->exists()) {
+            throw new RuntimeException('This ledger entry has already been reversed.');
+        }
+
         return $this->createLedger(
             $ledger->account,
             [
+                'description'      => "Reversal of Ledger #{$ledger->ledger_txn_code}",
                 'credit'           => $ledger->debit,
                 'debit'            => $ledger->credit,
+
                 'entry_type'       => 'reversal',
                 'status'           => LedgerStatusEnum::AVAILABLE->value,
                 'parent_ledger_id' => $ledger->id,
                 'ledger_date'      => now()->toDateString(),
                 'remarks'           => $remark,
+
+                'source_type'      => $ledger->source_type,
+                'source_id'        => $ledger->source_id,
+                'source_code'      => $ledger->source_code,
+
             ]
         );
     }

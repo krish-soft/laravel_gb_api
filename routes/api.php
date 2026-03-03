@@ -386,6 +386,8 @@ Route::group([
                 Route::get('summary', [AccountAdminApiController::class, 'summary']);
                 Route::apiResource('account', AccountAdminApiController::class);
                 Route::apiResource('ledger', AccountLedgerAdminApiController::class);
+                Route::get('ledger/reverse/{ledgerId}', [AccountLedgerAdminApiController::class, 'reverseLedger']);
+                Route::get('ledger/status/settle/{ledgerId}', [AccountLedgerAdminApiController::class, 'markSettled']);
 
                 // Settlement Preview
                 Route::prefix('settlement')->group(function () {

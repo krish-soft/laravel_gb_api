@@ -203,26 +203,26 @@ class AccountLedgerAdminApiController extends ApiResponseWithAdminAuthController
 
         // reveres reverseLedger
 
-        if ($accountLedger->status === LedgerStatusEnum::SETTLED->value) {
+        // if ($accountLedger->status === LedgerStatusEnum::SETTLED->value) {
 
-            $accountLedger = app(AccountingService::class)->reverseLedger($accountLedger, 'manual_reversal_for_deletion');
+        //     $accountLedger = app(AccountingService::class)->reverseLedger($accountLedger, 'manual_reversal_for_deletion');
 
-            // Log activity for reversal
-            logActivity(
-                'account_ledger_reversed',   // ACTIVITY TYPE (what happened)
-                request()->user(),       // ACTOR (who did it)
-                get_class($accountLedger),       // SUBJECT TYPE (what was affected)
-                $accountLedger->id,              // SUBJECT ID
-                $accountLedger->ledger_code,       // SUBJECT CODE (human readable)
-                [
-                    'credit' => $accountLedger->credit,
-                    'debit' => $accountLedger->debit,
-                    'status' => $accountLedger->status,
-                ]
-            );
+        //     // Log activity for reversal
+        //     logActivity(
+        //         'account_ledger_reversed',   // ACTIVITY TYPE (what happened)
+        //         request()->user(),       // ACTOR (who did it)
+        //         get_class($accountLedger),       // SUBJECT TYPE (what was affected)
+        //         $accountLedger->id,              // SUBJECT ID
+        //         $accountLedger->ledger_code,       // SUBJECT CODE (human readable)
+        //         [
+        //             'credit' => $accountLedger->credit,
+        //             'debit' => $accountLedger->debit,
+        //             'status' => $accountLedger->status,
+        //         ]
+        //     );
 
-            return $this->showSuccessMessage(__('messages.success_messages.success_reverse'));
-        }
+        //     return $this->showSuccessMessage(__('messages.success_messages.success_reverse'));
+        // }
 
         return $this->errorResponse(__('messages.error_messages.user_detlete_prohibited'), 403);
 
@@ -245,4 +245,73 @@ class AccountLedgerAdminApiController extends ApiResponseWithAdminAuthController
 
         return $this->showSuccessMessage(__('messages.success_messages.success_delete'));
     }
+
+
+
+
+    public function reverseLedger($ledgerId)
+    {
+        $accountLedger = AccountLedger::findOrFail($ledgerId);
+
+
+        if ($accountLedger->status === LedgerStatusEnum::SETTLED->value) {
+            return $this->errorResponse('Cannot reverse a settled ledger entry.', 400);
+        }
+
+        $reversedLedger = app(AccountingService::class)->reverseLedger($accountLedger);
+
+        // Log activity for reversal
+        logActivity(
+            'account_ledger_reversed',   // ACTIVITY TYPE (what happened)
+            request()->user(),       // ACTOR (who did it)
+            get_class($reversedLedger),       // SUBJECT TYPE (what was affected)
+            $reversedLedger->id,              // SUBJECT ID
+            $reversedLedger->ledger_code,       // SUBJECT CODE (human readable)
+            [
+                'credit' => $reversedLedger->credit,
+                'debit' => $reversedLedger->debit,
+                'status' => $reversedLedger->status,
+            ]
+        );
+
+        return $this->showSuccessMessage(__('messages.success_messages.success_update'));
+    }
+
+    public function markSettled($ledgerId)
+    {
+        $accountLedger = AccountLedger::findOrFail($ledgerId);
+
+        if ($accountLedger->status === LedgerStatusEnum::SETTLED->value) {
+            return $this->errorResponse('Ledger entry is already settled.', 400);
+        }
+
+        app(AccountingService::class)->markStatusSettled($accountLedger);
+
+        // Log activity for status change
+        logActivity(
+            'account_ledger_settled',   // ACTIVITY TYPE (what happened)
+            request()->user(),       // ACTOR (who did it)
+            get_class($accountLedger),       // SUBJECT TYPE (what was affected)
+            $accountLedger->id,              // SUBJECT ID
+            $accountLedger->ledger_code,       // SUBJECT CODE (human readable)
+            [
+                'credit' => $accountLedger->credit,
+                'debit' => $accountLedger->debit,
+                'status' => LedgerStatusEnum::SETTLED->value,
+            ]
+        );
+
+        return $this->showSuccessMessage(__('messages.success_messages.success_update'));
+    }
+
+
+
+
+
+
+
+
+
+
+    //
 }

@@ -229,6 +229,7 @@ class OrderAccountingService
                         'common_reference' => $order->order_number,
                     ]);
 
+
                     // Debit we dont becasue we will invoice final that will debit it
                     // $accounting->createLedger($buyerAccount, [
                     //     'description' => "Payment paid for Order #{$order->order_number}",
@@ -247,7 +248,7 @@ class OrderAccountingService
 
 
 
-            
+
 
 
                 //
