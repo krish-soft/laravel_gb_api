@@ -111,6 +111,35 @@ class InvoiceAccountingService
                         'common_reference' => $invoice->invoice_number,
                     ]);
 
+
+                    ## We need to collect tax on platform for reporting
+                    if (($owner->isSeller() || $owner->isDelivery()) && $taxAmount > 0) {
+                        $taxAccount = Account::getOrCreateByOwner(
+                            AccountOwnerTypeEnum::GOVERNMENT->value,
+                            null,
+                            PlatformAccountCodeEnum::PLATFORM_TAX->value
+                        );
+                        if (!$accountingService->ledgerExists(
+                            $taxAccount->id,
+                            AccountEntryTypeEnum::INVOICE_TAX_AMOUNT->value,
+                            Invoice::class,
+                            $invoice->id
+                        )) {
+                            $accountingService->createLedger($taxAccount, [
+                                'description' => "Tax for Invoice #{$invoice->invoice_number}",
+                                'credit' => $invoice->tax_amount,
+                                'debit'  => 0,
+                                'entry_type' => AccountEntryTypeEnum::INVOICE_TAX_AMOUNT->value,
+                                'status' => LedgerStatusEnum::AVAILABLE->value,
+                                'is_tax' => true,
+                                'source_type' => Invoice::class,
+                                'source_id' => $invoice->id,
+                                'source_code' => $invoice->invoice_number,
+                                'common_reference' => $invoice->invoice_number,
+                            ]);
+                        }
+                    }
+
                     //
                 }
 

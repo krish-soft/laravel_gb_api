@@ -137,31 +137,60 @@ class OrderAccountingService
                 foreach ($order->orderCharges as $charge) {
 
                     // $revenue = Account::where('accnt_code', PlatformAccountCodeEnum::PLATFORM_REVENUE->value)->firstOrFail();
-                    $revenueAccount = Account::getOrCreateByOwner(
-                        AccountOwnerTypeEnum::PLATFORM->value,
-                        null,
-                        PlatformAccountCodeEnum::PLATFORM_REVENUE->value
-                    );
 
-                    if (!$this->ledgerExists(
-                        $revenueAccount->id,
-                        AccountEntryTypeEnum::PLATFORM_CHARGE_BASE->value,
-                        get_class($charge),
-                        $charge->id
-                    )) {
-                        $accounting->createLedger($revenueAccount, [
-                            'description' => "Fees for Order #{$order->order_number}: {$charge->charge_name}",
-                            'credit' => $charge->taxable_amount,
-                            'debit'  => 0,
-                            'entry_type' => AccountEntryTypeEnum::PLATFORM_CHARGE_BASE->value,
-                            'status' => LedgerStatusEnum::AVAILABLE->value,
-                            'source_type' => get_class($charge),
-                            'source_id' => $charge->id,
-                            'source_code' => $order->order_number,
-                            'reference' => $payment->payment_code,
-                            'payment_reference' => $payment->gateway_order_id,
-                            'common_reference' => $order->order_number,
-                        ]);
+                    if (str_contains(strtolower($charge->charge_name), 'platform')) {
+                        //
+                        $revenueAccount = Account::getOrCreateByOwner(
+                            AccountOwnerTypeEnum::PLATFORM->value,
+                            null,
+                            PlatformAccountCodeEnum::PLATFORM_REVENUE->value
+                        );
+
+                        if (!$this->ledgerExists(
+                            $revenueAccount->id,
+                            AccountEntryTypeEnum::PLATFORM_CHARGE_BASE->value,
+                            get_class($charge),
+                            $charge->id
+                        )) {
+
+                            $accounting->createLedger($revenueAccount, [
+                                'description' => "Fees for Order #{$order->order_number}: {$charge->charge_name}",
+                                'credit' => $charge->taxable_amount,
+                                'debit'  => 0,
+                                'entry_type' => AccountEntryTypeEnum::PLATFORM_CHARGE_BASE->value,
+                                'status' => LedgerStatusEnum::AVAILABLE->value,
+                                'source_type' => get_class($charge),
+                                'source_id' => $charge->id,
+                                'source_code' => $order->order_number,
+                                'reference' => $payment->payment_code,
+                                'payment_reference' => $payment->gateway_order_id,
+                                'common_reference' => $order->order_number,
+                            ]);
+                        }
+
+                        //
+                    } else {
+
+                        if (!$this->ledgerExists(
+                            $clearingAccount->id,
+                            AccountEntryTypeEnum::PLATFORM_CHARGE_BASE->value,
+                            get_class($charge),
+                            $charge->id
+                        )) {
+                            $accounting->createLedger($clearingAccount, [
+                                'description' => "Fees for Order #{$order->order_number}: {$charge->charge_name}",
+                                'credit' => $charge->taxable_amount,
+                                'debit'  => 0,
+                                'entry_type' => AccountEntryTypeEnum::PLATFORM_CHARGE_BASE->value,
+                                'status' => LedgerStatusEnum::AVAILABLE->value,
+                                'source_type' => get_class($charge),
+                                'source_id' => $charge->id,
+                                'source_code' => $order->order_number,
+                                'reference' => $payment->payment_code,
+                                'payment_reference' => $payment->gateway_order_id,
+                                'common_reference' => $order->order_number,
+                            ]);
+                        }
                     }
                 }
 
