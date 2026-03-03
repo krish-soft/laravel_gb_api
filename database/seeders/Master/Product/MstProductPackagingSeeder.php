@@ -31,13 +31,13 @@ class MstProductPackagingSeeder extends Seeder
 
         // Standard packaging combinations
         $packagings = [
-            [
-                'pack_size' => 5,
-                'pack_unit' => 'kg',
-                'pack_type_unit' => 'bag',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+            // [
+            //     'pack_size' => 5,
+            //     'pack_unit' => 'kg',
+            //     'pack_type_unit' => 'bag',
+            //     'created_at' => now(),
+            //     'updated_at' => now(),
+            // ],
             [
                 'pack_size' => 10,
                 'pack_unit' => 'kg',
