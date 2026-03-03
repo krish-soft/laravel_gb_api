@@ -61,6 +61,8 @@ return new class extends Migration
             $table->string('reference', 100)->nullable(); // internal reference
             $table->string('remarks')->nullable(); // internal reference
 
+            $table->boolean('is_locked')->default(false)->nullable(); // to prevent changes after generation
+
             $table->timestamps();
             $table->softDeletes();
         });

@@ -20,17 +20,11 @@ return new class extends Migration
 
             $table->unsignedBigInteger('source_id')->nullable(); // order_item_id or return_item_id or refund_item_id
 
-            $table->string('product_code', 20)->nullable();
-            $table->string('product_name');
+            $table->string('item_code', 20)->nullable();
+            $table->string('item_name');
 
             $table->decimal('order_qty', 15, 2);
             $table->decimal('ship_qty', 15, 2)->default(0)->nullable();
-
-            $table->decimal('pack_size', 15, 2)->nullable();
-            $table->string('pack_unit', 20)->nullable();
-            $table->string('pack_type_unit', 50)->nullable();
-
-            $table->decimal('pack_price', 15, 2)->default(0)->nullable();
 
             $table->decimal('discount_amount', 15, 2)->default(0)->nullable();
 

@@ -74,15 +74,11 @@ class InvoiceService
 
                 // Base on order create all 
                 $invoice->invoiceItems()->create([
-                    'product_code' => $orderItem->product_code,
-                    'product_name' => $orderItem->product_name,
+                    'item_code' => $orderItem->product_code,
+                    'item_name' => $orderItem->product_name . "[$orderItem->pack_size $orderItem->pack_unit ($orderItem->pack_type_unit)]",
                     'order_qty' => $orderItem->order_qty,
                     'ship_qty' => $orderItem->ship_qty,
-                    'pack_size' => $orderItem->pack_size,
-                    'pack_unit' => $orderItem->pack_unit,
-                    'pack_type_unit' => $orderItem->pack_type_unit,
-                    'pack_price' => $orderItem->pack_price,
-                    'discount_amount' => $orderItem->discount_amount,
+
                     'taxable_amount' => $orderItem->taxable_amount,
                     'tax_amount' => $orderItem->tax_amount,
                     'total_amount' => $orderItem->total_amount,
@@ -125,14 +121,10 @@ class InvoiceService
 
                     // Now We need to refund that pacakge
                     $invoice->invoiceItems()->create([
-                        'product_name' => "Undelivered Package:$shipmentPackage->shipment_package_number ($shipmentPackage->package_number)",
+                        'item_name' => "Undelivered Package:$shipmentPackage->shipment_package_number ($shipmentPackage->package_number)",
                         'order_qty' => -1 * $shipmentPackage->qty, // negative for refund
                         'ship_qty' => 0,
-                        'pack_size' => $shipmentPackage->pack_size,
-                        'pack_unit' => $shipmentPackage->pack_unit,
-                        'pack_type_unit' => $shipmentPackage->pack_type_unit,
-                        'pack_price' => $shipmentPackage->pack_price,
-                        'discount_amount' => 0, // we can also calculate discount if needed
+
                         'taxable_amount' => -1 * $shipmentPackage->qty * $shipmentPackage->pack_price, // negative for refund
                         'tax_amount' => 0, // negative for refund
                         'total_amount' => -1 * ($shipmentPackage->qty * $shipmentPackage->pack_price), // negative for refund
@@ -293,14 +285,11 @@ class InvoiceService
                         $totalTaxableAmount += $itemTaxable;
 
                         $invoice->invoiceItems()->create([
-                            'product_code' => $product->product_code ?? 'N/A',
-                            'product_name' => $product->name ?? 'Unknown Product',
+                            'item_code' => $product->product_code ?? 'N/A',
+                            'item_name' => $product->name . " [Package: {$package->package_number}]",
                             'order_qty' => $package->sold_qty,
                             'ship_qty' => $shipQty,
-                            'pack_size' => $package->pack_size,
-                            'pack_unit' => $package->pack_unit,
-                            'pack_type_unit' => $package->pack_type_unit,
-                            'pack_price' => $package->pack_price,
+
                             'taxable_amount' => $itemTaxable,
                             'tax_amount' => 0,
                             'total_amount' => $itemTaxable,

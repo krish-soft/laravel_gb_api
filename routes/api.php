@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\v1\Admin\Common\Payment\PaymentReconcileApiControll
 use App\Http\Controllers\Api\v1\Admin\Common\Payment\PayoutApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Customer\CustomerApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Customer\CustomerLegalActionApiController;
+use App\Http\Controllers\Api\v1\Admin\Common\Invoice\InvoiceAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Payment\AdminPaymentApiController;
 use App\Http\Controllers\Api\v1\Admin\Market\MarketOrderAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Shipment\ShipmentPackageAdminApiController;
@@ -378,13 +379,15 @@ Route::group([
                 //
             });
 
+            Route::apiResource('invoice', InvoiceAdminApiController::class);
+
+
             // Razorpay Payments  
             Route::prefix('payment')->group(function () {
                 Route::get('/', [AdminPaymentApiController::class, 'getPaymentsList']);
                 Route::get('/{paymentId}', [AdminPaymentApiController::class, 'getPaymentDetails']);
                 Route::post('/reconcile', [PaymentReconcileApiController::class, 'reconcile']);
             });
-
 
 
             // Razorpay Payouts

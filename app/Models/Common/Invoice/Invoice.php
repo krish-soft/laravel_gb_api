@@ -46,6 +46,8 @@ class Invoice extends BaseModel
 
         'reference',
         'remarks',
+
+        'is_locked', // to prevent changes after generation
     ];
 
     // casts
@@ -56,6 +58,7 @@ class Invoice extends BaseModel
         'subtotal' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
+        'is_locked' => 'boolean',
     ];
 
     // relationships

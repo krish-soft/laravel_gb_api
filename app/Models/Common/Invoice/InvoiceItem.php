@@ -15,18 +15,13 @@ class InvoiceItem extends BaseModel
         'invoice_id',
         'source_id',
 
-        'product_code',
-        'product_name',
+        'item_code',
+        'item_name',
 
         'order_qty',
         'ship_qty',
 
-        'pack_size',
-        'pack_unit',
-        'pack_type_unit',
-
-        'pack_price',
-
+    
         'discount_amount',
 
         'taxable_amount',
@@ -56,7 +51,7 @@ class InvoiceItem extends BaseModel
         return $this->belongsTo(Invoice::class);
     }
 
-   
+
 
     //
 }
