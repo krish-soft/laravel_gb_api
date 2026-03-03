@@ -35,17 +35,22 @@ class InvoiceAccountingService
                 $ownerType = null;
                 $owner = $invoice->user;
 
+                $ownerType = Account::getOwnerTypeByUser($owner);
 
-                if ($owner->isSeller()) {
-                    $ownerType = AccountOwnerTypeEnum::SELLER->value;
-                } else if ($owner->isBuyer()) {
-                    $ownerType = AccountOwnerTypeEnum::BUYER->value;
-                } else if ($owner->isDelivery()) {
-                    $ownerType = AccountOwnerTypeEnum::DELIVERY->value;
-                } else {
+                if (!$ownerType) {
                     // Log::warning("Unknown user type for Invoice number: {$invoice->invoice_number}, User ID: {$owner->id}");
                     throw new RuntimeException("Unknown user type for Invoice number: {$invoice->invoice_number} and User ID: {$owner->id}");
                 }
+                // if ($owner->isSeller()) {
+                //     $ownerType = AccountOwnerTypeEnum::SELLER->value;
+                // } else if ($owner->isBuyer()) {
+                //     $ownerType = AccountOwnerTypeEnum::BUYER->value;
+                // } else if ($owner->isDelivery()) {
+                //     $ownerType = AccountOwnerTypeEnum::DELIVERY->value;
+                // } else {
+                //     // Log::warning("Unknown user type for Invoice number: {$invoice->invoice_number}, User ID: {$owner->id}");
+                //     throw new RuntimeException("Unknown user type for Invoice number: {$invoice->invoice_number} and User ID: {$owner->id}");
+                // }
 
                 // Invoice amount breakup
                 $baseAmount = $invoice->base_amount;

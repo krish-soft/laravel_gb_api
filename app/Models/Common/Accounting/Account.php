@@ -102,6 +102,21 @@ class Account extends BaseModel
     }
 
 
+    public static function getOwnerTypeByUser(User $user): string
+    {
+        $ownerType = null;
+
+        if ($user->isSeller()) {
+            $ownerType = AccountOwnerTypeEnum::SELLER->value;
+        } else if ($user->isBuyer()) {
+            $ownerType = AccountOwnerTypeEnum::BUYER->value;
+        } else if ($user->isDelivery()) {
+            $ownerType = AccountOwnerTypeEnum::DELIVERY->value;
+        }
+
+        return $ownerType;
+    }
+
 
 
     // public static function getOrCreateByOwner(

@@ -101,8 +101,15 @@ class OrderItem extends BaseModel
             return null;
         }
 
-        return \App\Models\User::select('id', 'name', 'user_code', 'nickname')
+        $data = \App\Models\User::select('id', 'name', 'user_code', 'nickname')
             ->find($sellerId);
+
+        // unsetRelation
+        $this->unsetRelation('productListingItem');
+        $this->unsetRelation('productListing');
+        // $this->unsetRelation('seller');
+
+        return $data;
     }
 
 
@@ -110,7 +117,12 @@ class OrderItem extends BaseModel
     public function getPickupDepotAttribute()
     {
 
-        return $this->pickupFulfillmentLocation->primaryDepot ?? $this->pickupFulfillmentLocation->user->primaryDepot ?? null;
+        $data = $this->pickupFulfillmentLocation->primaryDepot ?? $this->pickupFulfillmentLocation->user->primaryDepot ?? null;
+
+        $this->unsetRelation('pickupFulfillmentLocation');
+        $this->unsetRelation('user');
+
+        return $data;
     }
 
 

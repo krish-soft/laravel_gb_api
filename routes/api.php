@@ -41,6 +41,7 @@ use App\Http\Controllers\Api\v1\Admin\Settlement\SettlementAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Settlement\SettlementBatchAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Shipment\DriverShipmentAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Shipment\ShipmentAdminApiController;
+use App\Http\Controllers\Api\v1\User\Buyer\BuyerOrderApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\BuyerProductListingApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\CartApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\CheckoutApiController;
@@ -48,6 +49,7 @@ use App\Http\Controllers\Api\v1\User\Common\Auth\UserLoginApiController;
 use App\Http\Controllers\Api\v1\User\Common\Auth\UserLogoutApiController;
 use App\Http\Controllers\Api\v1\User\Common\Auth\UserRegisterApiController;
 use App\Http\Controllers\Api\v1\User\Common\Auth\UserResetPasswordApiController;
+use App\Http\Controllers\Api\v1\User\Common\EarningApiController;
 use App\Http\Controllers\Api\v1\User\Common\Fulfillment\FulfillmentLocationApiController;
 use App\Http\Controllers\Api\v1\User\Common\Legal\UserBankApiController;
 use App\Http\Controllers\Api\v1\User\Common\Legal\UserKycApiController;
@@ -244,7 +246,8 @@ Route::group([
                 'buyer-checker' // Custom Middleware to check if user is buyer
             ])->group(function () {
 
-                Route::get('products', [BuyerProductListingApiController::class, 'getBuyerProductListing']);
+                Route::get('products', [BuyerProductListingApiController::class, 'getBuyerProductSummary']);
+                Route::get('products/package/details/{productId}', [BuyerProductListingApiController::class, 'getBuyerProductPackages']);
 
                 // Cart Routes
                 Route::prefix('cart')->group(function () {
@@ -255,11 +258,16 @@ Route::group([
                     Route::delete('clear', [CartApiController::class, 'clearCart']);
                 });
 
-
                 // Checkout Routes
                 Route::prefix('checkout')->group(function () {
                     Route::get('preview', [CheckoutApiController::class, 'preview']);
                     Route::post('confirm', [CheckoutApiController::class, 'confirm']);
+                });
+
+                Route::prefix('order')->group(function () {
+                    Route::get('list', [BuyerOrderApiController::class, 'getBuyerOrders']);
+                    Route::get('details/{orderId}', [BuyerOrderApiController::class, 'getBuyerOrderDetails']);
+                    Route::get('shipment-packages/{orderId}', [BuyerOrderApiController::class, 'getOrderShipmentPackages']);
                 });
 
                 //
@@ -289,6 +297,13 @@ Route::group([
                 });
 
                 //
+            });
+
+            // Common for users 
+            Route::prefix('earnings')->group(function () {
+
+                //
+                Route::get('/', [EarningApiController::class, 'getEarningsData']);
             });
 
 
