@@ -14,8 +14,8 @@ class MarketOrderAccountingCmd extends Command
      * The name and signature of the console command.
      *
      * @var string
-        */
-        protected $signature = 'accounting:market-order
+     */
+    protected $signature = 'accounting:market-order
                             {startDate?} 
                             {endDate?}';
 
@@ -70,8 +70,8 @@ class MarketOrderAccountingCmd extends Command
         //
 
         foreach ($groupedByMarkets as $marketId => $marketOrders) {
-             $marketOrders->pluck('id')
-                ->chunk(10) // batch size per market
+            $marketOrders->pluck('id')
+                ->chunk(15) // batch size per market
                 ->each(function ($chunk) use (&$jobs) {
                     $jobs[] = new JobMarketOrderAccounting($chunk->toArray());
                 });
@@ -83,12 +83,10 @@ class MarketOrderAccountingCmd extends Command
         }
 
         Bus::batch($jobs)
-            ->name('CutOff Market Order Accounting Batch (Grouped by Market)')  
+            ->name('CutOff Market Order Accounting Batch (Grouped by Market)')
             ->onQueue(QueueEnum::ACCOUNTING_CUTOFF->value) // assign entire batch to cutoff queue
             ->dispatch();
 
         $this->info('Batch dispatched successfully.');
-    
-
     }
 }

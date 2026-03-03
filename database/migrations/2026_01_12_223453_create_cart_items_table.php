@@ -41,7 +41,7 @@ return new class extends Migration
             $table->unsignedInteger('order_qty');
 
             // Package snapshot
-            $table->decimal('pack_size', 10, 2);
+            $table->decimal('pack_size', 15, 2);
             $table->string('pack_unit', 20);
             $table->string('pack_type_unit', 50)->nullable();
 

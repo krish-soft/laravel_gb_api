@@ -51,17 +51,17 @@ return new class extends Migration {
             $table->string('variant_code', 20)->nullable();
             $table->string('variant_name')->nullable();
 
-            $table->decimal('order_qty', 10, 2);
-            $table->decimal('ship_qty', 10, 2)->default(0);
+            $table->decimal('order_qty', 15, 2);
+            $table->decimal('ship_qty', 15, 2)->default(0);
 
-            $table->decimal('pack_size', 10, 2);
+            $table->decimal('pack_size', 15, 2);
             $table->string('pack_unit', 20);
             $table->string('pack_type_unit', 50)->nullable();
 
             $table->decimal('pack_price', 15, 2)->default(0);
             $table->decimal('per_unit_price', 15, 2)->default(0)->nullable();
 
-            $table->decimal('discount_amount', 15, 2)->default(0);
+            $table->decimal('discount_amount', 15, 2)->default(0)->nullable();
             $table->string('discount_type', 30)->nullable();
 
             $table->decimal('taxable_amount', 15, 2); // ship_qty * per_unit_price - discount_amount = taxable_amount

@@ -141,7 +141,7 @@ class ChargeCalculationService
                 $charges[] = [
                     'charge_code' => $charge->code,
                     'charge_name' => $charge->name,
-
+                    'qty' => $totalQty,
                     'rule_type' => $ruleNo ? 'rule_based' : null,
                     'rule_no' => $ruleNo,
                     'rule_desc' => $ruleDesc,
@@ -472,6 +472,7 @@ class ChargeCalculationService
         return [
             'charge_code'   => $charge->code,
             'charge_name'   => $charge->name,
+            'qty'           => 1, // Platform fee is generally a single charge per order
             'rule_no'       => $rule['rule_no'],
             'rule_desc'     => $rule['description'],
             'taxable_amount' => round($rule['amount'], 2),
@@ -530,6 +531,7 @@ class ChargeCalculationService
             $charges[] = [
                 'charge_code'   => $charge->code,
                 'charge_name'   => $charge->name,
+                'qty'           => (float)$pkg['order_qty'],
                 'rule_no'       => $rule['rule_no'],
                 'rule_desc'     => $rule['description'],
                 'taxable_amount' => round($lineAmount, 2),

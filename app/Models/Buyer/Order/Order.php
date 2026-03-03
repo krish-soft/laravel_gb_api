@@ -6,6 +6,7 @@ use App\Models\BaseModel;
 use App\Models\Buyer\Cart\Cart;
 use App\Models\Common\Address;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
+use App\Models\Common\Invoice\Invoice;
 use App\Models\Common\Payment\Payment;
 use App\Models\Common\Shipment\ShipmentPackage;
 use App\Models\Master\Depot\MstDepot;
@@ -95,9 +96,9 @@ class Order extends BaseModel
         return $this->hasMany(OrderCharge::class, 'order_id', 'id');
     }
 
-    public function orderInvoice()
+    public function orderInvoices()
     {
-        return $this->hasOne(OrderInvoice::class, 'order_id', 'id');
+        return $this->hasMany(Invoice::class, 'order_id', 'id');
     }
 
     public function buyer()

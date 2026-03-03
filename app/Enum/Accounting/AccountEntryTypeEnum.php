@@ -9,6 +9,8 @@ enum AccountEntryTypeEnum: string
     case ORDER_TAX_AMOUNT           = 'order_tax_amount';
     case ORDER_CHARGE_AMOUNT        = 'order_charge_amount';
 
+    case INVOICE_BASE_AMOUNT        = 'invoice_base_amount';
+
         // 🔹 Platform charges (order-level)
     case PLATFORM_CHARGE_BASE    = 'platform_charge_base';
     case PLATFORM_CHARGE_TAX     = 'platform_charge_tax';

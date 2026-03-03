@@ -410,6 +410,9 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
 
             foreach ($packages as $package) {
 
+                $isMarketOrderPackage = $package->market_order_id !== null;
+                $dispatchDeliveredList = [];
+
                 if ($type === ShipmentStatusEnum::PICKUP->value) {
 
                     // Only process if package is picked and not already arrived
@@ -453,24 +456,64 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
 
                 if ($type === ShipmentStatusEnum::DISPATCH->value) {
 
+                    $dArr  = [
+                        'is_market_order' => $isMarketOrderPackage,
+                        'order_id' => $package->order_id,
+                        'market_order_id' => $package->market_order_id,
+                    ];
+
                     if ($package->buyer_status === ShipmentStatusEnum::DELIVERED->value) {
                         $package->update([
                             'status' => ShipmentStatusEnum::DELIVERED->value,
                             'delivered_at' => now(),
                         ]);
+                        $dArr['status'] = ShipmentStatusEnum::DELIVERED->value;
                     } else {
-                        $package->update([
-                            'status' => $package->buyer_status,
-                        ]);
+
+                        if ($package->seller_status == ShipmentStatusEnum::NOT_PICKED_UP->value) {
+                            $package->update([
+                                'status' => $package->seller_status,
+                            ]);
+                            $dArr['status'] = $package->seller_status;
+                        }
+                    }
+
+                    $dispatchDeliveredList[] = $dArr;
+                }
+            }
+            // Check for dispatch if all or order_id or marker_order_id is same and status have delivereed then mark that order as delivered because in dispatch we can have multiple package for same order or market order and if any of them delivered then we can say order is delivered because buyer receive at least one package of that order.
+            if ($type === ShipmentStatusEnum::DISPATCH->value) {
+
+                $groupedByOrder = collect($dispatchDeliveredList)->groupBy(function ($item) {
+                    return $item['is_market_order'] ? 'market_order_' . $item['market_order_id'] : 'order_' . $item['order_id'];
+                });
+
+                foreach ($groupedByOrder as $group) {
+
+                    $delivered = $group->contains('status', ShipmentStatusEnum::DELIVERED->value);
+
+                    if ($delivered) {
+
+                        $firstItem = $group->first();
+
+                        if ($firstItem['is_market_order']) {
+                            // Mark Market Order as Delivered
+                            \App\Models\Market\MarketOrder::where('id', $firstItem['market_order_id'])
+                                ->update(['delivery_status' => OrderStatusEnum::DELIVERED->value]);
+                        } elseif ($firstItem['order_id']) {
+                            // Mark Order as Delivered
+                            \App\Models\Buyer\Order\Order::where('id', $firstItem['order_id'])
+                                ->update(['delivery_status' => OrderStatusEnum::DELIVERED->value]);
+                        }
                     }
                 }
             }
 
             /*
-        |--------------------------------------------------------------------------
-        | 3️⃣ COMPLETE SHIPMENT
-        |--------------------------------------------------------------------------
-        */
+            |--------------------------------------------------------------------------
+            | 3️⃣ COMPLETE SHIPMENT
+            |--------------------------------------------------------------------------
+            */
 
             $driverShipment->update([
                 'completed_at' => now(),

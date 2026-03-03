@@ -21,16 +21,16 @@ return new class extends Migration
 
             $table->string('picture')->nullable();
 
-            $table->decimal('pack_size', 10, 2);
+            $table->decimal('pack_size', 15, 2);
             $table->string('pack_unit', 20);
             $table->string('pack_type_unit', 50)->nullable(); // Bag, Box, Bottle
 
-            $table->decimal('length_in', 10, 2)->nullable();
-            $table->decimal('width_in', 10, 2)->nullable();
-            $table->decimal('height_in', 10, 2)->nullable(); // inch
+            $table->decimal('length_in', 15, 2)->nullable();
+            $table->decimal('width_in', 15, 2)->nullable();
+            $table->decimal('height_in', 15, 2)->nullable(); // inch
 
-            $table->decimal('weight_kg', 10, 2)->nullable();
-            $table->decimal('volume_cu_in', 10, 2)->nullable();
+            $table->decimal('weight_kg', 15, 2)->nullable();
+            $table->decimal('volume_cu_in', 15, 2)->nullable();
 
             $table->boolean('is_active')->default(true)->nullable();
 

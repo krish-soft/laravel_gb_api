@@ -51,10 +51,10 @@ return new class extends Migration
             $table->string('variant_code', 20)->nullable();
             $table->string('variant_name', 100)->nullable();
 
-            $table->decimal('order_qty', 10, 2);
-            $table->decimal('ship_qty', 10, 2)->default(0);
+            $table->decimal('order_qty', 15, 2);
+            $table->decimal('ship_qty', 15, 2)->default(0);
 
-            $table->decimal('pack_size', 10, 2);
+            $table->decimal('pack_size', 15, 2);
             $table->string('pack_unit', 20);
             $table->string('pack_type_unit', 50)->nullable();
 

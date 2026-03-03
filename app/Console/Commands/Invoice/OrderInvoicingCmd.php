@@ -5,18 +5,19 @@ namespace App\Console\Commands\Invoice;
 use App\Enum\Common\Order\OrderStatusEnum;
 use App\Enum\Queue\QueueEnum;
 use App\Jobs\Invoice\JobOrderInvoice;
+use App\Jobs\Invoice\JobOrderInvoicing;
 use App\Models\Buyer\Order\Order;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Bus;
 
-class OrderInvoiceCmd extends Command
+class OrderInvoicingCmd extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'invoice:buyer-order
+    protected $signature = 'invoicing:order
                             {startDate?} 
                             {endDate?} {isEnforce=false}';
 
@@ -25,7 +26,7 @@ class OrderInvoiceCmd extends Command
      *
      * @var string
      */
-    protected $description = 'Generate invoices for buyer orders that do not have invoices yet';
+    protected $description = 'Generate invoices data from order/marketorder/productlising and settlement data for orders that do not have invoices yet.';
 
     /**
      * Execute the console command.
@@ -39,22 +40,18 @@ class OrderInvoiceCmd extends Command
 
         $isEnforce = filter_var($this->argument('isEnforce'), FILTER_VALIDATE_BOOLEAN); // To Rebuild again in case setltment done again or any reason to enforce rebuild
 
-        $this->info("Buyer  Orders from {$startDate} to {$endDate} " . ($isEnforce ? '(Enforce Rebuild)' : ''));
+        $this->info("Invoicing data from {$startDate} to {$endDate} " . ($isEnforce ? '(Enforce Rebuild)' : ''));
 
 
         // 
         $orders = Order::query()
-            // ->whereBetween('created_at', [
-            //     \Carbon\Carbon::parse($startDate)->startOfDay(),
-            //     \Carbon\Carbon::parse($endDate)->endOfDay(),
-            // ])
             ->whereBetween('order_date', [
                 \Carbon\Carbon::parse($startDate)->startOfDay(),
                 \Carbon\Carbon::parse($endDate)->endOfDay(),
             ])
             ->whereIn('order_status', [
-                OrderStatusEnum::SETTLED->value,
-                OrderStatusEnum::ACCOUNTED->value,
+                OrderStatusEnum::CONFIRMED->value,
+                // OrderStatusEnum::ACCOUNTED->value,
                 OrderStatusEnum::INVOICED->value
             ])->WhereIn('delivery_status', [
                 OrderStatusEnum::SHIPPED->value,
@@ -66,7 +63,7 @@ class OrderInvoiceCmd extends Command
 
 
         if ($orders->isEmpty()) {
-            $this->warn('No buyer orders eligible for cutoff.');
+            $this->warn('No buyer orders eligible for invoicing.');
             return;
         }
 
@@ -75,13 +72,12 @@ class OrderInvoiceCmd extends Command
         $jobs = [];
 
         //
-
         foreach ($groupedByBuyers as $buyerId => $buyerOrders) {
 
             $buyerOrders->pluck('id')
-                ->chunk(10) // batch size per buyer
+                ->chunk(15) // batch size per buyer // for each buyer we can create one job with all orders, or chunk if needed
                 ->each(function ($chunk) use (&$jobs, $isEnforce) {
-                    $jobs[] = new JobOrderInvoice($chunk->toArray(), $isEnforce);
+                    $jobs[] = new JobOrderInvoicing($chunk->toArray(), $isEnforce);
                 });
         }
 
@@ -91,8 +87,8 @@ class OrderInvoiceCmd extends Command
         }
 
         Bus::batch($jobs)
-            ->name('Order Invoice Generation Batch (Grouped by Buyer)')
-            ->onQueue(QueueEnum::INVOICE->value) // assign entire batch to cutoff queue
+            ->name('Order Invoicing Batch (Grouped by Buyer)')
+            ->onQueue(QueueEnum::INVOICING->value) // assign entire batch to invoicing queue
             ->dispatch();
 
         $this->info('Batch dispatched successfully.');

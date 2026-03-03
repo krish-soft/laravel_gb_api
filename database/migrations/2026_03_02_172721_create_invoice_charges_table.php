@@ -11,24 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('order_charges', function (Blueprint $table) {
+        Schema::create('invoice_charges', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('order_id')
-                ->constrained('orders')
+            $table->foreignId('invoice_id')
+                ->constrained('invoices')
                 ->cascadeOnDelete();
 
-            $table->string('order_number', 20)->nullable();
-
-            $table->string('charge_code', 50)->nullable();
             $table->string('charge_name', 100);
 
             $table->decimal('qty', 15, 2)->default(0)->nullable();
             $table->decimal('ship_qty', 15, 2)->default(0)->nullable();
-
-            $table->string('rule_type', 50)->nullable();
-            $table->string('rule_no', 30)->nullable();
-            $table->string('rule_desc', 150)->nullable();
 
             $table->decimal('taxable_amount', 15, 2);
             $table->decimal('tax_amount', 15, 2)->default(0)->nullable();
@@ -36,9 +29,6 @@ return new class extends Migration
 
             $table->timestamps();
             $table->softDeletes();
-
-            // indexes
-            $table->index(['order_id', 'charge_code']);
         });
     }
 
@@ -47,6 +37,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('order_charges');
+        Schema::dropIfExists('invoice_charges');
     }
 };

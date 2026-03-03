@@ -1,53 +1,54 @@
 <?php
 
-namespace App\Console\Commands\Accounting;
+namespace App\Console\Commands\Invoice;
 
 use App\Enum\Queue\QueueEnum;
-use App\Jobs\Accounting\JobProductListingAccounting;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Bus;
 use App\Models\Seller\Product\ProductListing;
-use App\Jobs\CutOff\JobCutOffProductListing;
-use Illuminate\Support\Facades\Log;
+use App\Jobs\Invoice\JobProductListingInvoicing;
 
-class ProductListingAccountingCmd extends Command
+class ProductListingInvoicingCmd extends Command
 {
-    protected $signature = 'accounting:product-listing
+    protected $signature = 'invoicing:product-listing
                             {startDate?} 
                             {endDate?}';
 
-    protected $description = 'Batch accounting for product listings.';
+    protected $description = 'Batch invoicing for product listings.';
 
     public function handle()
     {
         $startDate = $this->argument('startDate') ?? now()->subDay()->toDateString();
         $endDate   = $this->argument('endDate')   ?? now()->toDateString();
 
-        $this->info("Product Listing accounting from {$startDate} to {$endDate}");
+        $this->info("Invoicing from {$startDate} to {$endDate}");
 
         /*
     |--------------------------------------------------------------------------
-    | STEP 1 — Pull ONLY listings eligible for accounting
+    | STEP 1 — Pull ONLY listings eligible for invoicing
     |--------------------------------------------------------------------------
     */
         $listings = ProductListing::query()
             ->select(['id', 'seller_id']) // IMPORTANT → reduce memory
             ->where('is_active', true)
+            // ->where('is_expired', false)
             ->where('is_cutoff', true)
-            // ->whereBetween('created_at', [
-            //     \Carbon\Carbon::parse($startDate)->startOfDay(),
-            //     \Carbon\Carbon::parse($endDate)->endOfDay(),
-            // ])
             ->whereBetween('listing_date', [
                 $startDate,
                 $endDate
             ])
+            // ->whereHas('listingItems.listingPackages', function ($q) {
+            //     // $q->where('is_locked', false)
+            //     //     ->where('is_sold', false)
+            //     //     ->whereRaw('qty > sold_qty');
+            //     $q->whereRaw('qty > sold_qty');
+            // })
             ->orderBy('seller_id')
             ->orderBy('id')
             ->get();
 
         if ($listings->isEmpty()) {
-            $this->warn('No product listings eligible for cutoff.');
+            $this->warn('No listings eligible for invoicing.');
             return;
         }
 
@@ -60,8 +61,6 @@ class ProductListingAccountingCmd extends Command
 
         $jobs = [];
 
-        // Log::info("Total product listings for accounting: {$listings->count()} across " . $groupedBySeller->count() . " sellers.");
-
         /*
     |--------------------------------------------------------------------------
     | STEP 3 — Chunk per seller
@@ -70,10 +69,10 @@ class ProductListingAccountingCmd extends Command
         foreach ($groupedBySeller as $sellerId => $sellerListings) {
 
             $sellerListings->pluck('id')
-                ->chunk(5) // batch size per seller
+                ->chunk(15) // batch size per seller
                 ->each(function ($chunk) use (&$jobs) {
 
-                    $jobs[] = new JobProductListingAccounting($chunk->toArray());
+                    $jobs[] = new JobProductListingInvoicing($chunk->toArray());
                 });
         }
 
@@ -88,8 +87,8 @@ class ProductListingAccountingCmd extends Command
     |--------------------------------------------------------------------------
     */
         Bus::batch($jobs)
-            ->name('Accounting Product Listing Batch (Grouped by Seller)')
-            ->onQueue(QueueEnum::ACCOUNTING_CUTOFF->value) // assign entire batch to accounting queue
+            ->name('Product Listing Invoicing Batch (Grouped by Seller)')
+            ->onQueue(QueueEnum::INVOICING->value) // assign entire batch to invoicing queue
             ->dispatch();
 
         $this->info('Batch dispatched successfully.');

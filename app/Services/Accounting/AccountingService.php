@@ -31,8 +31,8 @@ class AccountingService
 
                 'description'       => $data['description'] ?? null,
 
-                'credit'            => $credit,
-                'debit'             => $debit,
+                'credit'            => abs($credit), // alwasy positive in ledger, we will use entry_type to determine how to apply
+                'debit'             => abs($debit), // alwasy positive in ledger, we will use entry_type to determine how to apply
 
                 'entry_type'        => $data['entry_type'],
                 'status'            => $data['status'] ?? LedgerStatusEnum::PENDING->value,

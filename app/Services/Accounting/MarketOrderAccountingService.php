@@ -118,7 +118,7 @@ class MarketOrderAccountingService
             }
 
             // We can also do it per item basis if we want to track earnings per item, but for now we are doing it on order basis.
-            app(ShipmentPackageAccountingService::class)->processMarketOrderShipmentPackageAccounting($marketOrder);
+            // app(ShipmentPackageAccountingService::class)->processMarketOrderShipmentPackageAccounting($marketOrder);
 
 
             // foreach ($marketOrder->marketOrderItems as $item) {

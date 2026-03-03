@@ -51,12 +51,14 @@ class ShipmentPackage extends Model
         'product_name',
 
         'qty',
+        'ship_qty',
+
         'pack_size',
         'pack_price',
         'pack_unit',
         'pack_type_unit',
 
-        
+
         'shipment_package_number',
         'package_number',
 
@@ -85,9 +87,12 @@ class ShipmentPackage extends Model
 
     protected $casts = [
         'qty' => 'integer',
+        'ship_qty' => 'integer',
+
         'pack_size' => 'decimal:2',
         'pack_price' => 'decimal:2',
-        'shipment_date' => 'date',
+        
+        'shipment_date' => 'date:Y-m-d',
 
         'packed_at' => 'datetime',
         'picked_up_at' => 'datetime',

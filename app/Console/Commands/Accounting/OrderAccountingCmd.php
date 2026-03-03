@@ -72,7 +72,7 @@ class OrderAccountingCmd extends Command
         foreach ($groupedByBuyers as $buyerId => $buyerOrders) {
 
             $buyerOrders->pluck('id')
-                ->chunk(10) // batch size per buyer
+                ->chunk(15) // batch size per buyer
                 ->each(function ($chunk) use (&$jobs) {
                     $jobs[] = new JobOrderAccounting($chunk->toArray());
                 });

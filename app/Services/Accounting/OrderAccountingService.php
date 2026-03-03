@@ -32,6 +32,10 @@ class OrderAccountingService
                     throw new RuntimeException("Order or Payment not found for Order ID: {$order->id} and Payment ID: {$payment->id}");
                 }
 
+                if ($order->total_amount != $payment->amount) {
+                    throw new RuntimeException("Payment amount does not match order total for Order ID: {$order->id} and Payment ID: {$payment->id}");
+                }
+
                 $accounting = app(AccountingService::class);
 
                 // get total of taxable orderItems 
@@ -86,43 +90,44 @@ class OrderAccountingService
                 | 2. SELLER EARNINGS (ITEM TAXABLE AMOUNT ONLY)
                 |-------------------------------------------------
                 */
-                foreach ($order->orderItems as $item) {
+                // Doing settle on invoice 
+                // foreach ($order->orderItems as $item) {
 
-                    // seller 
-                    $seller = $item->seller;
-                    // if not fail transactions 
-                    if (!$seller) {
-                        throw  new RuntimeException("Seller not found for Order Item ID: {$item->id}");
-                        // return;
-                    }
+                //     // seller 
+                //     $seller = $item->seller;
+                //     // if not fail transactions 
+                //     if (!$seller) {
+                //         throw  new RuntimeException("Seller not found for Order Item ID: {$item->id}");
+                //         // return;
+                //     }
 
-                    $sellerAccount = Account::getOrCreateByOwner(
-                        AccountOwnerTypeEnum::SELLER->value,
-                        $seller->id
-                    );
+                //     $sellerAccount = Account::getOrCreateByOwner(
+                //         AccountOwnerTypeEnum::SELLER->value,
+                //         $seller->id
+                //     );
 
-                    if (!$this->ledgerExists(
-                        $sellerAccount->id,
-                        AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
-                        OrderItem::class,
-                        $item->id
-                    )) {
-                        // Not Taxable base on ship qty * price because we are recording tax in separate ledger for better reporting and future use
-                        $accounting->createLedger($sellerAccount, [
-                            'description' => "Earnings for Order #{$order->order_number}: {$item->product_name} x {$item->order_qty}",
-                            'credit' => $item->taxable_amount, // we are storing in each accounts  ,
-                            'debit'  => 0,
-                            'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
-                            'status' => LedgerStatusEnum::AVAILABLE->value,
-                            'source_type' => OrderItem::class,
-                            'source_id' => $item->id,
-                            'source_code' => $order->order_number,
-                            'reference' => $payment->payment_code,
-                            'payment_reference' => $payment->gateway_order_id,
-                            'common_reference' => $order->order_number,
-                        ]);
-                    }
-                }
+                //     if (!$this->ledgerExists(
+                //         $sellerAccount->id,
+                //         AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
+                //         OrderItem::class,
+                //         $item->id
+                //     )) {
+                //         // Not Taxable base on ship qty * price because we are recording tax in separate ledger for better reporting and future use
+                //         $accounting->createLedger($sellerAccount, [
+                //             'description' => "Earnings for Order #{$order->order_number}: {$item->product_name} x {$item->order_qty}",
+                //             'credit' => $item->taxable_amount, // we are storing in each accounts  ,
+                //             'debit'  => 0,
+                //             'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
+                //             'status' => LedgerStatusEnum::AVAILABLE->value,
+                //             'source_type' => OrderItem::class,
+                //             'source_id' => $item->id,
+                //             'source_code' => $order->order_number,
+                //             'reference' => $payment->payment_code,
+                //             'payment_reference' => $payment->gateway_order_id,
+                //             'common_reference' => $order->order_number,
+                //         ]);
+                //     }
+                // }
 
                 /*
                 |-------------------------------------------------
@@ -215,7 +220,7 @@ class OrderAccountingService
                         'credit' => $order->total_amount, // we are storing in each accounts  ,
                         'debit'  => 0,
                         'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
-                        'status' => LedgerStatusEnum::SETTLED->value,
+                        'status' => LedgerStatusEnum::AVAILABLE->value, // Because Actual How much we sold to them  will finalize letter so
                         'source_type' => Order::class,
                         'source_id' => $order->id,
                         'source_code' => $order->order_number,
@@ -224,28 +229,25 @@ class OrderAccountingService
                         'common_reference' => $order->order_number,
                     ]);
 
-                    $accounting->createLedger($buyerAccount, [
-                        'description' => "Payment paid for Order #{$order->order_number}",
-                        'credit' => 0, // we are storing in each accounts  ,
-                        'debit'  => $order->total_amount,
-                        'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
-                        'status' => LedgerStatusEnum::SETTLED->value,
-                        'source_type' => Order::class,
-                        'source_id' => $order->id,
-                        'source_code' => $order->order_number,
-                        'reference' => $payment->payment_code,
-                        'payment_reference' => $payment->gateway_order_id,
-                        'common_reference' => $order->order_number,
-                    ]);
+                    // Debit we dont becasue we will invoice final that will debit it
+                    // $accounting->createLedger($buyerAccount, [
+                    //     'description' => "Payment paid for Order #{$order->order_number}",
+                    //     'credit' => 0, // we are storing in each accounts  ,
+                    //     'debit'  => $order->total_amount,
+                    //     'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
+                    //     'status' => LedgerStatusEnum::SETTLED->value,
+                    //     'source_type' => Order::class,
+                    //     'source_id' => $order->id,
+                    //     'source_code' => $order->order_number,
+                    //     'reference' => $payment->payment_code,
+                    //     'payment_reference' => $payment->gateway_order_id,
+                    //     'common_reference' => $order->order_number,
+                    // ]);
                 }
 
 
 
-                ## Now to Reconcile regarding package base 
-
-                app(ShipmentPackageAccountingService::class)
-                    ->processOrderShipmentPackageAccounting($order);
-
+            
 
 
                 //

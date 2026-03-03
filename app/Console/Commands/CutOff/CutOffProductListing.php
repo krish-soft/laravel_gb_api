@@ -70,7 +70,7 @@ class CutOffProductListing extends Command
         foreach ($groupedBySeller as $sellerId => $sellerListings) {
 
             $sellerListings->pluck('id')
-                ->chunk(5) // batch size per seller
+                ->chunk(15) // batch size per seller
                 ->each(function ($chunk) use (&$jobs) {
 
                     $jobs[] = new JobCutOffProductListing($chunk->toArray());

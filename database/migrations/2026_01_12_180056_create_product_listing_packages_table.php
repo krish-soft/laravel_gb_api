@@ -25,18 +25,19 @@ return new class extends Migration
             $table->string('listing_code', 50)->nullable();
 
             // Package Quantity
-            $table->decimal('qty', 10, 2); // total qty in the package
-            $table->decimal('sold_qty', 10, 2)->default(0); // qty sold from the package
+            $table->decimal('qty', 15, 2); // total qty in the package
+            $table->decimal('sold_qty', 15, 2)->default(0); // qty sold from the package
+            $table->decimal('ship_qty', 15, 2)->default(0); // qty shipped from the package
 
             // for accounting 
-            $table->decimal('reverse_qty', 10, 2)->default(0); // qty reversed back to available
+            $table->decimal('reverse_qty', 15, 2)->default(0); // qty reversed back to available
             $table->decimal('reverse_amount', 15, 2)->default(0); // amount reversed back to available
 
             // when cutoff we have to store what actual qty listed in the package for future reference, as qty can be updated due to returns and cancellations
-            $table->decimal('actual_qty', 10, 2)->nullable(); // total qty in the package
+            $table->decimal('actual_qty', 15, 2)->nullable(); // total qty in the package
 
             // Package Details
-            $table->decimal('pack_size', 10, 2);
+            $table->decimal('pack_size', 15, 2);
             $table->string('pack_unit', 20); //  kg, g, L, ml, pcs
             $table->string('pack_type_unit', 50)->nullable(); // bag, crate
             $table->decimal('pack_base_price', 15, 2)->nullable(); // total_price for the package

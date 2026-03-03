@@ -88,20 +88,19 @@ return new class extends Migration
 
 
             $table->string('order_type', 20)->nullable(); // normal, market, etc.
-
-
             $table->date('shipment_date')->nullable();
 
             $table->string('product_code', 50)->nullable();
             $table->string('product_name')->nullable();
 
             // One row = one physical package
-            $table->decimal('qty', 10, 2)->default(1);
+            $table->decimal('qty', 15, 2)->default(1);
+            $table->decimal('ship_qty', 15, 2)->default(0)->nullable();
 
             // Package content
-            $table->decimal('pack_size', 10, 2)->nullable();
+            $table->decimal('pack_size', 15, 2)->nullable();
             $table->string('pack_unit', 20)->nullable();
-            $table->decimal('pack_price', 10, 2)->nullable();
+            $table->decimal('pack_price', 15, 2)->nullable();
             $table->string('pack_type_unit', 50)->nullable();
 
             // Identifiers

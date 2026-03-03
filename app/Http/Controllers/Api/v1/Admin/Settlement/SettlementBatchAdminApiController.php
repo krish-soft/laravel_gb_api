@@ -118,18 +118,37 @@ class SettlementBatchAdminApiController extends ApiResponseWithAdminAuthControll
         $settlementAccount = SettlementAccount::findOrFail($id);
         $settlementAccountLedgers = $settlementAccount->settlementAccountLedgers;
 
-        if (!$settlementAccountLedgers->isEmpty() || $request->input('status') === 'settled') {
-            return $this->errorResponse('Cannot mark as settled. There are ledger entries that are not marked as settled.', 400);
-        }
+        $settlementAccountBalance = round($settlementAccount->amount, 2);
+        $settlementPlatformAccountBalance = round($settlementAccount->platformAccount->available_balance, 2);
+
+        $settlementAccountLedgersBalance = round($settlementAccountLedgers->sum(fn($sal) => $sal->credit - $sal->debit), 2);
+
+        $difference = abs($settlementAccountBalance - $settlementAccountLedgersBalance);
+
+        $differencePlatform = $settlementPlatformAccountBalance - $settlementAccountBalance;
+
+        Log::info([
+            'settlement_account_id' => $settlementAccount->id,
+            'settlement_account_balance' => $settlementAccountBalance,
+            'settlement_platform_account_balance' => $settlementPlatformAccountBalance,
+            'settlement_account_ledgers_balance' => $settlementAccountLedgersBalance,
+            'difference' => $difference,
+            'difference_platform' => $differencePlatform,
+        ]);
+
+        // if (!$settlementAccountLedgers->isEmpty() || $request->input('status') === 'settled') {
+        // if (!$settlementAccountLedgers->isEmpty() && $settlementAccountLedgers->where('accountLedger.status', '!=', LedgerStatusEnum::SETTLED->value)->isNotEmpty()) {
+        //     return $this->errorResponse('Cannot mark as settled. There are ledger entries that are not marked as settled.', 400);
+        // }
 
         // Check total of ledgers and settlement account amount should be same for settlement otherwise we have to do reversal entry for that ledger which is not marked as settled and then mark settlement account as settled
 
-        if ($settlementAccount->amount != $settlementAccountLedgers->sum(fn($sal) => $sal->credit - $sal->debit)) {
+        if ($difference > 0) {
             return $this->errorResponse('Cannot mark as settled. Total of ledger entries does not match settlement account amount.', 400);
         }
 
         // Check Platform account balance should be sufficient for settlement otherwise we can not mark as settled because we have to create ledger entry for platform account when we mark settlement account as settled so if platform account balance is not sufficient then we can not mark settlement account as settled because it will create problem in future when we will try to settle that ledger entry because it will be already marked as settled and we can not mark it as settled again so we have to check platform account balance before marking settlement account as settled
-        if ($settlementAccount->platformAccount->available_balance < $settlementAccount->amount) {
+        if ($differencePlatform < 0) {
             return $this->errorResponse('Cannot mark as settled. Platform account balance is not sufficient for settlement.', 400);
         }
 
@@ -169,6 +188,7 @@ class SettlementBatchAdminApiController extends ApiResponseWithAdminAuthControll
                         // its reverse base on what we have to do so do not change here
                         $debitOrCredit = $settlementAccount->amount > 0 ? 'debit' : 'credit';
 
+                        // User Acccount Always CREDIT
                         // First settlement Account Ledger entry for User Account (Debit)
                         $ledger =   $accountingService->createLedger(
                             $settlementAccount->userAccount,
@@ -176,6 +196,8 @@ class SettlementBatchAdminApiController extends ApiResponseWithAdminAuthControll
                                 'entry_type' => AccountEntryTypeEnum::SETTLEMENT->value,
                                 'source_type' => SettlementAccount::class,
                                 'source_id' => $settlementAccount->id,
+                                // 'debit' => 0,
+                                // 'credit' => abs($settlementAccount->amount),
                                 'debit' => $debitOrCredit === 'debit' ? $settlementAccount->amount : 0,
                                 'credit' => $debitOrCredit === 'credit' ? $settlementAccount->amount : 0,
                                 'status' => LedgerStatusEnum::AVAILABLE->value,
@@ -200,6 +222,7 @@ class SettlementBatchAdminApiController extends ApiResponseWithAdminAuthControll
                         }
 
 
+                        // Platform accoutn alwasy DEBIT becasue we are paying from that
                         ## FOr Platformaccount we have to mark as settled when user account is marked as settled because we are creating ledger entry for platform account when user account is marked as settled so we can not mark platform account ledger entry as settled before that because it will create problem in case if user account ledger entry is not created due to any reason and we have marked platform account ledger entry as settled then it will create problem in future when we will try to settle that ledger entry because it will be already marked as settled and we can not mark it as settled again so we have to mark it as settled when user account is marked as settled
                         $platformLedgerExist = $accountingService->ledgerExists(
                             $settlementAccount->platformAccount->id,
@@ -215,8 +238,15 @@ class SettlementBatchAdminApiController extends ApiResponseWithAdminAuthControll
                                     'entry_type' => AccountEntryTypeEnum::SETTLEMENT->value,
                                     'source_type' => SettlementAccount::class,
                                     'source_id' => $settlementAccount->id,
-                                    'debit' => $debitOrCredit === 'credit' ? $settlementAccount->amount : 0,
-                                    'credit' => $debitOrCredit === 'debit' ? $settlementAccount->amount : 0,
+                                    // 'debit' => abs($settlementAccount->amount),
+                                    // 'credit' => 0,
+                                    // in platform as it due to
+                                    'debit' => $debitOrCredit === 'debit' ? $settlementAccount->amount : 0,
+                                    'credit' =>  $debitOrCredit === 'credit' ? $settlementAccount->amount : 0,
+
+                                    // ORG
+                                    // 'debit' => $debitOrCredit === 'credit' ? $settlementAccount->amount : 0,
+                                    // 'credit' => $debitOrCredit === 'debit' ? $settlementAccount->amount : 0,
                                     'status' => LedgerStatusEnum::AVAILABLE->value, // directly mark as settled because it will be marked as settled when user account is marked as settled
                                     'description' => "Settlement for Account Code: {$settlementAccount->platformAccount->accnt_code}, Settlement Batch: {$batch->batch_no}",
                                     'parent_ledger_id' => $ledger->id, // set parent ledger id to user account ledger entry id because it will be marked as settled when user account is marked as settled so we can easily track that which platform account ledger entry is related to which user account ledger entry

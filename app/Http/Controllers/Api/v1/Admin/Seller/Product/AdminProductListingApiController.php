@@ -67,7 +67,7 @@ class AdminProductListingApiController extends ApiResponseWithAuthController
             'listingItems',
             'listingItems.product',
             'listingItems.listingPackages',
-            'productListingInvoice',
+            'productListingInvoices',
             'shipmentPackages.order',
             'shipmentPackages.marketOrder',
         ])

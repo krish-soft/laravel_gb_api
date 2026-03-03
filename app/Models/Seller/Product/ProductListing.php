@@ -3,7 +3,9 @@
 namespace App\Models\Seller\Product;
 
 use App\Models\BaseModel;
+use App\Models\Buyer\Order\OrderItem;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
+use App\Models\Common\Invoice\Invoice;
 use App\Models\Common\Log\ActivityLog;
 use App\Models\Common\Shipment\ShipmentPackage;
 use App\Models\Master\Unique\MstSeqCodeGenerator;
@@ -106,14 +108,26 @@ class ProductListing extends BaseModel
         return $this->belongsTo(FulfillmentLocation::class, 'fulfillment_location_id');
     }
 
-    public function productListingInvoice()
+    public function productListingInvoices()
     {
-        return $this->hasOne(ProductListingInvoice::class, 'product_listing_id');
+        return $this->hasMany(Invoice::class, 'product_listing_id', 'id');
     }
 
     public function shipmentPackages()
     {
         return $this->hasMany(ShipmentPackage::class, 'product_listing_id');
+    }
+
+    public function orderItems()
+    {
+        return $this->hasManyThrough(
+            OrderItem::class,
+            ProductListingItem::class,
+            'product_listing_id', // Foreign key on listing item
+            'product_listing_item_id', // Foreign key on order item
+            'id', // Local key on listing
+            'id' // Local key on listing item
+        );
     }
 
 

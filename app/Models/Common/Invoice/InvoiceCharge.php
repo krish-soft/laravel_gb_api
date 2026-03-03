@@ -1,28 +1,22 @@
 <?php
 
-namespace App\Models\Buyer\Order;
+namespace App\Models\Common\Invoice;
 
 use App\Models\BaseModel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class OrderCharge extends BaseModel
+class InvoiceCharge extends BaseModel
 {
     //
+
     use SoftDeletes;
 
     protected $fillable = [
-        'order_id',
-        'order_number',
-
+        'invoice_id',
         'charge_name',
-        'charge_code',
         'qty',
-
-        'rule_type',
-        'rule_no',
-        'rule_desc',
-
+        'ship_qty',
         'taxable_amount',
         'tax_amount',
         'total_amount',
@@ -30,16 +24,17 @@ class OrderCharge extends BaseModel
 
     // casts
     protected $casts = [
-        'qty' => 'decimal:2',
-        'taxable_amount' => 'decimal:2',
+        'charge_amount' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
     ];
 
-    // Relationships
-    public function order()
+
+    // relationships
+
+    public function invoice()
     {
-        return $this->belongsTo(Order::class, 'order_id', 'id');
+        return $this->belongsTo(Invoice::class);
     }
 
 
