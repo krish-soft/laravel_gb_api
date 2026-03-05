@@ -22,7 +22,7 @@ class InvoiceItem extends BaseModel
         'ship_qty',
 
         'unit_price',
-    
+
         'discount_amount',
 
         'taxable_amount',
