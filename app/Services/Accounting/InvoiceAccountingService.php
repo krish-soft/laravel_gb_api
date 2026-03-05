@@ -7,8 +7,10 @@ use App\Enum\Accounting\AccountEntryTypeEnum;
 use App\Enum\Accounting\AccountOwnerTypeEnum;
 use App\Enum\Accounting\LedgerStatusEnum;
 use App\Enum\Accounting\PlatformAccountCodeEnum;
+use App\Enum\Common\Invoice\InvoiceStatusEnum;
 use App\Models\Common\Accounting\Account;
 use App\Models\Common\Invoice\Invoice;
+use App\Models\Common\Invoice\InvoiceCharge;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -41,28 +43,12 @@ class InvoiceAccountingService
                     // Log::warning("Unknown user type for Invoice number: {$invoice->invoice_number}, User ID: {$owner->id}");
                     throw new RuntimeException("Unknown user type for Invoice number: {$invoice->invoice_number} and User ID: {$owner->id}");
                 }
-                // if ($owner->isSeller()) {
-                //     $ownerType = AccountOwnerTypeEnum::SELLER->value;
-                // } else if ($owner->isBuyer()) {
-                //     $ownerType = AccountOwnerTypeEnum::BUYER->value;
-                // } else if ($owner->isDelivery()) {
-                //     $ownerType = AccountOwnerTypeEnum::DELIVERY->value;
-                // } else {
-                //     // Log::warning("Unknown user type for Invoice number: {$invoice->invoice_number}, User ID: {$owner->id}");
-                //     throw new RuntimeException("Unknown user type for Invoice number: {$invoice->invoice_number} and User ID: {$owner->id}");
-                // }
 
                 // Invoice amount breakup
                 $baseAmount = $invoice->base_amount;
                 $subTotal = $invoice->subtotal;
                 $taxAmount = $invoice->tax_amount;
                 $totalAmount = $invoice->total_amount;
-
-                // Negative amount total invoice never gone a settled and we need to handle it manualy so we can skip it in accounting for now but log it for review
-                // now check amount  negative or zero
-                // if ($baseAmount <= 0 || $totalAmount <= 0) {
-                //     throw new RuntimeException("Invalid invoice amount for Invoice number: {$invoice->invoice_number}, Base Amount: {$baseAmount}, Total Amount: {$totalAmount}");
-                // }
 
                 $ownerAccount = Account::getOrCreateByOwner(
                     $ownerType,
@@ -75,8 +61,8 @@ class InvoiceAccountingService
                     AccountEntryTypeEnum::INVOICE_BASE_AMOUNT->value,
                     Invoice::class,
                     $invoice->id,
-                    $invoice->invoice_number // for reference only, not unique
                 )) {
+
 
                     $credit = 0;
                     $debit = 0;
@@ -106,8 +92,8 @@ class InvoiceAccountingService
 
                     $accountingService->createLedger($ownerAccount, [
                         'description' => "Accounting Ledger Entry for Invoice #{$invoice->invoice_number}",
-                        'credit' => $credit, // we are storing in each accounts  ,
-                        'debit'  => $debit,  // we are storing in each accounts  ,
+                        'credit' => abs($credit), // we are storing in each accounts  ,
+                        'debit'  => abs($debit),  // we are storing in each accounts  ,
                         'entry_type' => AccountEntryTypeEnum::INVOICE_BASE_AMOUNT->value,
                         'status' => LedgerStatusEnum::AVAILABLE->value,
                         'source_type' => Invoice::class,
@@ -116,43 +102,84 @@ class InvoiceAccountingService
                         'common_reference' => $invoice->invoice_number,
                     ]);
 
+                    //
+                }
 
-                    ## We need to collect tax on platform for reporting
-                    if (($owner->isSeller() || $owner->isDelivery()) && $taxAmount != 0) {
+                ## We need to collect tax on platform for reporting
+                if (($owner->isSeller() || $owner->isDelivery())) {
 
-                        $taxAccount = Account::getOrCreateByOwner(
-                            AccountOwnerTypeEnum::GOVERNMENT->value,
-                            null,
-                            PlatformAccountCodeEnum::PLATFORM_TAX->value
-                        );
+                    $taxAccount = Account::getOrCreateByOwner(
+                        AccountOwnerTypeEnum::GOVERNMENT->value,
+                        null,
+                        PlatformAccountCodeEnum::PLATFORM_TAX->value
+                    );
 
-                        if (!$accountingService->ledgerExists(
-                            $taxAccount->id,
-                            AccountEntryTypeEnum::INVOICE_TAX_AMOUNT->value,
-                            Invoice::class,
-                            $invoice->id
-                        )) {
-                            $accountingService->createLedger($taxAccount, [
-                                'description' => "Tax for Invoice #{$invoice->invoice_number}",
-                                'credit' => $invoice->tax_amount,
-                                'debit'  => 0,
-                                'entry_type' => AccountEntryTypeEnum::INVOICE_TAX_AMOUNT->value,
-                                'status' => LedgerStatusEnum::AVAILABLE->value,
-                                'is_tax' => true,
-                                'source_type' => Invoice::class,
-                                'source_id' => $invoice->id,
-                                'source_code' => $invoice->invoice_number,
-                                'common_reference' => $invoice->invoice_number,
-                            ]);
+                    $clearingAccount = Account::getOrCreateByOwner(
+                        AccountOwnerTypeEnum::PLATFORM->value,
+                        null,
+                        PlatformAccountCodeEnum::PLATFORM_CLEARING->value,
+                    );
+
+                    // $invocieChargesTotal = $subTotal - $baseAmount; // Total charges amount without tax
+
+                    if ($invoice->invoiceCharges->isNotEmpty()) {
+
+                        foreach ($invoice->invoiceCharges as $charge) {
+
+
+                            if (!$accountingService->ledgerExists(
+                                $clearingAccount->id,
+                                AccountEntryTypeEnum::INVOICE_CHARGE_AMOUNT->value,
+                                InvoiceCharge::class,
+                                $charge->id
+                            )) {
+                                $accountingService->createLedger($clearingAccount, [
+                                    'description' => "Charge for Invoice #{$invoice->invoice_number}: {$charge->charge_name}",
+                                    'credit' => abs($charge->taxable_amount),
+                                    'debit'  => 0,
+                                    'entry_type' => AccountEntryTypeEnum::INVOICE_CHARGE_AMOUNT->value,
+                                    'status' => LedgerStatusEnum::AVAILABLE->value,
+                                    'source_type' => InvoiceCharge::class,
+                                    'source_id' => $charge->id,
+                                    'source_code' => $invoice->invoice_number,
+                                    'common_reference' => $invoice->invoice_number,
+                                ]);
+                            }
+
+                            // Tax 
+
+                            if ($charge->tax_amount != 0) {
+
+                                if (!$accountingService->ledgerExists(
+                                    $taxAccount->id,
+                                    AccountEntryTypeEnum::INVOICE_TAX_AMOUNT->value,
+                                    InvoiceCharge::class,
+                                    $charge->id
+                                )) {
+                                    $accountingService->createLedger($taxAccount, [
+                                        'description' => "Tax for Invoice #{$invoice->invoice_number}: {$charge->charge_name}",
+                                        'credit' => abs($charge->tax_amount),
+                                        'debit'  => 0,
+                                        'entry_type' => AccountEntryTypeEnum::INVOICE_TAX_AMOUNT->value,
+                                        'status' => LedgerStatusEnum::AVAILABLE->value,
+                                        'is_tax' => true,
+                                        'source_type' => InvoiceCharge::class,
+                                        'source_id' => $charge->id,
+                                        'source_code' => $invoice->invoice_number,
+                                        'common_reference' => $invoice->invoice_number,
+                                    ]);
+                                }
+                            }
                         }
                     }
-
-                    //
                 }
 
 
                 //
 
+
+                $invoice->status = InvoiceStatusEnum::ACCOUNTED->value; // or any status to indicate it's processed
+                $invoice->save();
             });
         } catch (\Exception $e) {
             // Handle exceptions, log errors, etc.

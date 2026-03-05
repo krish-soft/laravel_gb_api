@@ -17,10 +17,35 @@ class InvoiceAdminApiController extends ApiResponseWithAdminAuthController
     */
     public function index(Request $request)
     {
-        return $this->successResponse(
-            'Invoice list fetched',
-            Invoice::orderByDesc('invoice_date')->get()
-        );
+
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date'   => 'nullable|date|after_or_equal:start_date',
+            'invoice_type' => 'nullable|in:sale,refund,return,delivery',
+            'payment_status' => 'nullable|in:pending,paid,overdue',
+        ]);
+
+
+        $startDate = $request->filled('start_date') ? $request->start_date : now()->subDay()->toDateString();
+        $endDate = $request->filled('end_date') ? $request->end_date : now()->toDateString();
+
+
+
+        $invoices = Invoice::latest()
+            ->whereBetween('invoice_date', [$startDate, $endDate])
+            ->when($request->filled('invoice_type'), function ($query) use ($request) {
+                $query->where('invoice_type', $request->invoice_type);
+            })
+            ->when($request->filled('payment_status'), function ($query) use ($request) {
+                $query->where('payment_status', $request->payment_status);
+            })
+            ->orderBy('invoice_date', 'desc')
+            ->get();
+
+
+        return $this->showSuccessMessage(__('messages.success_messages.success_get'), 200, $invoices);
+
+        //
     }
 
     /*

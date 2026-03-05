@@ -33,19 +33,19 @@ class AccountSeeder extends Seeder
             'remarks' => 'Temporary holding of buyer payments before settlement',
         ]);
 
-        Account::create([
-            'name' => 'Platform Revenue Account',
-            'accnt_code' => PlatformAccountCodeEnum::PLATFORM_REVENUE->value, // 'PLATFORM_REVENUE',
-            'owner_type' => AccountOwnerTypeEnum::PLATFORM->value,
-            'owner_id' => null,
-            'currency' => MstFinanceSetting::currency() ?? 'INR',
-            'available_balance' => 0.00,
-            'hold_balance' => 0.00,
-            'total_credit' => 0.00,
-            'total_debit' => 0.00,
-            'is_active' => true,
-            'remarks' => 'Tracks platform earned income (fees, penalties)',
-        ]);
+        // Account::create([
+        //     'name' => 'Platform Revenue Account',
+        //     'accnt_code' => PlatformAccountCodeEnum::PLATFORM_REVENUE->value, // 'PLATFORM_REVENUE',
+        //     'owner_type' => AccountOwnerTypeEnum::PLATFORM->value,
+        //     'owner_id' => null,
+        //     'currency' => MstFinanceSetting::currency() ?? 'INR',
+        //     'available_balance' => 0.00,
+        //     'hold_balance' => 0.00,
+        //     'total_credit' => 0.00,
+        //     'total_debit' => 0.00,
+        //     'is_active' => true,
+        //     'remarks' => 'Tracks platform earned income (fees, penalties)',
+        // ]);
 
         Account::create([
             'name' => 'Platform Tax Liability Account',

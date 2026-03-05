@@ -140,20 +140,20 @@ class OrderAccountingService
 
                     if (str_contains(strtolower($charge->charge_name), 'platform')) {
                         //
-                        $revenueAccount = Account::getOrCreateByOwner(
-                            AccountOwnerTypeEnum::PLATFORM->value,
-                            null,
-                            PlatformAccountCodeEnum::PLATFORM_REVENUE->value
-                        );
+                        // $revenueAccount = Account::getOrCreateByOwner(
+                        //     AccountOwnerTypeEnum::PLATFORM->value,
+                        //     null,
+                        //     PlatformAccountCodeEnum::PLATFORM_REVENUE->value
+                        // );
 
                         if (!$this->ledgerExists(
-                            $revenueAccount->id,
+                            $clearingAccount->id,
                             AccountEntryTypeEnum::PLATFORM_CHARGE_BASE->value,
                             get_class($charge),
                             $charge->id
                         )) {
 
-                            $accounting->createLedger($revenueAccount, [
+                            $accounting->createLedger($clearingAccount, [
                                 'description' => "Fees for Order #{$order->order_number}: {$charge->charge_name}",
                                 'credit' => $charge->taxable_amount,
                                 'debit'  => 0,

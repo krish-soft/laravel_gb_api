@@ -24,7 +24,7 @@ class JobInvoiceAccounting implements ShouldQueue
 
     protected array $invoiceIds;
 
-    public function __construct(array $invoiceIds   )
+    public function __construct(array $invoiceIds)
     {
         $this->invoiceIds = $invoiceIds;
     }
@@ -47,9 +47,6 @@ class JobInvoiceAccounting implements ShouldQueue
                     // Log::info("Processing Invoice ID: {$invoice->id} for User ID: {$invoice->user_id}");
                     app(InvoiceAccountingService::class)
                         ->recordInvoice($invoice);
-
-                    $invoice->status = InvoiceStatusEnum::ACCOUNTED->value; // or any status to indicate it's processed
-                    $invoice->save();
                 }
                 //
             });

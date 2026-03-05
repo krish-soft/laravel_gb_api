@@ -122,6 +122,23 @@ class DriverShipmentAdminApiController extends ApiResponseWithAdminAuthControlle
 
         $shipment = Shipment::findOrFail($request->shipment_id);
 
+        // get existing driver shipments except completed
+        $existsShipments = DriverShipment::with('shipment')
+            ->where('driver_id', $vehicle->driver_id)
+            ->where('status', '!=', DriverShipmentStatusEnum::COMPLETED->value)
+            ->get();
+
+        // get unique shipment statuses (pickup/dispatch)
+        $shipmentStatuses = $existsShipments->pluck('shipment.shipment_type')->filter()->unique();
+
+        if ($shipmentStatuses->isNotEmpty()) {
+
+            // if existing shipment status is different than new shipment
+            if (!$shipmentStatuses->contains($shipment->shipment_type)) {
+                return $this->errorResponse(__('messages.error_messages.invalid_shipment_assign'), 422);
+            }
+        }
+
         // Check if shipment already assigned
 
         $driverShipment = DriverShipment::create([

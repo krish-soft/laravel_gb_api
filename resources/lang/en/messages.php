@@ -220,6 +220,8 @@ return [
         'user_depot_delete_prohibited' => 'User depot association cannot be deleted as it is essential for system operations.',
 
         'locked_resource' => 'This resource is locked and cannot be modified.',
+
+        'invalid_shipment_assign' => 'Invalid shipment assignment. Shipments can only be assigned to drivers if they are of the same type (pickup or dispatch).',
     ],
 
 ];

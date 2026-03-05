@@ -263,7 +263,7 @@ class AccountingService
         string $entryType,
         string $sourceType,
         int $sourceId,
-        string $otherReference = null
+        ?string $otherReference = null
     ): bool {
         return AccountLedger::where('account_id', $accountId)
             ->where('entry_type', $entryType)
