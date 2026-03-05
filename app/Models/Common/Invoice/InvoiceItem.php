@@ -21,6 +21,7 @@ class InvoiceItem extends BaseModel
         'order_qty',
         'ship_qty',
 
+        'unit_price',
     
         'discount_amount',
 
@@ -35,8 +36,7 @@ class InvoiceItem extends BaseModel
     protected $casts = [
         'order_qty' => 'decimal:2',
         'ship_qty' => 'decimal:2',
-        'pack_size' => 'decimal:2',
-        'pack_price' => 'decimal:2',
+        'unit_price' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'taxable_amount' => 'decimal:2',
         'tax_amount' => 'decimal:2',

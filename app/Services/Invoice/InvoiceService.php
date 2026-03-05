@@ -78,6 +78,7 @@ class InvoiceService
                     'item_name' => $orderItem->product_name . "[$orderItem->pack_size $orderItem->pack_unit ($orderItem->pack_type_unit)]",
                     'order_qty' => $orderItem->order_qty,
                     'ship_qty' => $orderItem->ship_qty,
+                    'unit_price' => $orderItem->pack_price,
 
                     'taxable_amount' => $orderItem->taxable_amount,
                     'tax_amount' => $orderItem->tax_amount,
@@ -344,6 +345,8 @@ class InvoiceService
                     'total_amount' => $totalAmount,
                 ]);
             });
+
+            //
         } catch (Throwable $e) {
 
             Log::error('Product Listing Invoice Failed', [

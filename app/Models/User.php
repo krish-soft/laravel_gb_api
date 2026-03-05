@@ -330,6 +330,10 @@ class User extends Authenticatable
         'is_depot_assigned',
         'is_fulfillment_location_exist',
 
+        'is_seller',
+        'is_buyer',
+        'is_delivery',
+
         //
     ];
 
@@ -366,6 +370,22 @@ class User extends Authenticatable
     public function getIsFulfillmentLocationExistAttribute(): bool
     {
         return $this->fulfillmentLocations()->exists();
+    }
+
+    // asign is seller buyer or deliver
+    public function getIsSellerAttribute(): bool
+    {
+        return $this->isSeller();
+    }
+
+    public function getIsBuyerAttribute(): bool
+    {
+        return $this->isBuyer();
+    }
+
+    public function getIsDeliveryAttribute(): bool
+    {
+        return $this->isDelivery();
     }
 
 

@@ -67,9 +67,6 @@ class JobMarketOrderAccounting implements ShouldQueue
 
                         app(MarketOrderAccountingService::class)
                             ->recordPaidOrder($order, $order->payment);
-                        // 
-                        $order->order_status =  OrderStatusEnum::ACCOUNTED->value;
-                        $order->save();
                     }
                 }
                 //

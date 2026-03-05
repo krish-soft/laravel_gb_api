@@ -24,7 +24,9 @@ class InvoiceCharge extends BaseModel
 
     // casts
     protected $casts = [
-        'charge_amount' => 'decimal:2',
+        'qty' => 'decimal:2',
+        'ship_qty' => 'decimal:2',
+        'taxable_amount' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
     ];

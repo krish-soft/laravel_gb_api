@@ -26,6 +26,7 @@ return new class extends Migration
             $table->decimal('order_qty', 15, 2);
             $table->decimal('ship_qty', 15, 2)->default(0)->nullable();
 
+            $table->decimal('unit_price', 15, 2)->default(0);
             $table->decimal('discount_amount', 15, 2)->default(0)->nullable();
 
             $table->decimal('taxable_amount', 15, 2);

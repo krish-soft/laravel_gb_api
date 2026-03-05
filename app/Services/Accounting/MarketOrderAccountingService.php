@@ -6,6 +6,7 @@ use App\Enum\Accounting\AccountEntryTypeEnum;
 use App\Enum\Accounting\AccountOwnerTypeEnum;
 use App\Enum\Accounting\LedgerStatusEnum;
 use App\Enum\Accounting\PlatformAccountCodeEnum;
+use App\Enum\Common\Order\OrderStatusEnum;
 use App\Enum\Common\Payment\PaymentStatusEnum;
 use App\Enum\Common\Shipment\DriverShipmentStatusEnum;
 use App\Enum\Common\Shipment\ShipmentStatusEnum;
@@ -159,6 +160,11 @@ class MarketOrderAccountingService
             //         ]);
             //     }
             // }
+
+            // 
+            $marketOrder->order_status =  OrderStatusEnum::ACCOUNTED->value;
+            $marketOrder->is_locked = true; // lock order after accounting
+            $marketOrder->save();
 
             //
         });

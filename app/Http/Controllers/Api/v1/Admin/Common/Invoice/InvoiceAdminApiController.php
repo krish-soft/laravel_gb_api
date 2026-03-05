@@ -6,6 +6,7 @@ use App\Http\Controllers\ApiResponseWithAdminAuthController;
 use App\Models\Common\Invoice\Invoice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class InvoiceAdminApiController extends ApiResponseWithAdminAuthController
 {
@@ -21,18 +22,21 @@ class InvoiceAdminApiController extends ApiResponseWithAdminAuthController
         $request->validate([
             'start_date' => 'nullable|date',
             'end_date'   => 'nullable|date|after_or_equal:start_date',
-            'invoice_type' => 'nullable|in:sale,refund,return,delivery',
+            'invoice_type' => 'nullable|in:sales,purchase,delivery',
             'payment_status' => 'nullable|in:pending,paid,overdue',
         ]);
-
 
         $startDate = $request->filled('start_date') ? $request->start_date : now()->subDay()->toDateString();
         $endDate = $request->filled('end_date') ? $request->end_date : now()->toDateString();
 
-
-
         $invoices = Invoice::latest()
-            ->whereBetween('invoice_date', [$startDate, $endDate])
+            ->whereBetween(
+                'invoice_date',
+                [
+                    $startDate,
+                    $endDate
+                ]
+            )
             ->when($request->filled('invoice_type'), function ($query) use ($request) {
                 $query->where('invoice_type', $request->invoice_type);
             })
@@ -43,7 +47,7 @@ class InvoiceAdminApiController extends ApiResponseWithAdminAuthController
             ->get();
 
 
-        return $this->showSuccessMessage(__('messages.success_messages.success_get'), 200, $invoices);
+        return $this->successResponse(__('messages.success_messages.success_get'), $invoices);
 
         //
     }
@@ -58,18 +62,19 @@ class InvoiceAdminApiController extends ApiResponseWithAdminAuthController
         $request->validate([
             'user_id'      => 'required|exists:users,id',
             'invoice_date' => 'required|date',
-            'invoice_type' => 'required|in:sale,refund,return,delivery',
+            'invoice_type' => 'required|in:sales,purchase,delivery',
 
             'items'                      => 'required|array|min:1',
             'items.*.item_name'          => 'required|string',
-            'items.*.order_qty'          => 'required|numeric|min:0.01',
-            'items.*.taxable_amount'     => 'required|numeric|min:0',
-            'items.*.tax_amount'         => 'required|numeric|min:0',
+            'items.*.order_qty'          => 'required|numeric',
+            'items.*.unit_price'         => 'required|numeric',
+            'items.*.taxable_amount'     => 'required|numeric',
+            'items.*.tax_amount'         => 'required|numeric',
 
             'charges'                    => 'nullable|array',
             'charges.*.charge_name'      => 'required_with:charges|string',
-            'charges.*.taxable_amount'   => 'required_with:charges|numeric|min:0',
-            'charges.*.tax_amount'       => 'required_with:charges|numeric|min:0',
+            'charges.*.taxable_amount'   => 'required_with:charges|numeric', // can be negative for discount or promotion
+            'charges.*.tax_amount'       => 'required_with:charges|numeric',
         ]);
 
         DB::beginTransaction();
@@ -101,6 +106,7 @@ class InvoiceAdminApiController extends ApiResponseWithAdminAuthController
                     'item_name'       => $item['item_name'],
                     'order_qty'       => $item['order_qty'],
                     'ship_qty'        => $item['ship_qty'] ?? $item['order_qty'],
+                    'unit_price'      => $item['unit_price'] ?? 0,
                     'discount_amount' => $item['discount_amount'] ?? 0,
                     'taxable_amount'  => $item['taxable_amount'],
                     'tax_amount'      => $item['tax_amount'],
@@ -153,6 +159,13 @@ class InvoiceAdminApiController extends ApiResponseWithAdminAuthController
         }
     }
 
+    public function show($id)
+    {
+        $invoice = Invoice::with(['invoiceItems', 'invoiceCharges'])->findOrFail($id);
+
+        return $this->successResponse(__('messages.success_messages.success_get'), $invoice);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | UPDATE
@@ -166,19 +179,21 @@ class InvoiceAdminApiController extends ApiResponseWithAdminAuthController
             return $this->errorResponse(__('messages.error_messages.locked_resource'), 403);
         }
 
+
         $request->validate([
             'invoice_date' => 'required|date',
 
             'items'                      => 'required|array|min:1',
             'items.*.item_name'          => 'required|string',
-            'items.*.order_qty'          => 'required|numeric|min:0.01',
-            'items.*.taxable_amount'     => 'required|numeric|min:0',
-            'items.*.tax_amount'         => 'required|numeric|min:0',
+            'items.*.order_qty'          => 'required|numeric',
+            'items.*.unit_price'         => 'required|numeric',
+            'items.*.taxable_amount'     => 'required|numeric',
+            'items.*.tax_amount'         => 'required|numeric',
 
             'charges'                    => 'nullable|array',
             'charges.*.charge_name'      => 'required_with:charges|string',
-            'charges.*.taxable_amount'   => 'required_with:charges|numeric|min:0',
-            'charges.*.tax_amount'       => 'required_with:charges|numeric|min:0',
+            'charges.*.taxable_amount'   => 'required_with:charges|numeric',
+            'charges.*.tax_amount'       => 'required_with:charges|numeric',
         ]);
 
         DB::beginTransaction();
@@ -209,6 +224,7 @@ class InvoiceAdminApiController extends ApiResponseWithAdminAuthController
                     'item_name'       => $item['item_name'],
                     'order_qty'       => $item['order_qty'],
                     'ship_qty'        => $item['ship_qty'] ?? $item['order_qty'],
+                    'unit_price'      => $item['unit_price'] ?? 0,
                     'discount_amount' => $item['discount_amount'] ?? 0,
                     'taxable_amount'  => $item['taxable_amount'],
                     'tax_amount'      => $item['tax_amount'],
