@@ -18,7 +18,7 @@ class UserProfileApiController extends ApiResponseWithAuthController
     {
         $user = $request->user();
 
-        $meta = [     
+        $meta = [
             'user_code' => $user->user_code,
             'name' => $user->name,
             'nickname' => $user->nickname,
@@ -30,6 +30,7 @@ class UserProfileApiController extends ApiResponseWithAuthController
 
             'is_bank_verified' => $user->is_bank_verified,
             'is_user_ready_for_order_management' => $user->is_user_ready_for_order_management,
+            // 'is_available_for_delivery'=> $user->is_available_for_delivery, // Only for delivery users
         ];
 
 

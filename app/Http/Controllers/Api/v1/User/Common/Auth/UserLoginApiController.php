@@ -42,6 +42,8 @@ class UserLoginApiController extends ApiResponseController
 
         $expiryMinutes = 30 * 24 * 60; // Default 30 days
 
+        $tokenExpiry = now()->addDays(30);
+
         // Get or generate device_id
         $deviceId = $request->input('device_id');
         if (!$deviceId) {
@@ -66,7 +68,7 @@ class UserLoginApiController extends ApiResponseController
         $token = $user->createToken(
             "auth_token|role:{$user->role}|device_id:{$deviceId}",
             [],
-            now()->addMinutes($expiryMinutes)
+            $tokenExpiry
         )->plainTextToken;
 
         //
@@ -75,6 +77,7 @@ class UserLoginApiController extends ApiResponseController
             'access_token' => $token,
             'token_type' => 'Bearer',
             'expires_in_minutes' => $expiryMinutes,
+            'expires_at'  => $tokenExpiry->toDateTimeString(),
             'device_id' => $deviceId,
         ];
 

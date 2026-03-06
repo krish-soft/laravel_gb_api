@@ -58,6 +58,7 @@ use App\Http\Controllers\Api\v1\User\Common\Legal\UserKycApiController;
 use App\Http\Controllers\Api\v1\User\Common\Legal\UserVehicleKycApiController;
 use App\Http\Controllers\Api\v1\User\Common\RatingApiController;
 use App\Http\Controllers\Api\v1\User\Common\Shipment\DriverShipmentApiController;
+use App\Http\Controllers\Api\v1\User\Common\DriverApiController;
 use App\Http\Controllers\Api\v1\User\Seller\Product\ProductListingApiController;
 use App\Http\Controllers\Api\v1\User\UserProfileApiController;
 use App\Http\Controllers\Api\v1\Utils\UtilsApiController;
@@ -277,10 +278,15 @@ Route::group([
             });
 
             Route::prefix('delivery')->middleware([
-                'delivery-checker' // Custom Middleware to check if user is buyer
+                'delivery-checker' // Custom Middleware to check if user is delivery
             ])->group(function () {
 
                 // Vehicle addition pending & images
+                // make driver online offlie
+                Route::prefix('driver')->group(function () {
+                    Route::get('online-status', [DriverApiController::class, 'getDriverOnlineOfflineStatus']);
+                    Route::post('update-online-status', [DriverApiController::class, 'updateDriverOnlineOffline']);
+                });
 
                 Route::prefix('shipment')->group(function () {
                     // Driver Shipment Routes
