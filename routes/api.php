@@ -50,6 +50,7 @@ use App\Http\Controllers\Api\v1\User\Common\Auth\UserLoginApiController;
 use App\Http\Controllers\Api\v1\User\Common\Auth\UserLogoutApiController;
 use App\Http\Controllers\Api\v1\User\Common\Auth\UserRegisterApiController;
 use App\Http\Controllers\Api\v1\User\Common\Auth\UserResetPasswordApiController;
+use App\Http\Controllers\Api\v1\User\Common\BuyerSellerFollowerApiController;
 use App\Http\Controllers\Api\v1\User\Common\EarningApiController;
 use App\Http\Controllers\Api\v1\User\Common\Fulfillment\FulfillmentLocationApiController;
 use App\Http\Controllers\Api\v1\User\Common\Legal\UserBankApiController;
@@ -312,15 +313,20 @@ Route::group([
             Route::prefix('ratings')->group(function () {
 
                 // Route::get('/', [RatingApiController::class, 'getRatings']); // not used yet
-
                 Route::post('/order', [RatingApiController::class, 'giveOrderRating']);
                 Route::post('/driver', [RatingApiController::class, 'giveDriverRating']);
                 Route::post('/seller', [RatingApiController::class, 'giveSellerRating']);
                 Route::post('/buyer', [RatingApiController::class, 'giveBuyerRating']);
-
-
-
                 //
+            });
+
+
+            Route::prefix('followers')->group(function () {
+
+                Route::post('/follow', [BuyerSellerFollowerApiController::class, 'followSeller']);
+                Route::post('/unfollow', [BuyerSellerFollowerApiController::class, 'unfollowSeller']);
+
+                Route::get('/list', [BuyerSellerFollowerApiController::class, 'listFollowedSellers']);
             });
 
             //

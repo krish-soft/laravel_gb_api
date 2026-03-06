@@ -85,6 +85,11 @@ return [
 
         'thanks_for_your_feedback' => 'તમારા પ્રતિસાદ માટે આભાર!',
 
+        'followed_successfully' => 'ફોલો સફળતાપૂર્વક થયું.',
+        'unfollowed_successfully' => 'અનફોલો સફળતાપૂર્વક થયું.',
+        'cannot_follow_yourself' => 'તમે પોતાને ફોલો કરી શકતા નથી.',
+
+
     ],
 
     /*

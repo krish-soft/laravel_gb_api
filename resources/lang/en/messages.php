@@ -82,6 +82,10 @@ return [
         'settlement_batch_created' => 'Settlement batch created successfully.',
 
         'thanks_for_your_feedback' => 'Thank you for your feedback!',
+
+        'followed_successfully' => 'Followed successfully.',
+        'unfollowed_successfully' => 'Unfollowed successfully.',
+        'cannot_follow_yourself' => 'You cannot follow yourself.',
     ],
 
     /*
