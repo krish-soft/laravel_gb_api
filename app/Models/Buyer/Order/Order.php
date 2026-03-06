@@ -8,6 +8,7 @@ use App\Models\Common\Address;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
 use App\Models\Common\Invoice\Invoice;
 use App\Models\Common\Payment\Payment;
+use App\Models\Common\Rating\OrderRating;
 use App\Models\Common\Shipment\ShipmentPackage;
 use App\Models\Master\Depot\MstDepot;
 use App\Models\Master\Unique\MstSeqCodeGenerator;
@@ -155,6 +156,11 @@ class Order extends BaseModel
                 $query->where('payment_code', $this->reference)
                     ->orWhere('gateway_order_id', $this->payment_reference);
             });
+    }
+
+    public function orderRatings()
+    {
+        return $this->hasMany(OrderRating::class, 'order_id', 'id');
     }
 
 

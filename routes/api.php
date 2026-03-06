@@ -55,6 +55,7 @@ use App\Http\Controllers\Api\v1\User\Common\Fulfillment\FulfillmentLocationApiCo
 use App\Http\Controllers\Api\v1\User\Common\Legal\UserBankApiController;
 use App\Http\Controllers\Api\v1\User\Common\Legal\UserKycApiController;
 use App\Http\Controllers\Api\v1\User\Common\Legal\UserVehicleKycApiController;
+use App\Http\Controllers\Api\v1\User\Common\RatingApiController;
 use App\Http\Controllers\Api\v1\User\Common\Shipment\DriverShipmentApiController;
 use App\Http\Controllers\Api\v1\User\Seller\Product\ProductListingApiController;
 use App\Http\Controllers\Api\v1\User\UserProfileApiController;
@@ -307,6 +308,20 @@ Route::group([
                 Route::get('/', [EarningApiController::class, 'getEarningsData']);
             });
 
+
+            Route::prefix('ratings')->group(function () {
+
+                // Route::get('/', [RatingApiController::class, 'getRatings']); // not used yet
+
+                Route::post('/order', [RatingApiController::class, 'giveOrderRating']);
+                Route::post('/driver', [RatingApiController::class, 'giveDriverRating']);
+                Route::post('/seller', [RatingApiController::class, 'giveSellerRating']);
+                Route::post('/buyer', [RatingApiController::class, 'giveBuyerRating']);
+
+
+
+                //
+            });
 
             //
         });

@@ -3,6 +3,7 @@
 namespace App\Models\Delivery;
 
 use App\Models\BaseModel;
+use App\Models\Common\Rating\DriverRating;
 use App\Models\Common\Shipment\Shipment;
 use App\Models\Common\Shipment\ShipmentPackage;
 use App\Models\Common\Shipment\ShipmentPackageGroup;
@@ -69,6 +70,11 @@ class DriverShipment extends BaseModel
     public function assignedBy()
     {
         return $this->belongsTo(User::class, 'assigned_by')->select('id', 'name', 'user_code', 'nickname');
+    }
+
+    public function driverRatings()
+    {
+        return $this->hasMany(DriverRating::class, 'driver_shipment_id', 'id');
     }
 
 

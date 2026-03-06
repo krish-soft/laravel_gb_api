@@ -80,6 +80,8 @@ return [
 
         'success_upload'    => 'File uploaded successfully.',
         'settlement_batch_created' => 'Settlement batch created successfully.',
+
+        'thanks_for_your_feedback' => 'Thank you for your feedback!',
     ],
 
     /*

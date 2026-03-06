@@ -13,6 +13,9 @@ use App\Models\Buyer\Order\Order;
 use App\Models\Common\Accounting\Account;
 use App\Models\Common\Address;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
+use App\Models\Common\Rating\BuyerRating;
+use App\Models\Common\Rating\DriverRating;
+use App\Models\Common\Rating\SellerRating;
 use App\Models\Common\User\Legal\UserBank;
 use App\Models\Common\User\Legal\UserKyc;
 use App\Models\Common\User\Legal\UserLegalDocument;
@@ -249,6 +252,22 @@ class User extends Authenticatable
     public function account()
     {
         return $this->hasOne(Account::class, 'owner_id', 'id');
+    }
+
+
+    public function buyerRatings()
+    {
+        return $this->hasMany(BuyerRating::class, 'buyer_id', 'id');
+    }
+
+    public function sellerRatings()
+    {
+        return $this->hasMany(SellerRating::class, 'seller_id', 'id');
+    }
+
+    public function driverRatings()
+    {
+        return $this->hasMany(DriverRating::class, 'driver_id', 'id');
     }
 
 

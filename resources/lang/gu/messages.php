@@ -82,6 +82,9 @@ return [
 
         'success_upload'    => 'ફાઇલ સફળતાપૂર્વક અપલોડ થઈ.',
         'settlement_batch_created' => 'સેટલમેન્ટ બેચ સફળતાપૂર્વક બનાવાયો.',
+
+        'thanks_for_your_feedback' => 'તમારા પ્રતિસાદ માટે આભાર!',
+
     ],
 
     /*
