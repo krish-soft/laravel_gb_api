@@ -12,6 +12,7 @@ use App\Models\Buyer\Cart\Cart;
 use App\Models\Buyer\Order\Order;
 use App\Models\Common\Accounting\Account;
 use App\Models\Common\Address;
+use App\Models\Common\Followers\BuyerSellerFollower;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
 use App\Models\Common\Rating\BuyerRating;
 use App\Models\Common\Rating\DriverRating;
@@ -270,6 +271,15 @@ class User extends Authenticatable
         return $this->hasMany(DriverRating::class, 'driver_id', 'id');
     }
 
+    public function followers()
+    {
+        return $this->hasMany(BuyerSellerFollower::class, 'seller_id', 'id');
+    }
+
+    public function followings()
+    {
+        return $this->hasMany(BuyerSellerFollower::class, 'buyer_id', 'id');
+    }
 
 
     /* ---------------- BOOLEAN METHODS (AUTH / LOGIC) ---------------- */

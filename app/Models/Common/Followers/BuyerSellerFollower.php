@@ -87,6 +87,12 @@ class BuyerSellerFollower extends BaseModel
             ->wherePivot('is_following', true);
     }
 
+    // total followed sellers by buyer
+    public function totalFollowedSellers()
+    {
+        return $this->followedSellers()->count();
+    }
+
 
     //
 }

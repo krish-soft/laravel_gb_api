@@ -54,6 +54,14 @@ class CustomerApiController extends ApiResponseWithAdminAuthController
             'address',
             'fulfillmentLocations.address',
 
+            'followers',
+            'followings',
+
+            'buyerRatings',
+            'sellerRatings',
+            'driverRatings',
+
+
         ])
             ->where('user_code', $request->user_code)
             ->whereIn('role', UserRoleEnum::casesAsValues())
