@@ -285,7 +285,7 @@ Route::group([
                 // make driver online offlie
                 Route::prefix('driver')->group(function () {
                     Route::get('online-status', [DriverApiController::class, 'getDriverOnlineOfflineStatus']);
-                    Route::post('update-online-status', [DriverApiController::class, 'updateDriverOnlineOffline']);
+                    Route::post('online-status/update', [DriverApiController::class, 'updateDriverOnlineOffline']);
                 });
 
                 Route::prefix('shipment')->group(function () {
