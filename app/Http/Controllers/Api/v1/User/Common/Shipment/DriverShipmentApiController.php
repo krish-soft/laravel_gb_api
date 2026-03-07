@@ -22,15 +22,39 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
     | DRIVER SHIPMENT LIST (FOR MOBILE HOME)
     |--------------------------------------------------------------------------
     */
+    // to get status requested or not to driver show can just show popup on mobile app
+    public function getRequestedShipments(Request $request)
+    {
+        $user = $request->user();
+
+        $driverShipments = DriverShipment::oldest()
+            ->where('driver_id', $user->id)
+            ->whereIn('status', [DriverShipmentStatusEnum::REQUESTED->value, DriverShipmentStatusEnum::ASSIGNED->value]) // becasue default we have to assigned direct as startup
+            ->get();
+
+        return $this->successResponse(
+            __('messages.success_messages.success_get'),
+            [
+                'has_requested_shipments' => $driverShipments->isNotEmpty(),
+                'number_of_requested_shipments' => $driverShipments->count(),
+                // 'shipment_ids' => implode(',', $driverShipments->pluck('id')->toArray()),
+                'shipment_ids' =>  $driverShipments->pluck('id')->toArray(),
+            ]
+        );
+    }
+
 
     // Get All Shipments and prepare routes need all address or deliver
     public function getDeliverShipments(Request $request)
     {
+        $user = $request->user();
+
         $request->validate([
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'shipment_number' => 'nullable|string',
             'status' => 'nullable|in:' . implode(',', DriverShipmentStatusEnum::casesAsValues()),
+            'status_not_in' => 'nullable|in:' . implode(',', DriverShipmentStatusEnum::casesAsValues()),
         ]);
 
         $query = DriverShipment::with([
@@ -46,7 +70,20 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
             'shipment.shipmentGroups.shipmentPackage',
         ])
             ->where('driver_id', $request->user()->id)
-            ->whereNotIn('status', [DriverShipmentStatusEnum::CANCELLED->value, DriverShipmentStatusEnum::REJECTED->value]);
+            ->whereNotIn('status', [
+                DriverShipmentStatusEnum::CANCELLED->value,
+                DriverShipmentStatusEnum::REJECTED->value,
+            ]);
+
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // for ongoing trips driver want to see only assigned
+        if ($request->filled('status_not_in')) {
+            $query->whereNotIn('status', explode(',', $request->status_not_in));
+        }
 
         $start = $request->filled('start_date')
             ? now()->parse($request->start_date)->startOfDay()
@@ -69,7 +106,7 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
 
 
         $routeList = $driverShipments
-            ->map(function ($ds) {
+            ->map(function ($ds) use ($request) {
 
                 $shipment = $ds->shipment;
 
@@ -77,12 +114,13 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
                     return null; // or handle this case as needed
                 }
 
-                return [
+                $processData =  [
                     'driver_shipment_id' => $ds->id,
+                    'driver_shipment_status' => $ds->status,
                     'shipment_id'        => $shipment->id,
                     'shipment_number'    => $shipment->shipment_number,
                     'shipment_type'      => $shipment->shipment_type,
-                    'status'             => $shipment->status,
+                    'shipment_status'             => $shipment->status,
 
                     // 🔥 MODEL ACCESSOR (FAST)
                     'origin'      => $shipment->from_address,
@@ -92,11 +130,32 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
                     'total_packages' => $shipment?->total_packages,
                     'shipment_payable' => $ds->shipment_payable,
 
+
                 ];
+
+                if ($request->status != DriverShipmentStatusEnum::REQUESTED->value) {
+
+                    $processData['shipmentPackages'] =  $shipment->shipmentGroups->pluck('shipmentPackage')->filter()->map(function ($p) {
+                        return [
+                            'shipment_package_id' => $p->id,
+                            'shipment_package_number' => $p->shipment_package_number,
+                            'shipment_package_status' => $p->status,
+                            'shipment_package_seller_status' => $p->seller_status,
+                            'shipment_package_buyer_status' => $p->buyer_status,
+                            'shipment_package_transfer_status' => $p->transfer_status,
+                            'package_number' => $p->package_number,
+                            'qty' => $p->qty,
+                            'pack_size' => $p->pack_size,
+                            'unit' => $p->pack_unit,
+                        ];
+                    })->values();
+                }
+
+                return $processData;
             })
             ->sortBy(function ($item) use ($priority) {
 
-                if ($item['status'] === 'completed') {
+                if ($item['driver_shipment_status'] === 'completed') {
                     return 999;
                 }
 
@@ -346,11 +405,15 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
     |--------------------------------------------------------------------------
     */
 
-    public function complete(DriverShipment $driverShipment)
+    public function complete(Request $request, DriverShipment $driverShipment)
     {
         if ($driverShipment->driver_id !== request()->user()->id) {
             return $this->errorResponse("Unauthorized", 403);
         }
+
+        $request->validate([
+            'proof_image' => 'required|image|max:2048', // Optional proof image
+        ]);
 
         $shipment = $driverShipment->shipment;
         if (!$shipment) {
@@ -365,13 +428,19 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
             return $this->errorResponse("This shipment has been cancelled/returned/completed. Cannot complete.", 410);
         }
 
-        DB::transaction(function () use ($driverShipment, $shipment) {
+        DB::transaction(function () use ($request, $driverShipment, $shipment) {
 
             $type = $shipment->shipment_type;
 
             $packages = $shipment->shipmentGroups
                 ->pluck('shipmentPackage')
                 ->filter();
+
+            // Store image if provided and save path in driver shipment for record
+            if ($request->hasFile('proof_image')) {
+                $imagePath = $request->file('proof_image')->store('driver_shipment_proofs', 'public');
+                $driverShipment->update(['proof_image_path' => $imagePath]);
+            }
 
             /*
         |--------------------------------------------------------------------------
@@ -727,6 +796,22 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
         ])) {
             throw new RuntimeException("This shipment has been cancelled/rejected/returned/completed.", 410);
         }
+
+        // if shipment itself is not started or accepted or in transit
+        if (
+            !in_array($driverShipment->shipment->status, [
+                DriverShipmentStatusEnum::IN_TRANSIT->value,
+            ]) ||
+            !in_array($driverShipment->status, [
+                DriverShipmentStatusEnum::IN_TRANSIT->value,
+            ])
+        ) {
+            throw new RuntimeException(
+                "Shipment is not in a valid state for updating package status.",
+                422
+            );
+        }
+
 
         $belongs = $driverShipment->shipment->shipmentGroups
             ->pluck('shipment_package_id')

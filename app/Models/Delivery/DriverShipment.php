@@ -35,6 +35,7 @@ class DriverShipment extends BaseModel
         'status',
 
         'remarks',
+        'proof_image_path',
     ];
 
     // casts 

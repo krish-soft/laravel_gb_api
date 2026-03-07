@@ -290,6 +290,8 @@ Route::group([
 
                 Route::prefix('shipment')->group(function () {
                     // Driver Shipment Routes
+                    Route::get('/requested', [DriverShipmentApiController::class, 'getRequestedShipments']);
+
                     Route::get('list/need-to-deliver', [DriverShipmentApiController::class, 'getDeliverShipments']);
                     Route::get('list/all', [DriverShipmentApiController::class, 'getAllShipments']);
                     Route::get('details/{driverShipment}', [DriverShipmentApiController::class, 'shipmentDetails']);

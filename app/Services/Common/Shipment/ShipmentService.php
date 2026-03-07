@@ -72,7 +72,7 @@ class ShipmentService
                         ->whereNull('s.deleted_at');
                 })
 
-                ->whereNotIn('status', ['delivered', 'cancelled', 'returned'])
+                ->whereNotIn('status', ['delivered', 'cancelled', 'returned', 'completed', 'in_transit'])
                 ->get();
 
             if ($packages->isEmpty()) {

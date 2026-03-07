@@ -106,16 +106,34 @@ class Shipment extends BaseModel
 
     private static function generateUniqueShipmentNumber(): string
     {
-        do {
-            $code = strtoupper(Str::random(12));
-        } while (
-            self::withTrashed()
-            ->where('shipment_number', $code)
-            ->exists()
-        );
+        $lastShipment = self::withTrashed()
+            ->where('shipment_number', 'like', 'SHP-%')
+            ->orderByDesc('id')
+            ->first();
 
-        return $code;
+        if (!$lastShipment) {
+            return 'SHP-000001';
+        }
+
+        $lastNumber = (int) str_replace('SHP-', '', $lastShipment->shipment_number);
+
+        $newNumber = $lastNumber + 1;
+
+        return 'SHP-' . str_pad($newNumber, 6, '0', STR_PAD_LEFT);
     }
+
+    // private static function generateUniqueShipmentNumber(): string
+    // {
+    //     do {
+    //         $code = strtoupper(Str::random(12));
+    //     } while (
+    //         self::withTrashed()
+    //         ->where('shipment_number', $code)
+    //         ->exists()
+    //     );
+
+    //     return $code;
+    // }
 
     // Appends totals 
 
