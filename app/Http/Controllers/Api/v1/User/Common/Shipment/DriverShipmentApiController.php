@@ -73,6 +73,7 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
             ->whereNotIn('status', [
                 DriverShipmentStatusEnum::CANCELLED->value,
                 DriverShipmentStatusEnum::REJECTED->value,
+                ...($request->filled('status_not_in') ? explode(',', $request->status_not_in) : [])
             ]);
 
 
@@ -80,10 +81,6 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
             $query->where('status', $request->status);
         }
 
-        // for ongoing trips driver want to see only assigned
-        if ($request->filled('status_not_in')) {
-            $query->whereNotIn('status', explode(',', $request->status_not_in));
-        }
 
         $start = $request->filled('start_date')
             ? now()->parse($request->start_date)->startOfDay()
