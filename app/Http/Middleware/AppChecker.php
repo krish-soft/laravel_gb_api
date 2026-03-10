@@ -37,28 +37,23 @@ class AppChecker
             App::setLocale($locale);
         }
 
-        $appSetting = null;
+
+        ## Already active on mobile apps side so no need
+
+
+        // $appSetting = null;
 
         $appSetting = MstAppSetting::getOrCreate();
 
 
-        //        if (!$appSetting) {
-        //            return $this->showErrorMessageWithAction(
-        //                'Service unavailable',
-        //                503,
-        //                ActionCodeEnum::FORCE_MAINTENANCE,
-        //
-        //            );
-        //        }
+        // if ($appSetting->isMaintenanceMode()) {
+        //     return $this->showErrorMessageWithAction(
+        //         __('messages.error_messages.maintenance_mode') . "\n\n" . $appSetting->getMaintenanceMessage(),
+        //         503,
+        //         ActionCodeEnum::FORCE_MAINTENANCE,
 
-        if ($appSetting->isMaintenanceMode()) {
-            return $this->showErrorMessageWithAction(
-                __('messages.error_messages.maintenance_mode') . "\n\n" . $appSetting->getMaintenanceMessage(),
-                503,
-                ActionCodeEnum::FORCE_MAINTENANCE,
-
-            );
-        }
+        //     );
+        // }
 
         $platform   = strtolower((string) $request->header('X-Platform'));
         $appVersion = (string) $request->header('X-App-Version');
@@ -76,18 +71,18 @@ class AppChecker
             }
         }
 
-        if ($platform === 'ios' && $appSetting->isForceIosUpdate()) {
-            $latestVersion = $appSetting->getIosAppVersion();
+        // if ($platform === 'ios' && $appSetting->isForceIosUpdate()) {
+        //     $latestVersion = $appSetting->getIosAppVersion();
 
-            if ($latestVersion && version_compare($appVersion, $latestVersion, '<')) {
-                return $this->showErrorMessageWithAction(
-                    __('messages.error_messages.force_app_update', ['version' => $latestVersion]),
-                    426,
-                    ActionCodeEnum::FORCE_APP_UPDATE,
+        //     if ($latestVersion && version_compare($appVersion, $latestVersion, '<')) {
+        //         return $this->showErrorMessageWithAction(
+        //             __('messages.error_messages.force_app_update', ['version' => $latestVersion]),
+        //             426,
+        //             ActionCodeEnum::FORCE_APP_UPDATE,
 
-                );
-            }
-        }
+        //         );
+        //     }
+        // }
 
         return $next($request);
     }

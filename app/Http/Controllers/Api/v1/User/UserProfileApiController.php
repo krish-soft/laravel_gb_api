@@ -39,6 +39,9 @@ class UserProfileApiController extends ApiResponseWithAuthController
 
             'is_bank_verified' => $user->is_bank_verified,
             'is_user_ready_for_order_management' => $user->is_user_ready_for_order_management,
+
+            'is_account_disabled' => !$user->is_active,
+            'account_disabled_message' => $user->incactive_reason,
             // 'is_available_for_delivery'=> $user->is_available_for_delivery, // Only for delivery users
         ];
 

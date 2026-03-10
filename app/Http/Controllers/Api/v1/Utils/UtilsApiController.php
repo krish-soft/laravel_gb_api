@@ -27,6 +27,7 @@ use App\Models\Master\Setting\MstAppSetting;
 use App\Models\Master\Setting\MstFinanceSetting;
 use App\Models\Setting\AppSetting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class UtilsApiController extends ApiResponseController
 {
@@ -54,9 +55,22 @@ class UtilsApiController extends ApiResponseController
     public function getAppMetaInfo()
     {
 
+        $appSetting = MstAppSetting::getOrCreate();
+
+        Log::info(json_encode($appSetting,JSON_PRETTY_PRINT));
+
+        Log::info(MstAppSetting::isMaintenanceMode());
+        Log::info(MstAppSetting::getMaintenanceMessage());
+
         $data = [
-            'app_name' => MstAppSetting::getOrCreate()->app_name,
+            'app_name' =>  $appSetting->app_name,
             'current_financial_year_code' => currentFy()->code,
+
+            'is_maintenance_mode' => MstAppSetting::isMaintenanceMode(),
+            'maintenance_message' => MstAppSetting::getMaintenanceMessage(),
+
+            'is_force_android_update' => MstAppSetting::isForceAndroidUpdate(),
+
         ];
 
         return $this->successResponse(__('messages.success_messages.success_get'), $data);
