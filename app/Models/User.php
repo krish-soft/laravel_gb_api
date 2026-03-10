@@ -20,6 +20,7 @@ use App\Models\Common\Rating\SellerRating;
 use App\Models\Common\User\Legal\UserBank;
 use App\Models\Common\User\Legal\UserKyc;
 use App\Models\Common\User\Legal\UserLegalDocument;
+use App\Models\Common\User\Legal\VehicleKyc;
 use App\Models\Common\User\UserDepot;
 use App\Models\Delivery\DriverShipment;
 use App\Models\Seller\Product\ProductListing;
@@ -281,6 +282,11 @@ class User extends Authenticatable
         return $this->hasMany(BuyerSellerFollower::class, 'buyer_id', 'id');
     }
 
+    public function vehicleKyc()
+    {
+        return $this->hasOne(VehicleKyc::class, 'user_id', 'id');
+    }
+
 
     /* ---------------- BOOLEAN METHODS (AUTH / LOGIC) ---------------- */
 
@@ -319,6 +325,17 @@ class User extends Authenticatable
     }
 
 
+    public function isKycSubmitted(): bool
+    {
+        $result =  $this->kyc->where('is_expired', false)->exists();;
+
+        // unload relation to prevent N+1 issue
+        $this->unsetRelation('kyc');
+
+        return $result;
+    }
+
+
     public function isKycApproved(): bool
     {
         $result =  $this->kyc && $this->kyc->status === KycStatusEnum::APPROVED->value;
@@ -341,6 +358,21 @@ class User extends Authenticatable
     }
 
 
+    public function isVehicleKycSubmitted(): bool
+    {
+        $result =  $this->vehicleKyc()->where('is_expired', false)->exists();
+        $this->unsetRelation('vehicleKyc');
+        return $result;
+    }
+
+    public function isVehicleKycApproved(): bool
+    {
+        $vehicleKyc = $this->vehicleKyc()->first();
+        $result =  $vehicleKyc && $vehicleKyc->status === KycStatusEnum::APPROVED->value;
+        $this->unsetRelation('vehicleKyc');
+        return $result;
+    }
+
 
 
 
@@ -349,9 +381,16 @@ class User extends Authenticatable
 
 
     protected $appends = [
+
+        // KYC
+        'is_kyc_submitted',
         'is_kyc_approved',
         'kyc_review_comment',
 
+        // Vehicle KYC
+        'is_vehicle_kyc_submitted',
+        'is_vehicle_kyc_approved',
+        'vehicle_kyc_review_comment',
 
         'is_bank_verified',
         'is_user_ready_for_order_management',
@@ -366,6 +405,13 @@ class User extends Authenticatable
         //
     ];
 
+
+
+    public function getIsKycSubmittedAttribute(): bool
+    {
+        return $this->isKycSubmitted();
+    }
+
     public function getIsKycApprovedAttribute(): bool
     {
         return $this->isKycApproved();
@@ -375,6 +421,26 @@ class User extends Authenticatable
     {
         return !$this->isKycApproved() ? $this->kyc->review_comment ?? '' : '';
     }
+
+    //
+    public function getIsVehicleKycSubmittedAttribute(): bool
+    {
+        return $this->isVehicleKycSubmitted();
+    }
+
+    public function getIsVehicleKycApprovedAttribute(): bool
+    {
+        return $this->isVehicleKycApproved();
+    }
+
+    public function getVehicleKycReviewCommentAttribute(): string
+    {
+        return !$this->isVehicleKycApproved() ? $this->vehicleKyc->review_comment ?? '' : '';
+    }
+
+
+
+    //
 
     public function getIsBankVerifiedAttribute(): bool
     {

@@ -13,6 +13,7 @@ use App\Models\Common\Address;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
 use App\Models\Common\Fulfillment\FulfillmentLocationDepot;
 use App\Models\Common\User\Legal\UserKyc;
+use App\Models\Common\User\Legal\VehicleKyc;
 use App\Models\Common\User\UserDepot;
 use App\Models\Delivery\DriverVehicle;
 use App\Models\Master\Vehicle\MstVehicle;
@@ -237,6 +238,48 @@ class TestDataSeeder extends Seeder
         /**
          *  Driver and Vehicle
          */
+
+        VehicleKyc::create([
+            'user_id' => $delivery->id,
+            'mst_vehicle_id' => 3, // Chota Hathi Assuming you have a vehicle with ID 3 in mst_vehicles table
+
+            'user_code' => $delivery->user_code,
+            'picture' => null,
+
+            'vehicle_kyc_code' => VehicleKyc::generateUniqueKycCode(),
+            'license_plate_number' => 'GJ-01-AB-1234',
+            'driving_license_number' => 'DL-1234567890',
+            'registration_number' => 'REG-1234567890',
+            'insurance_policy_number' => 'INS-1234567890',
+
+            // Vehicle details
+            'vehicle_maker' => 'Tata',
+            'vehicle_model' => 'Ace',
+            'vehicle_color' => 'White',
+            'vehicle_type' => 'Mini Truck',
+            'vehicle_fuel_type' => 'Diesel',
+            'vehicle_category' => 'Light Commercial Vehicle',
+
+            'seating_capacity' => 2,
+            'load_capacity_kg' => 1500.00,
+            'engine_cc' => 700,
+            'transmission_type' => 'Manual',
+            'vehicle_condition' => 'Good',
+
+            'chassis_number' => 'CHS-1234567890',
+            'engine_number' => 'ENG-1234567890',
+            'vehicle_unique_mark' => null,
+            'vehicle_branding' => null,
+
+            // Verification fields
+            'status' => KycStatusEnum::APPROVED->value,
+
+            'is_verified' => true,
+            'verification_mode' => 'auto',
+            'verified_at' => now(),
+            'verified_by' => 'System',
+            'verified_user_id' => null,
+        ]);
 
         $mstVehicle = MstVehicle::find(3);
 

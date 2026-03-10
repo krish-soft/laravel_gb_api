@@ -25,8 +25,17 @@ class UserProfileApiController extends ApiResponseWithAuthController
             'email' => $user->email,
             'phone_number' => $user->phone_number,
             'user_type' => $user->user_type, // buyer, seller, delivery
+
+            // KYC Status
+            'is_kyc_submitted' => $user->is_kyc_submitted,
             'is_kyc_approved' => $user->is_kyc_approved,
             'kyc_review_comment' => $user->kyc_review_comment,
+
+            // Vehicle KYC
+            'is_vehicle_kyc_submitted' => $user->is_vehicle_kyc_submitted,
+            'is_vehicle_kyc_approved' => $user->is_vehicle_kyc_approved,
+            'vehicle_kyc_review_comment' => $user->vehicle_kyc_review_comment,
+
 
             'is_bank_verified' => $user->is_bank_verified,
             'is_user_ready_for_order_management' => $user->is_user_ready_for_order_management,
