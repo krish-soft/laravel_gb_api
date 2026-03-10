@@ -42,7 +42,8 @@ class UserProfileApiController extends ApiResponseWithAuthController
     {
         $requestUser = $request->user();
 
-        $user = User::with(['address', 'billAddress'])->find($requestUser->id);
+        $user = User::with(['address', 'billAddress'])
+            ->find($requestUser->id);
 
         return $this->successResponse(__('messages.success_messages.success_get'), $user, 200);
     }
@@ -55,13 +56,13 @@ class UserProfileApiController extends ApiResponseWithAuthController
 
         $request->validate([
             'name' => 'required|string|max:150',
-            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
-            'phone_number' => 'required|string|max:20|unique:users,phone_number,' . $user->id,
+            'email' => 'nullable|email|max:255|unique:users,email,' . $user->id,
+            'phone_number' => 'nullable|string|max:20|unique:users,phone_number,' . $user->id,
         ]);
 
         $user->name = $request->input('name');
-        $user->email = $request->input('email');
-        $user->phone_number = $request->input('phone_number');
+        $user->email = $request->filled('email') ? $request->input('email') : $user->email;
+        // $user->phone_number = $request->input('phone_number'); // can not change phone numnber
         $user->save();
 
         return $this->showSuccessMessage(__('messages.success_messages.success_update'), 200);

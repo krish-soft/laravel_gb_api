@@ -187,7 +187,7 @@ Route::group([
             Route::get('/meta', [UserProfileApiController::class, 'metaDetails']);
 
             Route::get('/profile', [UserProfileApiController::class, 'getProfile']);
-            Route::put('/profile', [UserProfileApiController::class, 'updateProfile']);
+            Route::put('/profile/update', [UserProfileApiController::class, 'updateProfile']);
             Route::put('/profile/password', [UserProfileApiController::class, 'updatePassword']);
 
             // address
