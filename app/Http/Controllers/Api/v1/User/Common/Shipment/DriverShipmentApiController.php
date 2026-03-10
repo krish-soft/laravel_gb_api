@@ -362,6 +362,24 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
         // }
 
 
+        // Log Activity
+        logActivity(
+            'driver_shipment_rejected',
+            request()->user(),
+            get_class($driverShipment),
+            $driverShipment->id,
+            $shipment->shipment_number,
+            [
+                'driver_shipment_id' => $driverShipment->id,
+                'shipment_number' => $shipment->shipment_number,
+            ]
+        );
+
+        // once rejected delete it only drivershipment
+        $driverShipment->delete();
+
+
+
         return $this->showSuccessMessage(__('messages.success_messages.success_update'));
     }
 

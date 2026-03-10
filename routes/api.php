@@ -60,6 +60,7 @@ use App\Http\Controllers\Api\v1\User\Common\RatingApiController;
 use App\Http\Controllers\Api\v1\User\Common\Shipment\DriverShipmentApiController;
 use App\Http\Controllers\Api\v1\User\Common\DriverApiController;
 use App\Http\Controllers\Api\v1\User\Seller\Product\ProductListingApiController;
+use App\Http\Controllers\Api\v1\User\UserDashboardApiController;
 use App\Http\Controllers\Api\v1\User\UserProfileApiController;
 use App\Http\Controllers\Api\v1\Utils\UtilsApiController;
 use App\Http\Controllers\Api\v1\Utils\UtilsWithAuthApiController;
@@ -223,6 +224,8 @@ Route::group([
         ], function () {
 
             // Seller/Farmer Routes
+
+            Route::get('/dashboard', [UserDashboardApiController::class, 'dashboard']);
 
             Route::prefix('seller')
                 ->middleware([
