@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\v1\Admin\Common\Customer\CustomerApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Customer\CustomerLegalActionApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Invoice\InvoiceAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Payment\AdminPaymentApiController;
+use App\Http\Controllers\Api\v1\Admin\DashboardAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Market\MarketOrderAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Shipment\ShipmentPackageAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeApiController;
@@ -379,7 +380,9 @@ Route::group([
                 return $request->user();
             });
 
+            Route::get('/dashboard', [DashboardAdminApiController::class, 'getDashboardData']);
             Route::apiResource('adminUser', AdminUserAdminApiController::class); // Manage Admin users
+
 
             // Product Listing Routes
             Route::prefix('listing')->group(function () {
