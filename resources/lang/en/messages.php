@@ -228,6 +228,11 @@ return [
         'locked_resource' => 'This resource is locked and cannot be modified.',
 
         'invalid_shipment_assign' => 'Invalid shipment assignment. Shipments can only be assigned to drivers if they are of the same type (pickup or dispatch).',
+
+        'cannot_update_self' => 'You cannot update your own account details.',
+
+
+
     ],
 
 ];

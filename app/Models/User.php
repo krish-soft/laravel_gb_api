@@ -327,6 +327,10 @@ class User extends Authenticatable
 
     public function isKycSubmitted(): bool
     {
+        if (!$this->kyc) {
+            return false;
+        }
+
         $result =  $this->kyc->where('is_expired', false)->exists();;
 
         // unload relation to prevent N+1 issue
@@ -338,6 +342,9 @@ class User extends Authenticatable
 
     public function isKycApproved(): bool
     {
+        if (!$this->kyc) {
+            return false;
+        }
         $result =  $this->kyc && $this->kyc->status === KycStatusEnum::APPROVED->value;
 
         // unload relation to prevent N+1 issue
@@ -348,6 +355,9 @@ class User extends Authenticatable
 
     public function isBankVerified(): bool
     {
+        if (!$this->primaryBank) {
+            return false;
+        }
         // return $this->bank && $this->bank->status === BankStatusEnum::VERIFIED->value;
         $bank = $this->primaryBank()->first();
         $result = $bank && $bank->status === BankStatusEnum::VERIFIED->value;
@@ -360,6 +370,10 @@ class User extends Authenticatable
 
     public function isVehicleKycSubmitted(): bool
     {
+        if (!$this->vehicleKyc) {
+            return false;
+        }
+
         $result =  $this->vehicleKyc()->where('is_expired', false)->exists();
         $this->unsetRelation('vehicleKyc');
         return $result;
@@ -367,6 +381,10 @@ class User extends Authenticatable
 
     public function isVehicleKycApproved(): bool
     {
+        if (!$this->vehicleKyc) {
+            return false;
+        }
+
         $vehicleKyc = $this->vehicleKyc()->first();
         $result =  $vehicleKyc && $vehicleKyc->status === KycStatusEnum::APPROVED->value;
         $this->unsetRelation('vehicleKyc');

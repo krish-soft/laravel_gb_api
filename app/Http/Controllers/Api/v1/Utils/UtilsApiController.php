@@ -12,6 +12,7 @@ use App\Enum\Common\Legal\BankStatusEnum;
 use App\Enum\Common\Legal\KycReviewEnum;
 use App\Enum\Common\Legal\KycStatusEnum;
 use App\Enum\Common\Legal\LegalDocumentTypeEnum;
+use App\Enum\Common\Module\AppModuleEnum;
 use App\Enum\User\UserRoleEnum;
 use App\Enum\User\UserTypeEnum;
 use App\Http\Controllers\ApiResponseController;
@@ -57,10 +58,6 @@ class UtilsApiController extends ApiResponseController
 
         $appSetting = MstAppSetting::getOrCreate();
 
-        Log::info(json_encode($appSetting,JSON_PRETTY_PRINT));
-
-        Log::info(MstAppSetting::isMaintenanceMode());
-        Log::info(MstAppSetting::getMaintenanceMessage());
 
         $data = [
             'app_name' =>  $appSetting->app_name,
@@ -108,6 +105,8 @@ class UtilsApiController extends ApiResponseController
 
                 'financial_years' => MstFinancialYear::active()->pluck('id')->toArray(),
 
+                // 'app_modules' => AppModuleEnum::casesAsArray(),
+
 
 
                 // 
@@ -129,6 +128,11 @@ class UtilsApiController extends ApiResponseController
                     'label' => ucfirst(strtolower((string) $value)),
                 ];
             }
+        }
+
+        // Add app modules for admin users
+        if (request()->user() && request()->user()->isAdminManagement()) {
+            $processData['app_modules'] = AppModuleEnum::casesAsArray();
         }
 
 

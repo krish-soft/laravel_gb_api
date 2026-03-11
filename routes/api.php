@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\v1\Admin\AdminUser\AdminUserAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Buyer\Order\AdminOrderApiController;
 use App\Http\Controllers\Api\v1\Admin\CmdAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Accounting\AccountAdminApiController;
@@ -377,6 +378,8 @@ Route::group([
             Route::get('user-profile', function (Request $request) {
                 return $request->user();
             });
+
+            Route::apiResource('adminUser', AdminUserAdminApiController::class); // Manage Admin users
 
             // Product Listing Routes
             Route::prefix('listing')->group(function () {

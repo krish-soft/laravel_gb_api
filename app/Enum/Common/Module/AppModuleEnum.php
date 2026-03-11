@@ -5,7 +5,7 @@ namespace App\Enum\Common\Module;
 enum AppModuleEnum: int
 {
     //
-        // User & Access (100–199)
+    // User & Access (100–199)
     case USERS               = 101; // Login, OTP, KYC, roles, permissions
     case CUSTOMERS           = 102; // Sellers, Buyers, Delivery Partners, Affiliates // USED
 
@@ -48,17 +48,48 @@ enum AppModuleEnum: int
         // System & Configuration (700–799)
     case MASTERS             = 701; // USED
     case SETTINGS            = 702; // USED
-    case CMS                 = 703;
+        // case CMS                 = 703;
     case LEGALS              = 704; // USED
     case GEOGRAPHY           = 705; // USED
 
         // Admin & Operations (800–899)
-    case ADMIN               = 801;
-    case AUDIT_LOGS          = 802;
+    case ADMIN               = 801; // USED
+        // case AUDIT_LOGS          = 802;
 
 
     case SELLERS            = 900; // USED
     case BUYERS             = 901; // USED
-    case DELIVERY_PARTNERS  = 902;
-    case AFFILIATES         = 903;
+    // case DELIVERY_PARTNERS  = 902;
+    // case AFFILIATES         = 903;
+
+
+
+
+
+    // public static function casesAsValues(): array
+    // {
+    //     return array_map(
+    //         fn(self $case) => $case->value . '|' . $case->name,
+    //         self::cases()
+    //     );
+    // }
+
+    public static function casesAsValues(): array
+    {
+        return array_map(
+            fn(self $case) => $case->value,
+            self::cases()
+        );
+    }
+
+    public static function casesAsArray(): array
+    {
+        return array_map(
+            fn(self $case) => [
+                'label' => $case->name,
+                'value' => $case->value
+            ],
+            self::cases()
+        );
+    }
 }

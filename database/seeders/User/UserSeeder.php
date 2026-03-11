@@ -35,7 +35,7 @@ class UserSeeder extends Seeder
             'is_active' => true,
             'is_test_user' => false,
 
-            'access_modules' => '*',
+            'access_modules' => ['*'],
 
             'created_at' => now(),
             'updated_at' => now(),
@@ -57,7 +57,7 @@ class UserSeeder extends Seeder
             'is_active' => true,
             'is_test_user' => false,
 
-            'access_modules' => '*',
+            'access_modules' => ['*'],
 
             'created_at' => now(),
             'updated_at' => now(),
