@@ -34,6 +34,7 @@ class ProductListingApiController extends ApiResponseWithAuthController
             'listingItems.product',
             'listingItems.productVariant',
             'listingItems.listingPackages',
+            'shipmentPackages'
         ])->where('seller_id', $request->user()->id);
 
         if ($request->has('is_active')) {
