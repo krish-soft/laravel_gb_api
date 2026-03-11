@@ -131,8 +131,14 @@ class UtilsApiController extends ApiResponseController
         }
 
         // Add app modules for admin users
+        // if (request()->user() && request()->user()->isAdminManagement()) {
+        //     $processData['app_modules'] = AppModuleEnum::casesAsArray();
+        // }
         if (request()->user() && request()->user()->isAdminManagement()) {
-            $processData['app_modules'] = AppModuleEnum::casesAsArray();
+            $processData['app_modules'] = collect(AppModuleEnum::casesAsArray())
+                ->sortBy('label')
+                ->values()
+                ->toArray();
         }
 
 
