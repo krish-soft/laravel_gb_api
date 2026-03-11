@@ -368,7 +368,6 @@ Route::group([
         Route::group([
             'middleware' => [
                 'auth:sanctum', // Sanctum Authentication
-                'user-checker',  // Regular inactive and tose to check
                 'admin-user-checker' // Custom Middleware to check admin things
             ]
         ], function () {

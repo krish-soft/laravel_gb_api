@@ -33,7 +33,22 @@ class AdminUserChecker
                 403
             );
         }
+       
+        if ($user && !$user->is_active) {
+            // return $this->showErrorMessage('Your account is inactive.\n' . $user->incactive_reason, 403);
+            return $this->showErrorMessage(
+                __('messages.error_messages.account_inactive') . '\n: ' . $user->inactive_reason,
+                403
+            );
+        }
 
+
+        // last login update
+        if ($user) {
+            $user->last_login_at = now();
+            $user->last_login_ip = $request->ip();
+            $user->save();
+        }
 
 
 
