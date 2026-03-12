@@ -48,7 +48,13 @@ class CartApiController extends ApiResponseWithAuthController
             ]);
         }
 
-        $cart = Cart::with('cartItems')
+        // $cart = Cart::with('cartItems')
+        //     ->find($cart->id);
+
+        $cart = Cart::with([
+            'cartItems.productListingItem.product:id,name',
+            'cartItems.seller:id,nickname,user_code',
+        ])
             ->find($cart->id);
 
         return $this->successResponse(__('messages.success_messages.cart_fetched'), $cart, 200);

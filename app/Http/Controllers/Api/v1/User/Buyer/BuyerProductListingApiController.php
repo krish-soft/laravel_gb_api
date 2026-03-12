@@ -107,6 +107,7 @@ class BuyerProductListingApiController extends ApiResponseWithAuthController
             ->map(function ($pkg) {
                 return [
                     'package_id' => $pkg->id,
+                    'product_listing_item_id' => $pkg->product_listing_item_id,
                     'pack_size' => $pkg->pack_size,
                     'pack_unit' => $pkg->pack_unit,
                     'pack_type_unit' => $pkg->pack_type_unit,
