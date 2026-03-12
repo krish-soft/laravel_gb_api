@@ -4,6 +4,7 @@ namespace App\Services\Common\Auth;
 
 use App\Models\Common\OneTimePassword;
 use App\Models\User;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -172,8 +173,19 @@ class OneTimePasswordService
      */
     protected function sendSmsOtp(): bool
     {
-        // SmsProvider::send($this->otp->phone_number, $this->otp->otp_code);
-        return true;
+        // SmsProvider::send($this->otp->phone_number, $this->otp->otp_code);        
+        // http://sms.krishnasoftware.com/sendsms.jsp?user=Kim001&password=9827177854XX&senderid=KlSHNA&mobiles=9825425385&sms=OTP+FOR+KhetBajar+Reg+IS+1206+FROM+KRISHNA+COMPUTER&tempid=1207165036851849479&responsein=json
+        $response = Http::get("http://sms.krishnasoftware.com/sendsms.jsp?user=Kim001&password=9827177854XX&senderid=KlSHNA&mobiles={$this->otp->phone_number}&sms=OTP+FOR+KhetBajar+Reg+IS+{$this->otp->otp_code}+FROM+KRISHNA+COMPUTER&tempid=1207165036851849479&responsein=json");
+
+        if ($response->successful() && $response->json('smslist.sms.status') === 'success') {
+            // SMS sent successfully
+            return true;
+        } else {
+            // Failed
+            return false;
+        }
+
+        // return true;
     }
 
     /**
