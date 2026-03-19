@@ -22,6 +22,7 @@ use App\Models\Common\User\Legal\UserKyc;
 use App\Models\Common\User\Legal\UserLegalDocument;
 use App\Models\Common\User\Legal\VehicleKyc;
 use App\Models\Common\User\UserDepot;
+use App\Models\Delivery\DriverLocation;
 use App\Models\Delivery\DriverShipment;
 use App\Models\Seller\Product\ProductListing;
 use App\Traits\Auditable;
@@ -285,6 +286,11 @@ class User extends Authenticatable
     public function vehicleKyc()
     {
         return $this->hasOne(VehicleKyc::class, 'user_id', 'id');
+    }
+
+    public function driverLocation()
+    {
+        return $this->hasOne(DriverLocation::class, 'driver_id', 'id');
     }
 
 

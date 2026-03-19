@@ -50,6 +50,33 @@ class DriverApiController extends ApiResponseWithAuthController
     }
 
 
+    public function updateDriverLastLocation(Request $request)
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+            'driver_shipment_id' => 'nullable|integer|exists:driver_shipments,id',
+        ]);
+
+        // manage on middleware
+        // if (!$user->isDelivery()) {
+        //     return $this->showErrorMessage(__('messages.error_messages.unauthorized_access'), 403);
+        // }
+
+        $location = $user->driverLocation()->updateOrCreate(
+            ['driver_id' => $user->id],
+            [
+                'latitude' => $request->input('latitude'),
+                'longitude' => $request->input('longitude'),
+                'driver_shipment_id' => $request->input('driver_shipment_id'),
+            ]
+        );
+
+        return $this->showSuccessMessage(__('messages.success_messages.success_update'), 200);
+    }
+
 
 
     //

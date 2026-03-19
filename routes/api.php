@@ -288,10 +288,11 @@ Route::group([
             ])->group(function () {
 
                 // Vehicle addition pending & images
-                // make driver online offlie
+                // make driver online offline    
                 Route::prefix('driver')->group(function () {
                     Route::get('online-status', [DriverApiController::class, 'getDriverOnlineOfflineStatus']);
                     Route::post('online-status/update', [DriverApiController::class, 'updateDriverOnlineOffline']);
+                    Route::post('location/update', [DriverApiController::class, 'updateDriverLastLocation']);
                 });
 
                 Route::prefix('shipment')->group(function () {
