@@ -61,6 +61,7 @@ use App\Http\Controllers\Api\v1\User\Common\Legal\UserVehicleKycApiController;
 use App\Http\Controllers\Api\v1\User\Common\RatingApiController;
 use App\Http\Controllers\Api\v1\User\Common\Shipment\DriverShipmentApiController;
 use App\Http\Controllers\Api\v1\User\Common\DriverApiController;
+use App\Http\Controllers\Api\v1\user\DeliveryOtpActionApiController;
 use App\Http\Controllers\Api\v1\User\Seller\Product\ProductListingApiController;
 use App\Http\Controllers\Api\v1\User\UserDashboardApiController;
 use App\Http\Controllers\Api\v1\User\UserProfileApiController;
@@ -217,8 +218,6 @@ Route::group([
         Route::apiResource('fulfillmentLocation', FulfillmentLocationApiController::class);
         Route::post('fulfillmentLocation/address/{fulfillmentLocation}', [FulfillmentLocationApiController::class, 'saveAddress']);
 
-        // OTP Verification for sensitive actions
-     
 
         // Which Required KYC Approved User Only
         Route::group([
@@ -306,13 +305,21 @@ Route::group([
                     Route::post('accept/{driverShipment}', [DriverShipmentApiController::class, 'accept']);
                     Route::post('reject/{driverShipment}', [DriverShipmentApiController::class, 'reject']);
                     Route::post('start/{driverShipment}', [DriverShipmentApiController::class, 'start']);
-                    Route::post('complete/{driverShipment}', [DriverShipmentApiController::class, 'complete']);
+                    Route::post('completed/{driverShipment}', [DriverShipmentApiController::class, 'complete']);
 
                     // Route::post('update/shipment-Package/status', [DriverShipmentApiController::class, 'updateShipmentPackageStatus']);            
                     Route::post('package/update-status/buyer', [DriverShipmentApiController::class, 'updateShipmentPackageBuyerStatus']);
                     Route::post('package/update-status/seller', [DriverShipmentApiController::class, 'updateShipmentPackageSellerStatus']);
                     Route::post('package/update-status/transfer', [DriverShipmentApiController::class, 'updateShipmentPackageTransferStatus']);
+
+                    // OTP Verification for sensitive actions
+
+                    Route::post('otp-request/delivery-confirmation', [DeliveryOtpActionApiController::class, 'requestDeliveryConfirmationOtp']);
                 });
+
+
+
+
 
                 //
             });

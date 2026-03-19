@@ -173,7 +173,9 @@ class OneTimePasswordService
      */
     protected function sendSmsOtp(): bool
     {
-        // SmsProvider::send($this->otp->phone_number, $this->otp->otp_code);        
+        // TODO:: remove
+        return true; // testing purpose
+
         // http://sms.krishnasoftware.com/sendsms.jsp?user=Kim001&password=9827177854XX&senderid=KlSHNA&mobiles=9825425385&sms=OTP+FOR+KhetBajar+Reg+IS+1206+FROM+KRISHNA+COMPUTER&tempid=1207165036851849479&responsein=json
         $response = Http::get("http://sms.krishnasoftware.com/sendsms.jsp?user=Kim001&password=9827177854XX&senderid=KlSHNA&mobiles={$this->otp->phone_number}&sms=OTP+FOR+KhetBajar+Reg+IS+{$this->otp->otp_code}+FROM+KRISHNA+COMPUTER&tempid=1207165036851849479&responsein=json");
 

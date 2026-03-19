@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Api\v1\User\Common\Shipment;
 
 use App\Enum\Common\Order\OrderStatusEnum;
+use App\Enum\Common\OtpPurposeEnum;
 use App\Enum\Common\Shipment\DriverShipmentStatusEnum;
 use App\Enum\Common\Shipment\ShipmentStatusEnum;
 use App\Http\Controllers\ApiResponseWithAuthController;
 use App\Models\Common\Shipment\ShipmentPackage;
 use App\Models\Delivery\DriverShipment;
+use App\Models\User;
+use App\Services\Common\Auth\OneTimePasswordService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -141,6 +144,7 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
                     'total_packages' => $shipment?->total_packages,
                     'shipment_payable' => $ds->shipment_payable,
 
+                    'is_delivery_confirmation_otp_required' => $shipment->shipment_type === ShipmentStatusEnum::DISPATCH->value && $shipment->buyer_id !== null, // Only for dispatch shipments with a buyer
 
                 ];
 
@@ -434,7 +438,7 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
     |--------------------------------------------------------------------------
     */
 
-    public function complete(Request $request, DriverShipment $driverShipment)
+    public function complete(Request $request, DriverShipment $driverShipment, OneTimePasswordService $otpService)
     {
         if ($driverShipment->driver_id !== request()->user()->id) {
             return $this->errorResponse("Unauthorized", 403);
@@ -445,26 +449,11 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
 
         ]);
 
-
         $shipment = $driverShipment->shipment;
+
         if (!$shipment) {
             return $this->showErrorMessage(__('messages.error_messages.not_found'), 404);
         }
-
-        if ($shipment->shipment_type == ShipmentStatusEnum::DISPATCH->value) {
-            // we need OTP
-            $request->validate([
-                'otp' => 'required|string|min:4|max:8',
-            ]);
-
-
-            // Check OTP logic here (if implemented)
-
-
-        }
-
-        return;
-
 
         if (in_array($driverShipment->status, [
             DriverShipmentStatusEnum::CANCELLED->value,
@@ -473,6 +462,39 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
         ])) {
             return $this->errorResponse("This shipment has been cancelled/returned/completed. Cannot complete.", 410);
         }
+
+        // Only for buyer dispatch confirmation.
+        if (
+            $shipment->shipment_type == ShipmentStatusEnum::DISPATCH->value
+            && $shipment->buyer_id !== null
+        ) {
+            // we need OTP
+            $request->validate([
+                'otp' => 'required|string|min:4|max:8',
+                'request_id' => 'required|string', // To identify which OTP request this is for
+            ]);
+
+            $driverShipment = DriverShipment::with('shipment.buyer')->find($driverShipment->id);
+            $buyer = User::findOrFail($driverShipment->shipment->buyer_id);
+
+            // Check OTP logic here (if implemented)
+
+            // If not matching then return error response
+            if (!$otpService->verify(
+                $buyer,
+                OtpPurposeEnum::DELIVERY_CONFIRMATION->value,
+                $request->request_id,
+                $request->otp,
+                $request->phone_number
+            )) {
+                // return $this->showErrorMessage('Invalid or expired OTP', 422);
+                return $this->showErrorMessage(__('messages.error_messages.invalid_or_expired_otp'), 422);
+            }
+        }
+
+
+
+
 
         DB::transaction(function () use ($request, $driverShipment, $shipment) {
 
