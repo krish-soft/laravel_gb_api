@@ -217,6 +217,8 @@ Route::group([
         Route::apiResource('fulfillmentLocation', FulfillmentLocationApiController::class);
         Route::post('fulfillmentLocation/address/{fulfillmentLocation}', [FulfillmentLocationApiController::class, 'saveAddress']);
 
+        // OTP Verification for sensitive actions
+     
 
         // Which Required KYC Approved User Only
         Route::group([

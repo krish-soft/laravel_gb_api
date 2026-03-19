@@ -8,6 +8,7 @@ use App\Enum\Common\Shipment\ShipmentStatusEnum;
 use App\Http\Controllers\ApiResponseWithAuthController;
 use App\Models\Common\Shipment\ShipmentPackage;
 use App\Models\Delivery\DriverShipment;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -441,12 +442,29 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
 
         $request->validate([
             'proof_image' => 'required|image|max:2048', // Optional proof image
+
         ]);
+
 
         $shipment = $driverShipment->shipment;
         if (!$shipment) {
             return $this->showErrorMessage(__('messages.error_messages.not_found'), 404);
         }
+
+        if ($shipment->shipment_type == ShipmentStatusEnum::DISPATCH->value) {
+            // we need OTP
+            $request->validate([
+                'otp' => 'required|string|min:4|max:8',
+            ]);
+
+
+            // Check OTP logic here (if implemented)
+
+
+        }
+
+        return;
+
 
         if (in_array($driverShipment->status, [
             DriverShipmentStatusEnum::CANCELLED->value,
@@ -834,7 +852,7 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
                 DriverShipmentStatusEnum::IN_TRANSIT->value,
             ])
         ) {
-            throw new RuntimeException(
+            throw new Exception(
                 "Shipment is not in a valid state for updating package status.",
                 422
             );
@@ -846,7 +864,7 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
             ->contains($packageId);
 
         if (!$belongs) {
-            throw new RuntimeException('Shipment package not belongs to this shipment.', 404);
+            throw new Exception('Shipment package not belongs to this shipment.', 404);
         }
 
         return $driverShipment;
