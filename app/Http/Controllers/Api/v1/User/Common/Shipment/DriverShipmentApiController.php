@@ -32,6 +32,13 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
             ->whereIn('status', [DriverShipmentStatusEnum::REQUESTED->value, DriverShipmentStatusEnum::ASSIGNED->value]) // becasue default we have to assigned direct as startup
             ->get();
 
+        $activeShipments = DriverShipment::oldest()
+            ->where('driver_id', $user->id)
+            ->whereIn('status', [
+                DriverShipmentStatusEnum::ACCEPTED->value,
+                DriverShipmentStatusEnum::IN_TRANSIT->value,
+            ])->get();
+
         return $this->successResponse(
             __('messages.success_messages.success_get'),
             [
@@ -39,6 +46,12 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
                 'number_of_requested_shipments' => $driverShipments->count(),
                 // 'shipment_ids' => implode(',', $driverShipments->pluck('id')->toArray()),
                 'shipment_ids' =>  $driverShipments->pluck('id')->toArray(),
+
+                // Active Shipments
+                'has_active_shipments' => $activeShipments->isNotEmpty(),
+                'active_shipments_count' => $activeShipments->count(),
+                'active_shipment_ids' => $activeShipments->pluck('id')->toArray(),
+
             ]
         );
     }

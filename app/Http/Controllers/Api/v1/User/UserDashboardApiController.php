@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\v1\User;
 
+use App\Enum\Common\Shipment\DriverShipmentStatusEnum;
 use App\Http\Controllers\ApiResponseWithAuthController;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -17,13 +18,7 @@ class UserDashboardApiController extends ApiResponseWithAuthController
     {
         $user = $request->user();
 
-
-
         $dashboardData = [];
-
-
-
-
 
         $dashboardData['summary'] = [
             // buyer
@@ -35,6 +30,9 @@ class UserDashboardApiController extends ApiResponseWithAuthController
 
             // driver
             'total_deliveries' => $user->deliveryShipments()->count(), // driver
+            'requested_deliveries' => $user->deliveryShipments()->whereIn('status', [DriverShipmentStatusEnum::REQUESTED->value, DriverShipmentStatusEnum::ASSIGNED->value])->count(), // driver
+            'active_deliveries' => $user->deliveryShipments()->whereIn('status', [DriverShipmentStatusEnum::ACCEPTED->value, DriverShipmentStatusEnum::IN_TRANSIT->value])->count(), // driver
+
             'total_ratings' => $user->driverRatings()->count(), // driver
             'average_rating' => $user->driverRatings()->avg('rating'), // driver
         ];
