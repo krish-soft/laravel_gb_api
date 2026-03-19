@@ -70,28 +70,14 @@ class InvoiceAccountingService
                     $credit = 0;
                     $debit = 0;
 
-                    if ($owner->isBuyer()) {
-
-                        if ($totalAmount >= 0) {
-                            $debit = $totalAmount;   // Purchase
-                        } else {
-                            $credit = abs($totalAmount); // Refund
-                        }
-                    } else if ($owner->isSeller()) {
-
-                        if ($totalAmount >= 0) {
-                            $credit = $totalAmount;  // Seller earning
-                        } else {
-                            $debit = abs($totalAmount); // Deduction / reversal
-                        }
-                    } else if ($owner->isDelivery()) {
-
-                        if ($totalAmount >= 0) {
-                            $credit = $totalAmount;
-                        } else {
-                            $debit = abs($totalAmount);
-                        }
+                    if ($totalAmount > 0) {
+                        // $credit = $totalAmount;  // Seller earning or Delivery earning or Purchase amount
+                        $credit = $baseAmount;
+                    } else {
+                        // $debit = abs($totalAmount); // Deduction / reversal for seller or delivery or refund for buyer
+                        $debit = abs($baseAmount);
                     }
+
 
                     $accountingService->createLedger($ownerAccount, [
                         'description' => "Accounting Ledger Entry for Invoice #{$invoice->invoice_number}",
@@ -143,42 +129,19 @@ class InvoiceAccountingService
                         $debitChargeTax = 0;
                         $creditChargeTax = 0;
 
-
-
-                        if ($owner->isBuyer()) {
-
-                            if ($totalAmount >= 0) {
-                                // $debit = $totalAmount;   // Purchase
-                                $debitCharge = $chargeTaxable;
-                                $debitChargeTax = $chargeTax;
-                            } else {
-                                // $credit = abs($totalAmount); // Refund
-                                $creditCharge = abs($chargeTaxable);
-                                $creditChargeTax = abs($chargeTax);
-                            }
-                        } else if ($owner->isSeller()) {
-
-                            if ($totalAmount >= 0) {
-                                // $credit = $totalAmount;  // Seller earning
-                                $creditCharge = $chargeTaxable;
-                                $creditChargeTax = $chargeTax;
-                            } else {
-                                // $debit = abs($totalAmount); // Deduction / reversal
-                                $debitCharge = abs($chargeTaxable);
-                                $debitChargeTax = abs($chargeTax);
-                            }
-                        } else if ($owner->isDelivery()) {
-
-                            if ($totalAmount >= 0) {
-                                // $credit = $totalAmount;
-                                $creditCharge = $chargeTaxable;
-                                $creditChargeTax = $chargeTax;
-                            } else {
-                                // $debit = abs($totalAmount);
-                                $debitCharge = abs($chargeTaxable);
-                                $debitChargeTax = abs($chargeTax);
-                            }
+                        if ($chargeTaxable > 0) {
+                            $creditCharge = $chargeTaxable;
+                        } else {
+                            $debitCharge = abs($chargeTaxable);
                         }
+
+                        if ($chargeTax > 0) {
+                            $creditChargeTax = $chargeTax;
+                        } else {
+                            $debitChargeTax = abs($chargeTax);
+                        }
+
+
 
 
                         if (!$accountingService->ledgerExists(

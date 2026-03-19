@@ -16,7 +16,11 @@ class AccountingService
         $credit = $data['credit'] ?? 0;
         $debit  = $data['debit'] ?? 0;
 
-        if (($credit > 0 && $debit > 0) || ($credit <= 0 && $debit <= 0)) {
+        if (
+            ($credit > 0 && $debit > 0) ||  // both filled
+            ($credit == 0 && $debit == 0) || // none filled
+            ($credit < 0 || $debit < 0)      // negative values
+        ) {
             throw new RuntimeException("Invalid credit / debit amount for Account Code: {$account->accnt_code}, Credit: {$credit}, Debit: {$debit}");
         }
 

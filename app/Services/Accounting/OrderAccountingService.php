@@ -73,8 +73,8 @@ class OrderAccountingService
                 )) {
                     $accounting->createLedger($clearingAccount, [
                         'description' => "Payment received (taxable amount) for Order #{$order->order_number}",
-                        'credit' => $order->taxable_amount, // we are storing in each accounts  $order->total_amount,
-                        'debit'  => 0,
+                        'credit' => $order->subtotal > 0 ? $order->subtotal : 0, // we are storing in each accounts  $order->total_amount,
+                        'debit'  => $order->subtotal  < 0 ? abs($order->subtotal) : 0, // we are storing in each accounts  $order->total_amount,
                         'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
                         'status' => LedgerStatusEnum::AVAILABLE->value,
                         'source_type' => Order::class,
@@ -95,8 +95,8 @@ class OrderAccountingService
 
                     $accounting->createLedger($buyerAccount, [
                         'description' => "Payment received for Order #{$order->order_number}",
-                        'credit' => $order->total_amount, // we are storing in each accounts  ,
-                        'debit'  => 0,
+                        'credit' => $order->total_amount > 0 ? $order->total_amount : 0, // we are storing in each accounts  ,
+                        'debit'  => $order->total_amount < 0 ? abs($order->total_amount) : 0,
                         'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
                         'status' => LedgerStatusEnum::AVAILABLE->value, // Because Actual How much we sold to them  will finalize letter so
                         'source_type' => Order::class,
