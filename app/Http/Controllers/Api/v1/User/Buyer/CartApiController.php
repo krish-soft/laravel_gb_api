@@ -53,9 +53,29 @@ class CartApiController extends ApiResponseWithAuthController
 
         $cart = Cart::with([
             'cartItems.productListingItem.product:id,name',
+            'cartItems.productListingItem.listingPackages',
             'cartItems.seller:id,nickname,user_code',
         ])
             ->find($cart->id);
+
+        // add total sold and remain qty and total qty total
+        foreach ($cart->cartItems as $item) {
+            $soldQty = 0;
+            $remainQty = 0;
+            $totalQty = 0;
+
+            foreach ($item->productListingItem->listingPackages as $package) {
+                $soldQty += $package->sold_qty;
+                $remainQty += ($package->qty - $package->sold_qty);
+                $totalQty += $package->qty;
+            }
+            $item->sold_qty = $soldQty;
+            $item->remain_qty = $remainQty;
+            $item->total_qty = $totalQty;
+        }
+
+
+
 
         return $this->successResponse(__('messages.success_messages.cart_fetched'), $cart, 200);
     }
