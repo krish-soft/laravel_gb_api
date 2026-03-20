@@ -5,15 +5,18 @@ namespace App\Services\Common\Charge;
 use App\Enum\Common\Charge\ChargesEnum;
 use App\Models\Master\Charge\MstCharge;
 use App\Models\Master\Charge\MstChargeLevel;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class ChargeCalculationService
 {
+
+
     public function calculate(
         string $chargeLevelCode,
         float  $orderAmount,
         array  $packages,
-        bool  $isBuyerPickup = false,
+        bool   $isBuyerPickup = false,
         bool   $isSellerDropOff = false
     ): array {
 
@@ -29,35 +32,35 @@ class ChargeCalculationService
             ->where('code', $chargeLevelCode)
             ->first();
 
-        // We can Take Default Level
-
         if (!$level) {
             throw new RuntimeException(__('messages.error_messages.invalid_charge_level'), 422);
         }
 
-
-        $chargeMasters = MstCharge::active() // All active charges           
+        $chargeMasters = MstCharge::active()
             ->with([
-                'minimumRuleCharges' => fn($q) => $q->active()->where('charge_level_id', $level->id)->orderBy('rule_no'),
-                'deliveryRuleCharges' => fn($q) => $q->active()->where('charge_level_id', $level->id)->orderBy('rule_no'),
+                'minimumRuleCharges' => fn($q) => $q->active()
+                    ->where('charge_level_id', $level->id)
+                    ->orderBy('rule_no'),
+
+                'deliveryRuleCharges' => fn($q) => $q->active()
+                    ->where('charge_level_id', $level->id)
+                    ->orderBy('rule_no'),
             ])
             ->get();
 
+        // Remove delivery if pickup/drop
         if ($isBuyerPickup || $isSellerDropOff) {
-            // Remove Delivery Fee Charge from list
-            $chargeMasters = $chargeMasters->filter(function ($charge) {
-                return $charge->code !== ChargesEnum::DELIVERY_FEE->value;
-            });
+            $chargeMasters = $chargeMasters->filter(
+                fn($c) => $c->code !== ChargesEnum::DELIVERY_FEE->value
+            );
         }
 
-        // IF that level pricing not found then give error
         if ($chargeMasters->isEmpty()) {
             throw new RuntimeException(__('messages.error_messages.missing_charge_level_pricing_config'), 422);
         }
 
-
         // --------------------------------------------------
-        // DERIVED TOTALS FROM PACKAGES (SINGLE SOURCE)
+        // TOTALS
         // --------------------------------------------------
         $totalQty = 0;
         $totalWeight = 0;
@@ -74,19 +77,21 @@ class ChargeCalculationService
         $totalCharge = 0;
         $totalTax = 0;
 
-
+        // --------------------------------------------------
+        // MAIN LOOP
+        // --------------------------------------------------
         foreach ($chargeMasters as $charge) {
 
             $chargeAmount = 0;
             $ruleNo = null;
             $ruleDesc = null;
+            $deliveryBreakdown = [];
 
             // ==================================================
-            // MINIMUM / PLATFORM TYPE CHARGES
+            // MINIMUM / PLATFORM
             // ==================================================
-            if (
-                $charge->minimumRuleCharges->isNotEmpty()
-            ) {
+            if ($charge->minimumRuleCharges->isNotEmpty()) {
+
                 $rule = $this->applyMinimumOrderRule(
                     $charge->minimumRuleCharges,
                     $orderAmount,
@@ -102,37 +107,57 @@ class ChargeCalculationService
             }
 
             // ==================================================
-            // DELIVERY / PACKAGE BASED CHARGES
+            // DELIVERY (PER PACKAGE + BREAKDOWN)
             // ==================================================
             if (
                 $chargeAmount == 0 &&
                 $charge->deliveryRuleCharges->isNotEmpty()
             ) {
 
-                $matchedRule = null;
+                $packageChargeTotal = 0;
 
-                foreach ($charge->deliveryRuleCharges as $rule) {
-                    foreach ($packages as $pkg) {
+                foreach ($packages as $pkgIndex => $pkg) {
+
+                    foreach ($charge->deliveryRuleCharges as $rule) {
+
                         if (
                             $rule->measure_unit === $pkg['pack_unit'] &&
                             (float)$rule->measure_value === (float)$pkg['pack_size'] &&
-                            (!$rule->pack_type_unit || $rule->pack_type_unit === ($pkg['pack_type_unit'] ?? null))
+                            ($rule->pack_type_unit === $pkg['pack_type_unit'])
                         ) {
-                            $matchedRule = $rule;
-                            break 2; // Exit both loops
+
+                            $lineAmount = $rule->charge_amount * (float)$pkg['order_qty'];
+
+                            $packageChargeTotal += $lineAmount;
+
+                            $deliveryBreakdown[] = [
+                                'package_index' => $pkgIndex,
+                                'charge_code' => $charge->code,
+                                'charge_name' => $charge->name,
+                                'rule_no' => $rule->rule_no,
+                                'rule_desc' => $rule->description,
+                                'measure_value' => $rule->measure_value,
+                                'measure_unit' => $rule->measure_unit,
+                                'pack_type_unit' => $rule->pack_type_unit,
+
+                                //
+                                'order_qty' => (float)$pkg['order_qty'],
+                                'rate' => (float)$rule->charge_amount,
+                                'amount' => round($lineAmount, 2),
+                            ];
+
+                            break;
                         }
                     }
                 }
 
-                if ($matchedRule) {
-                    $chargeAmount = $matchedRule->charge_amount * $totalQty;
-                    $ruleNo = $matchedRule->rule_no;
-                    $ruleDesc = $matchedRule->description;
+                if ($packageChargeTotal > 0) {
+                    $chargeAmount = $packageChargeTotal;
                 }
             }
 
             // ==================================================
-            // PUSH CHARGE ONCE (GLOBAL GUARANTEE)
+            // FINAL PUSH
             // ==================================================
             if ($chargeAmount > 0) {
 
@@ -142,16 +167,19 @@ class ChargeCalculationService
                     'charge_code' => $charge->code,
                     'charge_name' => $charge->name,
                     'qty' => $totalQty,
-                    'rule_type' => $ruleNo ? 'rule_based' : null,
+
+                    'rule_type' => $ruleNo ? 'rule_based' : 'delivery',
                     'rule_no' => $ruleNo,
                     'rule_desc' => $ruleDesc,
 
                     'taxable_amount' => round($chargeAmount, 2),
                     'tax_amount' => round($taxArr['charge_tax'], 2),
-                    'total_amount' => round(
-                        $chargeAmount + $taxArr['charge_tax'],
-                        2
-                    ),
+                    'total_amount' => round($chargeAmount + $taxArr['charge_tax'], 2),
+
+                    // 👇 IMPORTANT: breakdown added here
+                    'breakdown' => !empty($deliveryBreakdown) ? $deliveryBreakdown : null,
+
+                    'applicable_state_code'=> $charge->applicable_state_code,
                 ];
 
                 $totalCharge += $chargeAmount;
@@ -159,86 +187,9 @@ class ChargeCalculationService
             }
         }
 
-        ## Seperate per line charge if two oacage then two time showing delivery charges with its cost
-        // foreach ($chargeMasters as $charge) {
-
-        //     // ==================================================
-        //     // PLATFORM / MINIMUM ORDER CHARGES
-        //     // ==================================================
-        //     if (
-        //         $charge->code === ChargesEnum::PLATFORM_FEE->value &&
-        //         $charge->minimumRuleCharges->isNotEmpty()
-        //     ) {
-
-        //         $rule = $this->applyMinimumOrderRule(
-        //             $charge->minimumRuleCharges,
-        //             $orderAmount,
-        //             $totalQty,
-        //             $totalWeight
-        //         );
-
-        //         if ($rule) {
-        //             $taxArr = $this->calculateTax($charge, $rule['amount']);
-
-        //             $charges[] = [
-        //                 'charge_code' => $charge->code,
-        //                 'charge_name' => $charge->name,
-
-        //                 'rule_type' => 'minimum_order',
-        //                 'rule_no' => $rule['rule_no'],
-        //                 'rule_desc' => $rule['description'],
-
-        //                 'taxable_amount' => round($rule['amount'], 2),
-        //                 'tax_amount' => round($taxArr['charge_tax'], 2),
-        //                 'total_amount' => round($rule['amount'] + $taxArr['charge_tax'], 2),
-        //             ];
-
-        //             $totalCharge += $rule['amount'];
-        //             $totalTax += $taxArr['charge_tax'];
-        //         }
-        //     }
-
-        //     // ==================================================
-        //     // DELIVERY CHARGES (PER PACKAGE)
-        //     // ==================================================
-        //     if (
-        //         $charge->code === ChargesEnum::DELIVERY_FEE->value &&
-        //         $charge->deliveryRuleCharges->isNotEmpty()
-        //     ) {
-
-        //         foreach ($packages as $pkg) {
-
-        //             $rule = $this->applyDeliveryRule(
-        //                 $charge->deliveryRuleCharges,
-        //                 $pkg
-        //             );
-
-        //             if (!$rule) {
-        //                 continue;
-        //             }
-
-        //             $lineAmount = $rule['amount'] * (float)$pkg['order_qty'];
-        //             $taxArr = $this->calculateTax($charge, $lineAmount) ?? [];
-
-        //             $charges[] = [
-        //                 'charge_code' => $charge->code,
-        //                 'charge_name' => $charge->name,
-
-        //                 'rule_type' => 'delivery',
-        //                 'rule_no' => $rule['rule_no'],
-        //                 'rule_desc' => $rule['description'],
-
-        //                 'taxable_amount' => round($lineAmount, 2),
-        //                 'tax_amount' => round($taxArr['tax_amount'] ?? 0, 2),
-        //                 'total_amount' => round((float)$lineAmount + ($taxArr['tax_amount'] ?? 0), 2),
-        //             ];
-
-        //             $totalCharge += $lineAmount;
-        //             $totalTax += $taxArr['tax_amount'] ?? 0;
-        //         }
-        //     }
-        // }
-
+        // --------------------------------------------------
+        // RESPONSE
+        // --------------------------------------------------
         return [
             'charges' => $charges,
             'charge_taxable' => round($totalCharge, 2),
@@ -246,7 +197,6 @@ class ChargeCalculationService
             'total_charge_amount' => round($totalCharge + $totalTax, 2),
         ];
     }
-
     // =========================================================
     // MINIMUM ORDER RULE (PRICE / QTY / WEIGHT – ANY COMBO)
     // =========================================================
