@@ -115,12 +115,13 @@ class MstProduct extends BaseModel
     }
 
 
-    protected $appends = ['pictureUrl'];
+    protected $appends = ['picture_url'];
 
     public function getPictureUrlAttribute()
     {
         if ($this->picture) {
-            return Storage::disk('public')->url($this->picture);
+            // return Storage::disk('public')->url($this->picture);
+            return $this->picture ? asset('storage/' . $this->picture) : null;
         }
         return null;
     }

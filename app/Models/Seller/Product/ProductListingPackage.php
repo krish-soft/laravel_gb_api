@@ -130,5 +130,28 @@ class ProductListingPackage extends BaseModel
     }
 
 
+    protected $appends = [
+        'picture_url',
+        'picture2_url',
+        'picture3_url',
+    ];
+
+    // Accessors for picture URLs
+    public function getPictureUrlAttribute()
+    {
+        return $this->picture ? asset('storage/' . $this->picture) : null;
+    }
+
+    public function getPicture2UrlAttribute()
+    {
+        return $this->picture2 ? asset('storage/' . $this->picture2) : null;
+    }
+
+    public function getPicture3UrlAttribute()
+    {
+        return $this->picture3 ? asset('storage/' . $this->picture3) : null;
+    }
+
+
     //
 }
