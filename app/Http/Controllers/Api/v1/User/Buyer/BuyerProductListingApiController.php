@@ -115,6 +115,7 @@ class BuyerProductListingApiController extends ApiResponseWithAuthController
                     'total_qty' => $pkg->qty,
                     'sold_qty' => $pkg->sold_qty,
                     'available_qty' => $pkg->qty - $pkg->sold_qty,
+                    'total_weight' => $pkg->pack_size * $pkg->qty,
                 ];
             })
             ->slice($offset, $limit)

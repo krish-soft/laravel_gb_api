@@ -53,8 +53,8 @@ class CartApiController extends ApiResponseWithAuthController
 
         $cart = Cart::with([
             'cartItems.productListingItem.product:id,name',
-            'cartItems.productListingItem.listingPackages',
-            'cartItems.seller:id,nickname,user_code',
+            // 'cartItems.productListingItem.listingPackages',
+            // 'cartItems.seller:id,nickname,user_code',
         ])
             ->find($cart->id);
 
@@ -65,10 +65,16 @@ class CartApiController extends ApiResponseWithAuthController
             $totalQty = 0;
 
             foreach ($item->productListingItem->listingPackages as $package) {
-                $soldQty += $package->sold_qty;
-                $remainQty += ($package->qty - $package->sold_qty);
-                $totalQty += $package->qty;
+
+                if ($package->id == $item->product_listing_package_id) {
+                    $soldQty += $package->sold_qty;
+                    $remainQty += ($package->qty - $package->sold_qty);
+                    $totalQty += $package->qty;
+                }
+                unset($item->productListingItem->listingPackages);
             }
+
+
             $item->sold_qty = $soldQty;
             $item->remain_qty = $remainQty;
             $item->total_qty = $totalQty;
