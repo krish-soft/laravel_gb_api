@@ -20,40 +20,73 @@ class MstProduct extends BaseModel
     {
         static::creating(function ($product) {
 
-            // If code already provided (seeder/manual), do nothing
-            if (!empty($product->product_code)) {
-                return;
-            }
+            // if (!empty($product->product_code)) {
+            //     return;
+            // }
 
-            if (empty($product->category_id)) {
-                throw new \RuntimeException('Category is required to generate product code.');
-            }
+            // if (empty($product->category_id)) {
+            //     throw new \RuntimeException('Category required');
+            // }
 
-            $category = MstProductCategory::find($product->category_id);
+            // $category = \App\Models\Master\Product\MstProductCategory::find($product->category_id);
 
-            if (!$category || empty($category->hsn_chapter)) {
-                throw new \RuntimeException('Invalid category or missing HSN chapter.');
-            }
+            // if (!$category || empty($category->hsn_chapter)) {
+            //     throw new \RuntimeException('Invalid category');
+            // }
 
-            $prefix = $category->hsn_chapter . 'P';
+            // $prefix = $category->hsn_chapter . 'P';
+            $prefix = 'PDT';
 
-            // Find last product code for this category
-            $lastCode = self::withTrashed()
-                ->where('category_id', $product->category_id)
-                ->where('product_code', 'like', $prefix . '%')
-                ->orderBy('product_code', 'desc')
-                ->value('product_code');
+            // 🔥 SAFE UNIQUE CODE (NO NULL, NO DUPLICATE)
+            do {
+                $random = str_pad(mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);
+                $code = $prefix . $random;
+            } while (
+                self::withTrashed()->where('product_code', $code)->exists()
+            );
 
-            $next = 1;
-
-            if ($lastCode) {
-                $next = (int)substr($lastCode, -3) + 1;
-            }
-
-            $product->product_code =
-                $prefix . str_pad($next, 3, '0', STR_PAD_LEFT);
+            $product->product_code = $code;
         });
     }
+
+    // protected static function booted()
+    // {
+    //     static::creating(function ($product) {
+
+    //         // If code already provided (seeder/manual), do nothing
+    //         if (!empty($product->product_code)) {
+    //             return;
+    //         }
+
+    //         if (empty($product->category_id)) {
+    //             throw new \RuntimeException('Category is required to generate product code.');
+    //         }
+
+    //         $category = MstProductCategory::find($product->category_id);
+
+    //         if (!$category || empty($category->hsn_chapter)) {
+    //             throw new \RuntimeException('Invalid category or missing HSN chapter.');
+    //         }
+
+    //         $prefix = $category->hsn_chapter . 'P';
+
+    //         // Find last product code for this category
+    //         $lastCode = self::withTrashed()
+    //             ->where('category_id', $product->category_id)
+    //             ->where('product_code', 'like', $prefix . '%')
+    //             ->orderBy('product_code', 'desc')
+    //             ->value('product_code');
+
+    //         $next = 1;
+
+    //         if ($lastCode) {
+    //             $next = (int)substr($lastCode, -3) + 1;
+    //         }
+
+    //         $product->product_code =
+    //             $prefix . str_pad($next, 3, '0', STR_PAD_LEFT);
+    //     });
+    // }
 
     protected $fillable = [
         'picture',

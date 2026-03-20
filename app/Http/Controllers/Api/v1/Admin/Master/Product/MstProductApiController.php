@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 class MstProductApiController extends ApiResponseWithAdminAuthController
 {
 
-    protected $FILE_PATH = '/master/products';
+    protected static $FILE_PATH = '/master/products';
 
     /**
      * Display a listing of the resource.
@@ -37,7 +37,7 @@ class MstProductApiController extends ApiResponseWithAdminAuthController
         $request->validate([
             'name' => 'required|string|max:150',
             'category_id' => 'required|exists:mst_product_categories,id',
-            'description' => 'required|string|min:5|max:255',
+            'description' => 'required|string|min:3|max:255',
             'hsn' => 'required|string|max:15',
 
             'upc' => 'nullable|string|max:20',
@@ -78,6 +78,7 @@ class MstProductApiController extends ApiResponseWithAdminAuthController
 
         $mstProduct = MstProduct::create($request->merge([
             'picture' => $filePath,
+            'is_active' => true,
         ])->all());
 
 
@@ -118,7 +119,7 @@ class MstProductApiController extends ApiResponseWithAdminAuthController
         $request->validate([
             'name' => 'required|string|max:150',
             'category_id' => 'required|exists:mst_product_categories,id',
-            'description' => 'required|string|min:5|max:255',
+            'description' => 'required|string|min:3|max:255',
             'hsn' => 'required|string|max:15',
 
             'upc' => 'nullable|string|max:20',
@@ -130,24 +131,26 @@ class MstProductApiController extends ApiResponseWithAdminAuthController
         ]);
 
         // Check Already Exist any of key except name & descriptions
-        $existingProduct = MstProduct::where(function ($query) use ($request, $mstProduct) {
-            if ($request->filled('upc')) {
-                $query->orWhere('upc', $request->upc);
-            }
-            if ($request->filled('hsn')) {
-                $query->orWhere('hsn', $request->hsn);
-            }
-            if ($request->filled('sku')) {
-                $query->orWhere('sku', $request->sku);
-            }
-        })->where('id', '!=', $mstProduct->id)->first();
+        // $existingProduct = MstProduct::where('id', '!=', $mstProduct->id)
+        //     ->where(function ($query) use ($request) {
+        //         if ($request->filled('upc')) {
+        //             $query->orWhere('upc', $request->upc);
+        //         }
+        //         if ($request->filled('hsn')) {
+        //             $query->orWhere('hsn', $request->hsn);
+        //         }
+        //         if ($request->filled('sku')) {
+        //             $query->orWhere('sku', $request->sku);
+        //         }
+        //     })
+        //     ->first();
 
-        if ($existingProduct) {
-            return $this->showErrorMessage(
-                __('messages.error_messages.already_exists'),
-                409
-            );
-        }
+        // if ($existingProduct) {
+        //     return $this->showErrorMessage(
+        //         __('messages.error_messages.already_exists'),
+        //         409
+        //     );
+        // }
 
 
         $filePath = $mstProduct->picture;
