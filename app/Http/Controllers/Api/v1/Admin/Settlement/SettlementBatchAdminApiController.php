@@ -127,14 +127,14 @@ class SettlementBatchAdminApiController extends ApiResponseWithAdminAuthControll
 
         $differencePlatform = $settlementPlatformAccountBalance - $settlementAccountBalance;
 
-        Log::info([
-            'settlement_account_id' => $settlementAccount->id,
-            'settlement_account_balance' => $settlementAccountBalance,
-            'settlement_platform_account_balance' => $settlementPlatformAccountBalance,
-            'settlement_account_ledgers_balance' => $settlementAccountLedgersBalance,
-            'difference' => $difference,
-            'difference_platform' => $differencePlatform,
-        ]);
+        // Log::info([
+        //     'settlement_account_id' => $settlementAccount->id,
+        //     'settlement_account_balance' => $settlementAccountBalance,
+        //     'settlement_platform_account_balance' => $settlementPlatformAccountBalance,
+        //     'settlement_account_ledgers_balance' => $settlementAccountLedgersBalance,
+        //     'difference' => $difference,
+        //     'difference_platform' => $differencePlatform,
+        // ]);
 
         // if (!$settlementAccountLedgers->isEmpty() || $request->input('status') === 'settled') {
         // if (!$settlementAccountLedgers->isEmpty() && $settlementAccountLedgers->where('accountLedger.status', '!=', LedgerStatusEnum::SETTLED->value)->isNotEmpty()) {
