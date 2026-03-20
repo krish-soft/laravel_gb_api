@@ -7,6 +7,7 @@ use App\Models\Buyer\Order\OrderItem;
 use App\Models\Master\Product\MstProduct;
 use App\Models\Master\Product\MstProductVariant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class ProductListingItem extends BaseModel
 {
@@ -59,10 +60,56 @@ class ProductListingItem extends BaseModel
     }
 
 
-
     // helpers
     public function isOrganic()
     {
         return $this->is_organic;
+    }
+
+
+    protected $appends = [
+        'total_qty',
+        'total_sold_qty',
+        'total_available_qty',
+
+        'total_weight',
+        'total_sold_weight',
+        'total_available_weight',
+    ];
+
+    // get total qty 
+    public function getTotalQtyAttribute()
+    {
+        return $this->listingPackages()->sum('qty');
+    }
+
+    // get total sold qty
+    public function getTotalSoldQtyAttribute()
+    {
+        return $this->listingPackages()->sum('sold_qty');
+    }
+
+    // get total available qty
+    public function getTotalAvailableQtyAttribute()
+    {
+        return $this->listingPackages()->selectRaw('SUM(qty - sold_qty) as available_qty')->value('available_qty');
+    }
+
+    // get total weight
+    public function getTotalWeightAttribute()
+    {
+        return $this->listingPackages()->sum(DB::raw('qty * pack_size'));
+    }
+
+    // get total sold weight
+    public function getTotalSoldWeightAttribute()
+    {
+        return $this->listingPackages()->sum(DB::raw('sold_qty * pack_size'));
+    }
+
+    // get total available weight
+    public function getTotalAvailableWeightAttribute()
+    {
+        return $this->listingPackages()->selectRaw('SUM((qty - sold_qty) * pack_size) as available_weight')->value('available_weight');
     }
 }

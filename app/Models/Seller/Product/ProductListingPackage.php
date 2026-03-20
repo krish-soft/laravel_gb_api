@@ -15,6 +15,8 @@ class ProductListingPackage extends BaseModel
 
     protected $fillable = [
         'picture',
+        'picture2',
+        'picture3',
 
         'product_listing_item_id',
         'listing_code',
@@ -27,7 +29,6 @@ class ProductListingPackage extends BaseModel
         'reverse_amount',
 
         'actual_qty',
-
 
         'pack_size',
         'pack_unit',

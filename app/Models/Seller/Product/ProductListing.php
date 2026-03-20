@@ -142,6 +142,10 @@ class ProductListing extends BaseModel
         'total_qty',
         'total_sold_qty',
         'total_available_qty',
+
+        'total_weight',
+        'total_sold_weight',
+        'total_available_weight',
     ];
 
     // get total qty 
@@ -168,5 +172,30 @@ class ProductListing extends BaseModel
             ->join('product_listing_packages', 'product_listing_items.id', '=', 'product_listing_packages.product_listing_item_id')
             ->selectRaw('SUM(product_listing_packages.qty - product_listing_packages.sold_qty) as available_qty')
             ->value('available_qty');
+    }
+
+    // get total weight
+    public function getTotalWeightAttribute()
+    {
+        return $this->listingItems()
+            ->join('product_listing_packages', 'product_listing_items.id', '=', 'product_listing_packages.product_listing_item_id')
+            ->sum(DB::raw('product_listing_packages.qty * product_listing_packages.pack_size'));
+    }
+
+    // get total sold weight
+    public function getTotalSoldWeightAttribute()
+    {
+        return $this->listingItems()
+            ->join('product_listing_packages', 'product_listing_items.id', '=', 'product_listing_packages.product_listing_item_id')
+            ->sum(DB::raw('product_listing_packages.sold_qty * product_listing_packages.pack_size'));
+    }
+
+    // get total available weight
+    public function getTotalAvailableWeightAttribute()
+    {
+        return $this->listingItems()
+            ->join('product_listing_packages', 'product_listing_items.id', '=', 'product_listing_packages.product_listing_item_id')
+            ->selectRaw('SUM((product_listing_packages.qty - product_listing_packages.sold_qty) * product_listing_packages.pack_size) as available_weight')
+            ->value('available_weight');
     }
 }

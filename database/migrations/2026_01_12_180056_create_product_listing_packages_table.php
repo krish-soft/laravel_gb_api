@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
 
             $table->string('picture')->nullable();
+            $table->string('picture2')->nullable();
+            $table->string('picture3')->nullable();
 
             // Product Listing Item
             $table->foreignId('product_listing_item_id')

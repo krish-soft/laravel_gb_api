@@ -203,6 +203,11 @@ class ProductListingApiController extends ApiResponseWithAuthController
             'productListingItems.*.productListingPackages.*.discount_amount' => 'nullable|numeric|min:0',
             'productListingItems.*.productListingPackages.*.discount_type' => 'nullable|in:flat,percentage',
             'productListingItems.*.productListingPackages.*.quality_grade' => 'required|string|max:20',
+
+            // optional images for each package
+            'productListingItems.*.productListingPackages.*.picture' => 'nullable|image|max:2048',
+            'productListingItems.*.productListingPackages.*.picture2' => 'nullable|image|max:2048',
+            'productListingItems.*.productListingPackages.*.picture3' => 'nullable|image|max:2048',
         ];
     }
 
@@ -215,6 +220,11 @@ class ProductListingApiController extends ApiResponseWithAuthController
             'discount_amount' => 'nullable|numeric|min:0',
             'discount_type' => 'nullable|in:flat,percentage',
             'quality_grade' => 'sometimes|string|max:20',
+
+            // optional images for each package
+            'picture' => 'nullable|image|max:2048',
+            'picture2' => 'nullable|image|max:2048',
+            'picture3' => 'nullable|image|max:2048',
         ];
     }
 }

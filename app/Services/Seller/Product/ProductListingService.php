@@ -6,6 +6,7 @@ use App\Models\Seller\Product\ProductListing;
 use App\Models\Seller\Product\ProductListingPackage;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 
 class ProductListingService
@@ -51,6 +52,9 @@ class ProductListingService
                         );
                     }
 
+                    // check if images exist in pkgData and handle upload
+                    $pkgData = $this->processPackageImages($pkgData);
+
                     $item->listingPackages()->create(array_merge(
                         $this->onlyFillable(new ProductListingPackage(), $pkgData),
                         [
@@ -77,6 +81,41 @@ class ProductListingService
         });
     }
 
+    private function processPackageImages(array $pkgData): array
+    {
+        $imageFields = ['picture', 'picture2', 'picture3'];
+
+        foreach ($imageFields as $field) {
+            if (!empty($pkgData[$field])) {
+                $pkgData[$field] = $this->handleImageUpload($pkgData[$field]);
+            }
+        }
+
+        return $pkgData;
+    }
+
+    public function handleImageUpload($image): string
+    {
+        $filename = uniqid() . '_' . time() . '.' . $image->getClientOriginalExtension();
+
+        return $image->storeAs(
+            'listing/product_images/' . date('Y/m'),
+            $filename,
+            'public'
+        );
+    }
+
+    public function deleteImage(?string $path): void
+    {
+        if (!$path) {
+            return;
+        }
+
+        // Make sure file exists before deleting
+        if (Storage::disk('public')->exists($path)) {
+            Storage::disk('public')->delete($path);
+        }
+    }
     /* =========================================================
        ============ UPDATE LISTING FLAGS ONLY ==================
        ========================================================= */
@@ -157,6 +196,8 @@ class ProductListingService
             );
         }
 
+        // process images if exist
+        $data = $this->processPackageImages($data);
 
         $package->fill(array_intersect_key(
             $data,
@@ -214,6 +255,15 @@ class ProductListingService
         }
 
         DB::transaction(function () use ($package, $listing, $reason) {
+            // delete images if exist
+            $imageFields = ['picture', 'picture2', 'picture3'];
+            foreach ($imageFields as $field) {
+                if (!empty($package->$field)) {
+                    $this->deleteImage($package->$field);
+                }
+            }
+
+
             $package->delete();
 
             // Log activity
