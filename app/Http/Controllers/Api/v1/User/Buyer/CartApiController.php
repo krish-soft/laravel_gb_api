@@ -155,8 +155,8 @@ class CartApiController extends ApiResponseWithAuthController
             'pack_price' => $package->pack_price,
             'per_unit_price' => $package->per_kg_price,
 
-            'discount_amount' => $package->discount_amount ?? null,
-            'discount_type' => $package->discount_type ?? null,
+            'discount_amount' => $package->discount_amount ?? 0,
+            'discount_type' => $package->discount_type ?? 0,
 
             'total_price' => $data['order_qty'] * $package->pack_price,
         ]);
