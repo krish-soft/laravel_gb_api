@@ -120,6 +120,9 @@ class BuyerProductListingApiController extends ApiResponseWithAuthController
                     'picture_url' => $pkg->picture_url,
                     'picture2_url' => $pkg->picture2_url,
                     'picture3_url' => $pkg->picture3_url,
+
+                    // 
+                    'nickname' => $pkg->seller->nickname ?? 'N/A',
                 ];
             })
             ->slice($offset, $limit)
