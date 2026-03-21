@@ -3,6 +3,7 @@
 namespace App\Services\Invoice;
 
 use App\Enum\Common\Invoice\InvoiceStatusEnum;
+use App\Enum\Common\Invoice\InvoiceTypeEnum;
 use App\Enum\Common\Shipment\ShipmentStatusEnum;
 use App\Models\Buyer\Order\Order;
 use App\Models\Common\Accounting\Account;
@@ -55,7 +56,7 @@ class InvoiceService
                 'reference' => $order->order_number, // we can also have separate invoice reference if needed
 
                 'invoice_date' => now(),
-                'invoice_type' => InvoiceStatusEnum::SALES->value, // or 'proforma' based on your logic
+                'invoice_type' => InvoiceTypeEnum::SALES->value, // or 'proforma' based on your logic
 
                 'status' => InvoiceStatusEnum::GENERATED->value, // or 'draft' based on your logic
                 'payment_status' => $order->payment_status,
@@ -103,50 +104,6 @@ class InvoiceService
                 //
             }
 
-            // Now Check Each Shipment Package if delivered or not and make final invoice or reverse invoice, we can also have partial invoice if some packages delivered and some not, but for simplicity we will create only one invoice with all items and update the status based on shipment package status
-            foreach ($shipmentPackages as $shipmentPackage) {
-
-                $status = $shipmentPackage->status;
-                $sellerStatus = $shipmentPackage->seller_status;
-
-                if ($status == ShipmentStatusEnum::DELIVERED->value) {
-                    continue;
-                }
-
-                // Now for undelivered pacakges
-
-                if (in_array($sellerStatus, [
-                    ShipmentStatusEnum::PENDING->value,
-                    ShipmentStatusEnum::NOT_PICKED_UP->value,
-                ])) {
-
-                    // Now We need to refund that pacakge
-                    $invoice->invoiceItems()->create([
-                        'item_name' => "Undelivered Package:$shipmentPackage->shipment_package_number ($shipmentPackage->package_number)",
-                        'order_qty' => -1 * $shipmentPackage->qty, // negative for refund
-                        'ship_qty' => 0,
-
-                        'taxable_amount' => -1 * $shipmentPackage->qty * $shipmentPackage->pack_price, // negative for refund
-                        'tax_amount' => 0, // negative for refund
-                        'total_amount' => -1 * ($shipmentPackage->qty * $shipmentPackage->pack_price), // negative for refund
-                    ]);
-
-                    // We need to reverse delivery charge
-                    $deliveryChargeData = $this->getDeliveryCharge($buyer->charge_level_code, $shipmentPackage);
-
-                    $invoice->invoiceCharges()->create([
-                        'charge_name' => "Undelivered Package Delivery Charge: $shipmentPackage->shipment_package_number ($shipmentPackage->package_number)",
-                        'qty' => -1 * $shipmentPackage->qty, // negative for refund
-                        'ship_qty' => 0,
-                        'taxable_amount' => -1 * $deliveryChargeData->charge_taxable, // negative for refund
-                        'tax_amount' => -1 * $deliveryChargeData->charge_tax, // negative for refund
-                        'total_amount' => -1 * $deliveryChargeData->total_charge_amount, // negative for refund
-                    ]);
-                }
-                //
-            }
-
-
             // So not get total 
 
             $baseAmount = $invoice->invoiceItems()->sum('taxable_amount');
@@ -164,6 +121,105 @@ class InvoiceService
 
             $invoice->refresh();
 
+
+            // Create Sales Return Invoice if not delivered, we can also have partial return if some packages delivered and some not, but for simplicity we will create only one invoice with all items and update the status based on shipment package status
+            // Now Check Each Shipment Package if delivered or not and make final invoice or reverse invoice, we can also have partial invoice if some packages delivered and some not, but for simplicity we will create only one invoice with all items and update the status based on shipment package status
+            // First Check Shipment Package seller_status not_pickedup then need
+
+            $isNeedReturnInvoice = false;
+            $isNeedReturnInvoice = $shipmentPackages->contains(function ($shipmentPackage) {
+                return in_array($shipmentPackage->seller_status, [
+                    ShipmentStatusEnum::PENDING->value,
+                    ShipmentStatusEnum::NOT_PICKED_UP->value,
+                ]);
+            });
+
+            if ($isNeedReturnInvoice) {
+
+                // Invoice 
+                $returnInvoice = $order->orderInvoices()->create([
+                    'user_id' => $order->buyer_id,
+                    'order_id' => $order->id,
+
+                    'reference' => $order->order_number, // we can also have separate invoice reference if needed
+
+                    'invoice_date' => now(),
+                    'invoice_type' => InvoiceTypeEnum::SALES_RETURN->value, // or 'proforma' based on your logic
+
+                    'status' => InvoiceStatusEnum::GENERATED->value, // or 'draft' based on your logic
+                    'payment_status' => $order->payment_status,
+
+                    'currency' => $order->currency,
+
+                    'platform_bill_addr_code' => $business->bill_addr_code ?? $business->addr_code, // fix of platform
+
+                    'customer_bill_addr_code' => $order->bill_addr_code, // Optional
+                    'customer_ship_addr_code' => $order->ship_addr_code, // need
+                ]);
+
+
+                foreach ($shipmentPackages as $shipmentPackage) {
+
+                    $status = $shipmentPackage->status;
+                    $sellerStatus = $shipmentPackage->seller_status;
+
+                    if ($status == ShipmentStatusEnum::DELIVERED->value) {
+                        continue;
+                    }
+
+                    // Now for undelivered pacakges
+
+                    if (in_array($sellerStatus, [
+                        ShipmentStatusEnum::PENDING->value,
+                        ShipmentStatusEnum::NOT_PICKED_UP->value,
+                    ])) {
+
+                        // Now We need to refund that pacakge
+                        $returnInvoice->invoiceItems()->create([
+                            'item_name' => "Undelivered Package:$shipmentPackage->shipment_package_number ($shipmentPackage->package_number)",
+                            'order_qty' => $shipmentPackage->qty, // negative for refund
+                            'ship_qty' => 0,
+
+                            'taxable_amount' =>  $shipmentPackage->qty * $shipmentPackage->pack_price, // negative for refund
+                            'tax_amount' => 0, // negative for refund
+                            'total_amount' => ($shipmentPackage->qty * $shipmentPackage->pack_price), // negative for refund
+                        ]);
+
+                        // We need to reverse delivery charge
+                        $deliveryChargeData = $this->getDeliveryCharge($buyer->charge_level_code, $shipmentPackage);
+
+                        $returnInvoice->invoiceCharges()->create([
+                            'charge_name' => "Undelivered Package Delivery Charge: $shipmentPackage->shipment_package_number ($shipmentPackage->package_number)",
+                            'qty' => $shipmentPackage->qty, // negative for refund
+                            'ship_qty' => 0,
+                            'taxable_amount' =>  $deliveryChargeData->charge_taxable, // negative for refund
+                            'tax_amount' =>  $deliveryChargeData->charge_tax, // negative for refund
+                            'total_amount' => $deliveryChargeData->total_charge_amount, // negative for refund
+                        ]);
+                    }
+                    //
+                }
+
+                // total for return invoice
+                $returnInvoiceBaseAmount = $returnInvoice->invoiceItems()->sum('taxable_amount');
+                $returnInvoiceChargeAmount = $returnInvoice->invoiceCharges()->sum('taxable_amount');
+                $returnInvoiceTaxAmount = $returnInvoice->invoiceItems()->sum('tax_amount') + $returnInvoice->invoiceCharges()->sum('tax_amount');
+                $returnInvoiceTotalAmount = $returnInvoiceBaseAmount + $returnInvoiceChargeAmount + $returnInvoiceTaxAmount;
+
+                $returnInvoice->update([
+                    'base_amount' => $returnInvoiceBaseAmount,
+                    'subtotal' => $returnInvoiceBaseAmount + $returnInvoiceChargeAmount,
+                    'tax_amount' => $returnInvoiceTaxAmount,
+                    'total_amount' => $returnInvoiceTotalAmount,
+                ]);
+
+                // Sales Return Invoice if needed
+            }
+
+
+
+
+
             //
         });
 
@@ -173,7 +229,7 @@ class InvoiceService
 
     public function generateProductListingInvoiceData(ProductListing $productListing, $isEnforce = false)
     {
-        Log::info("Generating invoice for Product Listing ID: {$productListing->id}");
+        // Log::info("Generating invoice for Product Listing ID: {$productListing->id}");
 
         try {
 
@@ -288,7 +344,7 @@ class InvoiceService
                         $invoice->invoiceItems()->create([
                             'item_code' => $product->product_code ?? 'N/A',
                             'item_name' => $product->name . " [Package: {$package->package_number}]",
-                            'order_qty' => $package->sold_qty,
+                            'order_qty' =>  $package->sold_qty,
                             'ship_qty' => $shipQty,
 
                             'taxable_amount' => $itemTaxable,
@@ -305,9 +361,9 @@ class InvoiceService
                         'charge_name' => 'Delivery Charge',
                         'qty' => 1,
                         'ship_qty' => 1,
-                        'taxable_amount' => -$totalDeliveryTaxable,
-                        'tax_amount' => -$totalDeliveryTax,
-                        'total_amount' => -$totalDeliveryCharge,
+                        'taxable_amount' => $totalDeliveryTaxable,
+                        'tax_amount' => $totalDeliveryTax,
+                        'total_amount' => $totalDeliveryCharge,
                     ]);
                 }
 
@@ -324,19 +380,19 @@ class InvoiceService
                     'charge_name' => $platformCharge['charge_name'] ?? 'Platform Fee',
                     'qty' => 1,
                     'ship_qty' => 1,
-                    'taxable_amount' => -$platformCharge['taxable_amount'],
-                    'tax_amount' => -$platformCharge['tax_amount'],
-                    'total_amount' => -$platformCharge['total_amount'],
+                    'taxable_amount' => $platformCharge['taxable_amount'],
+                    'tax_amount' => $platformCharge['tax_amount'],
+                    'total_amount' => $platformCharge['total_amount'],
                 ]);
 
                 // Final Totals
                 $baseAmount = $invoice->invoiceItems()->sum('taxable_amount');
                 $chargeTaxable = $invoice->invoiceCharges()->sum('taxable_amount');
-                $taxAmount = $invoice->invoiceItems()->sum('tax_amount')
-                    + $invoice->invoiceCharges()->sum('tax_amount');
+                $taxAmount = $invoice->invoiceItems()->sum('tax_amount') + $invoice->invoiceCharges()->sum('tax_amount');
 
-                $subtotal = $baseAmount + $chargeTaxable;
-                $totalAmount = $subtotal + $taxAmount;
+                // Its product Listing so we have to take our charge from seller
+                $subtotal = $baseAmount - $chargeTaxable;
+                $totalAmount = $subtotal - $taxAmount;
 
                 $invoice->update([
                     'base_amount' => $baseAmount,

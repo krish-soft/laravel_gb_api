@@ -40,7 +40,7 @@ class JobProductListingInvoicing implements ShouldQueue
 
                 $productListing = ProductListing::findOrFail($productListingId);
 
-                Log::info("Starting invoicing for Product Listing ID: {$productListingId}");
+                // Log::info("Starting invoicing for Product Listing ID: {$productListingId}");
                 // this will create OR repair automatically
                 $invoice = $invoiceService->generateProductListingInvoiceData($productListing, $this->isEnforce);
 
