@@ -6,6 +6,7 @@ use App\Http\Controllers\ApiResponseWithAdminAuthController;
 use App\Http\Controllers\Controller;
 use App\Models\Master\Product\MstProduct;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class MstProductApiController extends ApiResponseWithAdminAuthController
 {
@@ -45,7 +46,7 @@ class MstProductApiController extends ApiResponseWithAdminAuthController
             'grade' => 'nullable|string|max:50',
             'size' => 'nullable|string|max:50',
             'origin' => 'nullable|string|max:50',
-            'picture' => 'nullable|image|max:2048|mimes:jpeg,png,jpg',
+            'file' => 'nullable|image|max:2048|mimes:jpeg,png,jpg',
         ]);
 
         // Check Already Exist any of key except name & descriptions
@@ -69,11 +70,23 @@ class MstProductApiController extends ApiResponseWithAdminAuthController
         }
 
         $filePath = null;
-        if ($request->hasFile('picture')) {
-            $filePath =  uploadPublicFile(
-                $request->file('picture'),
-                self::$FILE_PATH,
-            );
+
+        if ($request->hasFile('file')) {
+
+            $file = $request->file('file');
+
+
+            // ✅ If array → take first file
+            if (is_array($file)) {
+                $file = $file[0] ?? null;
+            }
+
+            if ($file) {
+                $filePath = uploadPublicFile(
+                    $file,
+                    self::$FILE_PATH
+                );
+            }
         }
 
         $mstProduct = MstProduct::create($request->merge([
@@ -127,8 +140,11 @@ class MstProductApiController extends ApiResponseWithAdminAuthController
             'grade' => 'nullable|string|max:50',
             'size' => 'nullable|string|max:50',
             'origin' => 'nullable|string|max:50',
-            'picture' => 'nullable|image|max:2048|mimes:jpeg,png,jpg',
+            'file' => 'nullable|image|max:2048|mimes:jpeg,png,jpg',
+            'is_remove_picture' => 'nullable|boolean',
         ]);
+
+        // Log::info(json_encode($request->all(), JSON_PRETTY_PRINT));
 
         // Check Already Exist any of key except name & descriptions
         // $existingProduct = MstProduct::where('id', '!=', $mstProduct->id)
@@ -153,18 +169,32 @@ class MstProductApiController extends ApiResponseWithAdminAuthController
         // }
 
 
-        $filePath = $mstProduct->picture;
-        if ($request->hasFile('picture')) {
-            $filePath =  uploadPublicFile(
-                $request->file('picture'),
-                self::$FILE_PATH,
-                $mstProduct->picture,
-            );
+        // $filePath = $mstProduct->picture;
+        $filePath = null;
+
+        if ($request->hasFile('file')) {
+
+            $file = $request->file('file');
+
+            // ✅ If array → take first file
+            if (is_array($file)) {
+                $file = $file[0] ?? null;
+            }
+
+            if ($file) {
+                $filePath = uploadPublicFile(
+                    $file,
+                    self::$FILE_PATH,
+                    $mstProduct->picture,
+                );
+            }
         }
 
-        $mstProduct->update($request->merge([
-            'picture' => $filePath,
-        ])->all());
+        $mstProduct->update(
+            $request->merge([
+                'picture' => $request->input('is_remove_picture') ? null : ($filePath ?? $mstProduct->picture),
+            ])->all()
+        );
 
         // Log activity
         logActivity(
