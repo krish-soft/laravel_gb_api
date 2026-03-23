@@ -68,6 +68,9 @@ class ProductListingItem extends BaseModel
 
 
     protected $appends = [
+        // 'product_name',
+        // 'variant_name',
+
         'total_qty',
         'total_sold_qty',
         'total_available_qty',
@@ -76,6 +79,21 @@ class ProductListingItem extends BaseModel
         'total_sold_weight',
         'total_available_weight',
     ];
+
+    public function getProductNameAttribute()
+    {
+        $productName = $this->product ? $this->product->name : null;
+        $this->unsetRelation('product'); // Unset the relation to prevent it from being included in the JSON response
+        return $productName;
+    }
+
+    public function getVariantNameAttribute()
+    {
+
+        $variantName = $this->productVariant ? $this->productVariant->name : null;
+        $this->unsetRelation('productVariant'); // Unset the relation to prevent it from being included in the JSON response
+        return $variantName;
+    }
 
     // get total qty 
     public function getTotalQtyAttribute()

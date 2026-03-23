@@ -60,6 +60,11 @@ class CartApiController extends ApiResponseWithAuthController
 
         // add total sold and remain qty and total qty total
         foreach ($cart->cartItems as $item) {
+
+            // itemLineTotal
+            $item->line_total = $item->order_qty * $item->pack_price;
+
+
             $soldQty = 0;
             $remainQty = 0;
             $totalQty = 0;
