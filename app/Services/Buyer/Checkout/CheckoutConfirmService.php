@@ -23,7 +23,7 @@ class CheckoutConfirmService
 {
 
 
-    public function confirm(Cart $cart, array $charges, $paymentMethod, FulfillmentLocation $fulfillmentLocation): Order
+    public function confirm(Cart $cart, array $charges, $paymentMethod, FulfillmentLocation $fulfillmentLocation, array $cartMeta = []): Order
     {
 
         /* -------------------------------------------------
@@ -226,6 +226,16 @@ class CheckoutConfirmService
                 $subtotal += $charge['taxable_amount'];
             }
 
+
+            ### NOTE: We can add one more step here to validate order total with cart total and if mismatch then throw error but for now we are assuming it will always match because we are taking charges from cart meta only but in future if we want to calculate charges again on confirm then this step will be important to avoid any manipulation from client side.
+            $creditAmount = 0;
+            if (isset($cartMeta)) {
+
+                $canUseCredit = $cartMeta['can_checkout_with_credit'] ?? false;
+                $creditBalanceToUse = $cartMeta['credit_balance_to_use'] ?? 0;
+                $creditAmount = $canUseCredit ? $creditBalanceToUse : 0;
+            }
+
             /* -------------------------------------------------
              | 4️⃣ Update Order Totals (FINAL)
              -------------------------------------------------*/
@@ -234,6 +244,7 @@ class CheckoutConfirmService
                 'subtotal' => $subtotal,
                 'tax_amount' => $taxAmount, // from charges only
                 'total_amount' => $subtotal + $taxAmount,
+                'credit_amount' => $creditAmount,
             ]);
 
             /* -------------------------------------------------

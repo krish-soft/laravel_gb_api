@@ -49,6 +49,7 @@ class Order extends BaseModel
         'subtotal', // subtotal is base amount + charge amount, we can use it for accounting and settlement total amount
         'tax_amount',
         'total_amount',
+        'credit_amount', // balance of credit used in this order if any
         'currency',
 
         'payment_method', // payment method

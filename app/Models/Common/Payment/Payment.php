@@ -28,7 +28,8 @@ class Payment extends BaseModel
         'amount',
         'tax_amount',
         'fee_amount',
-        'net_amount',
+        'credit_amount',
+        'order_amount',
 
         'payment_type',
         'payment_method',

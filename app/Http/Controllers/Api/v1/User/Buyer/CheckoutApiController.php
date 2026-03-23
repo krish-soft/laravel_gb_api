@@ -119,6 +119,7 @@ class CheckoutApiController extends ApiResponseWithAuthController
             );
         }
 
+
         if ($fulfillmentLocation->status !== KycStatusEnum::APPROVED->value) {
             return $this->showErrorMessage(
                 __('messages.error_messages.invalid_fulfillment_location'),
@@ -128,6 +129,8 @@ class CheckoutApiController extends ApiResponseWithAuthController
 
         // Get preview data again to ensure charges are correct
         $cartMeta = $cart->meta ?? [];
+        $canUseCredit = $cartMeta['can_checkout_with_credit'] ?? false;
+        $creditBalanceToUse = $cartMeta['credit_balance_to_use'] ?? 0;
 
 
         // also check  can checkour and message
@@ -164,7 +167,8 @@ class CheckoutApiController extends ApiResponseWithAuthController
                 $cart,
                 $charges, //$data['charges'],
                 $data['payment_method'],
-                $fulfillmentLocation
+                $fulfillmentLocation,
+                $cartMeta
             );
 
             // 
@@ -174,7 +178,10 @@ class CheckoutApiController extends ApiResponseWithAuthController
                 Order::class,
                 $order->id,
                 $order->order_number,
-                ['amount' => $order->total_amount]
+                [
+                    'order_amount' => $order->total_amount,
+                    'credit_amount' => $order->credit_amount
+                ]
             );
 
             /**
@@ -185,11 +192,10 @@ class CheckoutApiController extends ApiResponseWithAuthController
                 'source_id'     => $order->id,
                 'source_code'   => $order->order_number,
                 'user_id'       => $user->id,
-                'amount'        => $order->total_amount,
-                'tax_amount'    => $order->tax_amount,
-                'net_amount'    => $order->total_amount,
+                'order_amount'   => $order->total_amount,
                 'payment_type'  => 'checkout',
                 'payment_method' => $data['payment_method'],
+                'credit_amount' => $canUseCredit ? $creditBalanceToUse : 0,
             ]);
 
 
@@ -249,7 +255,8 @@ class CheckoutApiController extends ApiResponseWithAuthController
                 );
             }
 
-            return "Testing no razorpay";
+            // return "Testing no razorpay";
+            
             /**
              * ------------------------------------
              * RAZORPAY (ASYNC)

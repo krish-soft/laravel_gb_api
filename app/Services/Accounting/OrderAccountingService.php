@@ -33,7 +33,7 @@ class OrderAccountingService
                     throw new RuntimeException("Order or Payment not found for Order ID: {$order->id} and Payment ID: {$payment->id}");
                 }
 
-                if ($order->total_amount != $payment->amount) {
+                if ($order->total_amount != ($payment->amount + $payment->credit_amount)) {
                     throw new RuntimeException("Payment amount does not match order total for Order ID: {$order->id} and Payment ID: {$payment->id}");
                 }
 
@@ -65,11 +65,15 @@ class OrderAccountingService
                     PlatformAccountCodeEnum::PLATFORM_CLEARING->value,
                 );
 
+                // Log::info("Recording accounting for Order ID: {$order->id}, Payment ID: {$payment->id}");
+
                 if (!$this->ledgerExists(
                     $clearingAccount->id,
                     AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
                     Order::class,
-                    $order->id
+                    $order->id,
+                    $order->subtotal, // total without tax
+                    0
                 )) {
                     $accounting->createLedger($clearingAccount, [
                         'description' => "Payment received (taxable amount) for Order #{$order->order_number}",
@@ -90,7 +94,9 @@ class OrderAccountingService
                     $buyerAccount->id,
                     AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
                     Order::class,
-                    $order->id
+                    $order->id,
+                    $order->total_amount, // total without tax
+                    0
                 )) {
 
                     $accounting->createLedger($buyerAccount, [
@@ -246,7 +252,7 @@ class OrderAccountingService
                     $tax = Account::getOrCreateByOwner(
                         AccountOwnerTypeEnum::GOVERNMENT->value,
                         null,
-                        PlatformAccountCodeEnum::PLATFORM_TAX->value
+                        PlatformAccountCodeEnum::PLATFORM_TAX->value,
                     );
 
 
@@ -254,7 +260,9 @@ class OrderAccountingService
                         $tax->id,
                         AccountEntryTypeEnum::ORDER_TAX_AMOUNT->value,
                         Order::class,
-                        $order->id
+                        $order->id,
+                        $order->tax_amount,
+                        0
                     )) {
                         $accounting->createLedger($tax, [
                             'description' => "Tax for Order #{$order->order_number}",
@@ -305,12 +313,22 @@ class OrderAccountingService
         int $accountId,
         string $entryType,
         string $sourceType,
-        int $sourceId
+        int $sourceId,
+        ?float $credit = null,
+        ?float $debit = null
     ): bool {
-        return AccountLedger::where('account_id', $accountId)
+
+        // ✅ Normalize to 2 decimal (match DB DECIMAL)
+        $credit = is_null($credit) ? null : number_format($credit, 2, '.', '');
+        $debit  = is_null($debit)  ? null : number_format($debit, 2, '.', '');
+
+        return AccountLedger::query()
+            ->where('account_id', $accountId)
             ->where('entry_type', $entryType)
             ->where('source_type', $sourceType)
             ->where('source_id', $sourceId)
+            ->when(!is_null($credit), fn($q) => $q->where('credit', $credit))
+            ->when(!is_null($debit), fn($q) => $q->where('debit', $debit))
             ->exists();
     }
 }

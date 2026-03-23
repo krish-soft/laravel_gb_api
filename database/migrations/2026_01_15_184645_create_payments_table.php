@@ -43,15 +43,16 @@ return new class extends Migration
                      | AMOUNT DETAILS
                      ===================================================== */
                      $table->string('currency', 3)->default('INR');
+                     $table->decimal('order_amount', 12, 2)->nullable();               // amount - fees
                      $table->decimal('amount', 12, 2);                    // total amount
                      $table->decimal('tax_amount', 12, 2)->default(0)->nullable();
                      $table->decimal('fee_amount', 12, 2)->default(0)->nullable();      // gateway/platform fee
-                     $table->decimal('net_amount', 12, 2)->nullable();                // amount - fees
+                     $table->decimal('credit_amount', 12, 2)->default(0)->nullable(); // credit amount
 
                      /* =====================================================
                      | PAYMENT CONTEXT
                      ===================================================== */
-                     $table->string('payment_type', 30);                  // checkout | 
+                     $table->string('payment_type', 30);                  // checkout | wallet_topUp
                      $table->string('payment_method', 30)->nullable();    // razorpay | manual |
                      $table->string('gateway', 30)->nullable();           // razorpay
                      $table->string('status', 30)->index();               // initiated | pending | paid | failed | refunded

@@ -17,6 +17,17 @@ class PaymentService
      ------------------------------------------------- */
     public function initiate(array $data): Payment
     {
+        // credit amount
+        $creditAmount = $data['credit_amount'] ?? 0;
+        $orderAmount =  $data['order_amount'] ?? $data['amount'];
+
+        if ($creditAmount > 0) {
+            $paymentAmount = $orderAmount - $creditAmount;
+        } else {
+            $paymentAmount = $orderAmount;
+        }
+
+
         return Payment::create([
             'payment_code' => $this->generatePaymentCode(),
 
@@ -27,10 +38,13 @@ class PaymentService
             'user_id' => $data['user_id'],
 
             'currency' => $data['currency'] ?? PaymentCurrencyEnum::INR->value,
-            'amount' => $data['amount'],
+
+            'credit_amount' => $creditAmount,
+            'order_amount' => $orderAmount,
+            'amount' =>  $paymentAmount,
+
             'tax_amount' => $data['tax_amount'] ?? 0,
             'fee_amount' => $data['fee_amount'] ?? 0,
-            'net_amount' => $data['net_amount'] ?? $data['amount'],
 
             'payment_type' => $data['payment_type'],      // checkout | wallet_topUp
             'payment_method' => $data['payment_method'],  // razorpay
@@ -60,8 +74,7 @@ class PaymentService
         Payment $payment,
         string  $gatewayPaymentId,
         array   $meta = []
-    ): void
-    {
+    ): void {
         if ($payment->is_final) {
             return; // idempotent
         }
@@ -78,8 +91,7 @@ class PaymentService
         Payment $payment,
         ?string $code = null,
         ?string $reason = null
-    ): void
-    {
+    ): void {
         if ($payment->is_final) {
             return;
         }

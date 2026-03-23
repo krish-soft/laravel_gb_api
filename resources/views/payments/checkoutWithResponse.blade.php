@@ -5,36 +5,9 @@
     <meta charset="utf-8">
     <title>Payment</title>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding-top: 80px;
-            background: #f7f7f7;
-        }
-
-        .box {
-            display: none;
-        }
-
-        button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 16px;
-        }
-    </style>
 </head>
 
 <body>
-
-    <h2 id="start">Opening payment…</h2>
-
-    <div id="result" class="box">
-        <h2 id="title"></h2>
-        <p id="desc"></p>
-        <button onclick="closeApp()">Close</button>
-    </div>
 
     <script>
         const checkout = @json($checkout);
@@ -50,42 +23,44 @@
             window.close();
         }
 
-        async function fetchResultOnce() {
-            try {
-                const res = await fetch(statusUrl);
-                if (!res.ok) throw '';
+        // ✅ Disable EMI
+        checkout.method = {
+            netbanking: true,
+            card: true,
+            upi: true,
 
-                const data = await res.json();
-
-                document.getElementById('start').style.display = 'none';
-                document.getElementById('result').style.display = 'block';
-
-                if (data.status === 'paid') {
-                    document.getElementById('title').innerText = 'Payment Completed';
-                    document.getElementById('desc').innerText =
-                        data.order_number ? `Order Number: ${data.order_number}` : '';
-                } else {
-                    document.getElementById('title').innerText = 'Payment Pending';
-                    document.getElementById('desc').innerText =
-                        'You may safely close this window.';
-                }
-            } catch (e) {
-                closeApp(); // fallback
-            }
-        }
-
-        checkout.handler = function() {
-            // Razorpay success UI closed → now check backend ONCE
-            setTimeout(fetchResultOnce, 1000);
+            emi: false, // ❌ disable EMI
+            wallet: false, // ❌ disable wallets (Paytm, PhonePe wallet, etc.)
+            paylater: false // ❌ disable Pay Later (Simpl, LazyPay, etc.)
         };
 
+        // ✅ Payment success
+        checkout.handler = function(response) {
+
+            // 🔐 Send payment data to backend (IMPORTANT)
+            fetch(statusUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_signature: response.razorpay_signature
+                })
+            }).finally(() => {
+                closeApp(); // 🔥 instant close
+            });
+        };
+
+        // ✅ User cancelled / failed
         checkout.modal = {
             ondismiss: function() {
-                // User closed / failed / timeout → still check backend ONCE
-                setTimeout(fetchResultOnce, 1000);
+                closeApp();
             }
         };
 
+        // 🚀 Open checkout
         new Razorpay(checkout).open();
     </script>
 

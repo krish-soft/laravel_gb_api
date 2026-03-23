@@ -49,6 +49,7 @@ return new class extends Migration
             $table->decimal('subtotal', 15, 2);
             $table->decimal('tax_amount', 15, 2)->default(0)->nullable();
             $table->decimal('total_amount', 15, 2)->default(0);
+            $table->decimal('credit_amount', 15, 2)->default(0)->nullable();
             $table->string('currency', 10)->default('INR');
 
             // For Invoice Billing & Shipping

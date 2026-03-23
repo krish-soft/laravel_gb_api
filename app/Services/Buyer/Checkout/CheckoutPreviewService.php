@@ -2,8 +2,10 @@
 
 namespace App\Services\Buyer\Checkout;
 
+use App\Enum\Accounting\AccountOwnerTypeEnum;
 use App\Enum\Common\Cart\CartStatusEnum;
 use App\Models\Buyer\Cart\Cart;
+use App\Models\Common\Accounting\Account;
 use App\Models\Master\Setting\MstAppSetting;
 use App\Models\Master\Setting\MstFinanceSetting;
 use App\Models\Master\Setting\MstPaymentSetting;
@@ -160,7 +162,31 @@ class CheckoutPreviewService
                 'amount' => number_format($minimumCartAmount, 2),
             ]);
         }
+
         $finalTotalAmount =  round($subtotal + $chargeSummary['total_charge_amount'], 2);
+
+        // Check User Credit balance if payment method is credit and total amount > 0
+        //
+        $canCheckoutWithCredit = false;
+        $creditBalanceToUse = 0;
+
+        $buyerAccount = Account::getOrCreateByOwner(
+            AccountOwnerTypeEnum::BUYER->value,
+            $cart->buyer_id
+        );
+
+        if ($buyerAccount) {
+            $avaliableBalance = $buyerAccount->available_balance;
+
+            if ($avaliableBalance > 0 && $finalTotalAmount > 0) {
+                $canCheckoutWithCredit = true;
+                $creditBalanceToUse = $avaliableBalance;
+            }
+
+            //
+        }
+
+
         // Save meta preview data to cart
         $cart->meta = [
             'previewed_at' => now(),
@@ -170,7 +196,10 @@ class CheckoutPreviewService
             'can_checkout' => $canCheckout,
             'message_not_checkout' => $messageNotCheckout,
             'charges' => $chargeSummary['charges'], // detailed charges so no need to rerun on confirm
+            'can_checkout_with_credit' => $canCheckoutWithCredit,
+            'credit_balance_to_use' => $creditBalanceToUse,
         ];
+
         $cart->save();
 
         return [
@@ -186,11 +215,17 @@ class CheckoutPreviewService
             'charge_tax' => $chargeSummary['charge_tax'],
             'total_charge_amount' => $chargeSummary['total_charge_amount'],
 
+            // Credit Balance Info
+            'can_checkout_with_credit' => $canCheckoutWithCredit,
+            'credit_balance_to_use' => $creditBalanceToUse,
+
             'total_amount' => $finalTotalAmount,
+            'total_amount_after_credit' => round($finalTotalAmount - $creditBalanceToUse, 2),
 
             'has_invalid_items' => $hasInvalidItems,
             'can_checkout' => $canCheckout,
             'message_not_checkout' => $messageNotCheckout,
+
         ];
     }
 }

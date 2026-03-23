@@ -2,13 +2,16 @@
 
 namespace App\Services\Common\Payment\Handlers;
 
+use App\Enum\Accounting\AccountOwnerTypeEnum;
 use App\Enum\Common\Cart\CartStatusEnum;
 use App\Enum\Common\Order\OrderStatusEnum;
 use App\Enum\Common\Payment\PaymentStatusEnum;
 use App\Enum\Common\Shipment\ShipmentStatusEnum;
 use App\Models\Buyer\Order\Order;
+use App\Models\Common\Accounting\Account;
 use App\Models\Common\Payment\Payment;
 use App\Models\Common\Shipment\ShipmentPackage;
+use App\Services\Accounting\AccountingService;
 use App\Services\Accounting\OrderAccountingService;
 use App\Services\Buyer\Checkout\CheckoutRevertService;
 use App\Services\Common\Shipment\ShipmentService;
@@ -49,6 +52,17 @@ class OrderPaymentHandler
 
 
             ]);
+
+            // Buyer Account if credits used then add entry as debit to ensure debited..
+            // if ($payment->credit_amount > 0) {
+            //     // No need to do this entry due t owhen invoice base entry will do will minus this amount
+            //     $accountingService = app(AccountingService::class);
+            //     $buyerAccount = Account::getOrCreateByOwner(
+            //         AccountOwnerTypeEnum::BUYER->value,
+            //         $order->buyer_id
+            //     );
+            // }
+
 
             //
             // 2️⃣ Record accounting entries
