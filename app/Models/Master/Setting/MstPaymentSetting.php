@@ -40,6 +40,7 @@ class MstPaymentSetting extends BaseModel
 
         'payment_in_mode',
         'payment_out_mode',
+        'bank_verification_mode',
 
         'min_payout_amount',
         'max_payout_amount',
@@ -79,14 +80,19 @@ class MstPaymentSetting extends BaseModel
         ], [
             'payment_in_mode' => PaymentMethodEnum::RAZORPAY->value,
             'payment_out_mode' => PaymentMethodEnum::MANUAL->value,
+            'bank_verification_mode' => PaymentMethodEnum::MANUAL->value,
+
             'min_cart_order_amount' => 2500,
             'max_cart_order_amount' => 15000,
+
             'min_payout_amount' => 100,
             'max_payout_amount' => 15000,
+
             'payout_cycle' => 'weekly',
-            'refund_window_days' => 7,
+            'refund_window_days' => 1,
             'max_payment_attempts' => 2,
-            'cart_expiry_minutes' => 120, // 2 hours
+
+            'cart_expiry_minutes' => 420, // 7 hours
 
         ]);
         // });

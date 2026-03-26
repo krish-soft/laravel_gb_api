@@ -18,6 +18,7 @@ return new class extends Migration {
 
             $table->string('payment_in_mode', 30)->nullable();
             $table->string('payment_out_mode', 30)->nullable();
+            $table->string('bank_verification_mode', 30)->nullable();
 
             $table->decimal('min_payout_amount', 15, 2)->default(100);
             $table->decimal('max_payout_amount', 15, 2)->default(15000);
