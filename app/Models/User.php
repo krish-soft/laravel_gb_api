@@ -359,6 +359,20 @@ class User extends Authenticatable
         return $result;
     }
 
+    public function kycReviewComment(): string
+    {
+        if (!$this->kyc) {
+            return '';
+        }
+
+        $comment = !$this->isKycApproved() ? $this->kyc->review_comment ?? '' : '';
+
+        // unload relation to prevent N+1 issue
+        $this->unsetRelation('kyc');
+
+        return $comment;
+    }
+
     public function isBankVerified(): bool
     {
         if (!$this->primaryBank) {
@@ -395,6 +409,18 @@ class User extends Authenticatable
         $result =  $vehicleKyc && $vehicleKyc->status === KycStatusEnum::APPROVED->value;
         $this->unsetRelation('vehicleKyc');
         return $result;
+    }
+
+    public function vehicleKycReviewComment(): string
+    {
+        if (!$this->vehicleKyc) {
+            return '';
+        }
+
+        $vehicleKyc = $this->vehicleKyc()->first();
+        $comment = !$this->isVehicleKycApproved() ? $vehicleKyc->review_comment ?? '' : '';
+        $this->unsetRelation('vehicleKyc');
+        return $comment;
     }
 
 

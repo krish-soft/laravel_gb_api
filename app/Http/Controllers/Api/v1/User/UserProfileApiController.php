@@ -48,12 +48,10 @@ class UserProfileApiController extends ApiResponseWithAuthController
             'is_vehicle_kyc_approved' => $user->isVehicleKycApproved(),
             'vehicle_kyc_review_comment' => $user->vehicleKycReviewComment(),
 
-
             'is_bank_verified' => $user->isBankVerified(),
-            'is_user_ready_for_order_management' => $user->isUserReadyForOrderManagement(),
 
-            'is_account_disabled' => !$user->isActive(),
-            'account_disabled_message' => $user->inactiveReason(),
+            'is_account_disabled' => !$user->is_active,
+            'account_disabled_message' => $user->inactive_reason ?? null,
             // 'is_available_for_delivery'=> $user->isAvailableForDelivery(), // Only for delivery users
 
             'primary_depot_data' => $userPrimaryDepotData,
