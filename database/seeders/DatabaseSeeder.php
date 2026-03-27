@@ -60,6 +60,12 @@ class DatabaseSeeder extends Seeder
             \Database\Seeders\Master\Charge\MstDeliveryChargeRuleSeeder::class,
 
 
+            // Price
+            \Database\Seeders\Master\Price\MstProductPriceSeeder::class,
+            \Database\Seeders\Master\Price\MstProductPriceRuleSeeder::class,
+
+
+
             // Test Data Seeder
             TestDataSeeder::class,
 

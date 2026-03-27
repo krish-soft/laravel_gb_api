@@ -24,20 +24,20 @@ class MstProductVariantSeeder extends Seeder
         */
 
             // Tomato
-            ['created_at' => now(), 'updated_at' => now(), 'product_id' => $p['Tomato | ટમેટા | टमाटर']->id, 'variant_code' => $p['Tomato | ટમેટા | टमाटर']->product_code . 'V' . '01', 'name' => 'Desi', 'is_active' => true],
-            ['created_at' => now(), 'updated_at' => now(), 'product_id' => $p['Tomato | ટમેટા | टमाटर']->id, 'variant_code' => $p['Tomato | ટમેટા | टमाटर']->product_code . 'V' . '02', 'name' => 'Hybrid', 'is_active' => true],
+            // ['created_at' => now(), 'updated_at' => now(), 'product_id' => $p['Tomato | ટમેટા | टमाटर']->id, 'variant_code' => $p['Tomato | ટમેટા | टमाटर']->product_code . 'V' . '01', 'name' => 'Desi', 'is_active' => true],
+            // ['created_at' => now(), 'updated_at' => now(), 'product_id' => $p['Tomato | ટમેટા | टमाटर']->id, 'variant_code' => $p['Tomato | ટમેટા | टमाटर']->product_code . 'V' . '02', 'name' => 'Hybrid', 'is_active' => true],
 
-            // Onion
-            ['created_at' => now(), 'updated_at' => now(), 'product_id' => $p['Onion | ડુંગળી | प्याज']->id, 'variant_code' => $p['Onion | ડુંગળી | प्याज']->product_code . 'V' . '01', 'name' => 'Red', 'is_active' => true],
-            ['created_at' => now(), 'updated_at' => now(), 'product_id' => $p['Onion | ડુંગળી | प्याज']->id, 'variant_code' => $p['Onion | ડુંગળી | प्याज']->product_code . 'V' . '02', 'name' => 'White', 'is_active' => true],
+            // // Onion
+            // ['created_at' => now(), 'updated_at' => now(), 'product_id' => $p['Onion | ડુંગળી | प्याज']->id, 'variant_code' => $p['Onion | ડુંગળી | प्याज']->product_code . 'V' . '01', 'name' => 'Red', 'is_active' => true],
+            // ['created_at' => now(), 'updated_at' => now(), 'product_id' => $p['Onion | ડુંગળી | प्याज']->id, 'variant_code' => $p['Onion | ડુંગળી | प्याज']->product_code . 'V' . '02', 'name' => 'White', 'is_active' => true],
 
-            // Potato
-            // ['created_at' => now(), 'updated_at' => now(), 'product_id' => $p['Potato | બટાકા | आलू']->id, 'variant_code' => $p['Potato | બટાકા | आलू']->product_code . 'V' . '01', 'name' => 'Jyoti', 'is_active' => true],
+            // // Potato
+            // // ['created_at' => now(), 'updated_at' => now(), 'product_id' => $p['Potato | બટાકા | आलू']->id, 'variant_code' => $p['Potato | બટાકા | आलू']->product_code . 'V' . '01', 'name' => 'Jyoti', 'is_active' => true],
 
-            // Brinjal
-            ['created_at' => now(), 'updated_at' => now(), 'product_id' => $p['Brinjal | રીંગણ | बैंगन']->id, 'variant_code' => $p['Brinjal | રીંગણ | बैंगन']->product_code . 'V' . '01', 'name' => 'Long', 'is_active' => true],
-            ['created_at' => now(), 'updated_at' => now(), 'product_id' => $p['Brinjal | રીંગણ | बैंगन']->id, 'variant_code' => $p['Brinjal | રીંગણ | बैंगन']->product_code . 'V' . '02', 'name' => 'Round', 'is_active' => true],
-            ['created_at' => now(), 'updated_at' => now(), 'product_id' => $p['Brinjal | રીંગણ | बैंगन']->id, 'variant_code' => $p['Brinjal | રીંગણ | बैंगन']->product_code . 'V' . '03', 'name' => 'Desi', 'is_active' => true],
+            // // Brinjal
+            // ['created_at' => now(), 'updated_at' => now(), 'product_id' => $p['Brinjal | રીંગણ | बैंगन']->id, 'variant_code' => $p['Brinjal | રીંગણ | बैंगन']->product_code . 'V' . '01', 'name' => 'Long', 'is_active' => true],
+            // ['created_at' => now(), 'updated_at' => now(), 'product_id' => $p['Brinjal | રીંગણ | बैंगन']->id, 'variant_code' => $p['Brinjal | રીંગણ | बैंगन']->product_code . 'V' . '02', 'name' => 'Round', 'is_active' => true],
+            // ['created_at' => now(), 'updated_at' => now(), 'product_id' => $p['Brinjal | રીંગણ | बैंगन']->id, 'variant_code' => $p['Brinjal | રીંગણ | बैंगन']->product_code . 'V' . '03', 'name' => 'Desi', 'is_active' => true],
 
             // Cabbage
             // ['created_at' => now(), 'updated_at' => now(), 'product_id' => $p['Cabbage | કોબી | पत्ता गोभी']->id, 'variant_code' => $p['Cabbage | કોબી | पत्ता गोभी']->product_code . 'V' . '01', 'name' => 'Green', 'is_active' => true],
