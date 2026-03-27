@@ -2,6 +2,7 @@
 
 namespace App\Models\Buyer\Order;
 
+use App\Enum\Common\Payment\PaymentStatusEnum;
 use App\Models\BaseModel;
 use App\Models\Buyer\Cart\Cart;
 use App\Models\Common\Address;
@@ -164,6 +165,41 @@ class Order extends BaseModel
         return $this->hasMany(OrderRating::class, 'order_id', 'id');
     }
 
+
+    // assgned
+    protected $appends = [
+        'is_need_payment',
+        'payment_url',
+    ];
+
+    public function getIsNeedPaymentAttribute()
+    {
+        // check payment url and payment status 
+        $status = false;
+        if (
+            $this->payment
+            &&
+            (
+                isset($this->payment->payment_url)
+                && in_array($this->payment->status, [PaymentStatusEnum::INITIATED->value, PaymentStatusEnum::PROCESSING->value])
+            )
+        ) {
+            $status = true;
+        }
+        $this->unsetRelation('payment'); // unset to prevent accidental use
+        // Otherwise, payment is needed
+        return $status;
+    }
+
+    public function getPaymentUrlAttribute()
+    {
+        $url = null;
+        if ($this->payment) {
+            $url = $this->payment->payment_url;
+        }
+        $this->unsetRelation('payment'); // unset to prevent accidental use
+        return $url;
+    }
 
     //
 }

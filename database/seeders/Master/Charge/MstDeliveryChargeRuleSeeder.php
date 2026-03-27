@@ -23,7 +23,11 @@ class MstDeliveryChargeRuleSeeder extends Seeder
         // CHARGE LEVELS (Buyer / Seller / Driver)
         // --------------------------------------------------
         $levels = DB::table('mst_charge_levels')
-            ->whereIn('code', ['B-STD', 'S-STD', 'D-STD'])
+            ->whereIn('code', [
+                'B-STD',
+                'S-STD',
+                // 'D-STD' // No need
+            ])
             ->pluck('id', 'code');
 
         // --------------------------------------------------

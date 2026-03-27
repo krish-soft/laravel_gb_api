@@ -18,7 +18,18 @@ class UserProfileApiController extends ApiResponseWithAuthController
     {
         $user = $request->user();
 
+
+        $userPrimaryDepotData = [];
+        $userPrimaryDepot = $user->primaryDepot;
+        if ($userPrimaryDepot) {
+            $mDepot = $userPrimaryDepot->depot;
+
+            // load address and market
+            $userPrimaryDepotData = $mDepot->load('address', 'market');
+        }
+
         $meta = [
+            // Basic Info
             'user_code' => $user->user_code,
             'name' => $user->name,
             'nickname' => $user->nickname,
@@ -26,23 +37,27 @@ class UserProfileApiController extends ApiResponseWithAuthController
             'phone_number' => $user->phone_number,
             'user_type' => $user->user_type, // buyer, seller, delivery
 
+
             // KYC Status
-            'is_kyc_submitted' => $user->is_kyc_submitted,
-            'is_kyc_approved' => $user->is_kyc_approved,
-            'kyc_review_comment' => $user->kyc_review_comment,
+            'is_kyc_submitted' => $user->isKycSubmitted(),
+            'is_kyc_approved' => $user->isKycApproved(),
+            'kyc_review_comment' => $user->kycReviewComment(),
 
             // Vehicle KYC
-            'is_vehicle_kyc_submitted' => $user->is_vehicle_kyc_submitted,
-            'is_vehicle_kyc_approved' => $user->is_vehicle_kyc_approved,
-            'vehicle_kyc_review_comment' => $user->vehicle_kyc_review_comment,
+            'is_vehicle_kyc_submitted' => $user->isVehicleKycSubmitted(),
+            'is_vehicle_kyc_approved' => $user->isVehicleKycApproved(),
+            'vehicle_kyc_review_comment' => $user->vehicleKycReviewComment(),
 
 
-            'is_bank_verified' => $user->is_bank_verified,
-            'is_user_ready_for_order_management' => $user->is_user_ready_for_order_management,
+            'is_bank_verified' => $user->isBankVerified(),
+            'is_user_ready_for_order_management' => $user->isUserReadyForOrderManagement(),
 
-            'is_account_disabled' => !$user->is_active,
-            'account_disabled_message' => $user->incactive_reason,
-            // 'is_available_for_delivery'=> $user->is_available_for_delivery, // Only for delivery users
+            'is_account_disabled' => !$user->isActive(),
+            'account_disabled_message' => $user->inactiveReason(),
+            // 'is_available_for_delivery'=> $user->isAvailableForDelivery(), // Only for delivery users
+
+            'primary_depot_data' => $userPrimaryDepotData,
+
         ];
 
 

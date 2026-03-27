@@ -402,25 +402,23 @@ class User extends Authenticatable
 
 
     // Appends
-
-
     protected $appends = [
 
         // KYC
-        'is_kyc_submitted',
-        'is_kyc_approved',
-        'kyc_review_comment',
+        // 'is_kyc_submitted',
+        // 'is_kyc_approved',
+        // 'kyc_review_comment',
 
-        // Vehicle KYC
-        'is_vehicle_kyc_submitted',
-        'is_vehicle_kyc_approved',
-        'vehicle_kyc_review_comment',
+        // // Vehicle KYC
+        // 'is_vehicle_kyc_submitted',
+        // 'is_vehicle_kyc_approved',
+        // 'vehicle_kyc_review_comment',
 
-        'is_bank_verified',
-        'is_user_ready_for_order_management',
+        // 'is_bank_verified',
+        // 'is_user_ready_for_order_management',
 
-        'is_depot_assigned',
-        'is_fulfillment_location_exist',
+        // 'is_depot_assigned',
+        // 'is_fulfillment_location_exist',
 
         'is_seller',
         'is_buyer',
@@ -431,65 +429,65 @@ class User extends Authenticatable
 
 
 
-    public function getIsKycSubmittedAttribute(): bool
-    {
-        return $this->isKycSubmitted();
-    }
+    // public function getIsKycSubmittedAttribute(): bool
+    // {
+    //     return $this->isKycSubmitted();
+    // }
 
-    public function getIsKycApprovedAttribute(): bool
-    {
-        return $this->isKycApproved();
-    }
+    // public function getIsKycApprovedAttribute(): bool
+    // {
+    //     return $this->isKycApproved();
+    // }
 
-    public function getKycReviewCommentAttribute(): string
-    {
-        return !$this->isKycApproved() ? $this->kyc->review_comment ?? '' : '';
-    }
+    // public function getKycReviewCommentAttribute(): string
+    // {
+    //     return !$this->isKycApproved() ? $this->kyc->review_comment ?? '' : '';
+    // }
 
-    //
-    public function getIsVehicleKycSubmittedAttribute(): bool
-    {
-        return $this->isVehicleKycSubmitted();
-    }
+    // //
+    // public function getIsVehicleKycSubmittedAttribute(): bool
+    // {
+    //     return $this->isVehicleKycSubmitted();
+    // }
 
-    public function getIsVehicleKycApprovedAttribute(): bool
-    {
-        return $this->isVehicleKycApproved();
-    }
+    // public function getIsVehicleKycApprovedAttribute(): bool
+    // {
+    //     return $this->isVehicleKycApproved();
+    // }
 
-    public function getVehicleKycReviewCommentAttribute(): string
-    {
-        return !$this->isVehicleKycApproved() ? $this->vehicleKyc->review_comment ?? '' : '';
-    }
-
-
-
-    //
-
-    public function getIsBankVerifiedAttribute(): bool
-    {
-        return $this->isBankVerified();
-    }
-
-    public function getIsDepotAssignedAttribute(): bool
-    {
-        return $this->depots()->exists();
-    }
+    // public function getVehicleKycReviewCommentAttribute(): string
+    // {
+    //     return !$this->isVehicleKycApproved() ? $this->vehicleKyc->review_comment ?? '' : '';
+    // }
 
 
-    public function getIsUserReadyForOrderManagementAttribute(): bool
-    {
-        return  $this->is_kyc_approved
-            // && $this->is_bank_verified
-            && $this->is_depot_assigned
-            && $this->is_fulfillment_location_exist;
-    }
+
+    // //
+
+    // public function getIsBankVerifiedAttribute(): bool
+    // {
+    //     return $this->isBankVerified();
+    // }
+
+    // public function getIsDepotAssignedAttribute(): bool
+    // {
+    //     return $this->depots()->exists();
+    // }
 
 
-    public function getIsFulfillmentLocationExistAttribute(): bool
-    {
-        return $this->fulfillmentLocations()->exists();
-    }
+    // public function getIsUserReadyForOrderManagementAttribute(): bool
+    // {
+    //     return  $this->is_kyc_approved
+    //         // && $this->is_bank_verified
+    //         && $this->is_depot_assigned
+    //         && $this->is_fulfillment_location_exist;
+    // }
+
+
+    // public function getIsFulfillmentLocationExistAttribute(): bool
+    // {
+    //     return $this->fulfillmentLocations()->exists();
+    // }
 
     // asign is seller buyer or deliver
     public function getIsSellerAttribute(): bool
