@@ -231,6 +231,8 @@ return [
 
         'cannot_update_self' => 'You cannot update your own account details.',
 
+        'invalid_packaging' => 'The specified packaging details are invalid for the selected product.',
+
 
 
     ],

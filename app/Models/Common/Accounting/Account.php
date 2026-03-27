@@ -32,6 +32,11 @@ class Account extends BaseModel
         'currency',
         'type',
 
+        'credit_limit',
+        'credit_balance',
+
+        // Actual available balance = credit_balance + available_balance - hold_balance
+
         'available_balance',
         'hold_balance',
 
@@ -46,6 +51,8 @@ class Account extends BaseModel
 
     // casts
     protected $casts = [
+        'credit_limit' => 'decimal:2',
+        'credit_balance' => 'decimal:2',
         'available_balance' => 'decimal:2',
         'hold_balance' => 'decimal:2',
         'total_credit' => 'decimal:2',

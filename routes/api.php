@@ -44,10 +44,12 @@ use App\Http\Controllers\Api\v1\Admin\Settlement\SettlementAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Settlement\SettlementBatchAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Shipment\DriverShipmentAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Shipment\ShipmentAdminApiController;
+use App\Http\Controllers\Api\v1\User\Buyer\Demand\BuyerDemandProductListingApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\BuyerOrderApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\BuyerProductListingApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\CartApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\CheckoutApiController;
+use App\Http\Controllers\Api\v1\User\Buyer\Demand\DemandCartApiController;
 use App\Http\Controllers\Api\v1\User\Common\Auth\UserLoginApiController;
 use App\Http\Controllers\Api\v1\User\Common\Auth\UserLogoutApiController;
 use App\Http\Controllers\Api\v1\User\Common\Auth\UserRegisterApiController;
@@ -274,11 +276,34 @@ Route::group([
                     Route::post('confirm', [CheckoutApiController::class, 'confirm']);
                 });
 
+                // Will Use Common for both order and demand orders
                 Route::prefix('order')->group(function () {
                     Route::get('list', [BuyerOrderApiController::class, 'getBuyerOrders']);
                     Route::get('details/{orderId}', [BuyerOrderApiController::class, 'getBuyerOrderDetails']);
                     Route::get('shipment-packages/{orderId}', [BuyerOrderApiController::class, 'getOrderShipmentPackages']);
                 });
+
+                // Demand Routes
+                Route::prefix('demand')->group(function () {
+
+                    Route::get('products', [BuyerDemandProductListingApiController::class, 'getBuyerProductSummary']);
+                    Route::get('products/package/details/{productId}', [BuyerDemandProductListingApiController::class, 'getBuyerProductPackages']);
+
+
+                    Route::prefix('cart')->group(function () {
+                        Route::get('active', [DemandCartApiController::class, 'getActiveCart']);
+                        Route::post('item', [DemandCartApiController::class, 'addItem']);
+                        Route::put('item/{cartItemId}', [DemandCartApiController::class, 'updateItem']);
+                        Route::delete('item/{cartItemId}', [DemandCartApiController::class, 'removeItem']);
+                        Route::delete('clear', [DemandCartApiController::class, 'clearCart']);
+                    });
+
+
+                    //
+                }); //
+
+
+
 
                 //
             });

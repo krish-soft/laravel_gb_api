@@ -88,7 +88,7 @@ class BaseModel extends Model
             ->values();
     }
 
-    protected $appends = ['time_line_logs'];
+    // protected $appends = ['time_line_logs'];
 
     public function getTimeLineLogsAttribute()
     {

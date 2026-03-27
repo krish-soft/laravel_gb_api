@@ -22,6 +22,10 @@ return new class extends Migration
 
             $table->string('type', 50)->nullable();   // e.g., MAIN, TAX, REVNUE, CLEARING, EXPENSE
 
+            // Optional credit limit for certain account types (e.g., seller main account)
+            $table->decimal('credit_limit', 15, 2)->default(0.00)->nullable();
+            $table->decimal('credit_balance', 15, 2)->default(0.00)->nullable();
+
             // 🔴 SNAPSHOT COLUMNS
             $table->decimal('available_balance', 15, 2)->default(0.00); // ready to payout / usable
             $table->decimal('hold_balance', 15, 2)->default(0.00);      // earned but not yet released

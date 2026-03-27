@@ -11,35 +11,26 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('cart_items', function (Blueprint $table) {
+        Schema::create('demand_cart_items', function (Blueprint $table) {
             $table->id();
 
             // Cart
-            $table->foreignId('cart_id')
-                ->constrained('carts')
+            $table->foreignId('demand_cart_id')
+                ->constrained('demand_carts')
                 ->cascadeOnDelete();
 
-            // Seller snapshot (important)
-            $table->foreignId('seller_id')
+            $table->foreignId('product_id')
                 ->nullable()
-                ->constrained('users')
+                ->constrained('mst_products')
                 ->cascadeOnDelete();
 
-            // Listing references         
-            $table->foreignId('product_listing_item_id')
-                ->nullable()
-                ->constrained('product_listing_items')
-                ->restrictOnDelete();
 
-            $table->foreignId('product_listing_package_id')
+            $table->foreignId('variant_id')
                 ->nullable()
-                ->constrained('product_listing_packages')
-                ->restrictOnDelete();
+                ->constrained('mst_product_variants')
+                ->cascadeOnDelete();
 
-            /**
-             * ORDER QUANTITY
-             * Number of packages ordered
-             */
+
             $table->unsignedInteger('order_qty');
 
             // Package snapshot
@@ -60,14 +51,11 @@ return new class extends Migration
             $table->softDeletes();
 
             // Prevent duplicate same package in same cart
-            $table->unique(['cart_id', 'product_listing_package_id', 'deleted_at'], 'cart_package_unique');
+            $table->unique(['demand_cart_id', 'product_id', 'variant_id', 'deleted_at'], 'demand_cart_item_unique');
 
             // Indexes for faster lookups
-            $table->index(['product_listing_item_id']);
-            $table->index(['product_listing_package_id']);
-            $table->index(['seller_id']);
-
-            $table->index(['cart_id']);
+            $table->index(['product_id']);
+            $table->index(['demand_cart_id']);
         });
     }
 
@@ -76,6 +64,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('cart_items');
+        Schema::dropIfExists('demand_cart_items');
     }
 };

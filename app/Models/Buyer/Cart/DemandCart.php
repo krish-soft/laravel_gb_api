@@ -5,12 +5,14 @@ namespace App\Models\Buyer\Cart;
 use App\Models\BaseModel;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
-class Cart extends BaseModel
+class DemandCart extends BaseModel
 {
     //
+
     use SoftDeletes;
 
     protected static function booted()
@@ -21,8 +23,6 @@ class Cart extends BaseModel
             }
         });
     }
-
-    
     protected $fillable = [
         'buyer_id',
         'fulfillment_location_id',
@@ -55,9 +55,9 @@ class Cart extends BaseModel
         return $this->belongsTo(FulfillmentLocation::class, 'fulfillment_location_id');
     }
 
-    public function cartItems()
+    public function demandCartItems()
     {
-        return $this->hasMany(CartItem::class, 'cart_id');
+        return $this->hasMany(DemandCartItem::class, 'demand_cart_id');
     }
 
 
@@ -66,11 +66,8 @@ class Cart extends BaseModel
     public function getTotalCartItemAmount()
     {
         // Charges for all cart items
-        return $this->cartItems->sum(function ($item) {
+        return $this->demandCartItems->sum(function ($item) {
             return $item->total_price;
         });
     }
-
-
-    //
 }
