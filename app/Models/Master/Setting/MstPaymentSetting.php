@@ -112,6 +112,13 @@ class MstPaymentSetting extends BaseModel
             ?? PaymentMethodEnum::MANUAL->value;
     }
 
+      public static function bankVerificationMode(): string
+    {
+        return self::getOrCreate()->bank_verification_mode
+            ?? PaymentMethodEnum::MANUAL->value;
+    }
+
+
 
     public static function minPayOutAmount(): int
     {
