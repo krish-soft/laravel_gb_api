@@ -37,6 +37,17 @@ return new class extends Migration
                 ->constrained('market_order_items')
                 ->cascadeOnDelete();
 
+            // Demand order relations (if applicable)
+            $table->foreignId('demand_order_id')
+                ->nullable()
+                ->constrained('demand_orders')
+                ->cascadeOnDelete();
+
+            $table->foreignId('demand_order_item_id')
+                ->nullable()
+                ->constrained('demand_order_items')
+                ->cascadeOnDelete();
+
             // Direct access (avoid joining orders/users every time)
             $table->foreignId('buyer_id')
                 ->nullable()

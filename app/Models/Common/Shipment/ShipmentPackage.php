@@ -2,6 +2,8 @@
 
 namespace App\Models\Common\Shipment;
 
+use App\Models\Buyer\Order\DemandOrder;
+use App\Models\Buyer\Order\DemandOrderItem;
 use App\Models\Buyer\Order\Order;
 use App\Models\Buyer\Order\OrderItem;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
@@ -29,6 +31,9 @@ class ShipmentPackage extends Model
 
         'market_order_id',
         'market_order_item_id',
+
+        'demand_order_id',
+        'demand_order_item_id',
 
         'buyer_id',
         'seller_id',
@@ -129,6 +134,16 @@ class ShipmentPackage extends Model
     public function marketOrderItem()
     {
         return $this->belongsTo(MarketOrderItem::class, 'market_order_item_id');
+    }
+
+    public function demandOrder()
+    {
+        return $this->belongsTo(DemandOrder::class, 'demand_order_id');
+    }
+
+    public function demandOrderItem()
+    {
+        return $this->belongsTo(DemandOrderItem::class, 'demand_order_item_id');
     }
 
     public function buyer()

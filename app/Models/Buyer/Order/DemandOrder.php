@@ -5,6 +5,8 @@ namespace App\Models\Buyer\Order;
 use App\Models\BaseModel;
 use App\Models\Buyer\Cart\DemandCart;
 use App\Models\Common\Address;
+use App\Models\Common\Fulfillment\FulfillmentLocation;
+use App\Models\Common\Shipment\ShipmentPackage;
 use App\Models\Master\Depot\MstDepot;
 use App\Models\Master\Unique\MstSeqCodeGenerator;
 use App\Models\User;
@@ -16,7 +18,7 @@ class DemandOrder extends BaseModel
     //
     use SoftDeletes;
 
-    
+
     protected static function booted()
     {
         static::creating(function ($order) {
@@ -95,6 +97,11 @@ class DemandOrder extends BaseModel
         return $this->hasMany(DemandOrderCharge::class, 'demand_order_id', 'id');
     }
 
+    public function demandOrderFulfillments()
+    {
+        return $this->hasMany(DemandOrderFulfillment::class, 'demand_order_id', 'id');
+    }
+
 
     public function buyer()
     {
@@ -131,7 +138,17 @@ class DemandOrder extends BaseModel
         return $this->belongsTo(Address::class, 'pickup_addr_code', 'address_code');
     }
 
+    // actual shipping location
+    public function shippingFulfillmentLocation()
+    {
+        return $this->belongsTo(FulfillmentLocation::class, 'shipping_fulfillment_location_id', 'id');
+    }
 
+    public function shipmentPackages()
+    {
+        return $this->hasMany(ShipmentPackage::class, 'demand_order_id', 'id');
+    }
 
     //
+
 }

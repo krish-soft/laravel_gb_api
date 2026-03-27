@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\v1\Admin\AdminUser\AdminUserAdminApiController;
+use App\Http\Controllers\Api\v1\Admin\Buyer\Order\AdminDemandOrderApiController;
 use App\Http\Controllers\Api\v1\Admin\Buyer\Order\AdminOrderApiController;
 use App\Http\Controllers\Api\v1\Admin\CmdAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Accounting\AccountAdminApiController;
@@ -443,6 +444,12 @@ Route::group([
             Route::prefix('order')->group(function () {
                 Route::get('/', [AdminOrderApiController::class, 'getOrdersList']);
                 Route::get('/{orderId}', [AdminOrderApiController::class, 'getOrderDetails']);
+                //
+            });
+
+            Route::prefix('demand-order')->group(function () {
+                Route::get('/', [AdminDemandOrderApiController::class, 'getOrdersList']);
+                Route::get('/{demandOrderId}', [AdminDemandOrderApiController::class, 'getOrderDetails']);
                 //
             });
 

@@ -175,6 +175,7 @@ class CheckoutConfirmService
                     'pack_unit' => $package->pack_unit,
                     'pack_type_unit' => $package->pack_type_unit,
 
+                    // Base on cart always
                     'order_qty' => $cartItem->order_qty,
                     'pack_price' => $cartItem->pack_price,
                     'per_unit_price' => $cartItem->per_unit_price,
