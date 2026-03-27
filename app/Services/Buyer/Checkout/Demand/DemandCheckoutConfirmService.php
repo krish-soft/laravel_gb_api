@@ -101,7 +101,7 @@ class DemandCheckoutConfirmService
                     'demand_order_id' => $order->id,
                     'order_number' => $order->order_number,
 
-
+                    'product_id' => $cartItem->product_id,
                     'product_code' => $product->product_code ?? null,
                     'product_name' => $product->name,
 

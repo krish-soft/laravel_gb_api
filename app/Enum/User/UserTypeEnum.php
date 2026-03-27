@@ -9,6 +9,7 @@ enum UserTypeEnum: string
     case FARMER = 'farmer'; // Farmer
     case TRADER = 'trader'; // Trader
     case DELIVERY = 'delivery'; // Delivery
+    case RESTAURANT = 'restaurant'; // Restaurant
 
     public static function casesAsValues(): array
     {

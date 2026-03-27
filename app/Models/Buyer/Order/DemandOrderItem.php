@@ -16,6 +16,7 @@ class DemandOrderItem extends BaseModel
         'demand_order_id',
         'order_number',
 
+        'product_id',
         'product_code',
         'product_name',
 

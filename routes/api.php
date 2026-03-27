@@ -30,6 +30,8 @@ use App\Http\Controllers\Api\v1\Admin\Master\MstFinancialYearApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\MstPackTypeApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\MstStateApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\MstUnitApiController;
+use App\Http\Controllers\Api\v1\Admin\Master\Price\MstProductPriceApiAdminController;
+use App\Http\Controllers\Api\v1\Admin\Master\Price\MstProductPriceRuleApiAdminController;
 use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductCategoryApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductPackagingApiController;
@@ -634,6 +636,10 @@ Route::group([
                 Route::apiResource('mstProduct', MstProductApiController::class);
                 Route::apiResource('mstProductVariant', MstProductVariantApiController::class);
                 Route::apiResource('mstProductPackaging', MstProductPackagingApiController::class);
+
+                // Product Price
+                Route::apiResource('mstProductPrice', MstProductPriceApiAdminController::class);
+                Route::apiResource('mstProductPriceRule', MstProductPriceRuleApiAdminController::class);
 
                 // Charges
                 Route::apiResource('mstCharge', MstChargeApiController::class);

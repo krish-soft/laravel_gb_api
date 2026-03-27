@@ -20,6 +20,11 @@ return new class extends Migration
 
             $table->string('order_number', 20)->nullable();
 
+            $table->foreignId('product_id')
+                ->nullable()
+                ->constrained('mst_products')
+                ->nullOnDelete();
+
             $table->string('product_code', 20)->nullable();
             $table->string('product_name');
 
