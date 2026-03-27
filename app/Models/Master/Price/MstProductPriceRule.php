@@ -30,8 +30,8 @@ class MstProductPriceRule extends BaseModel
     protected $fillable = [
 
         'rule_no',
-        'charge_level_id',
-        'user_type',
+        'charge_level_id', // B-STD
+        'user_type', // 
 
         'pack_unit',
         'calc_type',
@@ -50,16 +50,14 @@ class MstProductPriceRule extends BaseModel
     // casts
 
     protected $casts = [
+        '1_pkg' => 'decimal:2',
+        '2_pkg' => 'decimal:2',
+        '3_pkg' => 'decimal:2',
+        '5_pkg' => 'decimal:2',
+        '10_pkg' => 'decimal:2',
+        '20_pkg' => 'decimal:2',
+
         'is_active' => 'boolean',
-
-        '1' => 'decimal:2',
-        '2' => 'decimal:2',
-        '3' => 'decimal:2',
-        '5' => 'decimal:2',
-        '10' => 'decimal:2',
-        '20' => 'decimal:2',
-
-
     ];
 
     // Scope

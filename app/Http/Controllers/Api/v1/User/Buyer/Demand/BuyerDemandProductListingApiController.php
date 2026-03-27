@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\v1\User\Buyer\Demand;
 
 use App\Http\Controllers\ApiResponseWithAuthController;
 use App\Models\Master\Product\MstProduct;
+use App\Services\Common\Price\ProductPriceCalculationService;
 use Illuminate\Http\Request;
 
 class BuyerDemandProductListingApiController extends ApiResponseWithAuthController
@@ -33,6 +34,8 @@ class BuyerDemandProductListingApiController extends ApiResponseWithAuthControll
 
     public function getBuyerProductPackages(Request $request, $productId)
     {
+        $buyer = $request->user();
+
         $product = MstProduct::with([
             'category:id,name,category_code',
             'packagings' => function ($q) {
@@ -45,11 +48,17 @@ class BuyerDemandProductListingApiController extends ApiResponseWithAuthControll
 
         // TODO: Pack Price pending to add here later from Pricing Modules
         foreach ($product->packagings as $packaging) {
-            $packaging->prices = [
-                'date_price' => null, // Placeholder for future price
-                'market_price' => null, // Placeholder for future price
-                'pack_sell_price' => null,  // Placeholder for future price
-            ];
+
+            $priceData = (new ProductPriceCalculationService())->calculateFinalPrice(
+                $productId,
+                $buyer->charge_level_code, // Assuming buyer standard for now, can be dynamic based on user
+                $buyer->user_type, // Assuming user type restaurant for now, can be dynamic based on user
+                $packaging->pack_size,
+                $packaging->pack_unit
+            );
+
+
+            $packaging->prices = $priceData ?? null;
         }
 
         $data = [

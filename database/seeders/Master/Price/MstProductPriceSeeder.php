@@ -21,6 +21,7 @@ class MstProductPriceSeeder extends Seeder
             [
                 'product_id' =>  $firstProduct->id,
                 'product_code' => $firstProduct->product_code,
+                'price_date' => date('Y-m-d'),
                 'price' => 30.00,
                 'max_price' => 120.00,
                 'min_price' => 10.00,
@@ -32,6 +33,7 @@ class MstProductPriceSeeder extends Seeder
             [
                 'product_id' =>  $secondProduct->id,
                 'product_code' => $secondProduct->product_code,
+                'price_date' => date('Y-m-d'),
                 'price' => 15.00,
                 'max_price' => 120.00,
                 'min_price' => 10.00,
