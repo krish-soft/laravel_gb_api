@@ -33,6 +33,8 @@ class MstPaymentSettingApiController extends ApiResponseWithAdminAuthController
         $validated = $request->validate([
             'payment_in_mode'           => 'sometimes|string|max:50|in:razorpay,manual',
             'payment_out_mode'          => 'sometimes|string|max:50|in:razorpay,manual',
+            'bank_verification_mode'    => 'sometimes|string|max:50|in:razorpay,manual',
+
 
             'min_payout_amount'         => 'sometimes|numeric|min:1',
             'max_payout_amount'         => 'sometimes|numeric|min:1',
