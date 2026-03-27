@@ -29,14 +29,16 @@ class MstDepotSeeder extends Seeder
 
         $kimAddress = Address::create([
             'addr_code' => 'ADDR-DPT-KIM',
-            'addr_name' => 'Kim Depot Address ',
+            'addr_name' => 'Khet Bajar (Kim Depot)',
             'addr_type' => AddressTypeEnum::DEPOT->value,
             'address_line1' => 'Near kimamli patiya',
+            'address_line2' => 'anita-kim road',
             'village' => 'Kim',
+            'taluka' => 'Olpad',
             'city' => 'Surat',
             'state' => 'Gujarat',
             'state_iso' => 'GJ',
-            'postal_code' => '394220',
+            'postal_code' => '394110',
             'country' => 'India',
             'latitude' => 21.411122,
             'longitude' => 72.9023465,
