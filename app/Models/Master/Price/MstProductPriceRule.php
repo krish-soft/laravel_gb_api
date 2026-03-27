@@ -36,12 +36,12 @@ class MstProductPriceRule extends BaseModel
         'pack_unit',
         'calc_type',
 
-        '1',
-        '2',
-        '3',
-        '5',
-        '10',
-        '20',
+        '1_pkg',
+        '2_pkg',
+        '3_pkg',
+        '5_pkg',
+        '10_pkg',
+        '20_pkg',
 
         'is_active',
 

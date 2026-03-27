@@ -25,12 +25,12 @@ return new class extends Migration
             $table->string('pack_unit', 20)->default('kg')->nullable(); // 
             $table->string('calc_type', 50)->default('percentage');   // 
 
-            $table->decimal('1', 10, 2)->default(0)->nullable(); // 1 Kg Pkg price
-            $table->decimal('2', 10, 2)->default(0)->nullable(); // 2 Kg Pkg price
-            $table->decimal('3', 10, 2)->default(0)->nullable(); // 3 Kg Pkg price
-            $table->decimal('5', 10, 2)->default(0)->nullable(); // 5 Kg Pkg price
-            $table->decimal('10', 10, 2)->default(0)->nullable(); // 10 Kg Pkg price
-            $table->decimal('20', 10, 2)->default(0)->nullable(); // 20 Kg Pkg price
+            $table->decimal('1_pkg', 10, 2)->default(0)->nullable(); // 1 Kg Pkg price
+            $table->decimal('2_pkg', 10, 2)->default(0)->nullable(); // 2 Kg Pkg price
+            $table->decimal('3_pkg', 10, 2)->default(0)->nullable(); // 3 Kg Pkg price
+            $table->decimal('5_pkg', 10, 2)->default(0)->nullable(); // 5 Kg Pkg price
+            $table->decimal('10_pkg', 10, 2)->default(0)->nullable(); // 10 Kg Pkg price
+            $table->decimal('20_pkg', 10, 2)->default(0)->nullable(); // 20 Kg Pkg price
 
             $table->boolean('is_active')->default(true)->nullable();
 

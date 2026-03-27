@@ -232,6 +232,7 @@ return [
         'cannot_update_self' => 'You cannot update your own account details.',
 
         'invalid_packaging' => 'The specified packaging details are invalid for the selected product.',
+        'duplicate_entry_found' => 'A record with the same values combination already exists.',
 
 
 

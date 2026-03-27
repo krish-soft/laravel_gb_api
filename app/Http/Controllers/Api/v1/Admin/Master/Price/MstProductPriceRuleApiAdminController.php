@@ -34,15 +34,24 @@ class MstProductPriceRuleApiAdminController extends ApiResponseWithAdminAuthCont
             'pack_unit' => 'nullable|string|in:kg',
             'calc_type' => 'nullable|string|in:percentage,fixed',
 
-            '1' => 'required|numeric',
-            '2' => 'required|numeric',
-            '3' => 'required|numeric',
-            '5' => 'required|numeric',
-            '10' => 'required|numeric',
-            '20' => 'required|numeric',
+            '1_pkg' => 'required|numeric',
+            '2_pkg' => 'required|numeric',
+            '3_pkg' => 'required|numeric',
+            '5_pkg' => 'required|numeric',
+            '10_pkg' => 'required|numeric',
+            '20_pkg' => 'required|numeric',
 
         ]);
 
+        // Check for same charge leve and user type combination
+        $existingRule = MstProductPriceRule::where('charge_level_id', $request->input('charge_level_id'))
+            ->where('user_type', $request->input('user_type'))
+            ->where('pack_unit', $request->input('pack_unit'))
+            ->first();
+
+        if ($existingRule) {
+            return $this->showErrorMessage(__('messages.error_messages.duplicate_entry_found'), 400);
+        }
 
         $priceRule = MstProductPriceRule::create($request->all());
 
@@ -88,14 +97,24 @@ class MstProductPriceRuleApiAdminController extends ApiResponseWithAdminAuthCont
             'pack_unit' => 'nullable|string|in:kg',
             'calc_type' => 'nullable|string|in:percentage,fixed',
 
-            '1' => 'required|numeric',
-            '2' => 'required|numeric',
-            '3' => 'required|numeric',
-            '5' => 'required|numeric',
-            '10' => 'required|numeric',
-            '20' => 'required|numeric',
-
+            '1_pkg' => 'required|numeric',
+            '2_pkg' => 'required|numeric',
+            '3_pkg' => 'required|numeric',
+            '5_pkg' => 'required|numeric',
+            '10_pkg' => 'required|numeric',
+            '20_pkg' => 'required|numeric',
         ]);
+
+        // Check for same charge level and user type combination excluding current rule
+        $existingRule = MstProductPriceRule::where('charge_level_id', $request->input('charge_level_id'))
+            ->where('user_type', $request->input('user_type'))
+            ->where('pack_unit', $request->input('pack_unit'))
+            ->where('id', '!=', $mstProductPriceRule->id)
+            ->first();
+
+        if ($existingRule) {
+            return $this->showErrorMessage(__('messages.error_messages.duplicate_entry_found'), 400);
+        }
 
         $mstProductPriceRule->update($request->all());
 
