@@ -7,15 +7,19 @@ use App\Enum\Common\Legal\KycStatusEnum;
 use App\Enum\Common\Payment\PaymentMethodEnum;
 use App\Http\Controllers\ApiResponseWithAuthController;
 use App\Models\Buyer\Cart\Cart;
+use App\Models\Buyer\Cart\DemandCart;
+use App\Models\Buyer\Order\DemandOrder;
 use App\Models\Buyer\Order\Order;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
 use App\Models\Common\Payment\Payment;
 use App\Models\Master\Setting\MstAppSetting;
 use App\Models\Master\Setting\MstFinanceSetting;
 use App\Models\Master\Setting\MstPaymentSetting;
-use App\Services\Buyer\Checkout\CheckoutConfirmService;
-use App\Services\Buyer\Checkout\CheckoutPreviewService;
+
+use App\Services\Buyer\Checkout\Demand\DemandCheckoutPreviewService;
+use App\Services\Buyer\Checkout\Demand\DemandCheckoutConfirmService;
 use App\Services\Common\Payment\Gateways\RazorpayService;
+use App\Services\Common\Payment\Handlers\DemandOrderPaymentHandler;
 use App\Services\Common\Payment\Handlers\OrderPaymentHandler;
 use App\Services\Common\Payment\PaymentService;
 use Exception;
@@ -27,6 +31,7 @@ use RuntimeException;
 
 class DemandCheckoutApiController extends ApiResponseWithAuthController
 {
+
     /**
      * -------------------------------------------------
      * Checkout Preview
@@ -34,7 +39,7 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
      */
     public function preview(
         Request                $request,
-        CheckoutPreviewService $service,
+        DemandCheckoutPreviewService $service,
     ) {
 
         $request->validate([
@@ -44,10 +49,10 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
         $isBuyerPickup = $request->input('is_buyer_pickup') ?? false;
 
         try {
-            $cart = Cart::with('buyer', 'cartItems')->where('buyer_id', $request->user()->id)
+            $cart = DemandCart::with('buyer', 'demandCartItems')->where('buyer_id', $request->user()->id)
                 ->where('status', 'active')
                 ->with([
-                    'cartItems.productListingPackage.productListingItem.productListing'
+                    'demandCartItems.product'
                 ])
                 ->firstOrFail();
 
@@ -70,10 +75,10 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
      */
     public function confirm(
         Request                $request,
-        CheckoutConfirmService $checkoutService,
+        DemandCheckoutConfirmService $checkoutService,
         PaymentService         $paymentService,
         RazorpayService        $razorpayService,
-        OrderPaymentHandler   $orderPaymentHandler
+        DemandOrderPaymentHandler   $orderPaymentHandler
     ) {
         $user = $request->user();
 
@@ -85,18 +90,17 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
         // }
 
         $data = $request->validate([
-            'cart_id' => 'required|exists:carts,id',
+            'demand_cart_id' => 'required|exists:demand_carts,id',
             'payment_method' => 'required|in:razorpay', // manual only via admin
             'fulfillment_location_id' => 'required|exists:fulfillment_locations,id',
-            // 'charges'        => 'required|array|min:1',
             'is_buyer_pickup' => 'required|boolean',
         ]);
 
 
-        $cart = Cart::where('id', $data['cart_id'])
+        $cart = DemandCart::where('id', $data['demand_cart_id'])
             ->where('buyer_id', $user->id)
             ->where('status', 'active')
-            ->with(['cartItems.productListingPackage.productListingItem.productListing'])
+            ->with(['demandCartItems.product'])
             ->latest()
             ->first();
 
@@ -173,9 +177,9 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
 
             // 
             logActivity(
-                'checkout_order_created',
+                'checkout_demand_order_created',
                 $user,
-                Order::class,
+                DemandOrder::class,
                 $order->id,
                 $order->order_number,
                 [
@@ -188,7 +192,7 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
              * 2️⃣ Create Payment (INITIATED)
              */
             $payment = $paymentService->initiate([
-                'source_type'   => Order::class,
+                'source_type'   => DemandOrder::class,
                 'source_id'     => $order->id,
                 'source_code'   => $order->order_number,
                 'user_id'       => $user->id,
@@ -214,7 +218,7 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
                     'status' => $payment->status,
                 ],
                 // RELATED
-                Order::class,
+                DemandOrder::class,
                 $order->id
             );
 
@@ -225,9 +229,12 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
              */
             if (
                 MstPaymentSetting::payInMode() === PaymentMethodEnum::MANUAL->value
+                // check credit balance enough then can mark as paid directly without manual payment        
+
+                || ($canUseCredit && $order->credit_amount >= $order->total_amount)
             ) {
 
-                $payment->gateway = 'manual';
+                $payment->gateway =  ($canUseCredit && $order->credit_amount >= $order->total_amount) ? 'credit_balance' : 'manual';
                 $payment->save();
 
                 $payment->markPaid('MANUAL');
@@ -242,7 +249,7 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
                     $payment->payment_code,
                     ['amount' => $payment->amount],
                     // RELATED
-                    Order::class,
+                    DemandOrder::class,
                     $order->id
                 );
 
@@ -255,8 +262,8 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
                 );
             }
 
-            // return "Testing no razorpay";
-            
+            return "Testing no razorpay";
+
             /**
              * ------------------------------------
              * RAZORPAY (ASYNC)
@@ -294,7 +301,7 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
                     'amount' => $payment->amount,
                 ],
                 // RELATED
-                Order::class,
+                DemandOrder::class,
                 $order->id
             );
 
@@ -324,71 +331,15 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
                     $payment->payment_code,
                     ['reason' => $e->getMessage()],
                     // RELATED
-                    Order::class,
+                    DemandOrder::class,
                     $order->id
                 );
             }
 
-            if (isset($order)) {
-                app(\App\Services\Buyer\Checkout\CheckoutRevertService::class)
-                    ->revert($order);
-
-                logActivity(
-                    'checkout_reverted',
-                    $user,
-                    Order::class,
-                    $order->id,
-                    $order->order_number,
-                    []
-                );
-            }
+            // No revert needed here as order is only created in DB and not yet confirmed or processed.
+            // If needed, can add order status and mark as cancelled here.
 
             throw $e;
         }
     }
-
-
-    // ORGINAL CODE DELETED
-    // public function confirm(
-    //     Request $request,
-    //     CheckoutConfirmService $service
-    // ) {
-    //     try {
-    //         $data = $request->validate([
-    //             'payment_method' => 'required|in:razorpay,manual',
-
-    //             // ✅ charges must come from preview
-    //             'charges' => 'required|array|min:1',
-    //             'charges.*.charge_type' => 'required|string',
-    //             'charges.*.charge_name' => 'required|string',
-    //             'charges.*.taxable_amount' => 'required|numeric',
-    //             'charges.*.tax_amount' => 'required|numeric',
-    //             'charges.*.total_amount' => 'required|numeric',
-    //         ]);
-
-    //         $paymentMethod = $data['payment_method'];
-
-    //         $cart = Cart::where('buyer_id', $request->user()->id)
-    //             ->where('status', 'active')
-    //             ->with([
-    //                 'cartItems.productListingPackage.productListingItem.productListing'
-    //             ])
-    //             ->firstOrFail();
-
-    //         // ✅ CORRECT service call
-    //         $order = $service->confirm(
-    //             $cart,
-    //             $data['charges'],
-    //             $paymentMethod
-    //         );
-
-    //         return $this->successResponse(
-    //             __('messages.success_messages.order_created') . "\n" . __('messages.success_messages.proceed_to_payment'),
-    //             $order,
-    //             201
-    //         );
-    //     } catch (Exception $e) {
-    //         return $this->showErrorMessage($e->getMessage(), $e->getCode());
-    //     }
-    // }
 }

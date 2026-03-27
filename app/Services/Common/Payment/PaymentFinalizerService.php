@@ -2,8 +2,10 @@
 
 namespace App\Services\Common\Payment;
 
+use App\Models\Buyer\Order\DemandOrder;
 use App\Models\Buyer\Order\Order;
 use App\Models\Common\Payment\Payment;
+use App\Services\Common\Payment\Handlers\DemandOrderPaymentHandler;
 use App\Services\Common\Payment\Handlers\OrderPaymentHandler;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -15,6 +17,7 @@ class PaymentFinalizerService
         // try {
         match ($payment->source_type) {
             Order::class => app(OrderPaymentHandler::class)->onSuccess($payment),
+            DemandOrder::class => app(DemandOrderPaymentHandler::class)->onSuccess($payment),
 
             default => throw new RuntimeException('Unsupported payment source'),
         };
@@ -31,7 +34,8 @@ class PaymentFinalizerService
     ): void {
         match ($payment->source_type) {
             Order::class => app(OrderPaymentHandler::class)->onFailure($payment, $reason),
-
+            DemandOrder::class => app(DemandOrderPaymentHandler::class)->onFailure($payment, $reason),
+            
             default =>
             throw new RuntimeException('Unsupported payment source'),
         };

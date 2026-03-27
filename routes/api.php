@@ -50,6 +50,7 @@ use App\Http\Controllers\Api\v1\User\Buyer\BuyerProductListingApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\CartApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\CheckoutApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\Demand\DemandCartApiController;
+use App\Http\Controllers\Api\v1\User\Buyer\Demand\DemandCheckoutApiController;
 use App\Http\Controllers\Api\v1\User\Common\Auth\UserLoginApiController;
 use App\Http\Controllers\Api\v1\User\Common\Auth\UserLogoutApiController;
 use App\Http\Controllers\Api\v1\User\Common\Auth\UserRegisterApiController;
@@ -297,6 +298,13 @@ Route::group([
                         Route::delete('item/{cartItemId}', [DemandCartApiController::class, 'removeItem']);
                         Route::delete('clear', [DemandCartApiController::class, 'clearCart']);
                     });
+
+                    // Checkout Routes
+                    Route::prefix('checkout')->group(function () {
+                        Route::get('preview', [DemandCheckoutApiController::class, 'preview']);
+                        Route::post('confirm', [DemandCheckoutApiController::class, 'confirm']);
+                    });
+
 
 
                     //
