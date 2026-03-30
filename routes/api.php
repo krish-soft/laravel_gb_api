@@ -38,6 +38,7 @@ use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductPackagingApiContr
 use App\Http\Controllers\Api\v1\Admin\Master\Product\MstProductVariantApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstAppSettingApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstBusinessSettingApiController;
+use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstCutoffSettingApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstFinanceSettingApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstPaymentSettingApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Vehicle\MstVehicleApiController;
@@ -653,6 +654,10 @@ Route::group([
                     // App Settings
                     Route::get('mstAppSetting', [MstAppSettingApiController::class, 'getSetting']);
                     Route::put('mstAppSetting', [MstAppSettingApiController::class, 'updateSetting']);
+
+                    // Cutoff Settings
+                    Route::get('mstCutoffSetting', [MstCutoffSettingApiController::class, 'getSetting']);
+                    Route::put('mstCutoffSetting', [MstCutoffSettingApiController::class, 'updateSetting']);
 
                     // Finance Setting
                     Route::get('mstFinanceSetting', [MstFinanceSettingApiController::class, 'getSetting']);
