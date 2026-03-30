@@ -65,24 +65,21 @@ class MstCutoffSetting extends BaseModel
 
     public static function getOrCreate(): Model
     {
-        // return Cache::rememberForever('mst_cutoff_settings', function () {
-        return self::firstOrCreate(
-            [
-                // Seller
-                'seller_start_time' => '09:00:00', // 9:00 AM
-                'seller_end_time' => '15:00:00', // 3:00 PM
+        return Cache::rememberForever('mst_cutoff_settings', function () {
 
-                // Buyer
-                'buyer_start_time' => '09:00:00', // 9:00 AM
-                'buyer_end_time' => '23:59:59', // end of day
+            return self::firstOrCreate(
+                [
+                    'seller_start_time' => '09:00:00', // 9 AM by default
+                    'seller_end_time' => '15:00:00', // 3 PM by default
 
-            ],
-            [
-                'is_buyer_auto_cutoff' => false,
-                'is_seller_auto_cutoff' => false,
-            ]
-
-        );
-        // });
+                    'buyer_start_time' => '09:00:00', // 9 AM by default
+                    'buyer_end_time' => '23:59:59', // End of day by default
+                ],
+                [
+                    'is_buyer_auto_cutoff' => false,
+                    'is_seller_auto_cutoff' => false,
+                ]
+            );
+        });
     }
 }

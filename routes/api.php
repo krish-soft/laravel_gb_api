@@ -239,7 +239,9 @@ Route::group([
 
             Route::prefix('seller')
                 ->middleware([
-                    'seller-checker' // Custom Middleware to check if user is seller
+                    'seller-checker', // Custom Middleware to check if user is seller
+                    'seller-cutoff' // Custom Middleware to check seller cutoff time
+
                 ])
                 ->group(function () {
 
@@ -260,7 +262,8 @@ Route::group([
 
             // Buyer/Trader Routes
             Route::prefix('buyer')->middleware([
-                'buyer-checker' // Custom Middleware to check if user is buyer
+                'buyer-checker', // Custom Middleware to check if user is buyer
+                'buyer-cutoff' // Custom Middleware to check buyer cutoff time
             ])->group(function () {
 
                 Route::get('products', [BuyerProductListingApiController::class, 'getBuyerProductSummary']);

@@ -234,6 +234,10 @@ return [
         'invalid_packaging' => 'The specified packaging details are invalid for the selected product.',
         'duplicate_entry_found' => 'A record with the same values combination already exists.',
 
+        'listing_not_allowed' => 'Listing is currently not allowed. Please try within allowed time.',
+        'purchasing_not_allowed' => 'Purchasing is currently not allowed. Please try within allowed time.',
+
+
 
 
     ],
