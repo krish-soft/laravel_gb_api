@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\v1\user;
+namespace App\Http\Controllers\Api\v1\User;
 
 use App\Enum\Common\OtpPurposeEnum;
 use App\Http\Controllers\ApiResponseWithAuthController;
