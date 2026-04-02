@@ -67,8 +67,10 @@ class DemandOrder extends BaseModel
         'is_paid',
         'is_locked',
         'is_manual', // Manually created order
+        'is_cutoff', // when order is processed for cutoff
 
         'remarks',
+        'flags', // for any future use
 
         //
     ];
@@ -83,6 +85,7 @@ class DemandOrder extends BaseModel
         'is_locked' => 'boolean',
         'is_manual' => 'boolean',
         'is_buyer_pickup' => 'boolean',
+        'flags' => 'array',
     ];
 
 
@@ -95,11 +98,6 @@ class DemandOrder extends BaseModel
     public function demandOrderCharges()
     {
         return $this->hasMany(DemandOrderCharge::class, 'demand_order_id', 'id');
-    }
-
-    public function demandOrderFulfillments()
-    {
-        return $this->hasMany(DemandOrderFulfillment::class, 'demand_order_id', 'id');
     }
 
 
@@ -146,7 +144,7 @@ class DemandOrder extends BaseModel
 
     public function shipmentPackages()
     {
-        return $this->hasMany(ShipmentPackage::class, 'demand_order_id', 'id');
+        return $this->hasMany(ShipmentPackage::class, 'source_id')->where('source', DemandOrder::class);
     }
 
     //

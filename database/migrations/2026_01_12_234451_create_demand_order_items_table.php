@@ -28,11 +28,17 @@ return new class extends Migration
             $table->string('product_code', 20)->nullable();
             $table->string('product_name');
 
+            $table->foreignId('product_variant_id')
+                ->nullable()
+                ->constrained('mst_product_variants')
+                ->nullOnDelete();
+
             $table->string('variant_code', 20)->nullable();
             $table->string('variant_name')->nullable();
 
             $table->decimal('order_qty', 15, 2);
             $table->decimal('ship_qty', 15, 2)->default(0);
+            $table->decimal('seller_ship_qty', 15, 2)->default(0);
 
             $table->decimal('pack_size', 15, 2);
             $table->string('pack_unit', 20)->nullable();
@@ -50,6 +56,7 @@ return new class extends Migration
 
             $table->string('reference', 100)->nullable();
             $table->string('remarks', 100)->nullable();
+
 
             $table->boolean('is_fulfilled')->default(false)->nullable();
             $table->boolean('is_cancelled')->default(false)->nullable();

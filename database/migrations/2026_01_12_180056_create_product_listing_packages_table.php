@@ -29,7 +29,10 @@ return new class extends Migration
             // Package Quantity
             $table->decimal('qty', 15, 2); // total qty in the package
             $table->decimal('sold_qty', 15, 2)->default(0); // qty sold from the package
+            $table->decimal('demand_sold_qty', 15, 2)->default(0); // qty sold from the package
+
             $table->decimal('ship_qty', 15, 2)->default(0); // qty shipped from the package
+            $table->decimal('demand_ship_qty', 15, 2)->default(0); // qty shipped from the package
 
             // for accounting 
             $table->decimal('reverse_qty', 15, 2)->default(0); // qty reversed back to available

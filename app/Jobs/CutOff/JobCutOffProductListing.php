@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Jobs\CutOff;
+namespace App\Jobs\Cutoff;
 
 use App\Enum\Common\Order\OrderStatusEnum;
+use App\Enum\Common\Package\PackageTypeEnum;
 use App\Enum\Common\Shipment\ShipmentStatusEnum;
 use App\Models\Common\Shipment\ShipmentPackage;
 use App\Models\Seller\Product\ProductListing;
@@ -69,18 +70,23 @@ class JobCutOffProductListing implements ShouldQueue
 
                         // then if listing not to sold to market 
                         // we have to make qty sold and qty same
-                        foreach ($listing->listingItems as $item) {
-                            foreach ($item->listingPackages as $pkg) {
-                                // Sold qty is equal to qty to settle
+                        // foreach ($listing->listingItems as $item) {
+                        //     foreach ($item->listingPackages as $pkg) {
+                        //         // Sold qty is equal to qty to settle
 
-                            }
-                        }
+                        //     }
+                        // }
 
 
                         continue;
                     }
 
                     $marketId = $listing->seller->primaryDepot->depot->market_id;
+
+                    // Market Id missing failed the transaction, so we can be sure it exists here
+                    if (!$marketId) {
+                        throw new \RuntimeException("Market ID missing for listing {$listing->listing_code}");
+                    }
 
                     /* ---------------------------------------------
                      | CREATE / GET MARKET ORDER
@@ -134,7 +140,7 @@ class JobCutOffProductListing implements ShouldQueue
 
                         foreach ($item->listingPackages as $pkg) {
 
-                            $remain = $pkg->qty - $pkg->sold_qty;
+                            $remain = $pkg->qty - $pkg->sold_qty - $pkg->demand_sold_qty; // for cutoff we have to manage demand sold qty also because we can get demand order from farmer and also direct order from buyer so we have to manage both type of orders in cutoff
 
                             if ($remain <= 0) {
                                 continue;
@@ -196,53 +202,53 @@ class JobCutOffProductListing implements ShouldQueue
                      |--------------------------------------------------------------------------
                      */
 
-                    foreach ($createdMarketItems as $row) {
+                    // foreach ($createdMarketItems as $row) {
 
-                        $marketItem = $row['marketItem'];
-                        $pkg        = $row['package'];
-                        $remain     = $row['remain'];
+                    //     $marketItem = $row['marketItem'];
+                    //     $pkg        = $row['package'];
+                    //     $remain     = $row['remain'];
 
-                        for ($i = 0; $i < $remain; $i++) {
+                    //     for ($i = 0; $i < $remain; $i++) {
 
-                            ShipmentPackage::create([
-                                'market_order_id' => $marketOrder->id,
-                                'market_order_item_id' => $marketItem->id,
+                    //         ShipmentPackage::create([
+                    //             'market_order_id' => $marketOrder->id,
+                    //             'market_order_item_id' => $marketItem->id,
 
-                                'shipment_date' => now()->toDateString(),
+                    //             'shipment_date' => now()->toDateString(),
 
-                                'order_type' => 'market',
-                                'market_id' => $marketId,
+                    //             'order_type' => 'market',
+                    //             'market_id' => $marketId,
 
-                                'buyer_id' => null,
-                                'seller_id' => $listing->seller_id,
+                    //             'buyer_id' => null,
+                    //             'seller_id' => $listing->seller_id,
 
-                                'pickup_fulfillment_location_id' => $listing->fulfillment_location_id,
-                                'shipping_fulfillment_location_id' => $marketOrder->shipping_fulfillment_location_id,
+                    //             'pickup_fulfillment_location_id' => $listing->fulfillment_location_id,
+                    //             'shipping_fulfillment_location_id' => $marketOrder->shipping_fulfillment_location_id,
 
-                                'product_listing_package_id' => $pkg->id, // Assuming OrderItem has this field
-                                'product_listing_id' => $listing->id, // Assuming OrderItem has this field
+                    //             'product_listing_package_id' => $pkg->id, // Assuming OrderItem has this field
+                    //             'product_listing_id' => $listing->id, // Assuming OrderItem has this field
 
-                                'product_code' => $marketItem->product_code,
-                                'product_name' => $marketItem->product_name,
+                    //             'product_code' => $marketItem->product_code,
+                    //             'product_name' => $marketItem->product_name,
 
-                                // SINGLE PICKUP UNIT
-                                'qty' => 1,
-                                'pack_size' => $pkg->pack_size,
-                                'pack_price' => $pkg->pack_price,
-                                'pack_unit' => $pkg->pack_unit,
-                                'pack_type_unit' => $pkg->pack_type_unit,
+                    //             // SINGLE PICKUP UNIT
+                    //             'qty' => 1,
+                    //             'pack_size' => $pkg->pack_size,
+                    //             'pack_price' => $pkg->pack_price,
+                    //             'pack_unit' => $pkg->pack_unit,
+                    //             'pack_type_unit' => $pkg->pack_type_unit,
 
-                                'package_number' => ShipmentPackage::generatePackageNumber(null, $marketId),
-                                'status' => ShipmentStatusEnum::PENDING->value,
+                    //             'package_number' => ShipmentPackage::generatePackageNumber(null, $marketId),
+                    //             'status' => ShipmentStatusEnum::PENDING->value,
 
-                                'pickup_depot_id' => $marketOrder->depot_id,
-                                'shipping_depot_id' => $marketOrder->depot_id,
+                    //             'pickup_depot_id' => $marketOrder->depot_id,
+                    //             'shipping_depot_id' => $marketOrder->depot_id,
 
-                                'is_buyer_pickup' => $marketOrder->is_buyer_pickup,
-                                'is_seller_dropoff' => $listing->is_seller_dropoff,
-                            ]);
-                        }
-                    }
+                    //             'is_buyer_pickup' => $marketOrder->is_buyer_pickup,
+                    //             'is_seller_dropoff' => $listing->is_seller_dropoff,
+                    //         ]);
+                    //     }
+                    // }
                 }
 
                 /*
@@ -250,9 +256,9 @@ class JobCutOffProductListing implements ShouldQueue
                  | FINAL SHIPMENT FLOW CREATION
                  |--------------------------------------------------------------------------
                  */
-                app(ShipmentService::class)->createShipmentAndGroups(ShipmentStatusEnum::PICKUP->value);
-                app(ShipmentService::class)->createShipmentAndGroups(ShipmentStatusEnum::TRANSFER->value);
-                app(ShipmentService::class)->createShipmentAndGroups(ShipmentStatusEnum::DISPATCH->value);
+                // app(ShipmentService::class)->createShipmentAndGroups(ShipmentStatusEnum::PICKUP->value);
+                // app(ShipmentService::class)->createShipmentAndGroups(ShipmentStatusEnum::TRANSFER->value);
+                // app(ShipmentService::class)->createShipmentAndGroups(ShipmentStatusEnum::DISPATCH->value);
             });
 
             // Log::info('CutOff Job FINISHED SUCCESS');

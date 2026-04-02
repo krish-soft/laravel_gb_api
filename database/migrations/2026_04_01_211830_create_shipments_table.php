@@ -25,18 +25,21 @@ return new class extends Migration
             $table->string('origin_type', 50); // fulfillment_location | user
             $table->unsignedBigInteger('origin_flmnt_location_id')->nullable(); // origin entity id // alwaays this
             $table->unsignedBigInteger('origin_depot_id')->nullable(); // optional link to depot for easier querying
+            $table->unsignedBigInteger('origin_market_id')->nullable(); // optional link to market for easier querying
 
             $table->string('destination_type', 50); // fulfillment_location | user
             $table->unsignedBigInteger('destination_flmnt_location_id')->nullable(); // destination entity id
             $table->unsignedBigInteger('destination_depot_id')->nullable(); // optional link to depot for easier querying
+            $table->unsignedBigInteger('destination_market_id')->nullable(); // optional link to market for easier querying
 
             $table->unsignedBigInteger('market_id')->nullable(); // optional link to market for easier querying
 
+            $table->string('status', 30)->default('pending')->index();
 
+            $table->text('remarks')->nullable(); // internal note      
 
-            $table->string('status', 30)->default('pending')->index(); // pending | grouped | assigned | in_transit | completed | cancelled
-
-            $table->text('remarks')->nullable(); // internal note
+            $table->boolean('is_seller_dropoff')->default(false)->nullable();
+            $table->boolean('is_buyer_pickup')->default(false)->nullable();
 
             $table->timestamps();
             $table->softDeletes();

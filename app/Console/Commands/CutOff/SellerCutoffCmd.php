@@ -3,31 +3,44 @@
 namespace App\Console\Commands\Cutoff;
 
 use App\Enum\Queue\QueueEnum;
+use App\Jobs\CutOff\JobCutOffProductListing;
+use App\Jobs\Cutoff\JobSellerCutoff;
+use App\Models\Seller\Product\ProductListing;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Bus;
-use App\Models\Seller\Product\ProductListing;
-use App\Jobs\CutOff\JobCutOffProductListing;
 
-class CutOffProductListing extends Command
+class SellerCutoffCmd extends Command
 {
-    protected $signature = 'cut-off:product-listing
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'cutoff:seller
                             {startDate?} 
                             {endDate?}';
 
-    protected $description = 'Batch cutoff for product listings.';
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Command to perform seller cutoff operations.';
 
+    /**
+     * Execute the console command.
+     */
     public function handle()
     {
         $startDate = $this->argument('startDate') ?? now()->subDay()->toDateString();
         $endDate   = $this->argument('endDate')   ?? now()->toDateString();
 
-        $this->info("Cutoff from {$startDate} to {$endDate}");
+        $this->info("Seller cutoff from {$startDate} to {$endDate}");
 
-        /*
-    |--------------------------------------------------------------------------
-    | STEP 1 — Pull ONLY listings eligible for cutoff
-    |--------------------------------------------------------------------------
-    */
+        // TODO:: Notify sellers about cutoff
+
+        // Product listing cutoff logic will be implemented here, similar to CutOffProductListing command.
+
         $listings = ProductListing::query()
             ->select(['id', 'seller_id']) // IMPORTANT → reduce memory
             ->where('is_active', true)
@@ -37,7 +50,6 @@ class CutOffProductListing extends Command
                 $startDate,
                 $endDate
             ])
-
             ->whereHas('listingItems.listingPackages', function ($q) {
                 // $q->where('is_locked', false)
                 //     ->where('is_sold', false)
@@ -53,27 +65,17 @@ class CutOffProductListing extends Command
             return;
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | STEP 2 — GROUP BY SELLER
-    |--------------------------------------------------------------------------
-    */
         $groupedBySeller = $listings->groupBy('seller_id');
 
         $jobs = [];
 
-        /*
-    |--------------------------------------------------------------------------
-    | STEP 3 — Chunk per seller
-    |--------------------------------------------------------------------------
-    */
         foreach ($groupedBySeller as $sellerId => $sellerListings) {
 
             $sellerListings->pluck('id')
                 ->chunk(15) // batch size per seller
                 ->each(function ($chunk) use (&$jobs) {
 
-                    $jobs[] = new JobCutOffProductListing($chunk->toArray());
+                    $jobs[] = new JobSellerCutoff($chunk->toArray());
                 });
         }
 
@@ -82,20 +84,14 @@ class CutOffProductListing extends Command
             return;
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | STEP 4 — Dispatch batch
-    |--------------------------------------------------------------------------
-    */
         Bus::batch($jobs)
             ->name('CutOff Product Listing Batch (Grouped by Seller)')
-            ->onQueue(QueueEnum::LISTING_CUTOFF->value) // assign entire batch to cutoff queue
+            ->onQueue(QueueEnum::SELLER_CUTOFF->value) // assign entire batch to cutoff queue
             ->dispatch();
 
-        $this->info('Batch dispatched successfully.');
+        $this->info('Seller Cutoff batch dispatched successfully.');
+
+
+        //
     }
-
-
-
-    //
 }

@@ -20,6 +20,7 @@ class OrderItem extends BaseModel
 
         'pickup_fulfillment_location_id',
 
+        'seller_id',
         'product_listing_item_id',
         'product_listing_package_id',
 
@@ -55,11 +56,17 @@ class OrderItem extends BaseModel
         'reverse_reference',
     ];
 
+
     // casts
     protected $casts = [
         'order_qty' => 'decimal:2',
         'ship_qty' => 'decimal:2',
 
+        'taxable_amount' => 'decimal:2',
+        'tax_amount' => 'decimal:2',
+        'total_amount' => 'decimal:2',
+
+        'is_reverse' => 'boolean',
     ];
 
     // Relationships

@@ -2,10 +2,12 @@
 
 namespace App\Models\Common\Shipment;
 
+use App\Enum\Common\Shipment\ShipmentStatusEnum;
 use App\Models\BaseModel;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
 use App\Models\Delivery\DriverShipment;
 use App\Models\Master\Depot\MstDepot;
+use App\Models\Master\Market\MstMarket;
 use App\Models\User;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
@@ -25,6 +27,7 @@ class Shipment extends BaseModel
 
     protected $fillable = [
         'shipment_number',
+
         'shipment_date',
         'shipment_type',
 
@@ -34,18 +37,33 @@ class Shipment extends BaseModel
         'origin_type',
         'origin_flmnt_location_id',
         'origin_depot_id',
+        'origin_market_id',
 
         'destination_type',
         'destination_flmnt_location_id',
         'destination_depot_id',
+        'destination_market_id',
+
 
         'status', // pending | grouped | assigned | in_transit | completed | cancelled
         'remarks',
+
+        'is_seller_dropoff',
+        'is_buyer_pickup',
     ];
 
     protected $casts = [
-        'shipment_date' => 'date',
+        'shipment_date' => 'date:Y-m-d',
+
+        'is_seller_dropoff' => 'boolean',
+        'is_buyer_pickup' => 'boolean',
     ];
+
+    // Make a scope pending or not cancelled  for grouping
+    public function scopeAvailable($query)
+    {
+        return $query->whereIn('status', [ShipmentStatusEnum::PENDING->value, ShipmentStatusEnum::GROUPED->value]);
+    }
 
     /*
     |--------------------------------------------------------------------------
@@ -53,10 +71,8 @@ class Shipment extends BaseModel
     |--------------------------------------------------------------------------
     */
 
-    public function shipmentGroups()
-    {
-        return $this->hasMany(ShipmentPackageGroup::class);
-    }
+
+
 
     public function buyer()
     {
@@ -90,11 +106,25 @@ class Shipment extends BaseModel
         return $this->belongsTo(MstDepot::class, 'destination_depot_id');
     }
 
+    public function originMarket()
+    {
+        return $this->belongsTo(MstMarket::class, 'origin_market_id');
+    }
+
+    public function destinationMarket()
+    {
+        return $this->belongsTo(MstMarket::class, 'destination_market_id');
+    }
+
     public function driverShipment()
     {
         return $this->hasOne(DriverShipment::class, 'shipment_id', 'id');
     }
 
+    public function shipmentPackages()
+    {
+        return $this->hasMany(ShipmentPackage::class, 'shipment_id', 'id');
+    }
 
 
 

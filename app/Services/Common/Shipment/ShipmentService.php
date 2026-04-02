@@ -2,6 +2,8 @@
 
 namespace App\Services\Common\Shipment;
 
+use App\Enum\Common\Shipment\ShipmentStatusEnum;
+use App\Enum\Common\Shipment\ShipmentTypeEnum;
 use App\Models\Common\Shipment\Shipment;
 use App\Models\Common\Shipment\ShipmentPackage;
 use App\Models\Common\Shipment\ShipmentPackageGroup;
@@ -87,7 +89,7 @@ class ShipmentService
 
             $routeGroups = $packages->groupBy(function ($p) use ($shipmentType) {
 
-                if ($shipmentType === 'pickup') {
+                if ($shipmentType === ShipmentTypeEnum::PICKUP->value) {
 
                     if ($p->is_seller_dropoff) {
                         return '__SKIP__';
@@ -100,7 +102,7 @@ class ShipmentService
                     ]);
                 }
 
-                if ($shipmentType === 'transfer') {
+                if ($shipmentType === ShipmentTypeEnum::TRANSFER->value) {
 
                     // 🔥 HARD STOP FOR SAME DEPOT
                     if ((int)$p->pickup_depot_id === (int)$p->shipping_depot_id) {
@@ -113,7 +115,7 @@ class ShipmentService
                     ]);
                 }
 
-                if ($shipmentType === 'dispatch') {
+                if ($shipmentType === ShipmentTypeEnum::DISPATCH->value) {
 
                     if ($p->is_buyer_pickup) {
                         return '__SKIP__';
@@ -158,22 +160,26 @@ class ShipmentService
                 $existingShipment = Shipment::query()
                     ->where('shipment_type', $shipmentType)
 
-                    ->when($shipmentType === 'pickup', function ($q) use ($first) {
+                    ->when($shipmentType === ShipmentTypeEnum::PICKUP->value, function ($q) use ($first) {
                         $q->where('seller_id', $first->seller_id)
                             ->where('origin_flmnt_location_id', $first->pickup_fulfillment_location_id)
                             ->where('destination_depot_id', $first->pickup_depot_id);
                     })
 
-                    ->when($shipmentType === 'transfer', function ($q) use ($first) {
+                    ->when($shipmentType === ShipmentTypeEnum::TRANSFER->value, function ($q) use ($first) {
                         $q->where('origin_depot_id', $first->pickup_depot_id)
                             ->where('destination_depot_id', $first->shipping_depot_id);
                     })
 
-                    ->when($shipmentType === 'dispatch', function ($q) use ($first) {
+                    ->when($shipmentType === ShipmentTypeEnum::DISPATCH->value, function ($q) use ($first) {
                         $q->where('buyer_id', $first->buyer_id)
                             ->where('origin_depot_id', $first->shipping_depot_id)
                             ->where('destination_flmnt_location_id', $first->shipping_fulfillment_location_id);
                     })
+                    ->whereIn('status', [
+                        ShipmentStatusEnum::GROUPED->value,
+                        ShipmentStatusEnum::PENDING->value,
+                    ])
 
                     ->first();
 
@@ -188,23 +194,38 @@ class ShipmentService
                     $data = [
                         'shipment_type' => $shipmentType,
                         'shipment_date' => now()->toDateString(),
-                        'status'        => 'grouped',
+                        'status'        => ShipmentStatusEnum::GROUPED->value,
                     ];
 
-                    if ($shipmentType === 'pickup') {
+                    if (
+                        $shipmentType === ShipmentTypeEnum::PICKUP->value
+                        && $first->pickup_depot_id
+                        && $first->pickup_fulfillment_location_id
+                    ) {
 
                         $data['seller_id'] = $first->seller_id;
                         $data['origin_type'] = 'fulfillment_location';
                         $data['origin_flmnt_location_id'] = $first->pickup_fulfillment_location_id;
                         $data['destination_type'] = 'depot';
                         $data['destination_depot_id'] = $first->pickup_depot_id;
-                    } elseif ($shipmentType === 'transfer') {
+                    } elseif (
+                        $shipmentType === ShipmentTypeEnum::TRANSFER->value
+                        && $first->pickup_depot_id
+                        && $first->shipping_depot_id
+                    ) {
 
                         $data['origin_type'] = 'depot';
                         $data['origin_depot_id'] = $first->pickup_depot_id;
                         $data['destination_type'] = 'depot';
                         $data['destination_depot_id'] = $first->shipping_depot_id;
-                    } elseif ($shipmentType === 'dispatch') {
+
+                        //
+                    } elseif (
+                        $shipmentType === ShipmentTypeEnum::DISPATCH->value
+                        // && $first->shipping_depot_id
+                        // && $first->shipping_fulfillment_location_id
+
+                    ) {
 
                         $data['buyer_id'] = $first->buyer_id;
                         $data['origin_type'] = 'depot';

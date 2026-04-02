@@ -10,6 +10,9 @@ enum QueueEnum: string
     case INVOICING   = 'invoicing';   // order invoice data generation // USED
     // case INVOICE   = 'invoice';   // order invoice PDF // USED
 
+    case SELLER_CUTOFF   = 'seller_cutoff';   // seller lifecycle / expiry // USED
+    case BUYER_CUTOFF   = 'buyer_cutoff';   // buyer lifecycle / expiry // USED
+
     // case ORDER_PROCESS = 'order_process'; // order creation, updates, status sync
     // case PAYMENT_PROCESS  = 'payment_process';  // capture, refund, settlement
 

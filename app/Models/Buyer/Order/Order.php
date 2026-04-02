@@ -69,7 +69,9 @@ class Order extends BaseModel
         'is_paid',
         'is_locked',
         'is_manual', // Manually created order
+        'is_cutoff', // when order is processed for cutoff
 
+        'flags',
         'remarks',
 
         //
@@ -85,6 +87,8 @@ class Order extends BaseModel
         'is_locked' => 'boolean',
         'is_manual' => 'boolean',
         'is_buyer_pickup' => 'boolean',
+        'is_cutoff' => 'boolean',
+        'flags' => 'array',
     ];
 
     // Relationships
@@ -117,7 +121,7 @@ class Order extends BaseModel
 
     public function shipmentPackages()
     {
-        return $this->hasMany(ShipmentPackage::class, 'order_id', 'id');
+        return $this->hasMany(ShipmentPackage::class, 'source_id', 'id')->where('source', self::class);
     }
 
 

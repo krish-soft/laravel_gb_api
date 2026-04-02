@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('shipment_id')->nullable()->constrained('shipments')->cascadeOnDelete(); // becasue reassign to other driver possible
             $table->foreignId('driver_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('driver_vehicle_id')->nullable()->constrained('driver_vehicles')->nullOnDelete();
+
             $table->string('proof_image_path')->nullable();
 
             $table->date('assigned_date')->nullable();

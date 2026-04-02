@@ -61,7 +61,9 @@ class MarketOrder extends BaseModel
         'is_paid',
         'is_locked',
         'is_manual',
+        'is_cutoff', // when order is processed for cutoff
 
+        'flags',
         'remarks',
 
     ];
@@ -76,6 +78,8 @@ class MarketOrder extends BaseModel
         'is_paid' => 'boolean',
         'is_locked' => 'boolean',
         'is_manual' => 'boolean',
+        'is_cutoff' => 'boolean',
+        'flags' => 'array',
     ];
 
     // relationships
@@ -108,7 +112,7 @@ class MarketOrder extends BaseModel
 
     public function shipmentPackages()
     {
-        return $this->hasMany(ShipmentPackage::class, 'market_order_id');
+        return $this->hasMany(ShipmentPackage::class, 'source_id')->where('source', MarketOrder::class);
     }
 
 

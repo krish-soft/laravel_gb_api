@@ -72,6 +72,9 @@ return new class extends Migration
             $table->boolean('is_paid')->default(false)->nullable();
             $table->boolean('is_locked')->default(false)->nullable(); // No one can modify after this
             $table->boolean('is_manual')->default(false)->nullable(); // when send to market and then we have to create order manually
+            $table->boolean('is_cutoff')->default(false)->nullable(); // when order is processed for cutoff
+
+            $table->json('flags')->nullable(); // for any future use
 
 
             $table->string('remarks', 100)->nullable(); // internal reference

@@ -97,6 +97,54 @@ class BaseModel extends Model
 
 
 
+    // Common Functions For Package Module
+
+
+    public static function businessWindow(): array
+    {
+        $now = now();
+
+
+        // If before 7 AM → still previous business day
+        if ($now->hour < 7) {
+            $start = $now->copy()->subDay()->setTime(7, 0, 0);   // yesterday 7:00 AM
+            $end   = $now->copy()->setTime(6, 59, 59);           // today 6:59:59 AM
+        } else {
+            $start = $now->copy()->setTime(7, 0, 0);             // today 7:00 AM
+            $end   = $now->copy()->addDay()->setTime(6, 59, 59); // tomorrow 6:59:59 AM
+        }
+        // OR
+        // $start = $now->copy()->setTime(7, 0, 0)->subDay($now->lt($now->copy()->setTime(7, 0)));
+        // $end = $start->copy()->addDay()->subSecond();
+
+        // OLD
+
+        // If before 2 PM → we are still in previous business day
+        // if ($now->hour < 14) {
+        //     $start = $now->copy()->subDay()->setTime(14, 0, 0); // yesterday 2 PM
+        //     $end   = $now->copy()->setTime(13, 59, 59);         // today 1:59:59 PM
+        // } else {
+        //     $start = $now->copy()->setTime(14, 0, 0);           // today 2 PM
+        //     $end   = $now->copy()->addDay()->setTime(13, 59, 59); // tomorrow 1:59:59 PM
+        // }
+
+
+
+        return [$start, $end];
+    }
+
+    public static function alphaSequence(int $number): string
+    {
+        $result = '';
+
+        while ($number > 0) {
+            $number--;
+            $result = chr(65 + ($number % 26)) . $result;
+            $number = intdiv($number, 26);
+        }
+
+        return $result;
+    }
 
     // End Common Relations
 }

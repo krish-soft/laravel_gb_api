@@ -23,7 +23,10 @@ class ProductListingPackage extends BaseModel
 
         'qty',
         'sold_qty',
+        'demand_sold_qty',
+
         'ship_qty',
+        'demand_ship_qty',
 
         'reverse_qty',
         'reverse_amount',
@@ -126,7 +129,8 @@ class ProductListingPackage extends BaseModel
 
     public function shipmentPackages()
     {
-        return $this->hasMany(ShipmentPackage::class, 'product_listing_package_id');
+        return $this->hasMany(ShipmentPackage::class, 'source_pkg_id')
+            ->where('source_pkg', ProductListingPackage::class);
     }
 
 
