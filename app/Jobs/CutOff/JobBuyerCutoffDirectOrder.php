@@ -100,7 +100,7 @@ class JobBuyerCutoffDirectOrder implements ShouldQueue
                                 continue; // If already exist then skip to avoid duplication
                             }
 
-                            ShipmentPackage::create([
+                            $shipmentPackage = ShipmentPackage::create([
                                 'shipment_id' => $shipment->id,
                                 'seller_package_id' => $sellerPackage?->id,
 
@@ -143,6 +143,13 @@ class JobBuyerCutoffDirectOrder implements ShouldQueue
                                 // Because what seller already send to us so already shipped                              
                                 $orderItem->ship_qty = ($orderItem->ship_qty ?? 0) + 1;
                                 $orderItem->save();
+
+
+                                // update sellerpackage shipmentPacakge reference for buyer
+                                if ($sellerPackage->shipmentPackage && empty($sellerPackage->shipmentPackage->package_number_buyer)) {
+                                    $sellerPackage->shipmentPackage->package_number_buyer = $shipmentPackage->package_number_buyer; // update buyer package number to seller package for reference;
+                                    $sellerPackage->shipmentPackage->save();
+                                }
                             }
                         }
 

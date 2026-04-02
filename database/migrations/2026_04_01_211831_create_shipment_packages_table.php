@@ -49,6 +49,7 @@ return new class extends Migration
             $table->string('package_number', 20); // 
             $table->string('package_number_buyer', 20)->nullable(); // 
             $table->string('package_number_seller', 20)->nullable(); // 
+            $table->string('package_number_market', 20)->nullable(); // 
 
             // Status flow
             $table->string('status', 50)->default('pending');

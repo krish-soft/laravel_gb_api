@@ -63,6 +63,7 @@ class ShipmentPackage extends BaseModel
         'package_number',
         'package_number_buyer',
         'package_number_seller',
+        'package_number_market',
 
         'status',
         'is_seller_dropoff',

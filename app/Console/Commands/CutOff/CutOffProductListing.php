@@ -10,7 +10,7 @@ use App\Jobs\CutOff\JobCutOffProductListing;
 
 class CutOffProductListing extends Command
 {
-    protected $signature = 'cut-off:product-listing
+    protected $signature = 'cutoff:product-listing
                             {startDate?} 
                             {endDate?}';
 
@@ -31,19 +31,18 @@ class CutOffProductListing extends Command
         $listings = ProductListing::query()
             ->select(['id', 'seller_id']) // IMPORTANT → reduce memory
             ->where('is_active', true)
-            // ->where('is_expired', false)
-            ->where('is_cutoff', false)
+            ->where('is_expired', false)
+            // ->where('is_cutoff', false) // is cuoff used on first cutoff for seller
             ->whereBetween('listing_date', [
                 $startDate,
                 $endDate
             ])
-
-            ->whereHas('listingItems.listingPackages', function ($q) {
-                // $q->where('is_locked', false)
-                //     ->where('is_sold', false)
-                //     ->whereRaw('qty > sold_qty');
-                $q->whereRaw('qty > sold_qty');
-            })
+            // ->whereHas('listingItems.listingPackages', function ($q) {
+            //     // $q->where('is_locked', false)
+            //     //     ->where('is_sold', false)
+            //     //     ->whereRaw('qty > sold_qty');
+            //     $q->whereRaw('qty > sold_qty');
+            // })
             ->orderBy('seller_id')
             ->orderBy('id')
             ->get();

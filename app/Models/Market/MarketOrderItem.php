@@ -21,6 +21,7 @@ class MarketOrderItem extends BaseModel
 
         'product_listing_item_id',
         'product_listing_package_id',
+        'product_listing_id',
 
         'seller_id',
         'pickup_fulfillment_location_id',

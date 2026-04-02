@@ -50,14 +50,14 @@ class JobBuyerCutoffDemandOrder implements ShouldQueue
                     $buyer = $demandOrder->buyer;
                     $buyerDepot = $buyer?->primaryDepot->depot;
 
-                    $shipment = Shipment::where('buyer_id', $demandOrder->buyer_id)
+                    $deliveryShipment = Shipment::where('buyer_id', $demandOrder->buyer_id)
                         ->where('origin_depot_id', $demandOrder->depot_id) // This one is for dispatch so always from DEPOT
                         ->where('destination_flmnt_location_id', $demandOrder->shipping_fulfillment_location_id)  // Destunation of user
                         ->available()
                         ->first();
 
-                    if (!$shipment) {
-                        $shipment = Shipment::create([
+                    if (!$deliveryShipment) {
+                        $deliveryShipment = Shipment::create([
                             'shipment_date' => date('Y-m-d'),
                             'shipment_type' => ShipmentTypeEnum::DISPATCH->value, // to buyer always dispatch
                             'buyer_id' => $demandOrder->buyer_id,
@@ -108,6 +108,7 @@ class JobBuyerCutoffDemandOrder implements ShouldQueue
 
                             if (
                                 $sellerPackage
+                                // Also we need to check that package was pickedup or not if not then ignore
                                 && (
                                     $productListingPackage
                                     && $productListingPackage->pack_size == $demandOrderItem->pack_size
@@ -130,8 +131,8 @@ class JobBuyerCutoffDemandOrder implements ShouldQueue
                                     continue; // If already exist then skip to avoid duplication
                                 }
 
-                                ShipmentPackage::create([
-                                    'shipment_id' => $shipment->id,
+                                $shipmentPackage = ShipmentPackage::create([
+                                    'shipment_id' => $deliveryShipment->id,
                                     'seller_package_id' => $sellerPackage?->id,
 
                                     'source' => DemandOrder::class,
@@ -177,8 +178,15 @@ class JobBuyerCutoffDemandOrder implements ShouldQueue
                                 $productListingPackage->demand_ship_qty = ($productListingPackage->demand_ship_qty ?? 0) + 1;
                                 $productListingPackage->save();
 
+                                // Mark seller package used
                                 $sellerPackage->is_used = true;
                                 $sellerPackage->save();
+
+                                // update sellerpackage shipmentPacakge reference for buyer
+                                if ($sellerPackage->shipmentPackage && empty($sellerPackage->shipmentPackage->package_number_buyer)) {
+                                    $sellerPackage->shipmentPackage->package_number_buyer = $shipmentPackage->package_number_buyer; // update buyer package number to seller package for reference;
+                                    $sellerPackage->shipmentPackage->save();
+                                }
                             } else {
                                 // Log::warning("Seller Package unavailable for DemandOrderItem ID: {$demandOrderItem->id}, DemandOrder ID: {$demandOrder->id}");
                                 // Log::warning('No shipment creaed based on seller package.');
@@ -189,6 +197,37 @@ class JobBuyerCutoffDemandOrder implements ShouldQueue
                         //
                     }
 
+
+                    // We need another shipment to picup from market and bring to depot for remain which are not matched
+                    $marketId = $buyer->primaryDepot->depot->market_id;
+
+                    if (!$marketId) {
+                        throw new \RuntimeException("Market ID missing for demand order {$demandOrder->order_number}");
+                    }
+
+
+                    $pickupShipment = Shipment::where('buyer_id', $demandOrder->buyer_id)
+                        ->where('origin_market_id',  $marketId) // This one is for dispatch so always from MARKET
+                        ->where('destination_depot_id', $demandOrder->depot_id)  // Destunation of user
+                        ->available()
+                        ->first();
+
+                    if (!$pickupShipment) {
+                        $pickupShipment = Shipment::create([
+                            'shipment_date' => date('Y-m-d'),
+                            'shipment_type' => ShipmentTypeEnum::MARKET_PICKUP->value, // to buyer always dispatch
+                            'buyer_id' => $demandOrder->buyer_id,
+
+                            'origin_type' => ShipmentTypeEnum::MARKET->value,
+                            'origin_market_id' => $marketId, // This one is for dispatch so always from MARKET
+
+                            'destination_type' => ShipmentTypeEnum::DEPOT->value,
+                            'destination_depot_id' => $demandOrder->depot_id,  // Destunation of user
+
+                            'status' => ShipmentStatusEnum::PENDING->value,
+                            'is_buyer_pickup' => $demandOrder->is_buyer_pickup, // for buyer cutoff always pickup
+                        ]);
+                    }
 
 
                     // Once completed matching from farmer if not match or missing or not found 
@@ -210,8 +249,8 @@ class JobBuyerCutoffDemandOrder implements ShouldQueue
                                 // existng pacakge same product id can be exist for same order item because of multiple seller package so we have to check with product id and listing package id and listing item id and listing id
                                 // To Prevent duplicated its already manage my is_cutoff false or true so no need to check
 
-                                ShipmentPackage::create([
-                                    'shipment_id' => $shipment->id,
+                                $deliveryShipmentPackage =    ShipmentPackage::create([
+                                    'shipment_id' => $deliveryShipment->id,
 
                                     'source' => DemandOrder::class,
                                     'source_id' => $demandOrder->id,
@@ -231,11 +270,45 @@ class JobBuyerCutoffDemandOrder implements ShouldQueue
                                     'pack_type_unit' => $demandOrderItem->pack_type_unit,
 
                                     'package_number_buyer' => ShipmentPackage::generatePackageNumberBuyer($demandOrder->buyer_id),
-                                    'package_number_seller' =>  $sellerPackage?->package_number_seller,
 
                                     'is_buyer_pickup' => $demandOrder->is_buyer_pickup,
 
                                 ]);
+
+
+                                // Same for pickup shipment package for remain qty which is not fulfilled by farmer
+                                $pickupShipmentPackage =    ShipmentPackage::create([
+                                    'shipment_id' => $pickupShipment->id,
+
+                                    'source' => DemandOrder::class,
+                                    'source_id' => $demandOrder->id,
+
+                                    'source_item' => DemandOrderItem::class,
+                                    'source_item_id' => $demandOrderItem->id,
+
+                                    'buyer_id' => $demandOrder->buyer_id,
+
+                                    'product_id' => $demandOrderItem?->product_id,
+                                    'product_variant_id' => $demandOrderItem?->product_variant_id,
+
+                                    'qty' => $demandOrderItem->order_qty,
+                                    'pack_size' => $demandOrderItem->pack_size,
+                                    'pack_unit' => $demandOrderItem->pack_unit,
+                                    'pack_price' => $demandOrderItem->pack_price,
+                                    'pack_type_unit' => $demandOrderItem->pack_type_unit,
+
+                                    'package_number_buyer' => $deliveryShipmentPackage->package_number_buyer,
+                                    'package_number_market' => ShipmentPackage::generatePackageNumber(null, null, $marketId),
+
+                                    'is_buyer_pickup' => $demandOrder->is_buyer_pickup,
+
+                                ]);
+
+                                // update delivery shipment package reference to market package for buyer
+                                if ($deliveryShipmentPackage && empty($deliveryShipmentPackage->package_number_market)) {
+                                    $deliveryShipmentPackage->package_number_market = $pickupShipmentPackage->package_number_market; // update market package number to delivery shipment package for reference;
+                                    $deliveryShipmentPackage->save();
+                                }
                             }
                         }
                     }

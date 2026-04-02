@@ -22,6 +22,11 @@ return new class extends Migration
             $table->string('market_order_number', 20)->nullable();
 
             // Listing references
+            $table->foreignId('product_listing_id')
+                ->nullable()
+                ->constrained('product_listings')
+                ->nullOnDelete();
+
             $table->foreignId('product_listing_item_id')
                 ->nullable()
                 ->constrained('product_listing_items')
