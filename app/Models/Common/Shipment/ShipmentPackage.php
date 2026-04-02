@@ -30,6 +30,8 @@ class ShipmentPackage extends BaseModel
 
     protected $fillable = [
         'shipment_id',
+
+        'shipment_trace_code',
         'shipment_package_number',
 
         'seller_package_id',
@@ -43,8 +45,10 @@ class ShipmentPackage extends BaseModel
         'source_pkg',
         'source_pkg_id',
 
+        // To Generate Unique Numbers
         'buyer_id',
         'seller_id',
+        'market_id',
 
         'product_listing_package_id',
         'product_listing_item_id',
@@ -164,14 +168,22 @@ class ShipmentPackage extends BaseModel
             if (empty($model->package_number)) {
                 $model->package_number = self::generatePackageNumber(null, null, null);
             }
+
+
+            $model->shipment_trace_code = self::generateShipmentTraceCode($model);
         });
     }
+
 
     private static function generateUniqueShipmentNumber(): string
     {
         do {
-            // Example: A9F3K2Q8 (8 chars)
-            $code = strtoupper(Str::random(8));
+
+            // PKG + Date + Random
+            // Example: PKG240402A7F3
+            $code = 'PKG'
+                . now()->format('ymd')
+                . strtoupper(Str::random(6));
         } while (
             self::withTrashed()
             ->where('shipment_package_number', $code)
@@ -181,6 +193,64 @@ class ShipmentPackage extends BaseModel
         return $code;
     }
 
+
+    private static function generateShipmentTraceCode(self $model): string
+    {
+        try {
+
+            $shipment = $model->shipment;
+
+            if (!$shipment) {
+                throw new \Exception('Shipment not found');
+            }
+
+            $parts = [];
+
+            // ORIGIN
+            if ($shipment->originDepot && !empty($shipment->originDepot->depot_code)) {
+                $parts[] = $shipment->originDepot->depot_code;
+            } elseif ($shipment->originMarket && !empty($shipment->originMarket->market_code)) {
+                $parts[] = $shipment->originMarket->market_code;
+            } elseif ($shipment->originFulfillmentLocation && !empty($shipment->originFulfillmentLocation->location_code)) {
+                $parts[] = $shipment->originFulfillmentLocation->location_code;
+            }
+
+            // DESTINATION
+            if ($shipment->destinationDepot && !empty($shipment->destinationDepot->depot_code)) {
+                $parts[] = $shipment->destinationDepot->depot_code;
+            } elseif ($shipment->destinationMarket && !empty($shipment->destinationMarket->market_code)) {
+                $parts[] = $shipment->destinationMarket->market_code;
+            } elseif ($shipment->destinationFulfillmentLocation && !empty($shipment->destinationFulfillmentLocation->location_code)) {
+                $parts[] = $shipment->destinationFulfillmentLocation->location_code;
+            }
+
+            // OWNER
+            if ($model->buyer && !empty($model->buyer->user_code)) {
+                $parts[] = 'BUY-' . $model->buyer->user_code;
+            } elseif ($model->seller && !empty($model->seller->user_code)) {
+                $parts[] = 'SLR-' . $model->seller->user_code;
+            }
+
+            if (!empty($parts)) {
+                return implode('-', $parts);
+            }
+
+            throw new \Exception('Trace code empty');
+        } catch (\Throwable $e) {
+
+            // Fallback: generate unique random trace
+            do {
+
+                $code = 'TRC-' . strtoupper(\Illuminate\Support\Str::random(8));
+            } while (
+                self::withTrashed()
+                ->where('shipment_trace_code', $code)
+                ->exists()
+            );
+
+            return $code;
+        }
+    }
 
 
     /*
@@ -226,12 +296,12 @@ class ShipmentPackage extends BaseModel
 
             $buyerIndex = $buyerId % 18278;
             $alpha  = self::alphaSequence($buyerIndex ?: 1);
-            $prefix = "BY-{$alpha}";
+            $prefix = "BU-{$alpha}";
             $series = 'BUY';
             $seriesId = $buyerId;
         } else {
 
-            $prefix = 'SYS';
+            $prefix = 'SY';
             $series = 'SYS';
             $seriesId = 0;
         }
@@ -288,8 +358,8 @@ class ShipmentPackage extends BaseModel
             $series = 'SEL';
             $seriesId = $sellerId;
         } else {
-            $prefix = 'SYS';
-            $series = 'SYS';
+            $prefix = 'SY';
+            $series = 'SY-SEL';
             $seriesId = 0;
         }
 
@@ -331,12 +401,12 @@ class ShipmentPackage extends BaseModel
         if (!empty($buyerId)) {
             $buyerIndex = $buyerId % 18278;
             $alpha  = self::alphaSequence($buyerIndex ?: 1);
-            $prefix = "BY-{$alpha}";
+            $prefix = "BU-{$alpha}";
             $series = 'BUY';
             $seriesId = $buyerId;
         } else {
-            $prefix = 'SYS';
-            $series = 'SYS';
+            $prefix = 'SY';
+            $series = 'SY-BUY';
             $seriesId = 0;
         }
 
@@ -364,5 +434,51 @@ class ShipmentPackage extends BaseModel
         self::$runtimeSequenceBuyer[$key]++;
 
         return "{$prefix}-" . self::$runtimeSequenceBuyer[$key];
+    }
+
+    protected static array $runtimeSequenceMarket = [];
+    public static function generatePackageNumberMarket(
+        ?int $marketId = null
+    ): string {
+
+        [$start, $end] = self::businessWindow();
+
+
+        if (!empty($marketId)) {
+            $marketIndex = $marketId % 18278;
+            $alpha  = self::alphaSequence($marketIndex ?: 1);
+            $prefix = "MK-{$alpha}";
+            $series = 'MKT';
+            $seriesId = $marketId;
+        } else {
+            $prefix = 'SY-MKT';
+            $series = 'SY-MKT';
+            $seriesId = 0;
+        }
+
+        // ✅ Runtime key (prevents buyer/market collision)
+        $key = $series . '|' . $seriesId . '|' . $start->timestamp . '|' . $end->timestamp;
+
+        if (!isset(self::$runtimeSequenceMarket[$key])) {
+
+            $query = self::whereBetween('created_at', [$start, $end])
+                ->where('package_number_market', 'like', "{$prefix}-%");
+
+            // strict scoping
+            $query->where('market_id', $marketId);
+
+            $lastSeq = $query->selectRaw("
+            MAX(
+                CAST(SUBSTRING_INDEX(package_number_market,'-',-1) AS UNSIGNED)
+            ) as max_seq
+        ")->value('max_seq');
+
+            self::$runtimeSequenceMarket[$key] = (int) ($lastSeq ?? 0);
+        }
+
+        // 🔥 runtime increment
+        self::$runtimeSequenceMarket[$key]++;
+
+        return "{$prefix}-" . self::$runtimeSequenceMarket[$key];
     }
 }

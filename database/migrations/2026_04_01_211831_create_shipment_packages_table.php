@@ -30,6 +30,7 @@ return new class extends Migration
             // Product details for easier access, can be fetched from seller package but denormalized here for easier access and to avoid issues when product details change after package creation
             $table->foreignId('buyer_id')->nullable()->constrained('users')->nullOnDelete(); // dispatch owner
             $table->foreignId('seller_id')->nullable()->constrained('users')->nullOnDelete(); // pickup owner
+            $table->foreignId('market_id')->nullable()->constrained('mst_markets')->nullOnDelete(); // pickup owner
 
             $table->foreignId('product_listing_package_id')->nullable()->constrained('product_listing_packages')->cascadeOnDelete();
             $table->foreignId('product_listing_item_id')->nullable()->constrained('product_listing_items')->cascadeOnDelete();
@@ -46,6 +47,9 @@ return new class extends Migration
 
             // Identifiers
             $table->string('shipment_package_number', 20)->unique(); // HARD unique label
+            $table->string('shipment_trace_code', 100)->nullable(); // HARD unique label
+
+
             $table->string('package_number', 20); // 
             $table->string('package_number_buyer', 20)->nullable(); // 
             $table->string('package_number_seller', 20)->nullable(); // 

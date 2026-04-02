@@ -43,7 +43,6 @@ class AdminDemandOrderApiController extends ApiResponseWithAdminAuthController
             'buyer',
             'demandOrderItems',
             'demandOrderCharges',
-            'demandOrderFulfillments',
             'shippingFulfillmentLocation.address', // actual shipping location
             'billingAddress', // for invoice
             'shippingAddress', // for invoice

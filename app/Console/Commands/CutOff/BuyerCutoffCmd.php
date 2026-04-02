@@ -99,7 +99,7 @@ class BuyerCutoffCmd extends Command
             ->whereBetween('order_date', [$startDate, $endDate])
             ->where('delivery_status', OrderStatusEnum::PENDING->value)
             ->where('payment_status', PaymentStatusEnum::PAID->value)
-            // ->where('is_cutoff', false)
+            ->where('is_cutoff', false) // Important to avoid re-processing already cutoff orders
             ->orderBy('buyer_id')
             ->orderBy('id')
             ->chunkById(500, function ($orders) use (&$jobs, $jobClass) {

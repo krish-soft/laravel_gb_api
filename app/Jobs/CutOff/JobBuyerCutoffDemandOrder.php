@@ -287,6 +287,7 @@ class JobBuyerCutoffDemandOrder implements ShouldQueue
                                     'source_item_id' => $demandOrderItem->id,
 
                                     'buyer_id' => $demandOrder->buyer_id,
+                                    'market_id' => $marketId,
 
                                     'product_id' => $demandOrderItem?->product_id,
                                     'product_variant_id' => $demandOrderItem?->product_variant_id,
@@ -298,7 +299,7 @@ class JobBuyerCutoffDemandOrder implements ShouldQueue
                                     'pack_type_unit' => $demandOrderItem->pack_type_unit,
 
                                     'package_number_buyer' => $deliveryShipmentPackage->package_number_buyer,
-                                    'package_number_market' => ShipmentPackage::generatePackageNumber(null, null, $marketId),
+                                    'package_number_market' => ShipmentPackage::generatePackageNumberMarket($marketId),
 
                                     'is_buyer_pickup' => $demandOrder->is_buyer_pickup,
 

@@ -268,6 +268,7 @@ class JobCutOffProductListing implements ShouldQueue
                                     'source_item_id' => $marketItem->id,
 
                                     'seller_id' => $seller->id,
+                                    'market_id' => $marketId,
 
                                     'product_listing_package_id' => $marketItem->product_listing_package_id,
                                     'product_listing_item_id' => $marketItem->product_listing_item_id,
@@ -282,7 +283,7 @@ class JobCutOffProductListing implements ShouldQueue
                                     'pack_price' => $pkg->pack_price,
                                     'pack_type_unit' => $pkg->pack_type_unit,
 
-                                    'package_number_market' => ShipmentPackage::generatePackageNumber(null, null, $marketOrder->id),
+                                    'package_number_market' => ShipmentPackage::generatePackageNumberMarket($marketId),
                                     'package_number_seller' => $sellerPackage?->shipmentPackage?->package_number_seller,
 
                                     'is_seller_dropoff' => $listing->is_seller_dropoff,
