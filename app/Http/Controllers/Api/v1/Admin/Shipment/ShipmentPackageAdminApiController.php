@@ -2,280 +2,297 @@
 
 namespace App\Http\Controllers\Api\v1\Admin\Shipment;
 
-use App\Enum\Common\Shipment\ShipmentStatusEnum;
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
-use App\Http\Controllers\Controller;
 use App\Models\Common\Shipment\ShipmentPackage;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class ShipmentPackageAdminApiController extends ApiResponseWithAdminAuthController
 {
-
-
-
-    //
     public function summaryReport(Request $request)
     {
+
         $request->validate([
             'start_date' => 'nullable|date',
             'end_date'   => 'nullable|date|after_or_equal:start_date',
-            'depot_id'   => 'nullable|integer',
         ]);
 
         $startDate = $request->filled('start_date')
-            ? \Carbon\Carbon::parse($request->input('start_date'))->startOfDay()
+            ? Carbon::parse($request->start_date)->startOfDay()
             : now()->subDay()->startOfDay();
 
         $endDate = $request->filled('end_date')
-            ? \Carbon\Carbon::parse($request->input('end_date'))->endOfDay()
+            ? Carbon::parse($request->end_date)->endOfDay()
             : now()->endOfDay();
 
-        $depotId = $request->input('depot_id');
 
         /*
-    |--------------------------------------------------------------------------
-    | BASE QUERY
-    |--------------------------------------------------------------------------
-    */
-        $base = ShipmentPackage::query()
+        |--------------------------------------------------------------------------
+        | BASE PACKAGE QUERY WITH FULL RELATIONS
+        |--------------------------------------------------------------------------
+        */
+
+        $packages = ShipmentPackage::query()
             ->with([
-                'pickupDepot:id,name',
-                'shippingDepot:id,name',
-                'buyer:id,name,nickname',
-                'seller:id,name,nickname',
+
+                'buyer',
+                'seller',
+
+                'product',
+                'productVariant',
+
+                'shipment',
+
+                'shipment.originDepot.address',
+                'shipment.destinationDepot.address',
+
+                'shipment.originMarket',
+                'shipment.destinationMarket',
+
+                'shipment.originFulfillmentLocation.address',
+                'shipment.destinationFulfillmentLocation.address',
+
             ])
-            ->whereBetween('created_at', [$startDate, $endDate]);
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->get();
 
-        if ($depotId) {
-            $base->where(function ($q) use ($depotId) {
-                $q->where('pickup_depot_id', $depotId)
-                    ->orWhere('shipping_depot_id', $depotId);
-            });
-        }
 
         /*
-    |--------------------------------------------------------------------------
-    | ✅ STATUS SUMMARY (ONLY PACKAGE COUNT)
-    |--------------------------------------------------------------------------
-    */
-        $statusSummary = (clone $base)
-            ->selectRaw('
-            status,
-            COUNT(*) as total_packages
-        ')
+        |--------------------------------------------------------------------------
+        | STATUS SUMMARY
+        |--------------------------------------------------------------------------
+        */
+
+        $statusSummary = $packages
             ->groupBy('status')
-            ->get()
-            ->map(function ($row) use ($base) {
-
-                $packages = (clone $base)
-                    ->where('status', $row->status)
-                    ->get();
+            ->map(function ($rows, $status) {
 
                 return [
-                    'status'         => $row->status,
-                    'total_packages' => (int)$row->total_packages,
-                    'packages'       => $packages,
+                    'status' => $status,
+                    'total_packages' => $rows->count(),
+                    'packages' => $rows->values()
                 ];
-            });
-
-        /*
-    |--------------------------------------------------------------------------
-    | ✅ PACK COMBINATION SUMMARY (ONLY PLACE WHERE WEIGHT EXISTS)
-    |--------------------------------------------------------------------------
-    */
-        $packCombinationSummary = (clone $base)
-            ->selectRaw('
-            pack_size,
-            pack_unit,
-            pack_type_unit,
-            COUNT(*) as total_packages,
-            COALESCE(SUM(pack_size),0) as total_weight
-        ')
-            ->groupBy('pack_size', 'pack_unit', 'pack_type_unit')
-            ->orderBy('pack_size')
-            ->get()
-            ->map(function ($row) use ($base) {
-
-                $packages = (clone $base)
-                    ->where('pack_size', $row->pack_size)
-                    ->where('pack_unit', $row->pack_unit)
-                    ->where('pack_type_unit', $row->pack_type_unit)
-                    ->get();
-
-                return [
-                    'pack_size'       => $row->pack_size,
-                    'pack_unit'       => $row->pack_unit,
-                    'pack_type_unit'  => $row->pack_type_unit,
-                    'total_packages'  => (int)$row->total_packages,
-                    'total_weight'    => (float)$row->total_weight,
-                    'packages'        => $packages,
-                ];
-            });
-
-        /*
-    |--------------------------------------------------------------------------
-    | ✅ REGULAR DEPOT SUMMARY (ONLY COUNT)
-    |--------------------------------------------------------------------------
-    */
-        $regularDepotSummary = (clone $base)
-            ->whereNotNull('pickup_depot_id')
-            ->whereColumn('pickup_depot_id', '=', 'shipping_depot_id')
-            ->selectRaw('
-            pickup_depot_id,
-            status,
-            COUNT(*) as total_packages
-        ')
-            ->groupBy('pickup_depot_id', 'status')
-            ->with('pickupDepot:id,name')
-            ->get()
-            ->map(function ($row) use ($base) {
-
-                $packages = (clone $base)
-                    ->whereColumn('pickup_depot_id', '=', 'shipping_depot_id')
-                    ->where('pickup_depot_id', $row->pickup_depot_id)
-                    ->where('status', $row->status)
-                    ->get();
-
-                return [
-                    'depot_id'        => $row->pickup_depot_id,
-                    'depot_name'      => $row->pickupDepot->name ?? 'N/A',
-                    'status'          => $row->status,
-                    'total_packages'  => (int)$row->total_packages,
-                    'packages'        => $packages,
-                ];
-            });
-
-        /*
-    |--------------------------------------------------------------------------
-    | ✅ CROSS DEPOT SUMMARY (ONLY COUNT)
-    |--------------------------------------------------------------------------
-    */
-        $crossDepotSummary = (clone $base)
-            ->where(function ($q) {
-                $q->whereColumn('pickup_depot_id', '!=', 'shipping_depot_id')
-                    ->orWhereNull('pickup_depot_id')
-                    ->orWhereNull('shipping_depot_id');
             })
-            ->selectRaw('
-            pickup_depot_id,
-            shipping_depot_id,
-            status,
-            COUNT(*) as total_packages
-        ')
-            ->groupBy('pickup_depot_id', 'shipping_depot_id', 'status')
-            ->with(['pickupDepot:id,name', 'shippingDepot:id,name'])
-            ->get()
-            ->map(function ($row) use ($base) {
+            ->values();
 
-                $packages = (clone $base)
-                    ->where('status', $row->status)
-                    ->where('pickup_depot_id', $row->pickup_depot_id)
-                    ->where('shipping_depot_id', $row->shipping_depot_id)
-                    ->get();
+
+        /*
+        |--------------------------------------------------------------------------
+        | REGULAR DEPOT (same depot)
+        |--------------------------------------------------------------------------
+        */
+        $regularDepot = $packages
+            ->filter(fn($p) => $p->shipment)
+            ->flatMap(function ($p) {
+
+                $rows = [];
+
+                // Pickup flow (incoming to depot)
+                if ($p->shipment->origin_depot_id) {
+
+                    $rows[] = [
+                        'depot_id' => $p->shipment->origin_depot_id,
+                        'depot_name' => $p->shipment->originDepot?->name,
+                        'flow' => 'pickup',
+                        'status' => $p->status,
+                        'package' => $p
+                    ];
+                }
+
+                // Shipping flow (outgoing from depot)
+                if ($p->shipment->destination_depot_id) {
+
+                    $rows[] = [
+                        'depot_id' => $p->shipment->destination_depot_id,
+                        'depot_name' => $p->shipment->destinationDepot?->name,
+                        'flow' => 'shipping',
+                        'status' => $p->status,
+                        'package' => $p
+                    ];
+                }
+
+                return $rows;
+            })
+            ->groupBy(function ($row) {
+
+                return $row['depot_id']
+                    . '-' . $row['flow']
+                    . '-' . $row['status'];
+            })
+            ->map(function ($rows) {
+
+                $first = $rows->first();
 
                 return [
-                    'pickup_depot_id'     => $row->pickup_depot_id,
-                    'pickup_depot_name'   => $row->pickupDepot->name ?? 'N/A',
-                    'shipping_depot_id'   => $row->shipping_depot_id,
-                    'shipping_depot_name' => $row->shippingDepot->name ?? 'N/A',
-                    'status'              => $row->status,
-                    'total_packages'      => (int)$row->total_packages,
-                    'packages'            => $packages,
+                    'depot_id' => $first['depot_id'],
+                    'depot_name' => $first['depot_name'],
+                    'flow' => $first['flow'], // pickup or shipping
+                    'status' => $first['status'],
+                    'total_packages' => count($rows),
+                    'packages' => collect($rows)->pluck('package')->values()
+                ];
+            })
+            ->values();
+        /*
+        |--------------------------------------------------------------------------
+        | CROSS DEPOT (hub transfers)
+        |--------------------------------------------------------------------------
+        */
+
+        $crossDepot = $packages
+            ->filter(function ($p) {
+
+                return $p->shipment
+                    && $p->shipment->origin_depot_id
+                    != $p->shipment->destination_depot_id;
+            })
+            ->groupBy(function ($p) {
+
+                return $p->shipment->origin_depot_id
+                    . '-' .
+                    $p->shipment->destination_depot_id
+                    . '-' .
+                    $p->status;
+            })
+            ->map(function ($rows) {
+
+                $first = $rows->first();
+
+                return [
+
+                    'pickup_depot_id' =>
+                    $first->shipment->origin_depot_id,
+
+                    'pickup_depot_name' =>
+                    $first->shipment->originDepot?->name,
+
+                    'shipping_depot_id' =>
+                    $first->shipment->destination_depot_id,
+
+                    'shipping_depot_name' =>
+                    $first->shipment->destinationDepot?->name,
+
+                    'status' => $first->status,
+
+                    'total_packages' => $rows->count(),
+
+                    'packages' => $rows->values()
+                ];
+            })
+            ->values();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | PACK SUMMARY
+        |--------------------------------------------------------------------------
+        */
+
+        $packSummary = $packages
+            ->groupBy(function ($p) {
+
+                return $p->pack_size
+                    . '-' .
+                    $p->pack_unit
+                    . '-' .
+                    $p->pack_type_unit;
+            })
+            ->map(function ($rows) {
+
+                $first = $rows->first();
+
+                return [
+
+                    'pack_size' => $first->pack_size,
+
+                    'pack_unit' => $first->pack_unit,
+
+                    'pack_type_unit' => $first->pack_type_unit,
+
+                    'total_packages' => $rows->count(),
+
+                    'total_weight' =>
+                    $rows->sum(
+                        fn($p) => $p->pack_size * $p->qty
+                    ),
+
+                    'packages' => $rows->values()
+                ];
+            })
+            ->values();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | LOGISTICS ACTION SUMMARY
+        |--------------------------------------------------------------------------
+        */
+
+        $logistics = collect([
+
+            [
+                'action_type' => 'pickup_needed',
+                'packages' => $packages
+                    ->where('is_seller_dropoff', false)
+            ],
+
+            [
+                'action_type' => 'delivery_needed',
+                'packages' => $packages
+                    ->where('is_buyer_pickup', false)
+            ],
+
+            [
+                'action_type' => 'self_handled',
+                'packages' => $packages
+                    ->where('is_seller_dropoff', true)
+                    ->where('is_buyer_pickup', true)
+            ]
+
+        ])
+            ->map(function ($row) {
+
+                return [
+
+                    'action_type' => $row['action_type'],
+
+                    'total_packages' =>
+                    $row['packages']->count(),
+
+                    'packages' =>
+                    $row['packages']->values()
                 ];
             });
 
 
         /*
-    |--------------------------------------------------------------------------
-    | 🔥 NEW — DRIVER ACTION SUMMARY
-    |--------------------------------------------------------------------------
-    | pickup_needed   → driver must pickup from seller
-    | delivery_needed → driver must deliver to buyer
-    | self_handled    → no logistics movement
-    */
+        |--------------------------------------------------------------------------
+        | RESPONSE
+        |--------------------------------------------------------------------------
+        */
 
-        // $logisticsActionSummary = collect([
-        //     'pickup_needed' => (clone $base)
-        //         ->where('is_seller_dropoff', false)
-        //         ->get(),
-
-        //     'delivery_needed' => (clone $base)
-        //         ->where('is_buyer_pickup', false)
-        //         ->get(),
-
-        //     'self_handled' => (clone $base)
-        //         ->where('is_seller_dropoff', true)
-        //         ->where('is_buyer_pickup', true)
-        //         ->get(),
-        // ])->map(function ($packages, $key) {
-
-        //     return [
-        //         'action_type'   => $key,
-        //         'total_packages' => $packages->count(),
-        //         'packages'      => $packages,
-        //     ];
-        // })->values();
-
-        $logisticsActionSummary = collect([
-            [
-                'action_type'   => 'pickup_required',
-                'packages'      => (clone $base)
-                    ->where('is_seller_dropoff', false)
-                    ->where('status', 'pending')
-                    ->get(),
-            ],
-            [
-                'action_type'   => 'dropoff_required',
-                'packages'      => (clone $base)
-                    ->where('is_buyer_pickup', false)
-                    ->where('status', 'in_transit')
-                    ->get(),
-            ],
-            [
-                'action_type'   => 'seller_self_drop',
-                'packages'      => (clone $base)
-                    ->where('is_seller_dropoff', true)
-                    ->get(),
-            ],
-            [
-                'action_type'   => 'buyer_self_pickup',
-                'packages'      => (clone $base)
-                    ->where('is_buyer_pickup', true)
-                    ->get(),
-            ],
-        ])->map(function ($row) {
-            return [
-                'action_type'   => $row['action_type'],
-                'total_packages' => $row['packages']->count(),
-                'packages'      => $row['packages'],
-            ];
-        })->filter(fn($r) => $r['total_packages'] > 0)->values();
-
-
-        /*
-    |--------------------------------------------------------------------------
-    | FINAL RESPONSE
-    |--------------------------------------------------------------------------
-    */
         return $this->successResponse(
-            __('messages.success_messages.success_get'),
+            'Shipment summary',
             [
+
                 'filters' => [
                     'start_date' => $startDate->toDateString(),
-                    'end_date'   => $endDate->toDateString(),
-                    'depot_id'   => $depotId,
+                    'end_date' => $endDate->toDateString()
                 ],
-                'total_packages'           => $statusSummary->sum('total_packages'),
-                'status_summary'           => $statusSummary,
-                'pack_combination_summary' => $packCombinationSummary,
-                'regular_depot_summary'    => $regularDepotSummary,
-                'cross_depot_summary'      => $crossDepotSummary,
 
-                'logistics_action_summary' => $logisticsActionSummary,
+                'total_packages' => $packages->count(),
+
+                'status_summary' => $statusSummary,
+
+                'regular_depot_summary' => $regularDepot,
+
+                'cross_depot_summary' => $crossDepot,
+
+                'pack_combination_summary' => $packSummary,
+
+                'logistics_action_summary' => $logistics,
             ]
         );
     }
-
-    //
 }

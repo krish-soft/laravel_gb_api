@@ -37,7 +37,8 @@ class JobSellerCutoff implements ShouldQueue
                 $listings = ProductListing::with([
                     'seller.primaryDepot.depot.market',
                     'listingItems.product',
-                    'listingItems.listingPackages' => fn($q) => $q->available(),
+                    // 'listingItems.listingPackages' => fn($q) => $q->available(),
+                    'listingItems.listingPackages',
                 ])
                     ->whereIn('id', $this->listingIds)
                     ->lockForUpdate()

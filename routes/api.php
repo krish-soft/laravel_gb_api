@@ -349,12 +349,9 @@ Route::group([
                     Route::post('completed/{driverShipment}', [DriverShipmentApiController::class, 'complete']);
 
                     // Route::post('update/shipment-Package/status', [DriverShipmentApiController::class, 'updateShipmentPackageStatus']);            
-                    Route::post('package/update-status/buyer', [DriverShipmentApiController::class, 'updateShipmentPackageBuyerStatus']);
-                    Route::post('package/update-status/seller', [DriverShipmentApiController::class, 'updateShipmentPackageSellerStatus']);
-                    Route::post('package/update-status/transfer', [DriverShipmentApiController::class, 'updateShipmentPackageTransferStatus']);
-
+                    Route::post('package/update-status', [DriverShipmentApiController::class, 'updateShipmentPackageStatus']);
+               
                     // OTP Verification for sensitive actions
-
                     Route::post('otp-request/delivery-confirmation', [DeliveryOtpActionApiController::class, 'requestDeliveryConfirmationOtp']);
                 });
 
@@ -565,17 +562,8 @@ Route::group([
                 Route::put('shipmentPackage/status/{shipmentPackage}', [ShipmentPackageAdminApiController::class, 'updateStatus']);
 
                 // Shipment and Groups Management
-                Route::post('shipment-generate-package-groups', [ShipmentAdminApiController::class, 'generateShipmentAndGroups']);
                 Route::apiResource('shipment', ShipmentAdminApiController::class)->only(['index', 'show']);
 
-                Route::post('shipments/split-group', [ShipmentAdminApiController::class, 'splitGroup']);
-                Route::post('shipments/move-package', [ShipmentAdminApiController::class, 'movePackage']);
-
-                Route::post('shipments/merge-groups', [ShipmentAdminApiController::class, 'mergeGroups']);
-                Route::post('shipments/merge-shipments', [ShipmentAdminApiController::class, 'mergeShipments']);
-
-                Route::post('shipments/rebuild/{shipment}', [ShipmentAdminApiController::class, 'rebuildShipment']);
-                Route::get('shipment-groups/{groupNumber}', [ShipmentAdminApiController::class, 'getGroupPackages']);
 
                 // Driver and Vehicle Assignment
                 Route::post('assign-shipment-to-driver', [DriverShipmentAdminApiController::class, 'assignDriver']);

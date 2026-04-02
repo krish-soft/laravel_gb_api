@@ -22,10 +22,10 @@ class DriverShipmentAdminApiController extends ApiResponseWithAdminAuthControlle
     */
     public function getDriversWithAvailableVehicles()
     {
-        $depotsIds = Shipment::where('status', ShipmentStatusEnum::GROUPED->value)
+        $depotsIds = Shipment::where('status', ShipmentStatusEnum::PENDING->value)
             ->pluck('origin_depot_id')
             ->merge(
-                Shipment::where('status', ShipmentStatusEnum::GROUPED->value)
+                Shipment::where('status', ShipmentStatusEnum::PENDING->value)
                     ->pluck('destination_depot_id')
             )
             ->unique()
@@ -65,9 +65,7 @@ class DriverShipmentAdminApiController extends ApiResponseWithAdminAuthControlle
         $query = DriverShipment::with([
             'driver',
             'driverVehicle',
-            'shipment',
-            'shipment.shipmentGroups.shipmentPackage.buyer',
-            'shipment.shipmentGroups.shipmentPackage.seller',
+            'shipment.shipmentPackages',
             'assignedBy',
         ]);
 
@@ -208,7 +206,7 @@ class DriverShipmentAdminApiController extends ApiResponseWithAdminAuthControlle
 
             // Shipment make available for other assignment if needed
             $shipment = $driverShipment->shipment;
-            $shipment->update(['status' => ShipmentStatusEnum::GROUPED->value]);
+            $shipment->update(['status' => ShipmentStatusEnum::PENDING->value]);
         });
 
 

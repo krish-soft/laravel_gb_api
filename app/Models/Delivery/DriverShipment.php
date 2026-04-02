@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\Common\Charge\ChargeCalculationService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Log;
 
 class DriverShipment extends BaseModel
 {
@@ -53,10 +54,12 @@ class DriverShipment extends BaseModel
         return $this->belongsTo(Shipment::class, 'shipment_id');
     }
 
-    public function shipmentGroups()
-    {
-        return $this->shipment()->with('shipmentGroups');
-    }
+    // public function shipmentPackages()
+    // {
+    //     return $this->hasMany(ShipmentPackage::class, 'shipment_id', 'shipment_id');
+    // }
+
+
 
     public function driver()
     {
@@ -92,42 +95,59 @@ class DriverShipment extends BaseModel
             return null;
         }
 
-        $packages = $this->shipment
-            ->shipmentGroups
-            ->map(fn($g) => [
-                'order_qty'  => $g->shipmentPackage->qty ?? 0,
-                'pack_size'  => $g->shipmentPackage->pack_size ?? 0,
-                'pack_price' => $g->shipmentPackage->pack_price ?? 0,
-                'pack_unit'  => $g->shipmentPackage->pack_unit ?? '',
-                'pack_type_unit' => $g->shipmentPackage->pack_type_unit ?? null,
-            ]);
+        $packages = $this->shipment->shipmentPackages;
 
-        $orderAmount = $packages->sum(
-            fn($pkg) => $pkg['order_qty'] * $pkg['pack_price']
-        );
+        if ($packages->isEmpty()) {
+            return [
+                'total_quantity' => 0,
+                'total_weight' => 0,
+                'order_amount' => 0,
+                'delivery_charge_amount' => 0,
+                'platform_commission_amount' => 0,
+                'final_payable_amount' => 0,
+            ];
+        }
 
-        $totalQty = $packages->sum('order_qty');
-        $totalWeight = $packages->sum(
-            fn($pkg) => $pkg['order_qty'] * $pkg['pack_size']
-        );
+        $totalQty = 0;
+        $totalWeight = 0;
+        $orderAmount = 0;
+
+        $packageData = [];
+
+        foreach ($packages as $p) {
+
+            $qty = $p->qty ?? 0;
+            $packSize = $p->pack_size ?? 0;
+            $packPrice = $p->pack_price ?? 0;
+
+            $totalQty += $qty;
+            $totalWeight += $qty * $packSize;
+            $orderAmount += $qty * $packPrice;
+
+            $packageData[] = [
+                'order_qty' => $qty,
+                'pack_size' => $packSize,
+                'pack_price' => $packPrice,
+                'pack_unit' => $p->pack_unit ?? '',
+                'pack_type_unit' => $p->pack_type_unit ?? null,
+            ];
+        }
 
         $chargeLevelCode = $this->driver?->charge_level_code;
 
         $service = app(ChargeCalculationService::class);
 
-        // Driver payable estimate (delivery side)
         $deliveryEstimate = $service->calculateDeliveryCharges(
             $chargeLevelCode,
-            $packages->toArray(),
+            $packageData,
             false,
             false
         );
 
-        // Platform commission estimate (driver order amount = 0)
         $commissionEstimate = $service->calculatePlatformFee(
             $chargeLevelCode,
             0,
-            $packages->toArray()
+            $packageData
         );
 
         $driverPayableEstimate = $deliveryEstimate['total_charge_amount'] ?? 0;
@@ -138,26 +158,29 @@ class DriverShipment extends BaseModel
             2
         );
 
+        // Log::info('Driver Shipment Payable Estimate', [
+        //     'driver_shipment_id' => $this->id,
+        //     'shipment_id' => $this->shipment_id,
+        //     'driver_id' => $this->driver_id,
+        //     'charge_level_code' => $chargeLevelCode,
+        //     'total_qty' => $totalQty,
+        //     'total_weight' => $totalWeight,
+        //     'order_amount' => $orderAmount,
+        //     'delivery_charge_estimate' => $driverPayableEstimate,
+        //     'platform_commission_estimate' => $platformCommissionEstimate,
+        //     'approx_driver_payable' => $approxDriverPayable,
+        // ]);
+
         return [
             'total_quantity' => $totalQty,
-            'total_weight'   => $totalWeight,
-
-            // only reference, not financial
+            'total_weight' => $totalWeight,
             'order_amount' => round($orderAmount, 2),
-
-            // 🟡 ESTIMATIONS ONLY
-            // 'driver_payable'      => $deliveryEstimate,
-            // 'platform_commission' => $commissionEstimate,
 
             'delivery_charge_amount' => round($driverPayableEstimate, 2),
             'platform_commission_amount' => round($platformCommissionEstimate, 2),
 
-
-            // final approx number
             'final_payable_amount' => $approxDriverPayable,
         ];
     }
-
-
     //
 }

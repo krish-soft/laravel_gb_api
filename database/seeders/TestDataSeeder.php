@@ -40,7 +40,7 @@ class TestDataSeeder extends Seeder
         // 
         $buyer =    User::create([
 
-            'user_code' => 'buyer01',
+            'user_code' => 'BUY001',
             'nickname' => User::generateUniqueNickName(UserTypeEnum::TRADER->value),
             'name' => 'Buyer Test',
 
@@ -80,7 +80,7 @@ class TestDataSeeder extends Seeder
 
         $seller =   User::create([
 
-            'user_code' => 'seller01',
+            'user_code' => 'SEL001',
             'nickname' => User::generateUniqueNickName(UserTypeEnum::FARMER->value),
             'name' => 'Seller Test',
 
@@ -119,7 +119,7 @@ class TestDataSeeder extends Seeder
 
         $delivery = User::create([
 
-            'user_code' => 'delivery01',
+            'user_code' => 'DRV001',
             'nickname' => User::generateUniqueNickName(UserTypeEnum::DELIVERY->value),
             'name' => 'Delivery Test',
 

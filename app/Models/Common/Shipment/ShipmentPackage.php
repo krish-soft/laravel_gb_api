@@ -12,6 +12,7 @@ use App\Models\Common\Package\SellerPackage;
 use App\Models\Market\MarketOrder;
 use App\Models\Market\MarketOrderItem;
 use App\Models\Master\Depot\MstDepot;
+use App\Models\Master\Market\MstMarket;
 use App\Models\Master\Product\MstProduct;
 use App\Models\Master\Product\MstProductVariant;
 use App\Models\Seller\Product\ProductListing;
@@ -102,6 +103,11 @@ class ShipmentPackage extends BaseModel
         return $this->belongsTo(User::class, 'seller_id')->select('id', 'name', 'user_code', 'nickname');
     }
 
+    public function market()
+    {
+        return $this->belongsTo(MstMarket::class, 'market_id');
+    }
+
 
     public function sellerPackage()
     {
@@ -120,35 +126,111 @@ class ShipmentPackage extends BaseModel
     }
 
 
+    public function getSourceModelAttribute()
+    {
+        switch ($this->source) {
+            case Order::class:
+                return $this->order;
+            case MarketOrder::class:
+                return $this->marketOrder;
+            case DemandOrder::class:
+                return $this->demandOrder;
+            default:
+                return null;
+        }
+    }
+
+    public function getSourceItemModelAttribute()
+    {
+        switch ($this->source_item) {
+            case OrderItem::class:
+                return $this->orderItem;
+            case MarketOrderItem::class:
+                return $this->marketOrderItem;
+            case DemandOrderItem::class:
+                return $this->demandOrderItem;
+            default:
+                return null;
+        }
+    }
+
+    public function getSourcePackageModelAttribute()
+    {
+        switch ($this->source_pkg) {
+            case ProductListingPackage::class:
+                return $this->productListingPackage;
+            default:
+                return null;
+        }
+    }
+
+
+    protected $appends = [
+        'source_model',
+        'source_item_model',
+        'source_package_model',
+    ];
+
     public function order()
     {
-        return $this->belongsTo(Order::class, 'source_id', 'id')->where('source', Order::class);
+        return $this->belongsTo(Order::class, 'source_id');
     }
 
     public function orderItem()
     {
-        return $this->belongsTo(OrderItem::class, 'source_item_id', 'id')->where('source_item', OrderItem::class);
+        return $this->belongsTo(OrderItem::class, 'source_item_id');
     }
 
     public function marketOrder()
     {
-        return $this->belongsTo(MarketOrder::class, 'source_id', 'id')->where('source', MarketOrder::class);
+        return $this->belongsTo(MarketOrder::class, 'source_id');
     }
 
     public function marketOrderItem()
     {
-        return $this->belongsTo(MarketOrderItem::class, 'source_item_id', 'id')->where('source_item', MarketOrderItem::class);
+        return $this->belongsTo(MarketOrderItem::class, 'source_item_id');
     }
 
     public function demandOrder()
     {
-        return $this->belongsTo(DemandOrder::class, 'source_id', 'id')->where('source', DemandOrder::class);
+        return $this->belongsTo(DemandOrder::class, 'source_id');
     }
 
     public function demandOrderItem()
     {
-        return $this->belongsTo(DemandOrderItem::class, 'source_item_id', 'id')->where('source_item', DemandOrderItem::class);
+        return $this->belongsTo(DemandOrderItem::class, 'source_item_id');
     }
+
+
+    // public function order()
+    // {
+    //     return $this->belongsTo(Order::class, 'source_id', 'id')->where('source', Order::class);
+    // }
+
+    // public function orderItem()
+    // {
+    //     return $this->belongsTo(OrderItem::class, 'source_item_id', 'id')->where('source_item', OrderItem::class);
+    // }
+
+    // public function marketOrder()
+    // {
+    //     return $this->belongsTo(MarketOrder::class, 'source_id', 'id')->where('source', MarketOrder::class);
+    // }
+
+    // public function marketOrderItem()
+    // {
+    //     return $this->belongsTo(MarketOrderItem::class, 'source_item_id', 'id')->where('source_item', MarketOrderItem::class);
+    // }
+
+    // public function demandOrder()
+    // {
+    //     return $this->belongsTo(DemandOrder::class, 'source_id', 'id')->where('source', DemandOrder::class);
+    // }
+
+    // public function demandOrderItem()
+    // {
+    //     return $this->belongsTo(DemandOrderItem::class, 'source_item_id', 'id')->where('source_item', DemandOrderItem::class);
+    // }
 
 
 

@@ -3,6 +3,7 @@
 namespace App\Models\Common\Shipment;
 
 use App\Enum\Common\Shipment\ShipmentStatusEnum;
+use App\Enum\Common\Shipment\ShipmentTypeEnum;
 use App\Models\BaseModel;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
 use App\Models\Delivery\DriverShipment;
@@ -10,6 +11,7 @@ use App\Models\Master\Depot\MstDepot;
 use App\Models\Master\Market\MstMarket;
 use App\Models\User;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class Shipment extends BaseModel
@@ -152,76 +154,30 @@ class Shipment extends BaseModel
         return 'SHP-' . str_pad($newNumber, 6, '0', STR_PAD_LEFT);
     }
 
-    // private static function generateUniqueShipmentNumber(): string
-    // {
-    //     do {
-    //         $code = strtoupper(Str::random(12));
-    //     } while (
-    //         self::withTrashed()
-    //         ->where('shipment_number', $code)
-    //         ->exists()
-    //     );
-
-    //     return $code;
-    // }
 
     // Appends totals 
 
     protected $appends = [
-        'total_packages',
-        // 'total_weight',
-        'group_number',
 
         // NEW
         'from_address',
         'to_address',
+
+        // 
+        'total_packages',
+        'total_weight',
     ];
 
 
 
     public function getTotalPackagesAttribute()
     {
-        return $this->shipmentGroups()->count();
+        return round($this->shipmentPackages()->count(), 2);
     }
 
     public function getTotalWeightAttribute()
     {
-        // $groups = $this->shipmentGroups()
-        //     ->with('shipmentPackage:id,pack_size,qty')
-        //     ->get();
-
-        // if ($groups->isEmpty()) {
-        //     return null;
-        // }
-
-        // $total = $groups->sum(
-        //     fn($g) => ($g?->shipmentPackage?->pack_size ?? 0)
-        //         * ($g?->shipmentPackage?->qty ?? 0)
-        // );
-
-        // return $total ?: null; // also returns null if calculated weight = 0
-
-        // $total = $this->shipmentGroups()
-        //     ->join('shipment_packages', 'shipment_packages.id', '=', 'shipment_package_groups.shipment_package_id')
-        //     ->selectRaw('SUM(shipment_packages.pack_size * shipment_packages.qty) as total')
-        //     ->value('total');
-
-        // return $total ?: null;
-    }
-
-
-
-
-    public function getGroupNumberAttribute()
-    {
-        // if relation already loaded (fast)
-        if ($this->relationLoaded('shipmentGroups')) {
-            return $this->shipmentGroups->first()?->group_number;
-        }
-
-        // fallback query
-        return $this->shipmentGroups()
-            ->value('group_number');
+        return round($this->shipmentPackages()->sum(DB::raw('pack_size * qty')), 2);
     }
 
 
@@ -235,11 +191,15 @@ class Shipment extends BaseModel
     {
         $address = null;
 
-        if ($this->shipment_type === 'pickup') {
+        if ($this->shipment_type === ShipmentTypeEnum::PICKUP->value) {
             $address = $this->originFulfillmentLocation?->address;
-        } elseif ($this->shipment_type === 'dispatch') {
+        } elseif ($this->shipment_type === ShipmentTypeEnum::MARKET_PICKUP->value) {
+            $address = $this->originMarket?->fulfillmentLocation?->address ?? null;
+        } elseif ($this->shipment_type === ShipmentTypeEnum::DISPATCH->value) {
             $address = $this->originDepot?->address ?? null;
-        } elseif ($this->shipment_type === 'transfer') {
+        } elseif ($this->shipment_type === ShipmentTypeEnum::MARKET_DISPATCH->value) {
+            $address = $this->originDepot?->address ?? null;
+        } elseif ($this->shipment_type === ShipmentTypeEnum::TRANSFER->value) {
             $address = $this->originDepot?->address ?? null;
         }
 
@@ -273,11 +233,15 @@ class Shipment extends BaseModel
     {
         $address = null;
 
-        if ($this->shipment_type === 'pickup') {
+        if ($this->shipment_type === ShipmentTypeEnum::PICKUP->value) {
             $address = $this->destinationDepot?->address ?? null;
-        } elseif ($this->shipment_type === 'dispatch') {
+        } elseif ($this->shipment_type === ShipmentTypeEnum::MARKET_PICKUP->value) {
+            $address = $this->destinationDepot?->address ?? null;
+        } elseif ($this->shipment_type === ShipmentTypeEnum::DISPATCH->value) {
             $address = $this->destinationFulfillmentLocation?->address;
-        } elseif ($this->shipment_type === 'transfer') {
+        } elseif ($this->shipment_type === ShipmentTypeEnum::MARKET_DISPATCH->value) {
+            $address = $this->destinationMarket?->fulfillmentLocation?->address ?? null;
+        } elseif ($this->shipment_type === ShipmentTypeEnum::TRANSFER->value) {
             $address = $this->destinationDepot?->address ?? null;
         }
 

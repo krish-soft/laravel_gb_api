@@ -142,60 +142,88 @@ class ProductListing extends BaseModel
         'total_qty',
         'total_sold_qty',
         'total_available_qty',
-
         'total_weight',
         'total_sold_weight',
         'total_available_weight',
     ];
 
-    // get total qty 
+    /*
+|--------------------------------------------------------------------------
+| TOTAL QTY
+|--------------------------------------------------------------------------
+*/
     public function getTotalQtyAttribute()
     {
-        return $this->listingItems()
-            ->join('product_listing_packages', 'product_listing_items.id', '=', 'product_listing_packages.product_listing_item_id')
-            ->sum('product_listing_packages.qty');
+        return DB::table('product_listing_packages')
+            ->join('product_listing_items', 'product_listing_items.id', '=', 'product_listing_packages.product_listing_item_id')
+            ->where('product_listing_items.product_listing_id', $this->id)
+            ->sum('product_listing_packages.qty') ?? 0;
     }
 
-    // get total sold qty
+    /*
+|--------------------------------------------------------------------------
+| TOTAL SOLD QTY
+|--------------------------------------------------------------------------
+*/
     public function getTotalSoldQtyAttribute()
     {
-        return $this->listingItems()
-            ->join('product_listing_packages', 'product_listing_items.id', '=', 'product_listing_packages.product_listing_item_id')
-            ->sum('product_listing_packages.sold_qty');
+        return DB::table('product_listing_packages')
+            ->join('product_listing_items', 'product_listing_items.id', '=', 'product_listing_packages.product_listing_item_id')
+            ->where('product_listing_items.product_listing_id', $this->id)
+            ->sum('product_listing_packages.sold_qty') ?? 0;
     }
 
-
-    // get total available qty
+    /*
+    |--------------------------------------------------------------------------
+    | TOTAL AVAILABLE QTY
+    |--------------------------------------------------------------------------
+    */
     public function getTotalAvailableQtyAttribute()
     {
-        return $this->listingItems()
-            ->join('product_listing_packages', 'product_listing_items.id', '=', 'product_listing_packages.product_listing_item_id')
+        return DB::table('product_listing_packages')
+            ->join('product_listing_items', 'product_listing_items.id', '=', 'product_listing_packages.product_listing_item_id')
+            ->where('product_listing_items.product_listing_id', $this->id)
             ->selectRaw('SUM(product_listing_packages.qty - product_listing_packages.sold_qty) as available_qty')
-            ->value('available_qty');
+            ->value('available_qty') ?? 0;
     }
 
-    // get total weight
+    /*
+    |--------------------------------------------------------------------------
+    | TOTAL WEIGHT
+    |--------------------------------------------------------------------------
+    */
     public function getTotalWeightAttribute()
     {
-        return $this->listingItems()
-            ->join('product_listing_packages', 'product_listing_items.id', '=', 'product_listing_packages.product_listing_item_id')
-            ->sum(DB::raw('product_listing_packages.qty * product_listing_packages.pack_size'));
+        return DB::table('product_listing_packages')
+            ->join('product_listing_items', 'product_listing_items.id', '=', 'product_listing_packages.product_listing_item_id')
+            ->where('product_listing_items.product_listing_id', $this->id)
+            ->sum(DB::raw('product_listing_packages.qty * product_listing_packages.pack_size')) ?? 0;
     }
 
-    // get total sold weight
+    /*
+    |--------------------------------------------------------------------------
+    | TOTAL SOLD WEIGHT
+    |--------------------------------------------------------------------------
+    */
     public function getTotalSoldWeightAttribute()
     {
-        return $this->listingItems()
-            ->join('product_listing_packages', 'product_listing_items.id', '=', 'product_listing_packages.product_listing_item_id')
-            ->sum(DB::raw('product_listing_packages.sold_qty * product_listing_packages.pack_size'));
+        return DB::table('product_listing_packages')
+            ->join('product_listing_items', 'product_listing_items.id', '=', 'product_listing_packages.product_listing_item_id')
+            ->where('product_listing_items.product_listing_id', $this->id)
+            ->sum(DB::raw('product_listing_packages.sold_qty * product_listing_packages.pack_size')) ?? 0;
     }
 
-    // get total available weight
+    /*
+    |--------------------------------------------------------------------------
+    | TOTAL AVAILABLE WEIGHT
+    |--------------------------------------------------------------------------
+    */
     public function getTotalAvailableWeightAttribute()
     {
-        return $this->listingItems()
-            ->join('product_listing_packages', 'product_listing_items.id', '=', 'product_listing_packages.product_listing_item_id')
+        return DB::table('product_listing_packages')
+            ->join('product_listing_items', 'product_listing_items.id', '=', 'product_listing_packages.product_listing_item_id')
+            ->where('product_listing_items.product_listing_id', $this->id)
             ->selectRaw('SUM((product_listing_packages.qty - product_listing_packages.sold_qty) * product_listing_packages.pack_size) as available_weight')
-            ->value('available_weight');
+            ->value('available_weight') ?? 0;
     }
 }

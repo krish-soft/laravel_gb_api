@@ -68,22 +68,12 @@ class JobCutOffProductListing implements ShouldQueue
                     }
 
                     // In case its pending from first cutoff
-                    $listing->is_cutoff = true;
-                    // $listing->is_locked = true; // is locked at end of day
-                    $listing->save();
+                    if (!$listing->is_cutoff) {
+                        $listing->is_cutoff = true;
+                        $listing->save();
+                    }
 
                     if (!$listing->is_sell_to_market) {
-
-                        // then if listing not to sold to market 
-                        // we have to make qty sold and qty same
-                        // foreach ($listing->listingItems as $item) {
-                        //     foreach ($item->listingPackages as $pkg) {
-                        //         // Sold qty is equal to qty to settle
-
-                        //     }
-                        // }
-
-
                         continue;
                     }
 
@@ -216,7 +206,7 @@ class JobCutOffProductListing implements ShouldQueue
                      */
 
                     $shipment = Shipment::where('seller_id', $seller->id)
-                        ->where('origin_depot_id', $depot->depot_id) // This one is for dispatch so always from DEPOT
+                        ->where('origin_depot_id', $depot->id) // This one is for dispatch so always from DEPOT
                         ->where('destination_market_id', $marketOrder->shipping_fulfillment_location_id)  // Destunation of user
                         ->available()
                         ->first();
@@ -229,7 +219,7 @@ class JobCutOffProductListing implements ShouldQueue
                             'seller_id' => $seller->id,
 
                             'origin_type' => ShipmentTypeEnum::DEPOT->value,
-                            'origin_depot_id' => $depot->depot_id, // This one is for dispatch so always from DEPOT
+                            'origin_depot_id' => $depot->id, // This one is for dispatch so always from DEPOT
 
                             'destination_type' => ShipmentTypeEnum::MARKET->value,
                             'destination_market_id' => $marketOrder->shipping_fulfillment_location_id,
