@@ -31,9 +31,6 @@ class JobMarketOrderAccounting implements ShouldQueue
      */
     public function handle(): void
     {
-        //
-
-
         try {
 
             DB::transaction(function () {
@@ -42,34 +39,25 @@ class JobMarketOrderAccounting implements ShouldQueue
                     'market',
                     'marketOrderItems.pickupFulfillmentLocation',
                     'shippingFulfillmentLocation.address',
+                    'shipmentPackages.shipment', // important for filtering shipment type if needed
                     'shipmentPackages.seller',
                 ])
                     ->whereIn('id', $this->orderIds)
                     ->lockForUpdate()
                     ->get();
 
+                $accountingService = app(MarketOrderAccountingService::class);
+
                 foreach ($marketOrders as $order) {
 
-                    ## We are not checking any status of packages in any cutfoff so first we have to check the delivery status of each pacakges its delivered and tehre is no pending then mark order as Delivered and then we can check the payment status and order status for accounting entry.
-                    $packages = $order->shipmentPackages;
-                    $pendingPackageCount = $packages->where('status', OrderStatusEnum::PENDING->value)->count();
-                    $deliveredPackageCount = $packages->where('status', OrderStatusEnum::DELIVERED->value)->count();
+                    // update delivery status based on packages
+                    $order->updateDeliveryStatusFromPackages();
 
-                    if ($pendingPackageCount <= 0 && $deliveredPackageCount > 0) {
-                        $order->delivery_status = OrderStatusEnum::DELIVERED->value;
-                        $order->save();
-                    }
-
-                    if (
-                        in_array($order->order_status, [OrderStatusEnum::CONFIRMED->value,  OrderStatusEnum::ACCOUNTED->value, OrderStatusEnum::SETTLED->value])
-                        &&  in_array($order->delivery_status, [OrderStatusEnum::DELIVERED->value])
-                    ) {
-
-                        app(MarketOrderAccountingService::class)
-                            ->recordPaidOrder($order, $order->payment);
+                    // check eligibility for accounting
+                    if ($order->isEligibleForAccounting()) {
+                        $accountingService->recordPaidOrder($order, $order->payment);
                     }
                 }
-                //
             });
         } catch (Throwable $e) {
 

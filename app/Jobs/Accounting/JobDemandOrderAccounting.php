@@ -4,7 +4,9 @@ namespace App\Jobs\Accounting;
 
 use App\Enum\Common\Order\OrderStatusEnum;
 use App\Enum\Common\Payment\PaymentStatusEnum;
+use App\Models\Buyer\Order\DemandOrder;
 use App\Models\Buyer\Order\Order;
+use App\Services\Accounting\DemandOrderAccountingService;
 use App\Services\Accounting\OrderAccountingService;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -13,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-class JobOrderAccounting implements ShouldQueue
+class JobDemandOrderAccounting implements ShouldQueue
 {
     use Queueable, Batchable;
 
@@ -33,12 +35,11 @@ class JobOrderAccounting implements ShouldQueue
 
             DB::transaction(function () {
 
-                $orders = Order::with([
+                $orders = DemandOrder::with([
                     'payment',
                     'buyer',
-                    'orderItems',
-                    'orderCharges',
-                    'shippingFulfillmentLocation.address',
+                    'demandOrderItems',
+                    'demandOrderCharges',
                     'shipmentPackages',
                 ])
                     ->whereIn('id', $this->orderIds)
@@ -54,7 +55,7 @@ class JobOrderAccounting implements ShouldQueue
                     // check accounting eligibility
                     if ($order->isEligibleForAccounting()) {
 
-                        app(OrderAccountingService::class)
+                        app(DemandOrderAccountingService::class)
                             ->recordPaidOrder($order, $order->payment);
                     }
                 }

@@ -2,14 +2,20 @@
 
 namespace App\Models\Buyer\Order;
 
+use App\Enum\Common\Order\OrderFlagsEum;
+use App\Enum\Common\Order\OrderStatusEnum;
+use App\Enum\Common\Payment\PaymentStatusEnum;
+use App\Enum\Common\Shipment\ShipmentTypeEnum;
 use App\Models\BaseModel;
 use App\Models\Buyer\Cart\DemandCart;
 use App\Models\Common\Address;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
+use App\Models\Common\Payment\Payment;
 use App\Models\Common\Shipment\ShipmentPackage;
 use App\Models\Master\Depot\MstDepot;
 use App\Models\Master\Unique\MstSeqCodeGenerator;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -25,7 +31,7 @@ class DemandOrder extends BaseModel
             do {
                 $sequence = MstSeqCodeGenerator::getNextOrderNo();
                 $orderNumber = 'DMD-' . str_pad($sequence, 6, '0', STR_PAD_LEFT);
-            } while (Order::withTrashed()->where('order_number', $orderNumber)->exists());
+            } while (DemandOrder::withTrashed()->where('order_number', $orderNumber)->exists());
             $order->order_number = $orderNumber;
         });
     }
@@ -88,6 +94,64 @@ class DemandOrder extends BaseModel
         'flags' => 'array',
     ];
 
+    /*
+    |--------------------------------------------------------------------------
+    | Scopes
+    |--------------------------------------------------------------------------
+    */
+
+    public function scopeEligibleForAccounting(Builder $query): Builder
+    {
+        return $query
+            ->whereIn('order_status', [
+                OrderStatusEnum::CONFIRMED->value,
+                // OrderStatusEnum::ACCOUNTED->value,
+                // OrderStatusEnum::INVOICED->value,
+            ]);
+        // ->where('delivery_status', OrderStatusEnum::DELIVERED->value)
+        // ->where('payment_status', PaymentStatusEnum::PAID->value);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Helper Methods
+    |--------------------------------------------------------------------------
+    */
+
+    public function updateDeliveryStatusFromPackages(): void
+    {
+        $packages = $this->shipmentPackages
+            ->filter(function ($package) {
+                return $package->shipment &&
+                    in_array($package->shipment->shipment_type, [
+                        ShipmentTypeEnum::DISPATCH->value,
+                    ]);
+            });
+
+        $counts = $packages->countBy('status');
+
+        $pending = $counts[OrderStatusEnum::PENDING->value] ?? 0;
+        $delivered = $counts[OrderStatusEnum::DELIVERED->value] ?? 0;
+
+        if ($pending <= 0 && $delivered > 0) {
+            $this->delivery_status = OrderStatusEnum::DELIVERED->value;
+            $this->save();
+        }
+    }
+
+    public function isEligibleForAccounting(): bool
+    {
+        return in_array($this->order_status, [
+            OrderStatusEnum::CONFIRMED->value,
+            OrderStatusEnum::ACCOUNTED->value,
+            OrderStatusEnum::INVOICED->value,
+        ])
+            && $this->delivery_status === OrderStatusEnum::DELIVERED->value
+            && $this->payment_status === PaymentStatusEnum::PAID->value;
+    }
+
+
+    // Relationships
 
 
     public function demandOrderItems()
@@ -145,6 +209,47 @@ class DemandOrder extends BaseModel
     public function shipmentPackages()
     {
         return $this->hasMany(ShipmentPackage::class, 'source_id')->where('source', DemandOrder::class);
+    }
+
+    public function payment()
+    {
+        return $this->hasOne(Payment::class, 'source_id', 'id')
+            ->where('source_type', self::class)
+            ->where(function ($query) {
+                $query->where('payment_code', $this->reference)
+                    ->orWhere('gateway_order_id', $this->payment_reference);
+            });
+    }
+
+
+    //
+
+    // Methods for adding and removing flags
+
+    public function addFlag(OrderFlagsEum $flag, ?string $reason = null): void
+    {
+        $flags = $this->flags ?? [];
+
+        $value = $reason
+            ? "{$flag->value}: {$reason}"
+            : $flag->value;
+
+        if (!in_array($value, $flags)) {
+            $flags[] = $value;
+            $this->flags = array_values($flags);
+            $this->save();
+        }
+    }
+
+    public function removeFlag(OrderFlagsEum $flag): void
+    {
+        $flags = collect($this->flags ?? [])
+            ->reject(fn($f) => str_starts_with($f, $flag->value))
+            ->values()
+            ->toArray();
+
+        $this->flags = $flags;
+        $this->save();
     }
 
     //

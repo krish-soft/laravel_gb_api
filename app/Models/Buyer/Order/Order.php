@@ -2,7 +2,10 @@
 
 namespace App\Models\Buyer\Order;
 
+use App\Enum\Common\Order\OrderFlagsEum;
+use App\Enum\Common\Order\OrderStatusEnum;
 use App\Enum\Common\Payment\PaymentStatusEnum;
+use App\Enum\Common\Shipment\ShipmentTypeEnum;
 use App\Models\BaseModel;
 use App\Models\Buyer\Cart\Cart;
 use App\Models\Common\Address;
@@ -14,6 +17,7 @@ use App\Models\Common\Shipment\ShipmentPackage;
 use App\Models\Master\Depot\MstDepot;
 use App\Models\Master\Unique\MstSeqCodeGenerator;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Order extends BaseModel
@@ -91,7 +95,66 @@ class Order extends BaseModel
         'flags' => 'array',
     ];
 
-    // Relationships
+
+    /*
+    |--------------------------------------------------------------------------
+    | Scopes
+    |--------------------------------------------------------------------------
+    */
+
+    public function scopeEligibleForAccounting(Builder $query): Builder
+    {
+        return $query
+            ->whereIn('order_status', [
+                OrderStatusEnum::CONFIRMED->value,
+                // OrderStatusEnum::ACCOUNTED->value,
+                // OrderStatusEnum::INVOICED->value,
+            ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Helper Methods
+    |--------------------------------------------------------------------------
+    */
+
+    public function updateDeliveryStatusFromPackages(): void
+    {
+        $packages = $this->shipmentPackages
+            ->filter(function ($package) {
+                return $package->shipment &&
+                    in_array($package->shipment->shipment_type, [
+                        ShipmentTypeEnum::DISPATCH->value,
+                    ]);
+            });
+
+        $counts = $packages->countBy('status');
+
+        $pending = $counts[OrderStatusEnum::PENDING->value] ?? 0;
+        $delivered = $counts[OrderStatusEnum::DELIVERED->value] ?? 0;
+
+        if ($pending <= 0 && $delivered > 0) {
+            $this->delivery_status = OrderStatusEnum::DELIVERED->value;
+            $this->save();
+        }
+    }
+
+    public function isEligibleForAccounting(): bool
+    {
+        return in_array($this->order_status, [
+            OrderStatusEnum::CONFIRMED->value,
+            OrderStatusEnum::ACCOUNTED->value,
+            OrderStatusEnum::INVOICED->value,
+        ])
+            && $this->delivery_status === OrderStatusEnum::DELIVERED->value
+            && $this->payment_status === PaymentStatusEnum::PAID->value;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
 
     public function orderItems()
     {
@@ -203,6 +266,34 @@ class Order extends BaseModel
         }
         $this->unsetRelation('payment'); // unset to prevent accidental use
         return $url;
+    }
+
+    // Methods for adding and removing flags
+
+    public function addFlag(OrderFlagsEum $flag, ?string $reason = null): void
+    {
+        $flags = $this->flags ?? [];
+
+        $value = $reason
+            ? "{$flag->value}: {$reason}"
+            : $flag->value;
+
+        if (!in_array($value, $flags)) {
+            $flags[] = $value;
+            $this->flags = array_values($flags);
+            $this->save();
+        }
+    }
+
+    public function removeFlag(OrderFlagsEum $flag): void
+    {
+        $flags = collect($this->flags ?? [])
+            ->reject(fn($f) => str_starts_with($f, $flag->value))
+            ->values()
+            ->toArray();
+
+        $this->flags = $flags;
+        $this->save();
     }
 
     //

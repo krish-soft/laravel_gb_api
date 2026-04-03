@@ -52,6 +52,7 @@ class OrderAccountingCmd extends Command
                 \Carbon\Carbon::parse($startDate)->startOfDay(),
                 \Carbon\Carbon::parse($endDate)->endOfDay(),
             ])
+            ->eligibleForAccounting()
             ->orderBy('buyer_id')
             ->orderBy('id')
             ->get();

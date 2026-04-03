@@ -8,6 +8,7 @@ use App\Enum\Accounting\LedgerStatusEnum;
 use App\Enum\Accounting\PlatformAccountCodeEnum;
 use App\Enum\Common\Order\OrderFlagsEum;
 use App\Enum\Common\Order\OrderStatusEnum;
+use App\Models\Buyer\Order\DemandOrder;
 use App\Models\Buyer\Order\Order;
 use App\Models\Buyer\Order\OrderItem;
 use App\Models\Common\Accounting\Account;
@@ -17,13 +18,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
-class OrderAccountingService
+class DemandOrderAccountingService
 {
 
     /// PLATFORM + BUYER + SELLER, ORDER RECEIVED LEDGERS
 
 
-    public function recordPaidOrder(Order $order, Payment $payment): void
+    public function recordPaidOrder(DemandOrder $order, Payment $payment): void
     {
         try {
 
@@ -42,8 +43,7 @@ class OrderAccountingService
                 $accounting = app(AccountingService::class);
 
                 // get total of taxable orderItems 
-                $taxableItemsAmount = $order->orderItems->sum('taxable_amount');
-
+                // $taxableItemsAmount = $order->demandOrderItems->sum('taxable_amount');
 
                 $buyerId = $order->buyer_id;
                 $buyerAccount = Account::getOrCreateByOwner(
@@ -71,18 +71,18 @@ class OrderAccountingService
                 if (!$this->ledgerExists(
                     $clearingAccount->id,
                     AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
-                    Order::class,
+                    DemandOrder::class,
                     $order->id,
                     $order->total_amount, // total without tax
                     0
                 )) {
                     $accounting->createLedger($clearingAccount, [
-                        'description' => "Payment received (taxable amount) for Order #{$order->order_number}",
+                        'description' => "Payment received (taxable amount) for Demand Order #{$order->order_number}",
                         'credit' => $order->total_amount, // $order->subtotal, // total without tax  $taxableItemsAmount, // we are storing in each accounts  ,
                         'debit'  => 0,
                         'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
                         'status' => LedgerStatusEnum::AVAILABLE->value,
-                        'source_type' => Order::class,
+                        'source_type' => DemandOrder::class,
                         'source_id' => $order->id,
                         'source_code' => $order->order_number,
                         'reference' => $payment->payment_code,
@@ -94,41 +94,25 @@ class OrderAccountingService
                 if (!$this->ledgerExists(
                     $buyerAccount->id,
                     AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
-                    Order::class,
+                    DemandOrder::class,
                     $order->id,
                     $order->total_amount, // total without tax
                     0
                 )) {
 
                     $accounting->createLedger($buyerAccount, [
-                        'description' => "Payment received for Order #{$order->order_number}",
+                        'description' => "Payment received for Demand Order #{$order->order_number}",
                         'credit' =>  $order->total_amount, // we are storing in each accounts  ,
                         'debit'  => 0,
                         'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
                         'status' => LedgerStatusEnum::AVAILABLE->value, // Because Actual How much we sold to them  will finalize letter so
-                        'source_type' => Order::class,
+                        'source_type' => DemandOrder::class,
                         'source_id' => $order->id,
                         'source_code' => $order->order_number,
                         'reference' => $payment->payment_code,
                         'payment_reference' => $payment->gateway_order_id,
                         'common_reference' => $order->order_number,
                     ]);
-
-
-                    // Debit we dont becasue we will invoice final that will debit it
-                    // $accounting->createLedger($buyerAccount, [
-                    //     'description' => "Payment paid for Order #{$order->order_number}",
-                    //     'credit' => 0, // we are storing in each accounts  ,
-                    //     'debit'  => $order->total_amount,
-                    //     'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
-                    //     'status' => LedgerStatusEnum::SETTLED->value,
-                    //     'source_type' => Order::class,
-                    //     'source_id' => $order->id,
-                    //     'source_code' => $order->order_number,
-                    //     'reference' => $payment->payment_code,
-                    //     'payment_reference' => $payment->gateway_order_id,
-                    //     'common_reference' => $order->order_number,
-                    // ]);
                 }
 
 
@@ -137,15 +121,12 @@ class OrderAccountingService
                 $order->removeFlag(OrderFlagsEum::ACCOUNTING_ERROR); // remove accounting error flag if exists
                 $order->save();
 
-
-
                 //
             });
         } catch (\Exception $e) {
             $order->addFlag(OrderFlagsEum::ACCOUNTING_ERROR, $e->getMessage());
             throw $e;
             Log::error("Order Accounting for Order ID: {$order->order_number}, Error: {$e->getMessage()}");
-
             // You can also choose to rethrow the exception or handle it as per your application's needs
         }
     }

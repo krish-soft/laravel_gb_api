@@ -602,6 +602,7 @@ Route::group([
 
                 // accounting commands        
                 Route::post('accounting/order', [CmdAdminApiController::class, 'cmdAccountingOrder']);
+                Route::post('accounting/demand-order', [CmdAdminApiController::class, 'cmdAccountingDemandOrder']);
                 Route::post('accounting/market-order', [CmdAdminApiController::class, 'cmdAccountingMarketOrder']);
                 Route::post('accounting/invoice', [CmdAdminApiController::class, 'cmdAccountingInvoice']);
 

@@ -180,6 +180,42 @@ class CmdAdminApiController extends ApiResponseWithAdminAuthController
         }
     }
 
+    public function cmdAccountingDemandOrder(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+        ]);
+
+        $startDate = $request->filled('start_date') ? $request->input('start_date') : null;
+        $endDate = $request->filled('end_date') ? $request->input('end_date') : null;
+
+
+        $command = "accounting:demand-order {$startDate} {$endDate}";
+
+
+        // Log activity
+        logActivity(
+            'cmd_accounting_demand_order', // ACTIVITY TYPE
+            $request->user(),       // ACTOR (who did it)
+            null,       // SUBJECT TYPE (what was affected)
+            null,              // SUBJECT ID
+            null,       // SUBJECT CODE (human readable)
+            [
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+            ]
+        );
+
+        try {
+            Artisan::call($command);
+            $output = Artisan::output();
+            return $this->showSuccessMessage($output);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to execute accounting demand order command: ' . $e->getMessage(), 500);
+        }
+    }
+
     public function cmdAccountingMarketOrder(Request $request)
     {
         $request->validate([
