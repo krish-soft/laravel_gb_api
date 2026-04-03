@@ -350,7 +350,7 @@ Route::group([
 
                     // Route::post('update/shipment-Package/status', [DriverShipmentApiController::class, 'updateShipmentPackageStatus']);            
                     Route::post('package/update-status', [DriverShipmentApiController::class, 'updateShipmentPackageStatus']);
-               
+
                     // OTP Verification for sensitive actions
                     Route::post('otp-request/delivery-confirmation', [DeliveryOtpActionApiController::class, 'requestDeliveryConfirmationOtp']);
                 });
@@ -579,6 +579,8 @@ Route::group([
 
                 // Cutoff Command
                 Route::post('cutoff/product-listing', [CmdAdminApiController::class, 'cmdCutoffProductListing']);
+                Route::post('cutoff/seller', [CmdAdminApiController::class, 'cmdCutoffSeller']);
+                Route::post('cutoff/buyer', [CmdAdminApiController::class, 'cmdCutoffBuyer']);
 
                 // accounting commands        
                 Route::post('accounting/order', [CmdAdminApiController::class, 'cmdAccountingOrder']);

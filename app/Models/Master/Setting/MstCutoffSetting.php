@@ -35,6 +35,12 @@ class MstCutoffSetting extends BaseModel
 
         'is_buyer_auto_cutoff',
         'is_seller_auto_cutoff',
+
+        'accounting_cutoff_time',
+        'is_accounting_auto_cutoff',
+
+        'invoicing_cutoff_time',
+        'is_invoicing_auto_cutoff',
     ];
 
     // casts    
@@ -42,11 +48,20 @@ class MstCutoffSetting extends BaseModel
     protected $casts = [
         'buyer_start_time' => 'datetime:H:i:s',
         'buyer_end_time' => 'datetime:H:i:s',
+        'is_buyer_auto_cutoff' => 'boolean',
+
         'seller_start_time' => 'datetime:H:i:s',
         'seller_end_time' => 'datetime:H:i:s',
-
-        'is_buyer_auto_cutoff' => 'boolean',
         'is_seller_auto_cutoff' => 'boolean',
+
+        'accounting_cutoff_time' => 'datetime:H:i:s',
+        'is_accounting_auto_cutoff' => 'boolean',
+
+        'invoicing_cutoff_time' => 'datetime:H:i:s',
+        'is_invoicing_auto_cutoff' => 'boolean',
+
+
+
     ];
 
 
@@ -67,6 +82,15 @@ class MstCutoffSetting extends BaseModel
 
                 'is_buyer_auto_cutoff' => true,
                 'is_seller_auto_cutoff' => true,
+
+                // Accounting
+
+                'accounting_cutoff_time' => '14:00:00', // 2 PM by default
+                'is_accounting_auto_cutoff' => false,
+
+                // Invoicing 
+                'invoicing_cutoff_time' => '16:00:00', // 4 PM by default
+                'is_invoicing_auto_cutoff' => false,
             ]
         );
         // });

@@ -24,6 +24,13 @@ return new class extends Migration
             $table->boolean('is_buyer_auto_cutoff')->default(false)->nullable();
             $table->boolean('is_seller_auto_cutoff')->default(false)->nullable();
 
+
+            $table->time('accounting_cutoff_time')->nullable();
+            $table->boolean('is_accounting_auto_cutoff')->default(false)->nullable();
+
+            $table->time('invoicing_cutoff_time')->nullable();
+            $table->boolean('is_invoicing_auto_cutoff')->default(false)->nullable();
+
             $table->timestamps();
             $table->softDeletes();
         });

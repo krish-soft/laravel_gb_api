@@ -19,9 +19,7 @@ class CmdAdminApiController extends ApiResponseWithAdminAuthController
      *  Cutoff Commands
      */
 
-    // 1. Product Listing Cutoff Command
-
-    public function cmdCutoffProductListing(Request $request)
+    public function cmdCutoffSeller(Request $request)
     {
         $request->validate([
             'start_date' => 'nullable|date',
@@ -31,11 +29,88 @@ class CmdAdminApiController extends ApiResponseWithAdminAuthController
         $startDate = $request->filled('start_date') ? $request->input('start_date') : null;
         $endDate = $request->filled('end_date') ? $request->input('end_date') : null;
 
-        // 'cut-off:product-listing
-        //                     {startDate?} 
-        //                     {endDate?}';
+        $command = "cutoff:seller {$startDate} {$endDate}";
 
-        $command = "cut-off:product-listing {$startDate} {$endDate}";
+        // Log activity
+        logActivity(
+            'cmd_cutoff_seller', // ACTIVITY TYPE
+            $request->user(),       // ACTOR (who did it)
+            null,       // SUBJECT TYPE (what was affected)
+            null,              // SUBJECT ID
+            null,       // SUBJECT CODE (human readable)
+            [
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+            ]
+        );
+
+
+        try {
+            Artisan::call($command);
+            $output = Artisan::output();
+            return $this->showSuccessMessage($output);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to execute cutoff command: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function cmdCutoffBuyer(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+        ]);
+
+        $startDate = $request->filled('start_date') ? $request->input('start_date') : null;
+        $endDate = $request->filled('end_date') ? $request->input('end_date') : null;
+
+        $command = "cutoff:buyer {$startDate} {$endDate}";
+
+        // Log activity
+        logActivity(
+            'cmd_cutoff_buyer', // ACTIVITY TYPE
+            $request->user(),       // ACTOR (who did it)
+            null,       // SUBJECT TYPE (what was affected)
+            null,              // SUBJECT ID
+            null,       // SUBJECT CODE (human readable)
+            [
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+            ]
+        );
+
+
+        try {
+            Artisan::call($command);
+            $output = Artisan::output();
+            return $this->showSuccessMessage($output);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to execute cutoff command: ' . $e->getMessage(), 500);
+        }
+    }
+
+
+
+
+
+    // 1. Product Listing Cutoff Command
+
+    public function cmdCutoffProductListing(Request $request)
+    {
+
+        return $this->showErrorMessage('This command is currently disabled.', 503);
+
+
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+        ]);
+
+        $startDate = $request->filled('start_date') ? $request->input('start_date') : null;
+        $endDate = $request->filled('end_date') ? $request->input('end_date') : null;
+
+
+        $command = "cutoff:product-listing {$startDate} {$endDate}";
 
         // Log activity
         logActivity(
@@ -79,9 +154,6 @@ class CmdAdminApiController extends ApiResponseWithAdminAuthController
         $startDate = $request->filled('start_date') ? $request->input('start_date') : null;
         $endDate = $request->filled('end_date') ? $request->input('end_date') : null;
 
-        // 'accounting:order
-        //                     {startDate?} 
-        //                     {endDate?}';
 
         $command = "accounting:order {$startDate} {$endDate}";
 
@@ -118,9 +190,6 @@ class CmdAdminApiController extends ApiResponseWithAdminAuthController
         $startDate = $request->filled('start_date') ? $request->input('start_date') : null;
         $endDate = $request->filled('end_date') ? $request->input('end_date') : null;
 
-        // 'accounting:market-order
-        //                     {startDate?} 
-        //                     {endDate?}';
 
         $command = "accounting:market-order {$startDate} {$endDate}";
 
@@ -157,9 +226,6 @@ class CmdAdminApiController extends ApiResponseWithAdminAuthController
         $startDate = $request->filled('start_date') ? $request->input('start_date') : null;
         $endDate = $request->filled('end_date') ? $request->input('end_date') : null;
 
-        // 'accounting:market-order
-        //                     {startDate?} 
-        //                     {endDate?}';
 
         $command = "accounting:invoice {$startDate} {$endDate}";
 
