@@ -16,6 +16,7 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('product_id')
+                ->nullable()
                 ->constrained('mst_products')
                 ->cascadeOnUpdate()
                 ->nullOnDelete()
@@ -35,16 +36,12 @@ return new class extends Migration
             $table->boolean('is_auto_created')->default(false)->index();
 
             // Optional market segmentation
-            $table->foreignId('market_id')
+            $table->unsignedBigInteger('market_id')
                 ->nullable()
-                ->constrained('mst_markets')
-                ->nullOnDelete()
                 ->index();
 
-            $table->foreignId('depot_id')
+            $table->unsignedBigInteger('depot_id')
                 ->nullable()
-                ->constrained('mst_depots')
-                ->nullOnDelete()
                 ->index();
 
             $table->timestamps();

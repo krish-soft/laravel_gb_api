@@ -134,7 +134,6 @@ class BuyerCutoffCmd extends Command
     {
         $jobs = [];
 
-        Log::info("Date Range for Listing Cutoff: {$startDate->toDateString()} to {$endDate->toDateString()}");
 
         ProductListing::query()
             ->select(['id', 'seller_id'])
@@ -165,7 +164,6 @@ class BuyerCutoffCmd extends Command
                 });
             });
 
-        Log::info("Total Listing Cutoff Jobs Generated: " . count($jobs));
 
         return $jobs;
     }
