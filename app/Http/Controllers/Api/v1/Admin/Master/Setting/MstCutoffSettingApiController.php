@@ -6,6 +6,7 @@ use App\Enum\Admin\AdminRoleEnum;
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
 use App\Models\Master\Setting\MstAppSetting;
 use App\Models\Master\Setting\MstCutoffSetting;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -22,11 +23,9 @@ class MstCutoffSettingApiController extends ApiResponseWithAdminAuthController
         return $this->successResponse(__('messages.success_messages.success_get'), $cutoffSetting, 200);
     }
 
+
     public function updateSetting(Request $request)
     {
-
-
-
         $user = $request->user();
 
         if (
@@ -40,16 +39,28 @@ class MstCutoffSettingApiController extends ApiResponseWithAdminAuthController
         }
 
         $validated = $request->validate([
-            'buyer_start_time' => 'nullable|date_format:H:i:s',
-            'buyer_end_time' => 'nullable|date_format:H:i:s',
-
-            'seller_start_time' => 'nullable|date_format:H:i:s',
-            'seller_end_time' => 'nullable|date_format:H:i:s',
-
+            'buyer_start_time' => 'nullable',
+            'buyer_end_time' => 'nullable',
+            'seller_start_time' => 'nullable',
+            'seller_end_time' => 'nullable',
             'is_buyer_auto_cutoff' => 'nullable|boolean',
             'is_seller_auto_cutoff' => 'nullable|boolean',
         ]);
 
+        // Normalize time to H:i:s
+        foreach (
+            [
+                'buyer_start_time',
+                'buyer_end_time',
+                'seller_start_time',
+                'seller_end_time'
+            ] as $field
+        ) {
+
+            if (!empty($validated[$field])) {
+                $validated[$field] = Carbon::parse($validated[$field])->format('H:i:s');
+            }
+        }
 
         $cutoffSetting = MstCutoffSetting::getOrCreate();
 
@@ -60,7 +71,7 @@ class MstCutoffSettingApiController extends ApiResponseWithAdminAuthController
 
         $cutoffSetting->save();
 
-
+        // Activity log
         $changes = [];
         foreach ($dirty as $key => $newValue) {
             $changes[$key] = [
@@ -71,7 +82,7 @@ class MstCutoffSettingApiController extends ApiResponseWithAdminAuthController
 
         logActivity(
             'cutoff_setting_updated',
-            $request->user(),
+            $user,
             get_class($cutoffSetting),
             $cutoffSetting->id,
             null,

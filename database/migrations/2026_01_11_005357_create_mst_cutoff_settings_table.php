@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('mst_cutoff_settings', function (Blueprint $table) {
             $table->id();
 
+            $table->string('code', 20)->unique();   // inbound
             $table->time('buyer_start_time')->nullable();   // inbound
             $table->time('buyer_end_time')->nullable(); // outbound
 

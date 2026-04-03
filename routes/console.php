@@ -8,8 +8,10 @@ use App\Enum\Common\Shipment\ShipmentStatusEnum;
 use App\Models\Common\Payment\Payment;
 use App\Models\Common\Payment\Payout;
 use App\Models\Delivery\DriverShipment;
+use App\Models\Master\Setting\MstCutoffSetting;
 use App\Models\Master\Setting\MstPaymentSetting;
 use App\Services\Common\Payment\Handlers\PayoutHandler;
+use Carbon\Carbon;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
@@ -126,3 +128,53 @@ Schedule::call(function () {
             // Log::info("Driver shipment ID {$driverShipment->id} has been reset due to no acceptance within 10 minutes.");
         });
 })->everyTenMinutes();
+
+
+/**
+ *  Cutoff
+ */
+
+$mstCutoffSetting = MstCutoffSetting::getOrCreate();
+
+
+Schedule::call(function () use ($mstCutoffSetting) {
+
+
+    // Just pickup shipments at seller cutoff time
+    if (now()->format('H:i') === $mstCutoffSetting->seller_end_time && $mstCutoffSetting->is_seller_auto_cutoff) {
+        Artisan::call('cutoff:seller');
+    }
+
+    // To handle flow after buyer 
+    // 1. Convert all non-cutoff  orders to shipmentpackage
+    // 2. Convert all non-cutoff demand orders to shipmentpackage
+    // 3. Mark all productlisting expired and remain stock who sold or mark to sell to market convert them in to shipment package
+    if (now()->format('H:i') === $mstCutoffSetting->buyer_end_time && $mstCutoffSetting->is_buyer_auto_cutoff) {
+        Artisan::call('cutoff:buyer');
+    }
+
+    //
+})->everyMinute();
+
+
+Schedule::call(function () use ($mstCutoffSetting) {
+
+
+    $now = now()->format('H:i');
+
+    $sellerTime = Carbon::createFromFormat('H:i', $mstCutoffSetting->seller_end_time);
+    $buyerTime  = Carbon::createFromFormat('H:i', $mstCutoffSetting->buyer_end_time);
+
+    $sellerNotify = $sellerTime->copy()->subMinutes(10)->format('H:i');
+    $buyerNotify  = $buyerTime->copy()->subMinutes(10)->format('H:i');
+
+    // Seller cutoff notification (10 min before)
+    if ($now === $sellerNotify) {
+        Log::info('Dispatching seller cutoff notification chain.');
+    }
+
+    // Buyer cutoff notification (10 min before)
+    if ($now === $buyerNotify) {
+        Log::info('Dispatching buyer cutoff notification chain.');
+    }
+})->everyMinute();

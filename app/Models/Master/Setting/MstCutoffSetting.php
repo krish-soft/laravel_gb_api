@@ -20,26 +20,13 @@ class MstCutoffSetting extends BaseModel
             throw new \RuntimeException('Cutoff settings cannot be deleted.');
         });
 
-
         static::saved(function () {
-            try {
-                if (Schema::hasTable('mst_cutoff_settings') && Cache::has('mst_cutoff_settings')) {
-                    Cache::forget('mst_cutoff_settings');
-                }
-            } catch (\Throwable $e) {
-                // ignore completely
-            }
-        });
-
-        static::updated(function () {
-            if (Schema::hasTable('mst_cutoff_settings') && Cache::has('mst_cutoff_settings')) {
-                Cache::forget('mst_cutoff_settings');
-            }
+            Cache::forget('mst_cutoff_settings');
         });
     }
 
     protected $fillable = [
-
+        'code',
         'seller_start_time',
         'seller_end_time',
 
@@ -65,21 +52,23 @@ class MstCutoffSetting extends BaseModel
 
     public static function getOrCreate(): Model
     {
-        return Cache::rememberForever('mst_cutoff_settings', function () {
+        // return Cache::rememberForever('mst_cutoff_settings', function () {
 
-            return self::firstOrCreate(
-                [
-                    'seller_start_time' => '09:00:00', // 9 AM by default
-                    'seller_end_time' => '15:00:00', // 3 PM by default
+        return self::firstOrCreate(
+            [
+                'code' => 'SETTING001',
+            ],
+            [
+                'seller_start_time' => '09:00:00', // 9 AM by default
+                'seller_end_time' => '15:00:00', // 3 PM by default
 
-                    'buyer_start_time' => '09:00:00', // 9 AM by default
-                    'buyer_end_time' => '23:59:59', // End of day by default
-                ],
-                [
-                    'is_buyer_auto_cutoff' => false,
-                    'is_seller_auto_cutoff' => false,
-                ]
-            );
-        });
+                'buyer_start_time' => '09:00:00', // 9 AM by default
+                'buyer_end_time' => '23:59:59', // End of day by default
+
+                'is_buyer_auto_cutoff' => true,
+                'is_seller_auto_cutoff' => true,
+            ]
+        );
+        // });
     }
 }
