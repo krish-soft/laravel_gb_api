@@ -53,6 +53,7 @@ use App\Http\Controllers\Api\v1\User\Buyer\BuyerOrderApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\BuyerProductListingApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\CartApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\CheckoutApiController;
+use App\Http\Controllers\Api\v1\User\Buyer\Demand\BuyerDemandOrderApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\Demand\DemandCartApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\Demand\DemandCheckoutApiController;
 use App\Http\Controllers\Api\v1\User\Common\Auth\UserLoginApiController;
@@ -263,25 +264,30 @@ Route::group([
             // Buyer/Trader Routes
             Route::prefix('buyer')->middleware([
                 'buyer-checker', // Custom Middleware to check if user is buyer
-                'buyer-cutoff' // Custom Middleware to check buyer cutoff time
             ])->group(function () {
 
-                Route::get('products', [BuyerProductListingApiController::class, 'getBuyerProductSummary']);
-                Route::get('products/package/details/{productId}', [BuyerProductListingApiController::class, 'getBuyerProductPackages']);
+                Route::middleware([
+                    'buyer-cutoff' // Custom Middleware to check buyer cutoff time
+                ])->group(function () {
 
-                // Cart Routes
-                Route::prefix('cart')->group(function () {
-                    Route::get('active', [CartApiController::class, 'getActiveCart']);
-                    Route::post('item', [CartApiController::class, 'addItem']);
-                    Route::put('item/{cartItemId}', [CartApiController::class, 'updateItem']);
-                    Route::delete('item/{cartItemId}', [CartApiController::class, 'removeItem']);
-                    Route::delete('clear', [CartApiController::class, 'clearCart']);
-                });
 
-                // Checkout Routes
-                Route::prefix('checkout')->group(function () {
-                    Route::get('preview', [CheckoutApiController::class, 'preview']);
-                    Route::post('confirm', [CheckoutApiController::class, 'confirm']);
+                    Route::get('products', [BuyerProductListingApiController::class, 'getBuyerProductSummary']);
+                    Route::get('products/package/details/{productId}', [BuyerProductListingApiController::class, 'getBuyerProductPackages']);
+
+                    // Cart Routes
+                    Route::prefix('cart')->group(function () {
+                        Route::get('active', [CartApiController::class, 'getActiveCart']);
+                        Route::post('item', [CartApiController::class, 'addItem']);
+                        Route::put('item/{cartItemId}', [CartApiController::class, 'updateItem']);
+                        Route::delete('item/{cartItemId}', [CartApiController::class, 'removeItem']);
+                        Route::delete('clear', [CartApiController::class, 'clearCart']);
+                    });
+
+                    // Checkout Routes
+                    Route::prefix('checkout')->group(function () {
+                        Route::get('preview', [CheckoutApiController::class, 'preview']);
+                        Route::post('confirm', [CheckoutApiController::class, 'confirm']);
+                    });
                 });
 
                 // Will Use Common for both order and demand orders
@@ -294,24 +300,36 @@ Route::group([
                 // Demand Routes
                 Route::prefix('demand')->group(function () {
 
-                    Route::get('products', [BuyerDemandProductListingApiController::class, 'getBuyerProductSummary']);
-                    Route::get('products/package/details/{productId}', [BuyerDemandProductListingApiController::class, 'getBuyerProductPackages']);
+                    Route::middleware([
+                        'buyer-cutoff' // Custom Middleware to check buyer cutoff time
+                    ])->group(function () {
 
 
-                    Route::prefix('cart')->group(function () {
-                        Route::get('active', [DemandCartApiController::class, 'getActiveCart']);
-                        Route::post('item', [DemandCartApiController::class, 'addItem']);
-                        Route::put('item/{cartItemId}', [DemandCartApiController::class, 'updateItem']);
-                        Route::delete('item/{cartItemId}', [DemandCartApiController::class, 'removeItem']);
-                        Route::delete('clear', [DemandCartApiController::class, 'clearCart']);
+                        Route::get('products', [BuyerDemandProductListingApiController::class, 'getBuyerProductSummary']);
+                        Route::get('products/package/details/{productId}', [BuyerDemandProductListingApiController::class, 'getBuyerProductPackages']);
+
+
+                        Route::prefix('cart')->group(function () {
+                            Route::get('active', [DemandCartApiController::class, 'getActiveCart']);
+                            Route::post('item', [DemandCartApiController::class, 'addItem']);
+                            Route::put('item/{cartItemId}', [DemandCartApiController::class, 'updateItem']);
+                            Route::delete('item/{cartItemId}', [DemandCartApiController::class, 'removeItem']);
+                            Route::delete('clear', [DemandCartApiController::class, 'clearCart']);
+                        });
+
+                        // Checkout Routes
+                        Route::prefix('checkout')->group(function () {
+                            Route::get('preview', [DemandCheckoutApiController::class, 'preview']);
+                            Route::post('confirm', [DemandCheckoutApiController::class, 'confirm']);
+                        });
+                    }); //
+
+
+                    Route::prefix('order')->group(function () {
+                        Route::get('list', [BuyerDemandOrderApiController::class, 'getBuyerOrders']);
+                        Route::get('details/{orderId}', [BuyerDemandOrderApiController::class, 'getBuyerOrderDetails']);
+                        Route::get('shipment-packages/{orderId}', [BuyerDemandOrderApiController::class, 'getOrderShipmentPackages']);
                     });
-
-                    // Checkout Routes
-                    Route::prefix('checkout')->group(function () {
-                        Route::get('preview', [DemandCheckoutApiController::class, 'preview']);
-                        Route::post('confirm', [DemandCheckoutApiController::class, 'confirm']);
-                    });
-
 
 
                     //

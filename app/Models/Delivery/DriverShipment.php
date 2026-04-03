@@ -84,10 +84,18 @@ class DriverShipment extends BaseModel
 
 
     protected $appends = [
-
+        'proof_image_url',
         // Charges summary for driver to accept or not 
         'shipment_payable',
     ];
+
+    public function getProofImageUrlAttribute()
+    {
+        if ($this->proof_image_path) {
+            return asset('storage/' . $this->proof_image_path);
+        }
+        return null;
+    }
 
     public function getShipmentPayableAttribute()
     {

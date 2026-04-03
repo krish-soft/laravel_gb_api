@@ -126,7 +126,7 @@ class ShipmentPackage extends BaseModel
     }
 
 
-    public function getSourceModelAttribute()
+    public function getSourceModel()
     {
         switch ($this->source) {
             case Order::class:
@@ -140,7 +140,7 @@ class ShipmentPackage extends BaseModel
         }
     }
 
-    public function getSourceItemModelAttribute()
+    public function getSourceItemModel()
     {
         switch ($this->source_item) {
             case OrderItem::class:
@@ -154,7 +154,7 @@ class ShipmentPackage extends BaseModel
         }
     }
 
-    public function getSourcePackageModelAttribute()
+    public function getSourcePackageModel()
     {
         switch ($this->source_pkg) {
             case ProductListingPackage::class:
@@ -165,11 +165,21 @@ class ShipmentPackage extends BaseModel
     }
 
 
-    protected $appends = [
-        'source_model',
-        'source_item_model',
-        'source_package_model',
-    ];
+    // protected $appends = [
+    //     'source_model',
+    //     'source_item_model',
+    //     'source_package_model',
+    // ];
+
+    // Need to use with comibination
+    // Like this
+    //    if ($package->source_item == MarketOrderItem::class) {
+    //        $marketOrderItem = $package?->marketOrderItem;
+    //        if ($marketOrderItem) {
+    //            $marketOrderItem->increment('ship_qty', $package->qty);
+    //        }
+    //    }
+
 
     public function order()
     {
