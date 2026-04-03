@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\v1\Admin\Master\Price;
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
 use App\Http\Controllers\Controller;
 use App\Models\Master\Price\MstProductPrice;
+use App\Models\Master\Product\MstProduct;
 use Illuminate\Http\Request;
 
 class MstProductPriceApiAdminController extends ApiResponseWithAdminAuthController
@@ -44,7 +45,19 @@ class MstProductPriceApiAdminController extends ApiResponseWithAdminAuthControll
             'depot_id' => 'nullable|exists:mst_depots,id',
         ]);
 
-        $mstProductPrice = MstProductPrice::create($request->all());
+        $mstProduct = MstProduct::findOrFail($request->product_id);
+
+        $existingPrice = MstProductPrice::where('product_id', $request->product_id)
+            ->where('price_date', $request->price_date)
+            ->first();
+
+        if ($existingPrice) {
+            return $this->showErrorMessage('Price for this product and date already exists.', 422);
+        }
+
+        $mstProductPrice = MstProductPrice::create($request->merge([
+            'product_code' => $mstProduct->code,
+        ])->all());
 
         // Log activity
         logActivity(
@@ -78,7 +91,6 @@ class MstProductPriceApiAdminController extends ApiResponseWithAdminAuthControll
     public function update(Request $request, MstProductPrice $mstProductPrice)
     {
         //
-
         $request->validate([
             'product_id' => 'required|exists:mst_products,id',
             'price_date' => 'required|date',
@@ -91,7 +103,20 @@ class MstProductPriceApiAdminController extends ApiResponseWithAdminAuthControll
             'depot_id' => 'nullable|exists:mst_depots,id',
         ]);
 
-        $mstProductPrice->update($request->all());
+        $mstProduct = MstProduct::findOrFail($request->product_id);
+
+        $existingPrice = MstProductPrice::where('product_id', $request->product_id)
+            ->where('price_date', $request->price_date)
+            ->where('id', '!=', $mstProductPrice->id)
+            ->first();
+
+        if ($existingPrice) {
+            return $this->showErrorMessage('Price for this product and date already exists.', 422);
+        }
+
+        $mstProductPrice->update($request->merge([
+            'product_code' => $mstProduct->code,
+        ])->all());
 
         // Log activity
         logActivity(

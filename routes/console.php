@@ -22,6 +22,11 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 
+// Schedule a task to copy daily product prices
+// This will copy prices from the previous day to today for all products that don't have a price for today yet.
+Schedule::command('prices:copy-daily')->dailyAt('00:30');
+
+
 // Schedule a task to finalize pending payments
 // Its only for razorpay payments where gateway_order_id is not yet attached
 

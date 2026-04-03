@@ -14,14 +14,17 @@ class MstProductPrice extends Model
     protected $fillable = [
         'product_id',
         'product_code',
+        
         'price_date',
         'price',
-        'max_price',
+
         'min_price',
+        'max_price',
 
         // Future Use
         'market_id',
         'depot_id',
+        'is_auto_created',
     ];
 
 
@@ -32,6 +35,8 @@ class MstProductPrice extends Model
         'price' => 'decimal:2',
         'max_price' => 'decimal:2',
         'min_price' => 'decimal:2',
+
+        'is_auto_created' => 'boolean',
     ];
 
 

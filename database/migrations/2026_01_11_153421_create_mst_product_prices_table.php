@@ -12,36 +12,48 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('mst_product_prices', function (Blueprint $table) {
+
             $table->id();
 
             $table->foreignId('product_id')
-                ->nullable()
                 ->constrained('mst_products')
-                ->nullOnDelete();
+                ->cascadeOnUpdate()
+                ->nullOnDelete()
+                ->index();
 
-            $table->string('product_code', 20)->nullable();
+            $table->string('product_code', 20)->nullable()->index();
 
-            $table->date('price_date')->nullable();
+            // Daily pricing reference
+            $table->date('price_date')->nullable()->index();
 
-            $table->decimal('price', 15, 2)->default(0);
-            $table->decimal('max_price', 15, 2)->default(0)->nullable();
-            $table->decimal('min_price', 15, 2)->default(0)->nullable();
+            // Pricing
+            $table->decimal('price', 12, 2);
+            $table->decimal('max_price', 12, 2)->nullable();
+            $table->decimal('min_price', 12, 2)->nullable();
 
+            // Flag to identify copied price
+            $table->boolean('is_auto_created')->default(false)->index();
 
-            // Future Use
+            // Optional market segmentation
             $table->foreignId('market_id')
                 ->nullable()
                 ->constrained('mst_markets')
-                ->nullOnDelete();
+                ->nullOnDelete()
+                ->index();
 
             $table->foreignId('depot_id')
                 ->nullable()
                 ->constrained('mst_depots')
-                ->nullOnDelete();
-
+                ->nullOnDelete()
+                ->index();
 
             $table->timestamps();
             $table->softDeletes();
+
+            // Composite indexes for common queries
+            $table->index(['product_id', 'price_date']);
+            $table->index(['price_date', 'market_id']);
+            $table->index(['price_date', 'depot_id']);
         });
     }
 
