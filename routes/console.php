@@ -134,47 +134,35 @@ Schedule::call(function () {
  *  Cutoff
  */
 
-$mstCutoffSetting = MstCutoffSetting::getOrCreate();
 
 
-Schedule::call(function () use ($mstCutoffSetting) {
+Schedule::call(function () {
 
-
-    // Just pickup shipments at seller cutoff time
-    if (now()->format('H:i') === $mstCutoffSetting->seller_end_time && $mstCutoffSetting->is_seller_auto_cutoff) {
-        Artisan::call('cutoff:seller');
-    }
-
-    // To handle flow after buyer 
-    // 1. Convert all non-cutoff  orders to shipmentpackage
-    // 2. Convert all non-cutoff demand orders to shipmentpackage
-    // 3. Mark all productlisting expired and remain stock who sold or mark to sell to market convert them in to shipment package
-    if (now()->format('H:i') === $mstCutoffSetting->buyer_end_time && $mstCutoffSetting->is_buyer_auto_cutoff) {
-        Artisan::call('cutoff:buyer');
-    }
-
-    //
-})->everyMinute();
-
-
-Schedule::call(function () use ($mstCutoffSetting) {
-
+    $mstCutoffSetting = MstCutoffSetting::getOrCreate();
 
     $now = now()->format('H:i');
 
-    $sellerTime = Carbon::createFromFormat('H:i', $mstCutoffSetting->seller_end_time);
-    $buyerTime  = Carbon::createFromFormat('H:i', $mstCutoffSetting->buyer_end_time);
+    $sellerTime = Carbon::parse($mstCutoffSetting->seller_end_time);
+    $buyerTime  = Carbon::parse($mstCutoffSetting->buyer_end_time);
 
-    $sellerNotify = $sellerTime->copy()->subMinutes(10)->format('H:i');
-    $buyerNotify  = $buyerTime->copy()->subMinutes(10)->format('H:i');
+    $sellerNotify = $sellerTime->copy()->subMinutes(5)->format('H:i');
+    $buyerNotify  = $buyerTime->copy()->subMinutes(5)->format('H:i');
 
-    // Seller cutoff notification (10 min before)
     if ($now === $sellerNotify) {
         Log::info('Dispatching seller cutoff notification chain.');
     }
 
-    // Buyer cutoff notification (10 min before)
     if ($now === $buyerNotify) {
         Log::info('Dispatching buyer cutoff notification chain.');
+    }
+
+    if ($now === $sellerTime->format('H:i') && $mstCutoffSetting->is_seller_auto_cutoff) {
+        Artisan::call('cutoff:seller');
+        Log::info('Seller cutoff chain dispatched.');
+    }
+
+    if ($now === $buyerTime->format('H:i') && $mstCutoffSetting->is_buyer_auto_cutoff) {
+        Artisan::call('cutoff:buyer');
+        Log::info('Buyer cutoff chain dispatched.');
     }
 })->everyMinute();

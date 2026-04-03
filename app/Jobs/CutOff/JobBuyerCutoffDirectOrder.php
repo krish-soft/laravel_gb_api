@@ -92,7 +92,7 @@ class JobBuyerCutoffDirectOrder implements ShouldQueue
                             if (!$sellerPackage) {
                                 $order->flags = array_merge($order->flags ?? [], [OrderFlagsEum::ORDER_ITEM_SELLER_PACKAGE_UNAVAILABLE->value]);
                                 $order->save();
-                                Log::warning("Seller Package unavailable for OrderItem ID: {$orderItem->id}, Order ID: {$order->id}");
+                                // Log::warning("Seller Package unavailable for OrderItem ID: {$orderItem->id}, Order ID: {$order->id}");
                                 continue; // If no available seller package then skip to
                             }
 
@@ -120,7 +120,7 @@ class JobBuyerCutoffDirectOrder implements ShouldQueue
                                 'product_id' => $orderItem?->productListingItem?->product_id,
                                 'product_variant_id' => $orderItem?->productListingItem?->product_variant_id,
 
-                                'qty' => $orderItem->order_qty,
+                                'qty' => 1, // because we are creating package one by one for each qty
                                 'pack_size' => $orderItem->pack_size,
                                 'pack_unit' => $orderItem->pack_unit,
                                 'pack_price' => $orderItem->pack_price,

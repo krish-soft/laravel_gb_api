@@ -151,7 +151,7 @@ class JobBuyerCutoffDemandOrder implements ShouldQueue
                                     'product_id' => $demandOrderItem->product_id,
                                     'product_variant_id' => $demandOrderItem->product_variant_id,
 
-                                    'qty' => $demandOrderItem->order_qty,
+                                    'qty' => 1, // because we are creating package one by one for each qty
                                     'pack_size' => $demandOrderItem->pack_size,
                                     'pack_unit' => $demandOrderItem->pack_unit,
                                     'pack_price' => $demandOrderItem->pack_price,
@@ -263,7 +263,7 @@ class JobBuyerCutoffDemandOrder implements ShouldQueue
                                     'product_id' => $demandOrderItem?->product_id,
                                     'product_variant_id' => $demandOrderItem?->product_variant_id,
 
-                                    'qty' => $demandOrderItem->order_qty,
+                                    'qty' => 1, // because we are creating package one by one for each qty
                                     'pack_size' => $demandOrderItem->pack_size,
                                     'pack_unit' => $demandOrderItem->pack_unit,
                                     'pack_price' => $demandOrderItem->pack_price,
@@ -292,7 +292,7 @@ class JobBuyerCutoffDemandOrder implements ShouldQueue
                                     'product_id' => $demandOrderItem?->product_id,
                                     'product_variant_id' => $demandOrderItem?->product_variant_id,
 
-                                    'qty' => $demandOrderItem->order_qty,
+                                    'qty' => 1, // because we are creating package one by one for each qty
                                     'pack_size' => $demandOrderItem->pack_size,
                                     'pack_unit' => $demandOrderItem->pack_unit,
                                     'pack_price' => $demandOrderItem->pack_price,
