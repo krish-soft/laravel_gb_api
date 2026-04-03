@@ -14,6 +14,7 @@ use App\Models\Seller\Product\ProductListing;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Log;
 
 class BuyerCutoffCmd extends Command
 {
@@ -68,23 +69,34 @@ class BuyerCutoffCmd extends Command
             $endDate
         );
 
-        Bus::chain([
-            Bus::batch($orderJobs)
+        $batches = [];
+
+        // Do not change the order of batches
+
+        if (!empty($orderJobs)) {
+            $batches[] = Bus::batch($orderJobs)
                 ->allowFailures(false)
                 ->name('Buyer Direct Order Cutoff')
-                ->onQueue(QueueEnum::BUYER_CUTOFF->value),
+                ->onQueue(QueueEnum::BUYER_CUTOFF->value);
+        }
 
-            Bus::batch($demandJobs)
+        if (!empty($demandJobs)) {
+            $batches[] = Bus::batch($demandJobs)
                 ->allowFailures(false)
                 ->name('Buyer Demand Order Cutoff')
-                ->onQueue(QueueEnum::BUYER_CUTOFF->value),
+                ->onQueue(QueueEnum::BUYER_CUTOFF->value);
+        }
 
-            Bus::batch($listingJobs)
+        if (!empty($listingJobs)) {
+            $batches[] = Bus::batch($listingJobs)
                 ->allowFailures(false)
                 ->name('Seller Listing Cutoff')
-                ->onQueue(QueueEnum::LISTING_CUTOFF->value),
+                ->onQueue(QueueEnum::LISTING_CUTOFF->value);
+        }
 
-        ])->dispatch();
+        if (!empty($batches)) {
+            Bus::chain($batches)->dispatch();
+        }
 
         $this->info('Buyer cutoff chain dispatched.');
     }
@@ -122,13 +134,22 @@ class BuyerCutoffCmd extends Command
     {
         $jobs = [];
 
+        Log::info("Date Range for Listing Cutoff: {$startDate->toDateString()} to {$endDate->toDateString()}");
+
         ProductListing::query()
             ->select(['id', 'seller_id'])
             ->where('is_active', true)
             ->where('is_expired', false)
-            ->whereBetween('listing_date', [$startDate, $endDate])
-            ->orderBy('seller_id')
-            ->orderBy('id')
+            ->whereBetween(
+                'listing_date',
+                [
+                    $startDate->toDateString(),
+                    $endDate->toDateString()
+
+                    // $startDate,
+                    // $endDate
+                ]
+            )
             ->chunkById(500, function ($listings) use (&$jobs) {
 
                 $listings->groupBy('seller_id')->each(function ($sellerListings) use (&$jobs) {
@@ -144,9 +165,10 @@ class BuyerCutoffCmd extends Command
                 });
             });
 
+        Log::info("Total Listing Cutoff Jobs Generated: " . count($jobs));
+
         return $jobs;
     }
-
 
     //
 }

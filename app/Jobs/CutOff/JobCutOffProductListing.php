@@ -42,6 +42,8 @@ class JobCutOffProductListing implements ShouldQueue
 
             DB::transaction(function () use ($listingService) {
 
+                Log::info("Processing Cutoff for Listings: " . implode(', ', $this->listingIds));
+
                 $listings = ProductListing::with([
                     'seller.primaryDepot.depot.market',
                     'listingItems.product',
@@ -53,6 +55,10 @@ class JobCutOffProductListing implements ShouldQueue
 
                 foreach ($listings as $listing) {
 
+                    if ($listing->is_locked) {
+                        continue;
+                    }
+
                     /* ---------------------------------------------
                      | EXPIRE LISTING
                      ---------------------------------------------*/
@@ -62,20 +68,18 @@ class JobCutOffProductListing implements ShouldQueue
                         $listing->expires_at = now();
                     }
 
-                    if ($listing->is_locked) {
-                        $listing->save();
-                        continue;
-                    }
-
                     // In case its pending from first cutoff
                     if (!$listing->is_cutoff) {
                         $listing->is_cutoff = true;
-                        $listing->save();
                     }
+
+                    $listing->save();
 
                     if (!$listing->is_sell_to_market) {
                         continue;
                     }
+
+
 
                     $marketId = $listing->seller->primaryDepot->depot->market_id;
 
@@ -83,6 +87,8 @@ class JobCutOffProductListing implements ShouldQueue
                     if (!$marketId) {
                         throw new \RuntimeException("Market ID missing for listing {$listing->listing_code}");
                     }
+
+
 
                     $seller = $listing->seller;
                     $depot  = $seller->primaryDepot->depot;

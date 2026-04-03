@@ -50,12 +50,12 @@ class SellerCutoffCmd extends Command
                 $startDate,
                 $endDate
             ])
-            ->whereHas('listingItems.listingPackages', function ($q) {
-                // $q->where('is_locked', false)
-                //     ->where('is_sold', false)
-                //     ->whereRaw('qty > sold_qty');
-                $q->whereRaw('qty > sold_qty');
-            })
+            // ->whereHas('listingItems.listingPackages', function ($q) {
+            //     // $q->where('is_locked', false)
+            //     //     ->where('is_sold', false)
+            //     //     ->whereRaw('qty > sold_qty');
+            //     $q->whereRaw('qty > sold_qty');
+            // })
             ->orderBy('seller_id')
             ->orderBy('id')
             ->get();

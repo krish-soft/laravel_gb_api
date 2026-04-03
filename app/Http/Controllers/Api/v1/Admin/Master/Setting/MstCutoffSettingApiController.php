@@ -39,13 +39,27 @@ class MstCutoffSettingApiController extends ApiResponseWithAdminAuthController
         }
 
         $validated = $request->validate([
-            'buyer_start_time' => 'nullable',
-            'buyer_end_time' => 'nullable',
+
             'seller_start_time' => 'nullable',
             'seller_end_time' => 'nullable',
+
+            'buyer_start_time' => 'nullable',
+            'buyer_end_time' => 'nullable',
+
             'is_buyer_auto_cutoff' => 'nullable|boolean',
             'is_seller_auto_cutoff' => 'nullable|boolean',
         ]);
+
+
+        // Need to check seller_end_time above buyer_end_time 
+        // buyer_end_time is always after seller_end_time
+
+        $error = $this->validateCutoffOrder($validated);
+
+        if ($error) {
+            return $this->showErrorMessage($error, 422);
+        }
+
 
         // Normalize time to H:i:s
         foreach (
@@ -96,6 +110,41 @@ class MstCutoffSettingApiController extends ApiResponseWithAdminAuthController
     }
 
 
+
+    private function validateCutoffOrder(array $data)
+    {
+        if (!empty($data['seller_end_time']) && !empty($data['buyer_end_time'])) {
+
+            $sellerEnd = Carbon::parse($data['seller_end_time']);
+            $buyerEnd  = Carbon::parse($data['buyer_end_time']);
+
+            if ($buyerEnd->lessThanOrEqualTo($sellerEnd)) {
+                return 'Buyer end time must be after seller end time.';
+            }
+        }
+
+        if (!empty($data['seller_start_time']) && !empty($data['seller_end_time'])) {
+
+            $sellerStart = Carbon::parse($data['seller_start_time']);
+            $sellerEnd   = Carbon::parse($data['seller_end_time']);
+
+            if ($sellerEnd->lessThanOrEqualTo($sellerStart)) {
+                return 'Seller end time must be after seller start time.';
+            }
+        }
+
+        if (!empty($data['buyer_start_time']) && !empty($data['buyer_end_time'])) {
+
+            $buyerStart = Carbon::parse($data['buyer_start_time']);
+            $buyerEnd   = Carbon::parse($data['buyer_end_time']);
+
+            if ($buyerEnd->lessThanOrEqualTo($buyerStart)) {
+                return 'Buyer end time must be after buyer start time.';
+            }
+        }
+
+        return null;
+    }
 
     //
 }
