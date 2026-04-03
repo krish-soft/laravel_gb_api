@@ -48,20 +48,8 @@ class JobOrderInvoicing implements ShouldQueue
 
                 // INDUSTRY SAFE:
                 // this will create OR repair automatically
-                if (
-                    (in_array($order->order_status, [
-                        OrderStatusEnum::CONFIRMED->value,
-                        OrderStatusEnum::INVOICED->value,
-                        OrderStatusEnum::ACCOUNTED->value, // added to include accounted orders as well
-                    ]) && in_array($order->delivery_status, [OrderStatusEnum::DELIVERED->value]))
-                    && in_array($order->payment_status, [PaymentStatusEnum::PAID->value])
-                    // && !in_array($order->order_status, [OrderStatusEnum::REFUNDED->value, OrderStatusEnum::CANCELLED->value])
-                ) {
+                if ($order->isEligibleForInvoicing() || $this->isEnforce) {
                     $invoice = $invoiceService->generateOrderInvoiceData($order, $this->isEnforce);
-
-                    // Mark Order Invoice
-                    $order->order_status = OrderStatusEnum::INVOICED->value;
-                    $order->save();
                 }
 
                 // optional log

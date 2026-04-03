@@ -49,14 +49,7 @@ class OrderInvoicingCmd extends Command
                 \Carbon\Carbon::parse($startDate)->startOfDay(),
                 \Carbon\Carbon::parse($endDate)->endOfDay(),
             ])
-            ->whereIn('order_status', [
-                OrderStatusEnum::CONFIRMED->value,
-                OrderStatusEnum::ACCOUNTED->value,
-                OrderStatusEnum::INVOICED->value
-            ])->WhereIn('delivery_status', [
-                OrderStatusEnum::SHIPPED->value,
-                OrderStatusEnum::DELIVERED->value,
-            ])
+            ->eligibleForInvoicing() // scope to filter eligible orders for invoicing
             ->orderBy('buyer_id')
             ->orderBy('id')
             ->get();

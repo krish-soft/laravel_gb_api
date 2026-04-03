@@ -4,6 +4,7 @@ namespace App\Services\Invoice;
 
 use App\Enum\Common\Invoice\InvoiceStatusEnum;
 use App\Enum\Common\Invoice\InvoiceTypeEnum;
+use App\Enum\Common\Order\OrderStatusEnum;
 use App\Enum\Common\Shipment\ShipmentStatusEnum;
 use App\Models\Buyer\Order\Order;
 use App\Models\Common\Accounting\Account;
@@ -94,7 +95,7 @@ class InvoiceService
             foreach ($orderCharges as $orderCharge) {
                 $invoice->invoiceCharges()->create([
                     'charge_name' => $orderCharge->charge_name,
-                    'qty' => $orderCharge->qty ?? 1,
+                    'qty' => 1,
                     'ship_qty' => $orderCharge->ship_qty ?? 0,
                     'taxable_amount' => $orderCharge->taxable_amount,
                     'tax_amount' => $orderCharge->tax_amount,
@@ -128,7 +129,7 @@ class InvoiceService
 
             $isNeedReturnInvoice = false;
             $isNeedReturnInvoice = $shipmentPackages->contains(function ($shipmentPackage) {
-                return in_array($shipmentPackage->seller_status, [
+                return in_array($shipmentPackage->status, [
                     ShipmentStatusEnum::PENDING->value,
                     ShipmentStatusEnum::NOT_PICKED_UP->value,
                 ]);
@@ -161,7 +162,7 @@ class InvoiceService
                 foreach ($shipmentPackages as $shipmentPackage) {
 
                     $status = $shipmentPackage->status;
-                    $sellerStatus = $shipmentPackage->seller_status;
+                    $sellerStatus = $shipmentPackage->status;
 
                     if ($status == ShipmentStatusEnum::DELIVERED->value) {
                         continue;
@@ -216,13 +217,11 @@ class InvoiceService
                 // Sales Return Invoice if needed
             }
 
-
-
-
-
+            // Mark Order Invoice
+            $order->order_status = OrderStatusEnum::INVOICED->value;
+            $order->save();
             //
         });
-
 
         //
     }
@@ -285,7 +284,7 @@ class InvoiceService
 
                     foreach ($packages as $package) {
 
-                        if ($package->sold_qty <= 0) {
+                        if ($package->sold_qty <= 0 && $package->demand_sold_qty <= 0) {
                             continue;
                         }
 
@@ -294,9 +293,9 @@ class InvoiceService
                         foreach ($package->shipmentPackages as $shipment) {
 
                             // Ignore market orders
-                            if (!$shipment->order_id) {
-                                continue;
-                            }
+                            // if (!$shipment->order_id) {
+                            //     continue;
+                            // }
 
                             // Delivery charge for order shipments
                             $deliveryData = $this->getDeliveryCharge(

@@ -107,8 +107,16 @@ class Order extends BaseModel
         return $query
             ->whereIn('order_status', [
                 OrderStatusEnum::CONFIRMED->value,
-                // OrderStatusEnum::ACCOUNTED->value,
-                // OrderStatusEnum::INVOICED->value,
+                OrderStatusEnum::ACCOUNTED->value,
+            ]);
+    }
+
+    public function scopeEligibleForInvoicing(Builder $query): Builder
+    {
+        return $query
+            ->whereIn('order_status', [
+                OrderStatusEnum::ACCOUNTED->value,
+                OrderStatusEnum::INVOICED->value,
             ]);
     }
 
@@ -143,12 +151,23 @@ class Order extends BaseModel
     {
         return in_array($this->order_status, [
             OrderStatusEnum::CONFIRMED->value,
-            OrderStatusEnum::ACCOUNTED->value,
-            OrderStatusEnum::INVOICED->value,
+            OrderStatusEnum::ACCOUNTED->value, // To Reaccount if needed
+            // OrderStatusEnum::INVOICED->value,
         ])
             && $this->delivery_status === OrderStatusEnum::DELIVERED->value
             && $this->payment_status === PaymentStatusEnum::PAID->value;
     }
+
+    public function isEligibleForInvoicing(): bool
+    {
+        return in_array($this->order_status, [
+            OrderStatusEnum::ACCOUNTED->value,
+            OrderStatusEnum::INVOICED->value, // 
+        ])
+            && $this->delivery_status === OrderStatusEnum::DELIVERED->value
+            && $this->payment_status === PaymentStatusEnum::PAID->value;
+    }
+
 
     /*
     |--------------------------------------------------------------------------

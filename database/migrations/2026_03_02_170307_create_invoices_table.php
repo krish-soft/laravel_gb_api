@@ -25,6 +25,11 @@ return new class extends Migration
                 ->constrained('orders')
                 ->nullOnDelete();
 
+            $table->foreignId('demand_order_id')
+                ->nullable()
+                ->constrained('demand_orders')
+                ->nullOnDelete();
+
             $table->foreignId('market_order_id')
                 ->nullable()
                 ->constrained('market_orders')

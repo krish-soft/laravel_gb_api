@@ -3,6 +3,7 @@
 namespace App\Models\Common\Invoice;
 
 use App\Models\BaseModel;
+use App\Models\Buyer\Order\DemandOrder;
 use App\Models\Buyer\Order\Order;
 use App\Models\Market\MarketOrder;
 use App\Models\Master\Unique\MstSeqCodeGenerator;
@@ -18,8 +19,10 @@ class Invoice extends BaseModel
 
     protected $fillable = [
         'user_id',
+
         'order_id',
         'market_order_id',
+        'demand_order_id',
         'product_listing_id',
 
         'invoice_number',
@@ -81,6 +84,11 @@ class Invoice extends BaseModel
     public function order()
     {
         return $this->belongsTo(Order::class);
+    }
+
+    public function demandOrder()
+    {
+        return $this->belongsTo(DemandOrder::class);
     }
 
     public function marketOrder()
