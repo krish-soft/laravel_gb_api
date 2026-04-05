@@ -113,23 +113,35 @@ class OrderAccountingService
                         'payment_reference' => $payment->gateway_order_id,
                         'common_reference' => $order->order_number,
                     ]);
-
-
-                    // Debit we dont becasue we will invoice final that will debit it
-                    // $accounting->createLedger($buyerAccount, [
-                    //     'description' => "Payment paid for Order #{$order->order_number}",
-                    //     'credit' => 0, // we are storing in each accounts  ,
-                    //     'debit'  => $order->total_amount,
-                    //     'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
-                    //     'status' => LedgerStatusEnum::SETTLED->value,
-                    //     'source_type' => Order::class,
-                    //     'source_id' => $order->id,
-                    //     'source_code' => $order->order_number,
-                    //     'reference' => $payment->payment_code,
-                    //     'payment_reference' => $payment->gateway_order_id,
-                    //     'common_reference' => $order->order_number,
-                    // ]);
                 }
+
+                if ($order->credit_amount > 0) {
+
+                    if (!$this->ledgerExists(
+                        $buyerAccount->id,
+                        AccountEntryTypeEnum::ORDER_CREDIT_AMOUNT->value,
+                        Order::class,
+                        $order->id,
+                        0,
+                        $order->credit_amount
+                    )) {
+
+                        $accounting->createLedger($buyerAccount, [
+                            'description' => "Credit used for Order #{$order->order_number}",
+                            'credit' => 0,
+                            'debit'  =>  $order->credit_amount, // USED CREDIT AMOUNT
+                            'entry_type' => AccountEntryTypeEnum::ORDER_CREDIT_AMOUNT->value,
+                            'status' => LedgerStatusEnum::AVAILABLE->value, // Because Actual How much we sold to them  will finalize letter so
+                            'source_type' => Order::class,
+                            'source_id' => $order->id,
+                            'source_code' => $order->order_number,
+                            'reference' => $payment->payment_code,
+                            'payment_reference' => $payment->gateway_order_id,
+                            'common_reference' => $order->order_number,
+                        ]);
+                    }
+                }
+
 
 
                 $order->order_status =  OrderStatusEnum::ACCOUNTED->value;

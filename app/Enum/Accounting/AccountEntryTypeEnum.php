@@ -25,6 +25,8 @@ enum AccountEntryTypeEnum: string
     case UNDELIVERED_ITEM = 'undelivered_item';
     case DELIVERY_CHARGE_REVERSAL = 'delivery_charge_reversal';
 
+    case ORDER_CREDIT_AMOUNT = 'order_credit_amount';
+
         // 🔹 Adjustments
     case ORDER_PENALTY              = 'order_penalty';
     case ORDER_PROMOTION            = 'order_promotion';

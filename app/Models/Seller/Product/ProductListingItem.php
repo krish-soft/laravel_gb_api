@@ -4,6 +4,7 @@ namespace App\Models\Seller\Product;
 
 use App\Models\BaseModel;
 use App\Models\Buyer\Order\OrderItem;
+use App\Models\Market\MarketOrderItem;
 use App\Models\Master\Product\MstProduct;
 use App\Models\Master\Product\MstProductVariant;
 use Illuminate\Database\Eloquent\Model;
@@ -58,6 +59,13 @@ class ProductListingItem extends BaseModel
     {
         return $this->hasMany(OrderItem::class, 'product_listing_item_id');
     }
+
+    public function marketOrderItems()
+    {
+        return $this->hasMany(MarketOrderItem::class, 'product_listing_item_id');
+    }
+
+    
 
 
     // helpers

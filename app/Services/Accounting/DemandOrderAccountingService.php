@@ -115,6 +115,34 @@ class DemandOrderAccountingService
                     ]);
                 }
 
+                // IF Credit Balance exist 
+                if ($order->credit_amount > 0) {
+
+                    if (!$this->ledgerExists(
+                        $buyerAccount->id,
+                        AccountEntryTypeEnum::ORDER_CREDIT_AMOUNT->value,
+                        DemandOrder::class,
+                        $order->id,
+                        0,
+                        $order->credit_amount
+                    )) {
+
+                        $accounting->createLedger($buyerAccount, [
+                            'description' => "Credit used for Demand Order #{$order->order_number}",
+                            'credit' => 0,
+                            'debit'  =>  $order->credit_amount, // USED CREDIT AMOUNT
+                            'entry_type' => AccountEntryTypeEnum::ORDER_CREDIT_AMOUNT->value,
+                            'status' => LedgerStatusEnum::AVAILABLE->value, // Because Actual How much we sold to them  will finalize letter so
+                            'source_type' => DemandOrder::class,
+                            'source_id' => $order->id,
+                            'source_code' => $order->order_number,
+                            'reference' => $payment->payment_code,
+                            'payment_reference' => $payment->gateway_order_id,
+                            'common_reference' => $order->order_number,
+                        ]);
+                    }
+                }
+
 
                 $order->order_status =  OrderStatusEnum::ACCOUNTED->value;
                 $order->is_locked = true; // lock order after accounting

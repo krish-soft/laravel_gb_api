@@ -31,7 +31,7 @@ class ProductListingInvoicingCmd extends Command
         $listings = ProductListing::query()
             ->select(['id', 'seller_id']) // IMPORTANT → reduce memory
             ->where('is_active', true)
-            // ->where('is_expired', false)
+            ->where('is_expired', true)
             ->where('is_cutoff', true)
             ->whereBetween('listing_date', [
                 $startDate,

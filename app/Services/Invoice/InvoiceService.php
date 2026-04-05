@@ -6,6 +6,7 @@ use App\Enum\Common\Invoice\InvoiceStatusEnum;
 use App\Enum\Common\Invoice\InvoiceTypeEnum;
 use App\Enum\Common\Order\OrderStatusEnum;
 use App\Enum\Common\Shipment\ShipmentStatusEnum;
+use App\Enum\Common\Shipment\ShipmentTypeEnum;
 use App\Models\Buyer\Order\Order;
 use App\Models\Common\Accounting\Account;
 use App\Models\Common\Shipment\ShipmentPackage;
@@ -267,20 +268,9 @@ class InvoiceService
 
                 foreach ($productListing->listingItems as $item) {
 
-                    // Get only order-related package IDs
-                    $orderPackageIds = $item->orderItems
-                        ->pluck('product_listing_package_id')
-                        ->filter()
-                        ->unique()
-                        ->toArray();
-
-                    if (empty($orderPackageIds)) {
-                        continue;
-                    }
 
                     // Only order related packages
-                    $packages = $item->listingPackages
-                        ->whereIn('id', $orderPackageIds);
+                    $packages = $item->listingPackages;
 
                     foreach ($packages as $package) {
 
@@ -290,17 +280,33 @@ class InvoiceService
 
                         $shipQty = 0;
 
-                        foreach ($package->shipmentPackages as $shipment) {
+                        foreach ($package->shipmentPackages as $shpPkg) {
 
-                            // Ignore market orders
-                            // if (!$shipment->order_id) {
-                            //     continue;
-                            // }
+
+                            // We only need to consider shipment type is PICKUP & STATUS COMPLETED
+
+                            if (
+                                $shpPkg->shipment->shipment_type !== ShipmentTypeEnum::PICKUP->value
+                                && $shpPkg->shipment->status !== ShipmentStatusEnum::COMPLETED->value
+                                && in_array($shpPkg->status, [ShipmentStatusEnum::PENDING->value, ShipmentStatusEnum::NOT_PICKED_UP->value])
+                            ) {
+                                continue;
+                            }
+
+
+                            // Pack Price We need to decide 
+                            // For Direct Order we can record what farmer keep so will go as it is 
+                            // But for demand order what is price from Pricing module based morning data feed
+
+                            // First need to find Order or DemandOrder Shipment Package from Pacakge Numbers not from ids 
+
+                            // TODO: PENDING
+
 
                             // Delivery charge for order shipments
                             $deliveryData = $this->getDeliveryCharge(
                                 $productListing->seller->charge_level_code,
-                                $shipment
+                                $shpPkg
                             );
 
                             $totalDeliveryTaxable += $deliveryData->charge_taxable;
@@ -309,16 +315,16 @@ class InvoiceService
 
 
                             $pkgArr[] = [
-                                'order_qty' => $shipment->qty,
-                                'pack_size' => $shipment->pack_size,
-                                'pack_price' => $shipment->pack_price,
-                                'pack_unit' => $shipment->pack_unit,
-                                'pack_type_unit' => $shipment->pack_type_unit,
+                                'order_qty' => $shpPkg->qty,
+                                'pack_size' => $shpPkg->pack_size,
+                                'pack_price' => $shpPkg->pack_price,
+                                'pack_unit' => $shpPkg->pack_unit,
+                                'pack_type_unit' => $shpPkg->pack_type_unit,
                             ];
 
-                            if ($shipment->seller_status != ShipmentStatusEnum::NOT_PICKED_UP->value) {
-                                $shipQty += $shipment->qty;
-                                $totalShipQty += $shipment->qty;
+                            if ($shpPkg->seller_status != ShipmentStatusEnum::NOT_PICKED_UP->value) {
+                                $shipQty += $shpPkg->qty;
+                                $totalShipQty += $shpPkg->qty;
                             }
                         }
 
@@ -399,6 +405,12 @@ class InvoiceService
                     'tax_amount' => $taxAmount,
                     'total_amount' => $totalAmount,
                 ]);
+
+
+
+                // Mark Product Listing Invoice
+                $productListing->status = OrderStatusEnum::INVOICED->value;
+                $productListing->save();
             });
 
             //

@@ -44,9 +44,7 @@ class JobProductListingInvoicing implements ShouldQueue
                 // this will create OR repair automatically
                 $invoice = $invoiceService->generateProductListingInvoiceData($productListing, $this->isEnforce);
 
-                // Mark Product Listing Invoice
-                $productListing->status = OrderStatusEnum::INVOICED->value;
-                $productListing->save();
+             
 
                 // optional log
                 // Log::info("Invoice ready for {$productListing->listing_number}");

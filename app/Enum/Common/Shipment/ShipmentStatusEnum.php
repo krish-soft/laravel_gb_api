@@ -27,6 +27,7 @@ enum ShipmentStatusEnum: string
     case LOST = 'lost';
 
     case ASSIGNED = 'assigned';
+    case COMPLETED = 'completed';
 
         //  grouping status
     case PICKUP = 'pickup';
