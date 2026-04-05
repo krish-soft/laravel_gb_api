@@ -31,6 +31,11 @@ return new class extends Migration {
                 ->constrained('product_listing_packages')
                 ->nullOnDelete();
 
+            $table->foreignId('product_listing_id')
+                ->nullable()
+                ->constrained('product_listings')
+                ->nullOnDelete();
+
 
             $table->foreignId('seller_id')
                 ->nullable()

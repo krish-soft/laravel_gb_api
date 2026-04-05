@@ -113,9 +113,14 @@ class ProductListing extends BaseModel
         return $this->hasMany(Invoice::class, 'product_listing_id', 'id');
     }
 
+    // public function shipmentPackages()
+    // {
+    //     return $this->hasMany(ShipmentPackage::class, 'source_id')->where('source', ProductListing::class);
+    // }
+
     public function shipmentPackages()
     {
-        return $this->hasMany(ShipmentPackage::class, 'source_id')->where('source', ProductListing::class);
+        return $this->hasMany(ShipmentPackage::class, 'product_listing_id');
     }
 
     public function orderItems()

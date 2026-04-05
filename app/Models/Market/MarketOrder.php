@@ -36,8 +36,10 @@ class MarketOrder extends BaseModel
 
 
     protected $fillable = [
-
         'market_id',
+
+        'primary_depot_id', // primary depot for this order, it can be used for reporting and analytics, but actual shipping depot will be in shipment package
+
         'depot_id',
 
         'shipping_fulfillment_location_id',
@@ -138,8 +140,7 @@ class MarketOrder extends BaseModel
             OrderStatusEnum::ACCOUNTED->value, // To Reaccount if needed
             // OrderStatusEnum::INVOICED->value,
         ])
-            && $this->delivery_status === OrderStatusEnum::DELIVERED->value
-            && $this->payment_status === PaymentStatusEnum::PAID->value;
+            && $this->delivery_status === OrderStatusEnum::DELIVERED->value;
     }
 
     public function isEligibleForInvoicing(): bool
@@ -148,8 +149,7 @@ class MarketOrder extends BaseModel
             OrderStatusEnum::ACCOUNTED->value,
             // OrderStatusEnum::INVOICED->value, // 
         ])
-            && $this->delivery_status === OrderStatusEnum::DELIVERED->value
-            && $this->payment_status === PaymentStatusEnum::PAID->value;
+            && $this->delivery_status === OrderStatusEnum::DELIVERED->value;
     }
 
 
@@ -181,11 +181,16 @@ class MarketOrder extends BaseModel
     }
 
 
+    // public function shipmentPackages()
+    // {
+    //     return $this->hasMany(ShipmentPackage::class, 'source_id')->where('source', MarketOrder::class);
+    // }
+
+
     public function shipmentPackages()
     {
-        return $this->hasMany(ShipmentPackage::class, 'source_id')->where('source', MarketOrder::class);
+        return $this->hasMany(ShipmentPackage::class, 'market_order_id');
     }
-
 
 
     // Methods for adding and removing flags

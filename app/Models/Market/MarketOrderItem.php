@@ -4,6 +4,7 @@ namespace App\Models\Market;
 
 use App\Models\BaseModel;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
+use App\Models\Common\Shipment\ShipmentPackage;
 use App\Models\Seller\Product\ProductListingItem;
 use App\Models\Seller\Product\ProductListingPackage;
 use App\Models\User;
@@ -28,9 +29,11 @@ class MarketOrderItem extends BaseModel
 
         'listing_code',
 
+        'product_id',
         'product_code',
         'product_name',
 
+        'product_variant_id',
         'variant_code',
         'variant_name',
 
@@ -82,6 +85,12 @@ class MarketOrderItem extends BaseModel
     {
         return $this->belongsTo(ProductListingPackage::class, 'product_listing_package_id');
     }
+
+    public function shipmentPackages()
+    {
+        return $this->hasMany(ShipmentPackage::class, 'market_order_item_id');
+    }
+
 
     public function seller()
     {

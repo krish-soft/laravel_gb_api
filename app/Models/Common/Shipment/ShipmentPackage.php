@@ -32,19 +32,30 @@ class ShipmentPackage extends BaseModel
     protected $fillable = [
         'shipment_id',
 
+        'depot_id', // primary depot for this order, it can be used for reporting and analytics, but actual shipping depot will be in shipment package
+
         'shipment_trace_code',
         'shipment_package_number',
 
         'seller_package_id',
 
-        'source',
-        'source_id',
+        // 'source',
+        // 'source_id',
 
-        'source_item',
-        'source_item_id',
+        // 'source_item',
+        // 'source_item_id',
 
-        'source_pkg',
-        'source_pkg_id',
+        // 'source_pkg',
+        // 'source_pkg_id',
+
+        'order_id',
+        'order_item_id',
+
+        'demand_order_id',
+        'demand_order_item_id',
+
+        'market_order_id',
+        'market_order_item_id',
 
         // To Generate Unique Numbers
         'buyer_id',
@@ -126,43 +137,43 @@ class ShipmentPackage extends BaseModel
     }
 
 
-    public function getSourceModel()
-    {
-        switch ($this->source) {
-            case Order::class:
-                return $this->order;
-            case MarketOrder::class:
-                return $this->marketOrder;
-            case DemandOrder::class:
-                return $this->demandOrder;
-            default:
-                return null;
-        }
-    }
+    // public function getSourceModel()
+    // {
+    //     switch ($this->source) {
+    //         case Order::class:
+    //             return $this->order;
+    //         case MarketOrder::class:
+    //             return $this->marketOrder;
+    //         case DemandOrder::class:
+    //             return $this->demandOrder;
+    //         default:
+    //             return null;
+    //     }
+    // }
 
-    public function getSourceItemModel()
-    {
-        switch ($this->source_item) {
-            case OrderItem::class:
-                return $this->orderItem;
-            case MarketOrderItem::class:
-                return $this->marketOrderItem;
-            case DemandOrderItem::class:
-                return $this->demandOrderItem;
-            default:
-                return null;
-        }
-    }
+    // public function getSourceItemModel()
+    // {
+    //     switch ($this->source_item) {
+    //         case OrderItem::class:
+    //             return $this->orderItem;
+    //         case MarketOrderItem::class:
+    //             return $this->marketOrderItem;
+    //         case DemandOrderItem::class:
+    //             return $this->demandOrderItem;
+    //         default:
+    //             return null;
+    //     }
+    // }
 
-    public function getSourcePackageModel()
-    {
-        switch ($this->source_pkg) {
-            case ProductListingPackage::class:
-                return $this->productListingPackage;
-            default:
-                return null;
-        }
-    }
+    // public function getSourcePackageModel()
+    // {
+    //     switch ($this->source_pkg) {
+    //         case ProductListingPackage::class:
+    //             return $this->productListingPackage;
+    //         default:
+    //             return null;
+    //     }
+    // }
 
 
     // protected $appends = [
@@ -183,32 +194,37 @@ class ShipmentPackage extends BaseModel
 
     public function order()
     {
-        return $this->belongsTo(Order::class, 'source_id');
+        return $this->belongsTo(Order::class, 'order_id');
     }
 
     public function orderItem()
     {
-        return $this->belongsTo(OrderItem::class, 'source_item_id');
+        return $this->belongsTo(OrderItem::class, 'order_item_id');
     }
 
     public function marketOrder()
     {
-        return $this->belongsTo(MarketOrder::class, 'source_id');
+        return $this->belongsTo(MarketOrder::class, 'market_order_id');
     }
 
     public function marketOrderItem()
     {
-        return $this->belongsTo(MarketOrderItem::class, 'source_item_id');
+        return $this->belongsTo(MarketOrderItem::class, 'market_order_item_id');
     }
 
     public function demandOrder()
     {
-        return $this->belongsTo(DemandOrder::class, 'source_id');
+        return $this->belongsTo(DemandOrder::class, 'demand_order_id');
     }
 
     public function demandOrderItem()
     {
-        return $this->belongsTo(DemandOrderItem::class, 'source_item_id');
+        return $this->belongsTo(DemandOrderItem::class, 'demand_order_item_id');
+    }
+
+    public function productListingPackage()
+    {
+        return $this->belongsTo(ProductListingPackage::class, 'product_listing_package_id');
     }
 
 

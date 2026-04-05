@@ -237,6 +237,7 @@ return [
         'listing_not_allowed' => 'Listing is currently not allowed. Please try within allowed time.',
         'purchasing_not_allowed' => 'Purchasing is currently not allowed. Please try within allowed time.',
 
+        'no_enough_credit_balance' => 'Your available credit balance is insufficient to complete this transaction.',
 
 
     ],

@@ -55,9 +55,9 @@ class JobCutOffProductListing implements ShouldQueue
 
                 foreach ($listings as $listing) {
 
-                    if ($listing->is_locked) {
-                        continue;
-                    }
+                    // if ($listing->is_locked) {
+                    //     continue;
+                    // }
 
                     /* ---------------------------------------------
                      | EXPIRE LISTING
@@ -147,9 +147,35 @@ class JobCutOffProductListing implements ShouldQueue
 
                             $remain = $pkg->qty - $pkg->sold_qty - $pkg->demand_sold_qty; // for cutoff we have to manage demand sold qty also because we can get demand order from farmer and also direct order from buyer so we have to manage both type of orders in cutoff
 
+                            $shipQty = 0;
                             if ($remain <= 0) {
                                 continue;
                             }
+
+                            // Check shipment package status picked up then do it 
+                            if ($pkg->shipmentPackages()) { {
+                                    //
+                                    $pickedUpPackagesCount = $pkg->shipmentPackages()
+                                        ->whereIn('status', [
+                                            ShipmentStatusEnum::PICKED_UP->value,
+                                            ShipmentStatusEnum::ARRIVED_AT_DEPOT->value,
+                                            ShipmentStatusEnum::DELIVERED->value
+                                        ])->count();
+
+                                    if ($pickedUpPackagesCount > 0) {
+                                        // make sure not go beyond remain qty
+                                        if ($pickedUpPackagesCount >= $remain) {
+                                            $shipQty = $remain;
+                                        } else {
+                                            $shipQty = $pickedUpPackagesCount;
+                                        }
+                                    }
+                                }
+                                //
+                            } else {
+                                $shipQty = $remain; // if no shipment package then consider all remain qty for ship qty
+                            }
+
 
                             $marketItem = MarketOrderItem::create([
                                 'market_order_id' => $marketOrder->id,
@@ -164,16 +190,17 @@ class JobCutOffProductListing implements ShouldQueue
                                 'pickup_fulfillment_location_id' => $listing->fulfillment_location_id,
                                 'listing_code' => $listing->listing_code,
 
+                                'product_id' => $item->product_id,
                                 'product_code' => $item->product->product_code,
                                 'product_name' => $item->product->name,
 
-                                'variant_code' => null,
-                                'variant_name' => null,
+                                'product_variant_id' => $item?->product_variant_id,
+                                'variant_code' => $item?->product_variant?->variant_code,
+                                'variant_name' => $item?->product_variant?->variant_name,
 
                                 // CONSOLIDATED PER PACKAGE
                                 'order_qty' => $remain,
-                                'ship_qty'  => 0,
-
+                                'ship_qty'  => $shipQty,
 
                                 'pack_size' => $pkg->pack_size,
                                 'pack_unit' => $pkg->pack_unit,
@@ -241,6 +268,8 @@ class JobCutOffProductListing implements ShouldQueue
                         $pkg        = $row['package'];
                         $remain     = $row['remain'];
 
+                        // 
+
                         for ($i = 1; $i <= $remain; $i++) {
 
                             $sellerPackage = SellerPackage::with(['shipmentPackage'])
@@ -257,11 +286,8 @@ class JobCutOffProductListing implements ShouldQueue
                                     'shipment_id' => $shipment->id,
                                     'seller_package_id' => $sellerPackage->id,
 
-                                    'source' => MarketOrder::class,
-                                    'source_id' => $marketOrder->id,
-
-                                    'source_item' => MarketOrderItem::class,
-                                    'source_item_id' => $marketItem->id,
+                                    'market_order_id' => $marketOrder->id,
+                                    'market_order_item_id' => $marketItem->id,
 
                                     'seller_id' => $seller->id,
                                     'market_id' => $marketId,

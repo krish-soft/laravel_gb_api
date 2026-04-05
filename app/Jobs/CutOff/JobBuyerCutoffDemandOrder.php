@@ -118,8 +118,8 @@ class JobBuyerCutoffDemandOrder implements ShouldQueue
 
                             ) {
 
-                                $existShipmentPackage = ShipmentPackage::where('source_item_id', $demandOrderItem->id)
-                                    ->where('source_item', DemandOrderItem::class)
+                                $existShipmentPackage = ShipmentPackage::where('demand_order_item_id', $demandOrderItem->id)
+                                    // ->where('source_item', DemandOrderItem::class)
                                     ->where('product_id', $demandOrderItem->product_id)
                                     ->where('product_variant_id', $demandOrderItem->product_variant_id)
                                     ->where('product_listing_package_id', $sellerPackage->product_listing_package_id)
@@ -134,12 +134,16 @@ class JobBuyerCutoffDemandOrder implements ShouldQueue
                                 $shipmentPackage = ShipmentPackage::create([
                                     'shipment_id' => $deliveryShipment->id,
                                     'seller_package_id' => $sellerPackage?->id,
+                                    'depot_id' => $demandOrder->depot_id, // because for dispatch always from depot
 
-                                    'source' => DemandOrder::class,
-                                    'source_id' => $demandOrder->id,
+                                    // 'source' => DemandOrder::class,
+                                    // 'source_id' => $demandOrder->id,
 
-                                    'source_item' => DemandOrderItem::class,
-                                    'source_item_id' => $demandOrderItem->id,
+                                    // 'source_item' => DemandOrderItem::class,
+                                    // 'source_item_id' => $demandOrderItem->id,
+
+                                    'demand_order_id' => $demandOrder->id,
+                                    'demand_order_item_id' => $demandOrderItem->id,
 
                                     'buyer_id' => $demandOrder->buyer_id,
                                     'seller_id' => $sellerPackage?->seller_id,
@@ -252,11 +256,13 @@ class JobBuyerCutoffDemandOrder implements ShouldQueue
                                 $deliveryShipmentPackage =    ShipmentPackage::create([
                                     'shipment_id' => $deliveryShipment->id,
 
-                                    'source' => DemandOrder::class,
-                                    'source_id' => $demandOrder->id,
+                                    // 'source' => DemandOrder::class,
+                                    // 'source_id' => $demandOrder->id,
 
-                                    'source_item' => DemandOrderItem::class,
-                                    'source_item_id' => $demandOrderItem->id,
+                                    // 'source_item' => DemandOrderItem::class,
+                                    // 'source_item_id' => $demandOrderItem->id,
+                                    'demand_order_id' => $demandOrder->id,
+                                    'demand_order_item_id' => $demandOrderItem->id,
 
                                     'buyer_id' => $demandOrder->buyer_id,
 
@@ -280,11 +286,13 @@ class JobBuyerCutoffDemandOrder implements ShouldQueue
                                 $pickupShipmentPackage =    ShipmentPackage::create([
                                     'shipment_id' => $pickupShipment->id,
 
-                                    'source' => DemandOrder::class,
-                                    'source_id' => $demandOrder->id,
+                                    // 'source' => DemandOrder::class,
+                                    // 'source_id' => $demandOrder->id,
 
-                                    'source_item' => DemandOrderItem::class,
-                                    'source_item_id' => $demandOrderItem->id,
+                                    // 'source_item' => DemandOrderItem::class,
+                                    // 'source_item_id' => $demandOrderItem->id,
+                                    'demand_order_id' => $demandOrder->id,
+                                    'demand_order_item_id' => $demandOrderItem->id,
 
                                     'buyer_id' => $demandOrder->buyer_id,
                                     'market_id' => $marketId,
@@ -325,6 +333,7 @@ class JobBuyerCutoffDemandOrder implements ShouldQueue
             Log::error('Error processing JobBuyerCutoffDemandOrder: ' . $e->getMessage(), [
                 'order_ids' => $this->demandOrderIds,
             ]);
+            throw $e; // VERY IMPORTANT
         }
         //
     }

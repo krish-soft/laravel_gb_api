@@ -51,7 +51,7 @@ class JobMarketOrderAccounting implements ShouldQueue
                 foreach ($marketOrders as $order) {
 
                     // update delivery status based on packages
-                    $order->updateDeliveryStatusFromPackages();
+                    // $order->updateDeliveryStatusFromPackages();
 
                     // check eligibility for accounting
                     if ($order->isEligibleForAccounting()) {

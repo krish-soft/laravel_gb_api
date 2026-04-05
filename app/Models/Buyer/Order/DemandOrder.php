@@ -221,9 +221,14 @@ class DemandOrder extends BaseModel
         return $this->belongsTo(FulfillmentLocation::class, 'shipping_fulfillment_location_id', 'id');
     }
 
+    // public function shipmentPackages()
+    // {
+    //     return $this->hasMany(ShipmentPackage::class, 'source_id')->where('source', DemandOrder::class);
+    // }
+
     public function shipmentPackages()
     {
-        return $this->hasMany(ShipmentPackage::class, 'source_id')->where('source', DemandOrder::class);
+        return $this->hasMany(ShipmentPackage::class, 'demand_order_id');
     }
 
     public function payment()

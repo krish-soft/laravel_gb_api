@@ -48,8 +48,7 @@ class AdminOrderApiController extends ApiResponseWithAdminAuthController
             'shippingAddress', // for invoice
 
             // shipment packages for this order
-            'shipmentPackages.buyer',
-            'shipmentPackages.seller',
+            'shipmentPackages.shipment',
 
             'orderInvoices',
             

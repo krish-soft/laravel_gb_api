@@ -50,9 +50,15 @@ return new class extends Migration
 
             $table->string('listing_code', 50)->nullable(); // To Trace all way back to listing
 
+            $table->foreignId('product_id')->nullable()->constrained('mst_products')->nullOnDelete();
             $table->string('product_code', 20)->nullable();
             $table->string('product_name', 100);
 
+            $table->foreignId('product_variant_id')
+                ->nullable()
+                ->constrained('mst_product_variants')
+                ->nullOnDelete();
+                
             $table->string('variant_code', 20)->nullable();
             $table->string('variant_name', 100)->nullable();
 

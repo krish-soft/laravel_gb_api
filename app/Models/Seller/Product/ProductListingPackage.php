@@ -127,11 +127,17 @@ class ProductListingPackage extends BaseModel
     }
 
 
+    // public function shipmentPackages()
+    // {
+    //     return $this->hasMany(ShipmentPackage::class, 'source_pkg_id')
+    //         ->where('source_pkg', ProductListingPackage::class);
+    // }
+
     public function shipmentPackages()
     {
-        return $this->hasMany(ShipmentPackage::class, 'source_pkg_id')
-            ->where('source_pkg', ProductListingPackage::class);
+        return $this->hasMany(ShipmentPackage::class, 'product_listing_package_id');
     }
+
 
 
     protected $appends = [

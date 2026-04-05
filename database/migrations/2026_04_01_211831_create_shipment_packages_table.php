@@ -17,15 +17,31 @@ return new class extends Migration
             $table->foreignId('shipment_id')->nullable()->constrained('shipments')->cascadeOnDelete();
 
             $table->foreignId('seller_package_id')->nullable()->constrained('seller_packages')->nullOnDelete();
+            // Seller snapshot (important)
+            $table->foreignId('depot_id')
+                ->nullable()
+                ->constrained('mst_depots')
+                ->nullOnDelete();
 
-            $table->string('source')->nullable(); // Like Order, DemandOrder, MarketOrder
-            $table->unsignedBigInteger('source_id')->nullable(); // id of the source
 
-            $table->string('source_item')->nullable(); // Like Order, DemandOrder, MarketOrder
-            $table->unsignedBigInteger('source_item_id')->nullable(); // id of the source item
+            // $table->string('source')->nullable(); // Like Order, DemandOrder, MarketOrder
+            // $table->unsignedBigInteger('source_id')->nullable(); // id of the source
 
-            $table->string('source_pkg')->nullable(); // Like Order, DemandOrder, MarketOrder
-            $table->unsignedBigInteger('source_pkg_id')->nullable(); // id of the source package
+            // $table->string('source_item')->nullable(); // Like Order, DemandOrder, MarketOrder
+            // $table->unsignedBigInteger('source_item_id')->nullable(); // id of the source item
+
+            // $table->string('source_pkg')->nullable(); // Like Order, DemandOrder, MarketOrder
+            // $table->unsignedBigInteger('source_pkg_id')->nullable(); // id of the source package
+
+            $table->foreignId('order_id')->nullable()->constrained('orders')->nullOnDelete();
+            $table->foreignId('order_item_id')->nullable()->constrained('order_items')->nullOnDelete();
+
+            $table->foreignId('demand_order_id')->nullable()->constrained('demand_orders')->nullOnDelete();
+            $table->foreignId('demand_order_item_id')->nullable()->constrained('demand_order_items')->nullOnDelete();
+
+            $table->foreignId('market_order_id')->nullable()->constrained('market_orders')->nullOnDelete();
+            $table->foreignId('market_order_item_id')->nullable()->constrained('market_order_items')->nullOnDelete();
+
 
             // Product details for easier access, can be fetched from seller package but denormalized here for easier access and to avoid issues when product details change after package creation
             $table->foreignId('buyer_id')->nullable()->constrained('users')->nullOnDelete(); // dispatch owner

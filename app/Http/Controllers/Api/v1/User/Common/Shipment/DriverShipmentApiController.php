@@ -90,7 +90,7 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
             'shipment.originMarket.fulfillmentLocation.address',
             'shipment.destinationMarket.fulfillmentLocation.address',
 
-            'shipment.shipmentPackages',
+            'shipment.shipmentPackages.product',
         ])
             ->where('driver_id', $request->user()->id)
             ->whereNotIn('status', [
@@ -154,6 +154,86 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
 
                 ];
 
+                // $processData['shipment_packages_summary'] = $shipment->shipmentPackages
+                //     ->groupBy(function ($item) {
+                //         return $item->product_id . '-' . $item->pack_size . '-' . $item->pack_unit . '-' . $item->pack_type_unit;
+                //     })
+                //     ->map(function ($group) {
+
+                //         $first = $group->first();
+
+                //         $totalQty = $group->sum('qty');
+                //         $packSize = $first->pack_size ?? 0;
+
+                //         $totalWeight = $totalQty * $packSize;
+
+                //         return [
+                //             'product_id' => $first->product_id,
+                //             'product_code' => $first->product?->product_code,
+                //             'product_name' => $first->product?->name,
+
+                //             'pack_type_unit' => $first->pack_type_unit, // bag / crate / box
+                //             'pack_size' => $first->pack_size,
+                //             'pack_unit' => $first->pack_unit,
+
+                //             'total_packages' => $totalQty,
+                //             'total_weight' => $totalWeight,
+
+                //             'display' =>
+                //             $totalQty . ' ' . $first->pack_type_unit .
+                //                 ' (' . $first->pack_size . $first->pack_unit . ') = ' .
+                //                 $totalWeight . $first->pack_unit
+                //         ];
+                //     })
+                //     ->values();
+                $processData['shipment_packages_summary'] = $shipment->shipmentPackages
+                    ->groupBy(function ($item) {
+                        return implode('-', [
+                            $item->product_id,
+                            $item->pack_type_unit,
+                            $item->pack_size,
+                            $item->pack_unit
+                        ]);
+                    })
+                    ->map(function ($group) {
+
+                        $first = $group->first();
+
+                        $totalQty = $group->sum('qty');
+
+                        $packSize = $first->pack_size ?? 0;
+
+                        $totalWeight = $totalQty * $packSize;
+
+                        // 🔹 dynamic status summary
+                        $statusSummary = $group
+                            ->groupBy('status')
+                            ->map(function ($statusGroup) {
+                                return $statusGroup->sum('qty');
+                            });
+
+                        return [
+                            'product_id' => $first->product_id,
+                            'product_code' => $first->product?->product_code,
+                            'product_name' => $first->product?->name,
+
+                            'pack_type_unit' => $first->pack_type_unit,
+                            'pack_size' => $first->pack_size,
+                            'pack_unit' => $first->pack_unit,
+
+                            'total_packages' => $totalQty,
+                            'total_weight' => $totalWeight,
+
+                            'status_summary' => $statusSummary,
+
+                            'display' =>
+                            $totalQty . ' ' . $first->pack_type_unit .
+                                ' (' . $first->pack_size . $first->pack_unit . ') = ' .
+                                $totalWeight . $first->pack_unit
+                        ];
+                    })
+                    ->values();
+
                 if ($request->status != DriverShipmentStatusEnum::REQUESTED->value) {
 
                     $processData['shipmentPackages'] =  $shipment->shipmentPackages->map(function ($p) {
@@ -172,6 +252,11 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
                             'qty' => $p->qty,
                             'pack_size' => $p->pack_size,
                             'unit' => $p->pack_unit,
+
+                            'product' => [
+                                'code' => $p->product?->product_code,
+                                'name' => $p->product?->name,
+                            ],
                         ];
                     })->values();
                 }
@@ -203,6 +288,8 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
 
     public function shipmentDetails(DriverShipment $driverShipment)
     {
+        // Log::info("Fetching shipment details for DriverShipment ID: {$driverShipment->id}, Driver ID: {$driverShipment->driver_id}, Requested by User ID: " . request()->user()->id);
+
         if ($driverShipment->driver_id !== request()->user()->id) {
             return $this->errorResponse("Unauthorized", 403);
         }
@@ -225,7 +312,7 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
             'shipment.originMarket.fulfillmentLocation.address',
             'shipment.destinationMarket.fulfillmentLocation.address',
 
-            'shipment.shipmentPackages',
+            'shipment.shipmentPackages.product',
         ]);
 
         $shipment = $driverShipment->shipment;
@@ -253,6 +340,11 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
                         'qty' => $p->qty,
                         'pack_size' => $p->pack_size,
                         'unit' => $p->pack_unit,
+
+                        'product' => [
+                            'code' => $p->product?->product_code,
+                            'name' => $p->product?->name,
+                        ],
 
                         // 'buyer' => [
                         //     'nickname' => $p->buyer?->nickname,
@@ -516,10 +608,10 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
             }
 
             /*
-        |--------------------------------------------------------------------------
-        | 1️⃣ FIRST CHECK — BLOCK IF ALL PENDING
-        |--------------------------------------------------------------------------
-        */
+            |--------------------------------------------------------------------------
+            | 1️⃣ FIRST CHECK — BLOCK IF ALL PENDING
+            |--------------------------------------------------------------------------
+            */
 
             if (in_array($type, [ShipmentTypeEnum::PICKUP->value, ShipmentTypeEnum::MARKET_PICKUP->value])) {
 
@@ -536,7 +628,10 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
             if (in_array($type, [ShipmentTypeEnum::DISPATCH->value, ShipmentTypeEnum::MARKET_DISPATCH->value])) {
 
                 $allPending = $packages->every(function ($package) {
-                    return $package->status !== ShipmentStatusEnum::DELIVERED->value;
+                    return $package->status === ShipmentStatusEnum::PENDING->value
+                        // || $package->status !== ShipmentStatusEnum::DELIVERED->value 
+
+                    ;
                 });
 
                 if ($allPending) {
@@ -552,10 +647,43 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
 
             foreach ($packages as $package) {
 
-                $isMarketOrderPackage = $package->market_order_id !== null;
-                $dispatchDeliveredList = [];
+                $orderItem = $package?->orderItem;
+                $demandOrderItem = $package?->demandOrderItem;
+                $marketOrderItem = $package?->marketOrderItem;
+                $productListingPackage = $package?->productListingPackage;
 
-                    if (in_array($type, [ShipmentTypeEnum::PICKUP->value, ShipmentTypeEnum::MARKET_PICKUP->value])) {
+                // We have to increase ship qty in order_item
+                if (
+                    in_array($type, [ShipmentTypeEnum::PICKUP->value, ShipmentTypeEnum::MARKET_PICKUP->value])
+                    && !in_array($type, [ShipmentStatusEnum::NOT_PICKED_UP->value, ShipmentStatusEnum::PENDING->value])
+                ) {
+
+                    // but we need to ensure not go beyound $orderItem->qty which is actual order qty because in some case we can have more ship qty than order qty because of some mistake or change in order after shipment created so to avoid that we need to check that also
+                    if ($orderItem) {
+                        $orderItem->ship_qty = min(($orderItem->ship_qty ?? 0) + $package->qty, $orderItem->qty);
+                        $orderItem->save();
+                    }
+
+                    if ($demandOrderItem) {
+                        $demandOrderItem->ship_qty = min(($demandOrderItem->ship_qty ?? 0) + $package->qty, $demandOrderItem->order_qty);
+                        $demandOrderItem->save();
+                    }
+
+                    if ($marketOrderItem) {
+                        $marketOrderItem->ship_qty = min(($marketOrderItem->ship_qty ?? 0) + $package->qty, $marketOrderItem->qty);
+                        $marketOrderItem->save();
+                    }
+
+
+                    // If Only 
+                    if ($productListingPackage && $package->seller_id) {
+                        $productListingPackage->ship_qty = min(($productListingPackage->ship_qty ?? 0) + $package->qty, $productListingPackage->qty);
+                        $productListingPackage->save();
+                    }
+                }
+
+
+                if (in_array($type, [ShipmentTypeEnum::PICKUP->value, ShipmentTypeEnum::MARKET_PICKUP->value])) {
 
                     // Only process if package is picked and not already arrived
                     if (
@@ -566,38 +694,6 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
                         $package->update([
                             'status' => ShipmentStatusEnum::ARRIVED_AT_DEPOT->value,
                         ]);
-
-                        // $orderItem = $package?->orderItem;
-                        //    $marketOrderItem = $package?->marketOrderItem;
-                        // $demandOrderItem = $package?->demandOrderItem;
-
-
-                        if ($package->source_item == OrderItem::class) {
-                            $orderItem = $package?->orderItem;
-                            if ($orderItem) {
-                                $orderItem->increment('ship_qty', $package->qty);
-                            }
-                        }
-
-                        if ($package->source_item == MarketOrderItem::class) {
-                            $marketOrderItem = $package?->marketOrderItem;
-                            if ($marketOrderItem) {
-                                $marketOrderItem->increment('ship_qty', $package->qty);
-                            }
-                        }
-
-                        if ($package->source_item == DemandOrderItem::class) {
-                            $demandOrderItem = $package?->demandOrderItem;
-                            if ($demandOrderItem) {
-                                $sellerShipQty = $demandOrderItem->seller_ship_qty ?? 0;
-                                $currentShipQty = $demandOrderItem->ship_qty ?? 0;
-                                $totalShipped = $sellerShipQty + $currentShipQty + $package->qty;
-
-                                if ($totalShipped <= $demandOrderItem->qty) {
-                                    $demandOrderItem->increment('ship_qty', $package->qty);
-                                }
-                            }
-                        }
                     }
                 }
 
@@ -612,21 +708,12 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
 
                 if (in_array($type, [ShipmentTypeEnum::DISPATCH->value, ShipmentTypeEnum::MARKET_DISPATCH->value])) {
 
-                    $dArr  = [
-                        'is_market_order' => $isMarketOrderPackage,
-                        'order_id' => $package->order_id,
-                        'market_order_id' => $package->market_order_id,
-                    ];
-
                     if ($package->status === ShipmentStatusEnum::DELIVERED->value) {
                         $package->update([
                             'status' => ShipmentStatusEnum::DELIVERED->value,
                             'delivered_at' => now(),
                         ]);
-                        $dArr['status'] = ShipmentStatusEnum::DELIVERED->value;
                     }
-
-                    $dispatchDeliveredList[] = $dArr;
                 }
             }
 
@@ -635,29 +722,54 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
             // Check for dispatch if all or order_id or marker_order_id is same and status have delivereed then mark that order as delivered because in dispatch we can have multiple package for same order or market order and if any of them delivered then we can say order is delivered because buyer receive at least one package of that order.
             if (in_array($type, [ShipmentTypeEnum::DISPATCH->value, ShipmentTypeEnum::MARKET_DISPATCH->value])) {
 
-                $groupedByOrder = collect($dispatchDeliveredList)->groupBy(function ($item) {
-                    return $item['is_market_order'] ? 'market_order_' . $item['market_order_id'] : 'order_' . $item['order_id'];
-                });
+                // Based on shipment pacakges to there parent order_id, demand_order_id or market_order_id make them delivered 
+                // $firstPackage = $packages->first();
 
-                foreach ($groupedByOrder as $group) {
+                if ($package->order_id) {
+                    $order = $package->order;
+                    if ($order->delivery_status !== OrderStatusEnum::DELIVERED->value) { // to avoid multiple update and event trigger if multiple package of same market order   
+                        $order->delivery_status = OrderStatusEnum::DELIVERED->value;
+                    }
+                    $order->save();
+                }
 
-                    $delivered = $group->contains('status', ShipmentStatusEnum::DELIVERED->value);
+                if ($package->demand_order_id) {
+                    $order = $package->demandOrder;
+                    if ($order->delivery_status !== OrderStatusEnum::DELIVERED->value) { // to avoid multiple update and event trigger if multiple package of same market order   
+                        $order->delivery_status = OrderStatusEnum::DELIVERED->value;
+                    }
+                    $order->save();
+                }
 
-                    if ($delivered) {
+                if ($package->market_order_id) {
+                    $order = $package->marketOrder;
 
-                        $firstItem = $group->first();
+                    $pickupMarketShipmentPackage = ShipmentPackage::where('seller_package_id', $package->seller_package_id)
+                        ->where('product_listing_package_id', $package->product_listing_package_id)
+                        ->where('shipment_id', '!=', $shipment->id) // exclude current dispatch shipment
+                        ->first();
 
-                        if ($firstItem['is_market_order']) {
-                            // Mark Market Order as Delivered
-                            \App\Models\Market\MarketOrder::where('id', $firstItem['market_order_id'])
-                                ->update(['delivery_status' => OrderStatusEnum::DELIVERED->value]);
-                        } elseif ($firstItem['order_id']) {
-                            // Mark Order as Delivered
-                            \App\Models\Buyer\Order\Order::where('id', $firstItem['order_id'])
-                                ->update(['delivery_status' => OrderStatusEnum::DELIVERED->value]);
+                    if ($pickupMarketShipmentPackage && $pickupMarketShipmentPackage->status === ShipmentStatusEnum::PICKED_UP->value) {
+                        $marketItem = $package->marketOrderItem;
+                        if ($marketItem) {
+                            // need to increaste ship_qty to match the pickup qty because we are creating one shipment package per pickup unit but in market order item we have consolidated qty per package so we need to update ship_qty to match the pickup qty for correct reporting and tracking
+                            $marketItem->ship_qty = min(($marketItem->ship_qty ?? 0) + $package->qty, $marketItem->qty);
+                            $marketItem->save();
                         }
                     }
+
+
+                    if ($order->delivery_status !== OrderStatusEnum::DELIVERED->value) { // to avoid multiple update and event trigger if multiple package of same market order   
+                        $order->delivery_status = OrderStatusEnum::DELIVERED->value;
+                    }
+                    $order->save();
                 }
+
+                // Now to increase its ship qty
+
+
+
+                //
             }
 
             /*

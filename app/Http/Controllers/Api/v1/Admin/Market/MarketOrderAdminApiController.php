@@ -51,7 +51,7 @@ class MarketOrderAdminApiController extends  ApiResponseWithAdminAuthController
             'shippingFulfillmentLocation.address', // actual shipping location        
 
             // shipment packages for this order           
-            'shipmentPackages.seller',
+            'shipmentPackages.shipment', // to get shipment details like type, status, etc.
 
         ])->where('id', $orderId)->firstOrfail();
 

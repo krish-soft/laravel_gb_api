@@ -22,14 +22,18 @@ class OrderItem extends BaseModel
         'pickup_fulfillment_location_id',
 
         'seller_id',
+
         'product_listing_item_id',
         'product_listing_package_id',
+        'product_listing_id',
 
         'listing_code',
 
+        'product_id',
         'product_code',
         'product_name',
 
+        'product_variant_id',
         'variant_code',
         'variant_name',
 
@@ -91,9 +95,14 @@ class OrderItem extends BaseModel
         return $this->belongsTo(FulfillmentLocation::class, 'pickup_fulfillment_location_id', 'id');
     }
 
+    // public function shipmentPackages()
+    // {
+    //     return $this->hasMany(ShipmentPackage::class, 'source_item_id', 'id')->where('source_item', self::class);
+    // }
+
     public function shipmentPackages()
     {
-        return $this->hasMany(ShipmentPackage::class, 'source_item_id', 'id')->where('source_item', self::class);
+        return $this->hasMany(ShipmentPackage::class, 'order_item_id');
     }
 
 

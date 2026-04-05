@@ -201,10 +201,17 @@ class Order extends BaseModel
         return $this->belongsTo(MstDepot::class, 'depot_id', 'id');
     }
 
+    // public function shipmentPackages()
+    // {
+    //     return $this->hasMany(ShipmentPackage::class, 'source_id', 'id')->where('source', self::class);
+    // }
+
     public function shipmentPackages()
     {
-        return $this->hasMany(ShipmentPackage::class, 'source_id', 'id')->where('source', self::class);
+        return $this->hasMany(ShipmentPackage::class, 'order_id', 'id');
     }
+
+
 
 
     // actual shipping location
@@ -239,11 +246,11 @@ class Order extends BaseModel
     public function payment()
     {
         return $this->hasOne(Payment::class, 'source_id', 'id')
-            ->where('source_type', self::class)
-            ->where(function ($query) {
-                $query->where('payment_code', $this->reference)
-                    ->orWhere('gateway_order_id', $this->payment_reference);
-            });
+            ->where('source_type', self::class);
+            // ->where(function ($query) {
+            //     $query->where('payment_code', $this->reference)
+            //         ->orWhere('gateway_order_id', $this->payment_reference);
+            // });
     }
 
     public function orderRatings()

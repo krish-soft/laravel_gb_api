@@ -166,6 +166,7 @@ class CheckoutConfirmService
 
                     'product_listing_item_id' => $listingItem->id,
                     'product_listing_package_id' => $package->id,
+                    'product_listing_id' => $listing->id,
 
                     'product_code' => $listingProduct->product_code ?? null,
                     'product_name' => $listingProduct->name,

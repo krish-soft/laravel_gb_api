@@ -3,6 +3,7 @@
 namespace App\Models\Buyer\Order;
 
 use App\Models\BaseModel;
+use App\Models\Common\Shipment\ShipmentPackage;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -16,7 +17,6 @@ class DemandOrderItem extends BaseModel
         'order_number',
 
         'product_id',
-
         'product_code',
         'product_name',
 
@@ -73,5 +73,11 @@ class DemandOrderItem extends BaseModel
     public function demandOrder()
     {
         return $this->belongsTo(DemandOrder::class, 'demand_order_id', 'id');
+    }
+
+
+    public function shipmentPackages()
+    {
+        return $this->hasMany(ShipmentPackage::class, 'demand_order_item_id');
     }
 }

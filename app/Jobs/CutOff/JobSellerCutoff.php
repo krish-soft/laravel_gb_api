@@ -105,6 +105,8 @@ class JobSellerCutoff implements ShouldQueue
                         continue;
                     }
 
+
+
                     /*
                      |--------------------------------------------------------------------------
                      | Get or Create Shipment
@@ -161,15 +163,11 @@ class JobSellerCutoff implements ShouldQueue
                             ShipmentPackage::create([
                                 'shipment_id' => $shipment->id,
                                 'seller_package_id' => $sellerPackage->id,
+                                'depot_id' => $depot->id, // because for pickup always to depot                              
 
-                                'source' => ProductListing::class,
-                                'source_id' => $listing->id,
-
-                                'source_item' => ProductListingItem::class,
-                                'source_item_id' => $item->id,
-
-                                'source_pkg' => ProductListingPackage::class,
-                                'source_pkg_id' => $pkg->id,
+                                'product_listing_id' => $listing->id,
+                                'product_listing_item_id' => $item->id,
+                                'product_listing_package_id' => $pkg->id,
 
                                 'seller_id' => $seller->id,
 
