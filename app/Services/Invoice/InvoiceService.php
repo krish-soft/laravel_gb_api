@@ -4,9 +4,11 @@ namespace App\Services\Invoice;
 
 use App\Enum\Common\Invoice\InvoiceStatusEnum;
 use App\Enum\Common\Invoice\InvoiceTypeEnum;
+use App\Enum\Common\Order\OrderFlagsEum;
 use App\Enum\Common\Order\OrderStatusEnum;
 use App\Enum\Common\Shipment\ShipmentStatusEnum;
 use App\Enum\Common\Shipment\ShipmentTypeEnum;
+use App\Models\Buyer\Order\DemandOrder;
 use App\Models\Buyer\Order\Order;
 use App\Models\Common\Accounting\Account;
 use App\Models\Common\Shipment\ShipmentPackage;
@@ -14,6 +16,7 @@ use App\Models\Master\Setting\MstBusinessSetting;
 use App\Models\Master\Setting\MstFinanceSetting;
 use App\Models\Seller\Product\ProductListing;
 use App\Services\Common\Charge\ChargeCalculationService;
+use App\Services\Common\Price\ProductPriceCalculationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -22,131 +25,44 @@ use Throwable;
 class InvoiceService
 {
 
-    // Order Invoice
+    // Direct Order Invoice
     public function generateOrderInvoiceData(Order $order)
     {
         // Not PDF only Invoice data
 
-        //       
-        DB::transaction(function () use ($order) {
+        //    
+        try {
+            DB::transaction(function () use ($order) {
 
-            $order->load([
-                'buyer',
-                'orderInvoices',
-                'shipmentPackages',
-                'orderCharges',
-                'orderItems', // seller not to load 
-            ]);
-
-            $buyer = $order->buyer;
-            $orderItems = $order->orderItems;
-            $orderCharges = $order->orderCharges;
-            $shipmentPackages = $order->shipmentPackages;
-
-            // if not found throw runtime exception and it will be handled by job and can be retried later, we can also log the error for debugging
-            if ($shipmentPackages->isEmpty() || $orderItems->isEmpty()) {
-                throw new RuntimeException("No shipment packages or order items found for Order ID: {$order->id}");
-            }
-
-            $business = MstBusinessSetting::getOrCreate(); // Assuming you have a business settings table with necessary info
-
-            // Invoice 
-            $invoice = $order->orderInvoices()->create([
-                'user_id' => $order->buyer_id,
-                'order_id' => $order->id,
-
-                'reference' => $order->order_number, // we can also have separate invoice reference if needed
-
-                'invoice_date' => now(),
-                'invoice_type' => InvoiceTypeEnum::SALES->value, // or 'proforma' based on your logic
-
-                'status' => InvoiceStatusEnum::GENERATED->value, // or 'draft' based on your logic
-                'payment_status' => $order->payment_status,
-
-                'currency' => $order->currency,
-
-                'platform_bill_addr_code' => $business->bill_addr_code ?? $business->addr_code, // fix of platform
-
-                'customer_bill_addr_code' => $order->bill_addr_code, // Optional
-                'customer_ship_addr_code' => $order->ship_addr_code, // need
-            ]);
-
-
-            // First Create a Invoice for each Order Item then base on shipment package delivered or not make reverse or final invoice
-            foreach ($orderItems as $orderItem) {
-
-                // Base on order create all 
-                $invoice->invoiceItems()->create([
-                    'item_code' => $orderItem->product_code,
-                    'item_name' => $orderItem->product_name . "[$orderItem->pack_size $orderItem->pack_unit ($orderItem->pack_type_unit)]",
-                    'order_qty' => $orderItem->order_qty,
-                    'ship_qty' => $orderItem->ship_qty,
-                    'unit_price' => $orderItem->pack_price,
-
-                    'taxable_amount' => $orderItem->taxable_amount,
-                    'tax_amount' => $orderItem->tax_amount,
-                    'total_amount' => $orderItem->total_amount,
+                $order->load([
+                    'buyer',
+                    'invoices',
+                    'shipmentPackages',
+                    'orderCharges',
+                    'orderItems', // seller not to load 
                 ]);
 
-                //
-            }
+                $buyer = $order->buyer;
+                $orderItems = $order->orderItems;
+                $orderCharges = $order->orderCharges;
+                $shipmentPackages = $order->shipmentPackages;
 
-            // We already have charges so no need to calculate
-            // Charges same way
-            foreach ($orderCharges as $orderCharge) {
-                $invoice->invoiceCharges()->create([
-                    'charge_name' => $orderCharge->charge_name,
-                    'qty' => 1,
-                    'ship_qty' => $orderCharge->ship_qty ?? 0,
-                    'taxable_amount' => $orderCharge->taxable_amount,
-                    'tax_amount' => $orderCharge->tax_amount,
-                    'total_amount' => $orderCharge->total_amount,
-                ]);
+                // if not found throw runtime exception and it will be handled by job and can be retried later, we can also log the error for debugging
+                if ($shipmentPackages->isEmpty() || $orderItems->isEmpty()) {
+                    throw new RuntimeException("No shipment packages or order items found for Order ID: {$order->id}");
+                }
 
-                //
-            }
-
-            // So not get total 
-
-            $baseAmount = $invoice->invoiceItems()->sum('taxable_amount');
-            $subtotalAmount = $baseAmount  + $invoice->invoiceCharges()->sum('taxable_amount');
-            $taxAmount = $invoice->invoiceItems()->sum('tax_amount') + $invoice->invoiceCharges()->sum('tax_amount');
-            $totalAmount = $subtotalAmount + $taxAmount;
-
-
-            $invoice->update([
-                'base_amount' => $baseAmount,
-                'subtotal' => $subtotalAmount,
-                'tax_amount' => $taxAmount,
-                'total_amount' => $totalAmount,
-            ]);
-
-            $invoice->refresh();
-
-
-            // Create Sales Return Invoice if not delivered, we can also have partial return if some packages delivered and some not, but for simplicity we will create only one invoice with all items and update the status based on shipment package status
-            // Now Check Each Shipment Package if delivered or not and make final invoice or reverse invoice, we can also have partial invoice if some packages delivered and some not, but for simplicity we will create only one invoice with all items and update the status based on shipment package status
-            // First Check Shipment Package seller_status not_pickedup then need
-
-            $isNeedReturnInvoice = false;
-            $isNeedReturnInvoice = $shipmentPackages->contains(function ($shipmentPackage) {
-                return in_array($shipmentPackage->status, [
-                    ShipmentStatusEnum::PENDING->value,
-                    ShipmentStatusEnum::NOT_PICKED_UP->value,
-                ]);
-            });
-
-            if ($isNeedReturnInvoice) {
+                $business = MstBusinessSetting::getOrCreate(); // Assuming you have a business settings table with necessary info
 
                 // Invoice 
-                $returnInvoice = $order->orderInvoices()->create([
+                $invoice = $order->invoices()->create([
                     'user_id' => $order->buyer_id,
                     'order_id' => $order->id,
 
                     'reference' => $order->order_number, // we can also have separate invoice reference if needed
 
                     'invoice_date' => now(),
-                    'invoice_type' => InvoiceTypeEnum::SALES_RETURN->value, // or 'proforma' based on your logic
+                    'invoice_type' => InvoiceTypeEnum::SALES->value, // or 'proforma' based on your logic
 
                     'status' => InvoiceStatusEnum::GENERATED->value, // or 'draft' based on your logic
                     'payment_status' => $order->payment_status,
@@ -160,73 +76,236 @@ class InvoiceService
                 ]);
 
 
-                foreach ($shipmentPackages as $shipmentPackage) {
+                // First Create a Invoice for each Order Item then base on shipment package delivered or not make reverse or final invoice
+                foreach ($orderItems as $orderItem) {
 
-                    $status = $shipmentPackage->status;
-                    $sellerStatus = $shipmentPackage->status;
+                    // 
+                    $taxableAmount = $orderItem->ship_qty * $orderItem->pack_price; // we are storing in each accounts  , we can also have separate field for base amount without tax and charges if needed
+                    $taxAmount = 0; // we can also calculate tax based on tax code if needed
+                    $totalAmount = $taxableAmount + $taxAmount;
 
-                    if ($status == ShipmentStatusEnum::DELIVERED->value) {
-                        continue;
-                    }
+                    // Base on order create all 
+                    $invoice->invoiceItems()->create([
+                        'item_code' => $orderItem->product_code,
+                        'item_name' => $orderItem->product_name . "[$orderItem->pack_size $orderItem->pack_unit ($orderItem->pack_type_unit)]",
 
-                    // Now for undelivered pacakges
+                        'order_qty' => $orderItem->order_qty,
+                        'unit_price' => $orderItem->pack_price,
 
-                    if (in_array($sellerStatus, [
-                        ShipmentStatusEnum::PENDING->value,
-                        ShipmentStatusEnum::NOT_PICKED_UP->value,
-                    ])) {
+                        'ship_qty' => $orderItem->ship_qty,
+                        'ship_unit_price' => $orderItem->pack_price,
 
-                        // Now We need to refund that pacakge
-                        $returnInvoice->invoiceItems()->create([
-                            'item_name' => "Undelivered Package:$shipmentPackage->shipment_package_number ($shipmentPackage->package_number)",
-                            'order_qty' => $shipmentPackage->qty, // negative for refund
-                            'ship_qty' => 0,
+                        'taxable_amount' => $taxableAmount,
+                        'tax_amount' => $taxAmount,
+                        'total_amount' => $totalAmount,
+                    ]);
 
-                            'taxable_amount' =>  $shipmentPackage->qty * $shipmentPackage->pack_price, // negative for refund
-                            'tax_amount' => 0, // negative for refund
-                            'total_amount' => ($shipmentPackage->qty * $shipmentPackage->pack_price), // negative for refund
-                        ]);
-
-                        // We need to reverse delivery charge
-                        $deliveryChargeData = $this->getDeliveryCharge($buyer->charge_level_code, $shipmentPackage);
-
-                        $returnInvoice->invoiceCharges()->create([
-                            'charge_name' => "Undelivered Package Delivery Charge: $shipmentPackage->shipment_package_number ($shipmentPackage->package_number)",
-                            'qty' => $shipmentPackage->qty, // negative for refund
-                            'ship_qty' => 0,
-                            'taxable_amount' =>  $deliveryChargeData->charge_taxable, // negative for refund
-                            'tax_amount' =>  $deliveryChargeData->charge_tax, // negative for refund
-                            'total_amount' => $deliveryChargeData->total_charge_amount, // negative for refund
-                        ]);
-                    }
                     //
                 }
 
-                // total for return invoice
-                $returnInvoiceBaseAmount = $returnInvoice->invoiceItems()->sum('taxable_amount');
-                $returnInvoiceChargeAmount = $returnInvoice->invoiceCharges()->sum('taxable_amount');
-                $returnInvoiceTaxAmount = $returnInvoice->invoiceItems()->sum('tax_amount') + $returnInvoice->invoiceCharges()->sum('tax_amount');
-                $returnInvoiceTotalAmount = $returnInvoiceBaseAmount + $returnInvoiceChargeAmount + $returnInvoiceTaxAmount;
+                // TODO:: Infuture if we change to calculate automatically then will see
+                // We already have charges so no need to calculate
+                // Charges same way
+                // We can not return or take more
+                foreach ($orderCharges as $orderCharge) {
+                    $invoice->invoiceCharges()->create([
+                        'charge_name' => $orderCharge->charge_name,
+                        'qty' => 1,
+                        'taxable_amount' => $orderCharge->taxable_amount,
+                        'tax_amount' => $orderCharge->tax_amount,
+                        'total_amount' => $orderCharge->total_amount,
+                    ]);
 
-                $returnInvoice->update([
-                    'base_amount' => $returnInvoiceBaseAmount,
-                    'subtotal' => $returnInvoiceBaseAmount + $returnInvoiceChargeAmount,
-                    'tax_amount' => $returnInvoiceTaxAmount,
-                    'total_amount' => $returnInvoiceTotalAmount,
+                    //
+                }
+
+                // So not get total 
+
+                $baseAmount = $invoice->invoiceItems()->sum('taxable_amount');
+                $subtotalAmount = $baseAmount  + $invoice->invoiceCharges()->sum('taxable_amount');
+                $taxAmount = $invoice->invoiceItems()->sum('tax_amount') + $invoice->invoiceCharges()->sum('tax_amount');
+                $totalAmount = $subtotalAmount + $taxAmount;
+
+
+                $invoice->update([
+                    'base_amount' => $baseAmount,
+                    'subtotal' => $subtotalAmount,
+                    'tax_amount' => $taxAmount,
+                    'total_amount' => $totalAmount,
                 ]);
 
-                // Sales Return Invoice if needed
-            }
+                $invoice->refresh();
 
-            // Mark Order Invoice
-            $order->order_status = OrderStatusEnum::INVOICED->value;
-            $order->save();
-            //
-        });
+                // Mark Order Invoice
+                $order->order_status = OrderStatusEnum::INVOICED->value;
+                $order->removeFlag(OrderFlagsEum::INVOICING_ERROR); // remove flag if exists
+                $order->save();
+                //
+            });
+        } catch (Throwable $e) {
+
+            $order->addFlag(OrderFlagsEum::INVOICING_ERROR, $e->getMessage());
+
+            throw $e;
+        }
+
+
 
         //
     }
 
+
+    // Demand Order Invoice
+    public function generateDemandOrderInvoiceData(DemandOrder $order)
+    {
+        // Not PDF only Invoice data
+
+        //     
+        try {
+            DB::transaction(function () use ($order) {
+
+                $order->load([
+                    'buyer',
+                    'invoices',
+                    'shipmentPackages',
+                    'demandOrderCharges',
+                    'demandOrderItems', // seller not to load 
+                ]);
+
+                $buyer = $order->buyer;
+                $orderItems = $order->demandOrderItems;
+                $orderCharges = $order->demandOrderCharges;
+                $shipmentPackages = $order->shipmentPackages;
+
+                // if not found throw runtime exception and it will be handled by job and can be retried later, we can also log the error for debugging
+                if ($shipmentPackages->isEmpty() || $orderItems->isEmpty()) {
+                    throw new RuntimeException("No shipment packages or order items found for Order ID: {$order->id}");
+                }
+
+                $business = MstBusinessSetting::getOrCreate(); // Assuming you have a business settings table with necessary info
+
+                // Invoice 
+                $invoice = $order->invoices()->create([
+                    'user_id' => $order->buyer_id,
+                    'order_id' => $order->id,
+
+                    'reference' => $order->order_number, // we can also have separate invoice reference if needed
+
+                    'invoice_date' => now(),
+                    'invoice_type' => InvoiceTypeEnum::SALES->value, // or 'proforma' based on your logic
+
+                    'status' => InvoiceStatusEnum::GENERATED->value, // or 'draft' based on your logic
+                    'payment_status' => $order->payment_status,
+
+                    'currency' => $order->currency,
+
+                    'platform_bill_addr_code' => $business->bill_addr_code ?? $business->addr_code, // fix of platform
+
+                    'customer_bill_addr_code' => $order->bill_addr_code, // Optional
+                    'customer_ship_addr_code' => $order->ship_addr_code, // need
+                ]);
+
+
+                // First Create a Invoice for each Order Item then base on shipment package delivered or not make reverse or final invoice
+                foreach ($orderItems as $orderItem) {
+
+                    // Price We have to calculate from Price Module 
+                    // Because its demand order we have to calculate baseon what market price set in morning.
+
+                    $productId = $orderItem->product_id;
+                    // $marketId = $order->market_id;
+
+                    $pricedata = app(ProductPriceCalculationService::class)->calculateFinalPrice(
+                        $productId,
+                        $buyer->charge_level_code,
+                        $buyer->user_type,
+                        $orderItem->pack_size,
+                        $orderItem->pack_unit,
+                        $invoice->invoice_date // we have to take price based on invoice date because order can be place before but invoice generate later and price can be different based on date
+                    );
+
+
+                    if (!$pricedata || $pricedata->final_price <= 0) {
+                        throw new RuntimeException("Price data not found for product Code: {$orderItem->product_code} in Order Number: {$order->order_number}");
+                    }
+
+                    $totalShipQty = $orderItem->ship_qty + $orderItem->seller_ship_qty; // we can also have separate field for ship qty and seller ship qty if needed, because in some case we can have different ship qty from seller and what we record in order item, so to avoid confusion we can have separate field for that
+
+                    // 
+                    $taxableAmount =  $totalShipQty * $pricedata->final_price; // we are storing in each accounts  , we can also have separate field for base amount without tax and charges if needed
+                    $taxAmount = 0; // we can also calculate tax based on tax code if needed
+                    $totalAmount = $taxableAmount + $taxAmount;
+
+                    // Base on order create all 
+                    $invoice->invoiceItems()->create([
+                        'item_code' => $orderItem->product_code,
+                        'item_name' => $orderItem->product_name . "[$orderItem->pack_size $orderItem->pack_unit ($orderItem->pack_type_unit)]",
+
+                        'order_qty' => $orderItem->order_qty,
+                        'unit_price' => $orderItem->pack_price, // Alwasy waht order place on price
+
+                        'ship_qty' => $totalShipQty,
+                        'ship_unit_price' => $pricedata->final_price, // Latest optimize
+
+                        'taxable_amount' => $taxableAmount,
+                        'tax_amount' => $taxAmount,
+                        'total_amount' => $totalAmount,
+                    ]);
+
+                    //
+                }
+
+                // TODO:: Infuture if we change to calculate automatically then will see
+                // We already have charges so no need to calculate
+                // Charges same way
+                // We can not return or take more
+                foreach ($orderCharges as $orderCharge) {
+                    $invoice->invoiceCharges()->create([
+                        'charge_name' => $orderCharge->charge_name,
+                        'qty' => 1,
+                        'taxable_amount' => $orderCharge->taxable_amount,
+                        'tax_amount' => $orderCharge->tax_amount,
+                        'total_amount' => $orderCharge->total_amount,
+                    ]);
+
+                    //
+                }
+
+                // So not get total 
+
+                $baseAmount = $invoice->invoiceItems()->sum('taxable_amount');
+                $subtotalAmount = $baseAmount  + $invoice->invoiceCharges()->sum('taxable_amount');
+                $taxAmount = $invoice->invoiceItems()->sum('tax_amount') + $invoice->invoiceCharges()->sum('tax_amount');
+                $totalAmount = $subtotalAmount + $taxAmount;
+
+
+                $invoice->update([
+                    'base_amount' => $baseAmount,
+                    'subtotal' => $subtotalAmount,
+                    'tax_amount' => $taxAmount,
+                    'total_amount' => $totalAmount,
+                ]);
+
+                $invoice->refresh();
+
+                // Mark Order Invoice
+                $order->order_status = OrderStatusEnum::INVOICED->value;
+                $order->removeFlag(OrderFlagsEum::INVOICING_ERROR); // remove flag if exists
+                $order->save();
+                //
+            });
+        } catch (Throwable $e) {
+
+            $order->addFlag(OrderFlagsEum::INVOICING_ERROR, $e->getMessage());
+
+            throw $e;
+        }
+
+
+        //
+    }
+
+    // Product Listing Invoice
     public function generateProductListingInvoiceData(ProductListing $productListing, $isEnforce = false)
     {
         // Log::info("Generating invoice for Product Listing ID: {$productListing->id}");
@@ -414,12 +493,9 @@ class InvoiceService
             });
 
             //
-        } catch (Throwable $e) {
+        }  catch (Throwable $e) {
 
-            Log::error('Product Listing Invoice Failed', [
-                'listing_id' => $productListing->id,
-                'error' => $e->getMessage(),
-            ]);
+            $productListing->addFlag(OrderFlagsEum::INVOICING_ERROR, $e->getMessage());
 
             throw $e;
         }

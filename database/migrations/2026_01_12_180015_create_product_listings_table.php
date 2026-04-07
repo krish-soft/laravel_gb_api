@@ -49,6 +49,9 @@ return new class extends Migration
             $table->boolean('is_expired')->default(false)->nullable();
             $table->timestamp('expires_at')->nullable();
 
+            $table->json('flags')->nullable(); // for any future use
+            $table->string('remarks', 100)->nullable(); // internal reference
+
             $table->timestamps();
             $table->softDeletes();
 

@@ -5,15 +5,20 @@ namespace App\Services\Common\Price;
 use App\Models\Master\Price\MstProductPrice;
 use App\Models\Master\Price\MstProductPriceRule;
 
+use function Symfony\Component\Clock\now;
+
 class ProductPriceCalculationService
 {
 
     /**
      * Get latest base price of product
      */
-    public function getProductPrice(int $productId): ?object
+    public function getProductPrice(int $productId, ?string $priceDate = null): ?object
     {
         $price = MstProductPrice::where('product_id', $productId)
+            ->when($priceDate, function ($query) use ($priceDate) {
+                $query->where('price_date', '<=', $priceDate);
+            })
             ->latest('price_date')
             ->first(['price_date', 'price', 'max_price', 'min_price']);
 
@@ -38,10 +43,15 @@ class ProductPriceCalculationService
         string $chargeLevelCode,
         string $userType,
         int $packSize,
-        string $packUnit = 'kg'
+        string $packUnit = 'kg',
+        ?string $priceDate = null
     ): ?object {
 
-        $productPrice = $this->getProductPrice($productId);
+        if (!$priceDate) {
+            $priceDate = date('Y-m-d');
+        }
+
+        $productPrice = $this->getProductPrice($productId, $priceDate);
 
         if (!$productPrice || $productPrice->price <= 0) {
             return null;

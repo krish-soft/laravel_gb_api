@@ -36,13 +36,22 @@ class AppSettingSeeder extends Seeder
 
 
             // Meta
-            'app_version' => '1.0.0',
+            'web_app_version' => '1.0.0',
+            'mobile_app_version' => '1.0.0',
             // Mobile app versioning
             'mobile_app_android_version' => '1.0.0',
             'is_force_app_android_update' => false,
 
+            'driver_mobile_app_android_version' => '1.0.0',
+            'is_force_driver_app_android_update' => false,
+
+
             'mobile_app_ios_version' => '1.0.0',
             'is_force_app_ios_update' => false,
+
+            'driver_mobile_app_ios_version' => '1.0.0',
+            'is_force_driver_app_ios_update' => false,
+            
         ]);
     }
 }

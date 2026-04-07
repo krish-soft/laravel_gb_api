@@ -95,11 +95,11 @@ class InvoiceAccountingService
                 }
 
                 // Platform Accounts
-                $taxAccount = Account::getOrCreateByOwner(
-                    AccountOwnerTypeEnum::GOVERNMENT->value,
-                    null,
-                    PlatformAccountCodeEnum::PLATFORM_TAX->value
-                );
+                // $taxAccount = Account::getOrCreateByOwner(
+                //     AccountOwnerTypeEnum::GOVERNMENT->value,
+                //     null,
+                //     PlatformAccountCodeEnum::PLATFORM_TAX->value
+                // );
 
                 $clearingAccount = Account::getOrCreateByOwner(
                     AccountOwnerTypeEnum::PLATFORM->value,
@@ -155,29 +155,29 @@ class InvoiceAccountingService
                     }
 
                     // Tax Ledger (only for non-buyer)
-                    if ($taxAmount != 0 && $ownerType != AccountOwnerTypeEnum::BUYER->value) {
+                    // if ($taxAmount != 0 && $ownerType != AccountOwnerTypeEnum::BUYER->value) {
 
-                        if (!$accountingService->ledgerExists(
-                            $taxAccount->id,
-                            AccountEntryTypeEnum::INVOICE_TAX_AMOUNT->value,
-                            InvoiceCharge::class,
-                            $charge->id
-                        )) {
-                            $accountingService->createLedger($taxAccount, [
-                                // 'description' => "Tax: {$charge->charge_name} (Invoice #{$invoice->invoice_number})",
-                                'description' => "Invoice #{$invoice->invoice_number} - Tax ({$charge->charge_name})",
-                                'credit' => $creditTax,
-                                'debit'  => $debitTax,
-                                'entry_type' => AccountEntryTypeEnum::INVOICE_TAX_AMOUNT->value,
-                                'status' => LedgerStatusEnum::AVAILABLE->value,
-                                'is_tax' => true,
-                                'source_type' => InvoiceCharge::class,
-                                'source_id' => $charge->id,
-                                'source_code' => $invoice->invoice_number,
-                                'common_reference' => $invoice->invoice_number,
-                            ]);
-                        }
-                    }
+                    //     if (!$accountingService->ledgerExists(
+                    //         $taxAccount->id,
+                    //         AccountEntryTypeEnum::INVOICE_TAX_AMOUNT->value,
+                    //         InvoiceCharge::class,
+                    //         $charge->id
+                    //     )) {
+                    //         $accountingService->createLedger($taxAccount, [
+                    //             // 'description' => "Tax: {$charge->charge_name} (Invoice #{$invoice->invoice_number})",
+                    //             'description' => "Invoice #{$invoice->invoice_number} - Tax ({$charge->charge_name})",
+                    //             'credit' => $creditTax,
+                    //             'debit'  => $debitTax,
+                    //             'entry_type' => AccountEntryTypeEnum::INVOICE_TAX_AMOUNT->value,
+                    //             'status' => LedgerStatusEnum::AVAILABLE->value,
+                    //             'is_tax' => true,
+                    //             'source_type' => InvoiceCharge::class,
+                    //             'source_id' => $charge->id,
+                    //             'source_code' => $invoice->invoice_number,
+                    //             'common_reference' => $invoice->invoice_number,
+                    //         ]);
+                    //     }
+                    // }
                 }
 
                 // Finalize

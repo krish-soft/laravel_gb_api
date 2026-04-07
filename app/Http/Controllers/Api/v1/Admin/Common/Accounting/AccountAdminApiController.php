@@ -86,7 +86,7 @@ class AccountAdminApiController extends ApiResponseWithAdminAuthController
                 'direction'    => $balance < 0 ? 'receivable' : 'payable',
                 'type' => match ($row['accnt_code']) {
                     // PlatformAccountCodeEnum::PLATFORM_REVENUE->value => 'income',
-                    PlatformAccountCodeEnum::PLATFORM_TAX->value => 'government_payable',
+                    // PlatformAccountCodeEnum::PLATFORM_TAX->value => 'government_payable',
                     PlatformAccountCodeEnum::PLATFORM_CLEARING->value => 'escrow',
                     PlatformAccountCodeEnum::CASH->value,
                     PlatformAccountCodeEnum::BANK_01->value,
@@ -155,7 +155,7 @@ class AccountAdminApiController extends ApiResponseWithAdminAuthController
         ]);
 
         // $platformRevenue  = $platformMap[PlatformAccountCodeEnum::PLATFORM_REVENUE->value] ?? 0;
-        $platformTax      = $platformMap[PlatformAccountCodeEnum::PLATFORM_TAX->value] ?? 0;
+        // $platformTax      = $platformMap[PlatformAccountCodeEnum::PLATFORM_TAX->value] ?? 0;
         $platformClearing = $platformMap[PlatformAccountCodeEnum::PLATFORM_CLEARING->value] ?? 0;
 
         $cash  = $platformMap[PlatformAccountCodeEnum::CASH->value] ?? 0;
@@ -179,13 +179,14 @@ class AccountAdminApiController extends ApiResponseWithAdminAuthController
 
             'clearing_balance' => $platformClearing,
             // 'platform_revenue' => $platformRevenue,
-            'tax_liability'    => $platformTax,
+            // 'tax_liability'    => $platformTax,
 
             'cash_balance' => $cash,
             'bank_balance' => ($bank1 + $bank2),
 
             'net_platform_position' => ($cash + $bank1 + $bank2)
-                - ($sellerPayable + $deliveryPayable + $platformTax)
+                // - ($sellerPayable + $deliveryPayable + $platformTax)
+                - ($sellerPayable + $deliveryPayable)
                 + ($sellerReceivable + $deliveryReceivable + $buyerReceivable),
         ];
 

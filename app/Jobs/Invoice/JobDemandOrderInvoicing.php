@@ -4,6 +4,7 @@ namespace App\Jobs\Invoice;
 
 use App\Enum\Common\Order\OrderStatusEnum;
 use App\Enum\Common\Payment\PaymentStatusEnum;
+use App\Models\Buyer\Order\DemandOrder;
 use App\Models\Buyer\Order\Order;
 use App\Services\Invoice\InvoiceService;
 use Illuminate\Bus\Batchable;
@@ -12,7 +13,7 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-class JobOrderInvoicing implements ShouldQueue
+class JobDemandOrderInvoicing implements ShouldQueue
 {
     use Queueable, Batchable;
 
@@ -38,7 +39,7 @@ class JobOrderInvoicing implements ShouldQueue
 
             try {
 
-                $order = Order::with('invoices')->findOrFail($orderId);
+                $order = DemandOrder::with('invoices')->findOrFail($orderId);
 
                 if (count($order->invoices) > 0) {
                     // Invoice already exists, we can choose to skip or update
@@ -49,7 +50,7 @@ class JobOrderInvoicing implements ShouldQueue
                 // INDUSTRY SAFE:
                 // this will create OR repair automatically
                 if ($order->isEligibleForInvoicing() || $this->isEnforce) {
-                    $invoice = $invoiceService->generateOrderInvoiceData($order, $this->isEnforce);
+                    $invoice = $invoiceService->generateDemandOrderInvoiceData($order, $this->isEnforce);
                 }
 
                 // optional log
@@ -57,7 +58,7 @@ class JobOrderInvoicing implements ShouldQueue
 
             } catch (Throwable $e) {
 
-                Log::error('Order Invoice Job Failed', [
+                Log::error('Demand order Invoice Job Failed', [
                     'order_id' => $orderId,
                     'message'  => $e->getMessage(),
                     'file'     => $e->getFile(),

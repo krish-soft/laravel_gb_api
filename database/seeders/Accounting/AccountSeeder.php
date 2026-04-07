@@ -47,19 +47,19 @@ class AccountSeeder extends Seeder
         //     'remarks' => 'Tracks platform earned income (fees, penalties)',
         // ]);
 
-        Account::create([
-            'name' => 'Platform Tax Liability Account',
-            'accnt_code' => PlatformAccountCodeEnum::PLATFORM_TAX->value, // 'PLATFORM_TAX',
-            'owner_type' => AccountOwnerTypeEnum::GOVERNMENT->value,
-            'owner_id' => null,
-            'currency' => MstFinanceSetting::currency() ?? 'INR',
-            'available_balance' => 0.00,
-            'hold_balance' => 0.00,
-            'total_credit' => 0.00,
-            'total_debit' => 0.00,
-            'is_active' => true,
-            'remarks' => 'Tracks GST collected and payable to government',
-        ]);
+        // Account::create([
+        //     'name' => 'Platform Tax Liability Account',
+        //     'accnt_code' => PlatformAccountCodeEnum::PLATFORM_TAX->value, // 'PLATFORM_TAX',
+        //     'owner_type' => AccountOwnerTypeEnum::GOVERNMENT->value,
+        //     'owner_id' => null,
+        //     'currency' => MstFinanceSetting::currency() ?? 'INR',
+        //     'available_balance' => 0.00,
+        //     'hold_balance' => 0.00,
+        //     'total_credit' => 0.00,
+        //     'total_debit' => 0.00,
+        //     'is_active' => true,
+        //     'remarks' => 'Tracks GST collected and payable to government',
+        // ]);
 
         Account::create([
             'name' => 'Platform Market Liability Account',

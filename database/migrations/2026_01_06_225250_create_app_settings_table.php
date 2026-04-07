@@ -40,14 +40,21 @@ return new class extends Migration
             $table->boolean('is_registration_enabled')->default(true);
 
             // Meta
-            $table->string('app_version', 10)->nullable();
+            $table->string('web_app_version', 10)->nullable();
+            $table->string('mobile_app_version', 10)->nullable();
 
             // Mobile app versioning
             $table->string('mobile_app_android_version', 10)->nullable();
             $table->boolean('is_force_app_android_update')->default(false);
 
+            $table->string('driver_mobile_app_android_version', 10)->nullable();
+            $table->boolean('is_force_driver_app_android_update')->default(false);
+
             $table->string('mobile_app_ios_version', 10)->nullable();
             $table->boolean('is_force_app_ios_update')->default(false);
+      
+            $table->string('driver_mobile_app_ios_version', 10)->nullable();
+            $table->boolean('is_force_driver_app_ios_update')->default(false);
 
             $table->timestamps();
             $table->softDeletes();

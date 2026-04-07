@@ -10,6 +10,7 @@ use App\Models\BaseModel;
 use App\Models\Buyer\Cart\DemandCart;
 use App\Models\Common\Address;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
+use App\Models\Common\Invoice\Invoice;
 use App\Models\Common\Payment\Payment;
 use App\Models\Common\Shipment\ShipmentPackage;
 use App\Models\Master\Depot\MstDepot;
@@ -18,6 +19,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Log;
 
 class DemandOrder extends BaseModel
 {
@@ -159,7 +161,7 @@ class DemandOrder extends BaseModel
     {
         return in_array($this->order_status, [
             OrderStatusEnum::ACCOUNTED->value,
-            // OrderStatusEnum::INVOICED->value, // 
+            OrderStatusEnum::INVOICED->value, // To Re-invoice if needed
         ])
             && $this->delivery_status === OrderStatusEnum::DELIVERED->value
             && $this->payment_status === PaymentStatusEnum::PAID->value;
@@ -231,6 +233,13 @@ class DemandOrder extends BaseModel
         return $this->hasMany(ShipmentPackage::class, 'demand_order_id');
     }
 
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class, 'demand_order_id', 'id');
+    }
+
+
+
     public function payment()
     {
         return $this->hasOne(Payment::class, 'source_id', 'id')
@@ -245,19 +254,30 @@ class DemandOrder extends BaseModel
     //
 
     // Methods for adding and removing flags
-
     public function addFlag(OrderFlagsEum $flag, ?string $reason = null): void
     {
+
         $flags = $this->flags ?? [];
 
         $value = $reason
             ? "{$flag->value}: {$reason}"
             : $flag->value;
 
-        if (!in_array($value, $flags)) {
+
+        if (!in_array($value, $flags, true)) {
+
+
             $flags[] = $value;
+
             $this->flags = array_values($flags);
+
             $this->save();
+
+            // reload model so flags reflect latest DB value
+            $this->refresh();
+        } else {
+
+            Log::info("Flag '{$value}' already exists for Order ID: {$this->id}");
         }
     }
 
@@ -266,10 +286,11 @@ class DemandOrder extends BaseModel
         $flags = collect($this->flags ?? [])
             ->reject(fn($f) => str_starts_with($f, $flag->value))
             ->values()
-            ->toArray();
+            ->all();
 
-        $this->flags = $flags;
-        $this->save();
+        $this->update([
+            'flags' => $flags
+        ]);
     }
 
     //

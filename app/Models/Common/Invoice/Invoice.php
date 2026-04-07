@@ -48,6 +48,8 @@ class Invoice extends BaseModel
         'currency',
 
         'reference',
+
+        'notes',
         'remarks',
 
         'is_locked', // to prevent changes after generation

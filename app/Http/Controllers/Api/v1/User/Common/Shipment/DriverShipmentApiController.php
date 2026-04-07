@@ -537,12 +537,15 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
 
     public function complete(Request $request, DriverShipment $driverShipment, OneTimePasswordService $otpService)
     {
+
         if ($driverShipment->driver_id !== request()->user()->id) {
             return $this->errorResponse("Unauthorized", 403);
         }
 
         $request->validate([
             'proof_image' => 'required|image|max:2048', // Optional proof image
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
 
         ]);
 

@@ -15,23 +15,13 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('shipment_id')->nullable()->constrained('shipments')->cascadeOnDelete();
-
+            
             $table->foreignId('seller_package_id')->nullable()->constrained('seller_packages')->nullOnDelete();
+
+            $table->unsignedBigInteger('parent_shipment_package_id')->nullable(); // from pickup mainly
+
             // Seller snapshot (important)
-            $table->foreignId('depot_id')
-                ->nullable()
-                ->constrained('mst_depots')
-                ->nullOnDelete();
-
-
-            // $table->string('source')->nullable(); // Like Order, DemandOrder, MarketOrder
-            // $table->unsignedBigInteger('source_id')->nullable(); // id of the source
-
-            // $table->string('source_item')->nullable(); // Like Order, DemandOrder, MarketOrder
-            // $table->unsignedBigInteger('source_item_id')->nullable(); // id of the source item
-
-            // $table->string('source_pkg')->nullable(); // Like Order, DemandOrder, MarketOrder
-            // $table->unsignedBigInteger('source_pkg_id')->nullable(); // id of the source package
+            $table->foreignId('depot_id')->nullable()->constrained('mst_depots')->nullOnDelete();
 
             $table->foreignId('order_id')->nullable()->constrained('orders')->nullOnDelete();
             $table->foreignId('order_item_id')->nullable()->constrained('order_items')->nullOnDelete();

@@ -133,14 +133,10 @@ class JobBuyerCutoffDemandOrder implements ShouldQueue
 
                                 $shipmentPackage = ShipmentPackage::create([
                                     'shipment_id' => $deliveryShipment->id,
+                                    'parent_shipment_package_id' => $existShipmentPackage?->id, // if already exist then link to that otherwise null for new package
                                     'seller_package_id' => $sellerPackage?->id,
                                     'depot_id' => $demandOrder->depot_id, // because for dispatch always from depot
 
-                                    // 'source' => DemandOrder::class,
-                                    // 'source_id' => $demandOrder->id,
-
-                                    // 'source_item' => DemandOrderItem::class,
-                                    // 'source_item_id' => $demandOrderItem->id,
 
                                     'demand_order_id' => $demandOrder->id,
                                     'demand_order_item_id' => $demandOrderItem->id,

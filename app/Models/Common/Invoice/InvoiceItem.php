@@ -19,12 +19,12 @@ class InvoiceItem extends BaseModel
         'item_name',
 
         'order_qty',
-        'ship_qty',
-
         'unit_price',
 
-        'discount_amount',
+        'ship_qty',
+        'ship_unit_price',
 
+        'discount_amount',
         'taxable_amount',
         'tax_amount',
         'total_amount',

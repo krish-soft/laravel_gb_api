@@ -102,14 +102,10 @@ class JobBuyerCutoffDirectOrder implements ShouldQueue
 
                             $shipmentPackage = ShipmentPackage::create([
                                 'shipment_id' => $shipment->id,
+                                'parent_shipment_package_id' => $existShipmentPackage?->id, // if already exist then link to that otherwise null for new package
                                 'seller_package_id' => $sellerPackage?->id,
                                 'depot_id' => $order->depot_id, // because for dispatch always from depot
 
-                                // 'source' => Order::class,
-                                // 'source_id' => $order->id,
-
-                                // 'source_item' => OrderItem::class,
-                                // 'source_item_id' => $orderItem->id,
                                 'order_id' => $order->id,
                                 'order_item_id' => $orderItem->id,
 
@@ -168,7 +164,6 @@ class JobBuyerCutoffDirectOrder implements ShouldQueue
 
                 //
             });
-            
         } catch (\Exception $e) {
             Log::error('Error processing JobBuyerCutoffDirectOrder: ' . $e->getMessage(), [
                 'order_ids' => $this->orderIds,

@@ -2,6 +2,7 @@
 
 namespace App\Models\Seller\Product;
 
+use App\Enum\Common\Order\OrderFlagsEum;
 use App\Models\BaseModel;
 use App\Models\Buyer\Order\OrderItem;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
@@ -70,6 +71,9 @@ class ProductListing extends BaseModel
 
         'is_expired',
         'expires_at',
+
+        'flags',
+        'remarks',
     ];
 
     // casts
@@ -84,6 +88,8 @@ class ProductListing extends BaseModel
         'is_locked' => 'boolean',
         'is_expired' => 'boolean',
         'is_cutoff' => 'boolean',
+
+        'flags' => 'array',
     ];
 
     // scope
@@ -230,5 +236,43 @@ class ProductListing extends BaseModel
             ->where('product_listing_items.product_listing_id', $this->id)
             ->selectRaw('SUM((product_listing_packages.qty - product_listing_packages.sold_qty) * product_listing_packages.pack_size) as available_weight')
             ->value('available_weight') ?? 0;
+    }
+
+
+    // Methods for adding and removing flags
+    public function addFlag(OrderFlagsEum $flag, ?string $reason = null): void
+    {
+
+        $flags = $this->flags ?? [];
+
+        $value = $reason
+            ? "{$flag->value}: {$reason}"
+            : $flag->value;
+
+
+        if (!in_array($value, $flags, true)) {
+
+
+            $flags[] = $value;
+
+            $this->flags = array_values($flags);
+
+            $this->save();
+
+            // reload model so flags reflect latest DB value
+            $this->refresh();
+        }
+    }
+
+    public function removeFlag(OrderFlagsEum $flag): void
+    {
+        $flags = collect($this->flags ?? [])
+            ->reject(fn($f) => str_starts_with($f, $flag->value))
+            ->values()
+            ->all();
+
+        $this->update([
+            'flags' => $flags
+        ]);
     }
 }

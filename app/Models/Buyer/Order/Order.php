@@ -185,7 +185,7 @@ class Order extends BaseModel
         return $this->hasMany(OrderCharge::class, 'order_id', 'id');
     }
 
-    public function orderInvoices()
+    public function invoices()
     {
         return $this->hasMany(Invoice::class, 'order_id', 'id');
     }

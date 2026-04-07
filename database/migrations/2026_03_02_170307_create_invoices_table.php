@@ -64,6 +64,8 @@ return new class extends Migration
             $table->string('currency', 10)->default('INR');
 
             $table->string('reference', 100)->nullable(); // internal reference
+
+            $table->text('notes')->nullable();
             $table->string('remarks')->nullable(); // internal reference
 
             $table->boolean('is_locked')->default(false)->nullable(); // to prevent changes after generation

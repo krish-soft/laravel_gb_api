@@ -42,7 +42,7 @@ class OrderAccountingService
                 $accounting = app(AccountingService::class);
 
                 // get total of taxable orderItems 
-                $taxableItemsAmount = $order->orderItems->sum('taxable_amount');
+                // $taxableItemsAmount = $order->orderItems->sum('taxable_amount');
 
 
                 $buyerId = $order->buyer_id;

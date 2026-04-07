@@ -55,11 +55,20 @@ class MstAppSetting extends BaseModel
         'is_registration_enabled',
 
         // Versioning
-        'app_version',
+        'web_app_version',
+        'mobile_app_version',
+
         'mobile_app_android_version',
         'is_force_app_android_update',
+
+        'driver_mobile_app_android_version',
+        'is_force_driver_app_android_update',
+
         'mobile_app_ios_version',
         'is_force_app_ios_update',
+
+        'driver_mobile_app_ios_version',
+        'is_force_driver_app_ios_update',
     ];
 
     protected $casts = [
