@@ -46,14 +46,17 @@ class AppChecker
         $appSetting = MstAppSetting::getOrCreate();
 
 
-        // if ($appSetting->isMaintenanceMode()) {
-        //     return $this->showErrorMessageWithAction(
-        //         __('messages.error_messages.maintenance_mode') . "\n\n" . $appSetting->getMaintenanceMessage(),
-        //         503,
-        //         ActionCodeEnum::FORCE_MAINTENANCE,
+        if (
+            $appSetting->isMaintenanceMode() &&
+            !($request->user() && $request->user()->isAdminManagement()) // Allow admins to bypass maintenance
+        ) {
+            return $this->showErrorMessageWithAction(
+                __('messages.error_messages.maintenance_mode') . "\n\n" . $appSetting->getMaintenanceMessage(),
+                503,
+                ActionCodeEnum::FORCE_MAINTENANCE,
 
-        //     );
-        // }
+            );
+        }
 
         $platform   = strtolower((string) $request->header('X-Platform'));
         $appVersion = (string) $request->header('X-App-Version');

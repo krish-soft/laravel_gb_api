@@ -66,7 +66,12 @@ class UtilsApiController extends ApiResponseController
             'is_maintenance_mode' => MstAppSetting::isMaintenanceMode(),
             'maintenance_message' => MstAppSetting::getMaintenanceMessage(),
 
+            // Android
             'is_force_android_update' => MstAppSetting::isForceAndroidUpdate(),
+            'android_app_version' => MstAppSetting::getAppAndroidVersion(),
+
+            'is_force_driver_android_update' => MstAppSetting::isForceDriverAndroidUpdate(),
+            'driver_android_app_version' => MstAppSetting::getDriverAppAndroidVersion(),
 
         ];
 

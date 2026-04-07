@@ -52,8 +52,8 @@ class MstAppSettingApiController extends ApiResponseWithAdminAuthController
             'time_format' => 'nullable|string|max:50',
 
             // only from cmd
-            // 'is_maintenance_mode' => 'nullable|boolean',
-            // 'maintenance_message' => 'nullable|string|max:1000',
+            'is_maintenance_mode' => 'nullable|boolean',
+            'maintenance_message' => 'nullable|string|max:1000',
 
             'is_registration_enabled' => 'nullable|boolean',
 

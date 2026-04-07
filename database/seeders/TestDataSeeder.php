@@ -9,6 +9,7 @@ use App\Enum\Common\Fulfillment\FulfillmentLocationTypeEnum;
 use App\Enum\Common\Legal\KycStatusEnum;
 use App\Enum\User\UserRoleEnum;
 use App\Enum\User\UserTypeEnum;
+use App\Models\Common\Accounting\Account;
 use App\Models\Common\Address;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
 use App\Models\Common\Fulfillment\FulfillmentLocationDepot;
@@ -75,6 +76,11 @@ class TestDataSeeder extends Seeder
             'verified_by' => 'System',
         ]);
 
+        Account::getOrCreateByOwner(
+            Account::getOwnerTypeByUser($buyer),
+            $buyer->id
+        );
+
 
 
 
@@ -100,6 +106,11 @@ class TestDataSeeder extends Seeder
             'updated_at' => now(),
         ]);
 
+
+        Account::getOrCreateByOwner(
+            Account::getOwnerTypeByUser($seller),
+            $seller->id
+        );
 
         UserDepot::create([
             'user_id' => $seller->id,
@@ -138,6 +149,11 @@ class TestDataSeeder extends Seeder
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+
+        Account::getOrCreateByOwner(
+            Account::getOwnerTypeByUser($delivery),
+            $delivery->id
+        );
 
         UserDepot::create([
             'user_id' => $delivery->id,

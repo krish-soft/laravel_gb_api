@@ -3,6 +3,7 @@
 namespace App\Observers\User;
 
 use App\Enum\User\UserRoleEnum;
+use App\Models\Common\Accounting\Account;
 use App\Models\User;
 
 class UserObserver
@@ -13,6 +14,11 @@ class UserObserver
     public function created(User $user): void
     {
         //
+        // Create account for the user
+        Account::getOrCreateByOwner(
+            Account::getOwnerTypeByUser($user),
+            $user->id
+        );
     }
 
     /**

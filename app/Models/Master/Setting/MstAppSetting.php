@@ -145,6 +145,25 @@ class MstAppSetting extends BaseModel
         );
     }
 
+    public static function getAppAndroidVersion(): ?string
+    {
+        return self::getOrCreate()->mobile_app_android_version;
+    }
+
+    public static function isForceDriverAndroidUpdate(): bool
+    {
+        return (bool)(
+            self::getOrCreate()->is_force_driver_app_android_update
+            ?? false
+        );
+    }
+
+    public static function getDriverAppAndroidVersion(): ?string
+    {
+        return self::getOrCreate()->driver_mobile_app_android_version;
+    }
+
+
 
     public static function getAndroidAppVersion(): ?string
     {
