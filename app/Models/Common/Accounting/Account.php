@@ -97,6 +97,8 @@ class Account extends BaseModel
             'owner_id'   => $ownerId,
             'accnt_code' => $accountCode ?? self::generateAccountCode(),
 
+            'credit_limit' => 0,
+
             'total_credit'      => 0,
             'total_debit'       => 0,
 

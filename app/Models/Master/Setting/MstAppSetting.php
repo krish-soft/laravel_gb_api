@@ -77,6 +77,9 @@ class MstAppSetting extends BaseModel
         'is_force_app_android_update' => 'boolean',
         'is_force_app_ios_update' => 'boolean',
         'min_payout_amount' => 'float',
+
+        'is_force_driver_app_android_update' => 'boolean',
+        'is_force_driver_app_ios_update' => 'boolean',
     ];
 
     protected $hidden = [

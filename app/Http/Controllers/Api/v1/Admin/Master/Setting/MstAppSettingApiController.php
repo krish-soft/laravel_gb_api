@@ -62,8 +62,14 @@ class MstAppSettingApiController extends ApiResponseWithAdminAuthController
             'is_force_app_android_update' => 'nullable|boolean',
             'mobile_app_android_version' => 'nullable|string|max:50',
 
+            'driver_mobile_app_android_version' => 'nullable|string|max:50',
+            'is_force_driver_app_android_update' => 'nullable|boolean',
+
             'is_force_app_ios_update' => 'nullable|boolean',
             'mobile_app_ios_version' => 'nullable|string|max:50',
+
+            'driver_mobile_app_ios_version' => 'nullable|string|max:50',
+            'is_force_driver_app_ios_update' => 'nullable|boolean',
         ]);
 
 
