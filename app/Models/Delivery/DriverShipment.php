@@ -73,7 +73,7 @@ class DriverShipment extends BaseModel
 
     public function assignedBy()
     {
-        return $this->belongsTo(User::class, 'assigned_by')->select('id', 'name', 'user_code', 'nickname');
+        return $this->belongsTo(User::class, 'assigned_by')->select('id', 'name', 'user_code', 'nickname','user_type','charge_level_code');
     }
 
     public function driverRatings()

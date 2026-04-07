@@ -6,11 +6,11 @@ enum OrderFlagsEum: string
 {
     //
 
-    case SHIPMENT_PACKAGE_MISMATCH = 'shipment_package_mismatch';
-    case ORDER_ITEM_SELLER_PACKAGE_UNAVAILABLE = 'order_item_seller_package_unavailable';
 
+    case CUTOFF_ERROR = 'cutoff_error';
     case ACCOUNTING_ERROR = 'accounting_error';
     case INVOICING_ERROR = 'invoicing_error';
+    case INVOICE_ACCOUNTING_ERROR = 'invoice_accounting_error';
 
 
     //

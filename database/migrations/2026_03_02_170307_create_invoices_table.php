@@ -67,6 +67,7 @@ return new class extends Migration
 
             $table->text('notes')->nullable();
             $table->string('remarks')->nullable(); // internal reference
+            $table->json('flags')->nullable(); // for any future use
 
             $table->boolean('is_locked')->default(false)->nullable(); // to prevent changes after generation
 

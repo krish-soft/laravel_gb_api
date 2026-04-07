@@ -101,12 +101,12 @@ class ShipmentPackage extends BaseModel
 
     public function buyer()
     {
-        return $this->belongsTo(User::class, 'buyer_id')->select('id', 'name', 'user_code', 'nickname');
+        return $this->belongsTo(User::class, 'buyer_id')->select('id', 'name', 'user_code', 'nickname', 'user_type', 'charge_level_code');
     }
 
     public function seller()
     {
-        return $this->belongsTo(User::class, 'seller_id')->select('id', 'name', 'user_code', 'nickname');
+        return $this->belongsTo(User::class, 'seller_id')->select('id', 'name', 'user_code', 'nickname', 'user_type', 'charge_level_code');
     }
 
     public function market()
@@ -175,6 +175,25 @@ class ShipmentPackage extends BaseModel
     public function productListingPackage()
     {
         return $this->belongsTo(ProductListingPackage::class, 'product_listing_package_id');
+    }
+
+    protected $appends = [
+        'package_type',
+    ];
+
+    public function getPackageTypeAttribute()
+    {
+        if ($this->order_id) {
+            return 'order';
+        } elseif ($this->market_order_id) {
+            return 'market_order';
+        } elseif ($this->demand_order_id) {
+            return 'demand_order';
+        } elseif ($this->product_listing_package_id && $this->seller_package_id) {
+            return 'product_listing';
+        } else {
+            return null;
+        }
     }
 
 

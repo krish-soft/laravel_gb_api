@@ -609,6 +609,7 @@ Route::group([
                 // Invoice Generation Commands
                 Route::post('invoice/product-listing', [CmdAdminApiController::class, 'cmdProductListingInvoiceGeneration']);
                 Route::post('invoice/buyer-order', [CmdAdminApiController::class, 'cmdBuyerOrderInvoiceGeneration']);
+                Route::post('invoice/buyer-demand-order', [CmdAdminApiController::class, 'cmdBuyerDemandOrderInvoiceGeneration']);
 
                 //
             });

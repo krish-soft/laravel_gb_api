@@ -44,7 +44,13 @@ class InvoiceAccountingCmd extends Command
         $invoices = Invoice::query()
             ->select(['id', 'user_id']) // IMPORTANT → reduce memory         
             // ->where('is_locked', false)          
-            ->whereNotIn('status', [InvoiceStatusEnum::ACCOUNTED->value, OrderStatusEnum::INVOICED->value]) // only unaccounted invoices
+            ->whereNotIn(
+                'status',
+                [
+                    InvoiceStatusEnum::ACCOUNTED->value,
+                    OrderStatusEnum::INVOICED->value
+                ]
+            ) // only unaccounted invoices
             ->whereBetween('invoice_date', [
                 $startDate,
                 $endDate

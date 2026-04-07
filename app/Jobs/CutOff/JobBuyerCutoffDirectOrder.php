@@ -90,8 +90,7 @@ class JobBuyerCutoffDirectOrder implements ShouldQueue
                                 ->first();
 
                             if (!$sellerPackage) {
-                                $order->flags = array_merge($order->flags ?? [], [OrderFlagsEum::ORDER_ITEM_SELLER_PACKAGE_UNAVAILABLE->value]);
-                                $order->save();
+                                // throw new \Exception("Seller Package unavailable for OrderItem ID: {$orderItem->id}, Order ID: {$order->id}");
                                 // Log::warning("Seller Package unavailable for OrderItem ID: {$orderItem->id}, Order ID: {$order->id}");
                                 continue; // If no available seller package then skip to
                             }
@@ -156,6 +155,7 @@ class JobBuyerCutoffDirectOrder implements ShouldQueue
                     }
 
                     $order->is_cutoff = true;
+                    $order->removeFlag(OrderFlagsEum::CUTOFF_ERROR); // Remove cutoff error flag if exist because now we process cutoff
                     $order->save();
 
                     //
@@ -165,9 +165,10 @@ class JobBuyerCutoffDirectOrder implements ShouldQueue
                 //
             });
         } catch (\Exception $e) {
-            Log::error('Error processing JobBuyerCutoffDirectOrder: ' . $e->getMessage(), [
-                'order_ids' => $this->orderIds,
-            ]);
+            $order->addFlag(OrderFlagsEum::CUTOFF_ERROR, "Error processing cutoff for Order ID: {$order->id}. Error: " . $e->getMessage());
+            // Log::error('Error processing JobBuyerCutoffDirectOrder: ' . $e->getMessage(), [
+            //     'order_ids' => $this->orderIds,
+            // ]);
             throw $e; // VERY IMPORTANT // FOr job failure and retry mechanism we have to rethrow the exception after logging it.
         }
 

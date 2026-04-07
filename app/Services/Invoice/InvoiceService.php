@@ -154,7 +154,6 @@ class InvoiceService
         //
     }
 
-
     // Demand Order Invoice
     public function generateDemandOrderInvoiceData(DemandOrder $order)
     {
@@ -316,19 +315,22 @@ class InvoiceService
 
                 $productListing->load([
                     'seller',
-                    'productListingInvoices',
-                    'listingItems.product',
-                    'listingItems.listingPackages.shipmentPackages',
-                    'listingItems.orderItems',
+                    'invoices',
+                    // 'listingItems.product',
+                    // 'listingItems.listingPackages',
+                    'shipmentPackages.shipment',
+                    'shipmentPackages.product',
                 ]);
 
-                if ($productListing->productListingInvoices->isNotEmpty()) {
+                if ($productListing->invoices->isNotEmpty()) {
                     throw new RuntimeException(
                         "Invoice already exists for Listing Code: {$productListing->listing_code}"
                     );
                 }
 
-                $invoice = $productListing->productListingInvoices()->create([
+                $seller = $productListing->seller;
+
+                $invoice = $productListing->invoices()->create([
                     'user_id' => $productListing->seller_id,
                     'product_listing_id' => $productListing->id,
                     'reference' => $productListing->listing_code,
@@ -345,97 +347,111 @@ class InvoiceService
                 $totalShipQty = 0;
                 $pkgArr = [];
 
-                foreach ($productListing->listingItems as $item) {
+                $shipmentPackages = $productListing->shipmentPackages->filter(function ($pkg) {
+                    return in_array(
+                        $pkg->shipment->shipment_type,
+                        [
+                            ShipmentTypeEnum::DISPATCH->value,
+                            ShipmentTypeEnum::MARKET_DISPATCH->value
+                        ],
+                        true
+                    );
+                });
+
+                if ($shipmentPackages->isEmpty()) {
+                    throw new RuntimeException("No shipment packages found for Product Listing Code: {$productListing->listing_code}");
+                }
+
+                // Will Generate Bill accordingly per package line not based on total qty
+
+                foreach ($shipmentPackages as $shpPkg) {
+
+                    $pkgType = $shpPkg->package_type;
+
+                    $packQty = $shpPkg->qty; // we can also have separate field for ship qty and seller ship qty if needed, because in some case we can have different ship qty from seller and what we record in order item, so to avoid confusion we can have separate field for that
+                    $packPrice = $shpPkg->pack_price;
+                    $packSize = $shpPkg->pack_size;
+                    $packUnit = $shpPkg->pack_unit;
+                    $packTypeUnit = $shpPkg->pack_type_unit;
+
+                    // Demand if 
+                    if ($pkgType == 'demand_order') {
+
+                        $pricedata = app(ProductPriceCalculationService::class)->calculateFinalPrice(
+                            $shpPkg->product_id,
+                            $seller->charge_level_code,
+                            $seller->user_type,
+                            $shpPkg->pack_size,
+                            $shpPkg->pack_unit,
+                            $invoice->invoice_date // we have to take price based on invoice date because order can be place before but invoice generate later and price can be different based on date
+                        );
 
 
-                    // Only order related packages
-                    $packages = $item->listingPackages;
-
-                    foreach ($packages as $package) {
-
-                        if ($package->sold_qty <= 0 && $package->demand_sold_qty <= 0) {
-                            continue;
+                        if (!$pricedata || $pricedata->final_price <= 0) {
+                            throw new RuntimeException("Price data not found for product Code: {$shpPkg->product->product_code} in Listing Code: {$productListing->listing_code}");
                         }
-
-                        $shipQty = 0;
-
-                        foreach ($package->shipmentPackages as $shpPkg) {
-
-
-                            // We only need to consider shipment type is PICKUP & STATUS COMPLETED
-
-                            if (
-                                $shpPkg->shipment->shipment_type !== ShipmentTypeEnum::PICKUP->value
-                                && $shpPkg->shipment->status !== ShipmentStatusEnum::COMPLETED->value
-                                && in_array($shpPkg->status, [ShipmentStatusEnum::PENDING->value, ShipmentStatusEnum::NOT_PICKED_UP->value])
-                            ) {
-                                continue;
-                            }
-
-
-                            // Pack Price We need to decide 
-                            // For Direct Order we can record what farmer keep so will go as it is 
-                            // But for demand order what is price from Pricing module based morning data feed
-
-                            // First need to find Order or DemandOrder Shipment Package from Pacakge Numbers not from ids 
-
-                            // TODO: PENDING
-
-
-                            // Delivery charge for order shipments
-                            $deliveryData = $this->getDeliveryCharge(
-                                $productListing->seller->charge_level_code,
-                                $shpPkg
-                            );
-
-                            $totalDeliveryTaxable += $deliveryData->charge_taxable;
-                            $totalDeliveryTax += $deliveryData->charge_tax;
-                            $totalDeliveryCharge +=   $totalDeliveryTaxable  + $totalDeliveryTax;
-
-
-                            $pkgArr[] = [
-                                'order_qty' => $shpPkg->qty,
-                                'pack_size' => $shpPkg->pack_size,
-                                'pack_price' => $shpPkg->pack_price,
-                                'pack_unit' => $shpPkg->pack_unit,
-                                'pack_type_unit' => $shpPkg->pack_type_unit,
-                            ];
-
-                            if ($shpPkg->seller_status != ShipmentStatusEnum::NOT_PICKED_UP->value) {
-                                $shipQty += $shpPkg->qty;
-                                $totalShipQty += $shpPkg->qty;
-                            }
-                        }
-
-                        $package->update([
-                            'ship_qty' => $shipQty,
-                        ]);
-
-                        if ($shipQty <= 0) {
-                            continue;
-                        }
-
-                        $product = $item->product;
-
-                        if (!$product) {
-                            Log::error("Missing product relation for ListingItem ID: {$item->id}");
-                            continue;
-                        }
-
-                        $itemTaxable = $shipQty * $package->pack_price;
-                        $totalTaxableAmount += $itemTaxable;
-
-                        $invoice->invoiceItems()->create([
-                            'item_code' => $product->product_code ?? 'N/A',
-                            'item_name' => $product->name . " [Package: {$package->package_number}]",
-                            'order_qty' =>  $package->sold_qty,
-                            'ship_qty' => $shipQty,
-
-                            'taxable_amount' => $itemTaxable,
-                            'tax_amount' => 0,
-                            'total_amount' => $itemTaxable,
-                        ]);
+                        $packPrice = $pricedata->final_price ?? $packPrice;
+                    } else  if ($pkgType == 'market_order') {
+                        // For market order we have to take price from order because its already place and price is fix for that
+                        $packPrice = 0; // MARKET PRICE Will Come from
                     }
+
+
+                    // Line Total
+                    $lineTaxableAmount =     $packQty  * $packPrice; // we are storing in each accounts  , we can also have separate field for base amount without tax and charges if needed
+                    $lineTaxAmount = 0; // we can also calculate tax based on tax code if needed
+                    $lineTotalAmount = $lineTaxableAmount + $lineTaxAmount;
+
+                    $itemNameSuffix = "";
+                    if ($pkgType == 'market_order') {
+                        $itemNameSuffix = " ($pkgType : The price rate based on market.)";
+                    } else {
+                        $itemNameSuffix = " ($pkgType) ";
+                    }
+
+                    $invoice->invoiceItems()->create([
+                        'item_code' => $shpPkg->product->product_code,
+                        'item_name' => $shpPkg->product->name . " [$packSize $packUnit ($packTypeUnit)] " . $itemNameSuffix,
+
+                        'order_qty' =>  $packQty,
+                        'unit_price' => $pkgType == 'market_order' ? 0 : $shpPkg->pack_price, // Alwasy waht order place on price
+
+                        'ship_qty' =>  $packQty, // we have to take demand ship qty because in some case seller can update ship qty and what we record in listing package can be different, so to avoid confusion we can have separate field for that
+                        'ship_unit_price' => $packPrice, // Latest optimize
+
+                        'taxable_amount' => $lineTaxableAmount,
+                        'tax_amount' => $lineTaxAmount,
+                        'total_amount' => $lineTotalAmount,
+
+                        'reference' => $pkgType,
+                    ]);
+
+                    // Delivery charge for order shipments
+                    $deliveryData = $this->getDeliveryCharge(
+                        $seller->charge_level_code,
+                        $shpPkg
+                    );
+
+                    $totalDeliveryTaxable += $deliveryData->charge_taxable;
+                    $totalDeliveryTax += $deliveryData->charge_tax;
+                    $totalDeliveryCharge +=   $totalDeliveryTaxable  + $totalDeliveryTax;
+
+
+                    $pkgArr[] = [
+                        'order_qty' => $shpPkg->qty,
+                        'pack_size' => $shpPkg->pack_size,
+                        'pack_price' => $shpPkg->pack_price,
+                        'pack_unit' => $shpPkg->pack_unit,
+                        'pack_type_unit' => $shpPkg->pack_type_unit,
+                    ];
+
+
+                    $totalTaxableAmount += $lineTaxableAmount;
+                    $totalShipQty += $packQty;
+
+
+
+                    //
                 }
 
                 // Delivery Charge (only if applicable)
@@ -444,7 +460,6 @@ class InvoiceService
                     $invoice->invoiceCharges()->create([
                         'charge_name' => 'Delivery Charge',
                         'qty' => 1,
-                        'ship_qty' => 1,
                         'taxable_amount' => $totalDeliveryTaxable,
                         'tax_amount' => $totalDeliveryTax,
                         'total_amount' => $totalDeliveryCharge,
@@ -455,7 +470,7 @@ class InvoiceService
                 $chargeService = app(ChargeCalculationService::class);
 
                 $platformCharge = $chargeService->calculatePlatformFee(
-                    $productListing->seller->charge_level_code,
+                    $seller->charge_level_code,
                     $totalTaxableAmount,
                     $pkgArr
                 );
@@ -463,7 +478,6 @@ class InvoiceService
                 $invoice->invoiceCharges()->create([
                     'charge_name' => $platformCharge['charge_name'] ?? 'Platform Fee',
                     'qty' => 1,
-                    'ship_qty' => 1,
                     'taxable_amount' => $platformCharge['taxable_amount'],
                     'tax_amount' => $platformCharge['tax_amount'],
                     'total_amount' => $platformCharge['total_amount'],
@@ -489,11 +503,12 @@ class InvoiceService
 
                 // Mark Product Listing Invoice
                 $productListing->status = OrderStatusEnum::INVOICED->value;
+                $productListing->removeFlag(OrderFlagsEum::INVOICING_ERROR); // remove flag if exists
                 $productListing->save();
             });
 
             //
-        }  catch (Throwable $e) {
+        } catch (Throwable $e) {
 
             $productListing->addFlag(OrderFlagsEum::INVOICING_ERROR, $e->getMessage());
 
@@ -501,7 +516,7 @@ class InvoiceService
         }
     }
 
-
+    // Delivery Charge Calculation
     private function getDeliveryCharge($chargeLevelCode, ShipmentPackage $shipmentPackage)
     {
 

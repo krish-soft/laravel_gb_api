@@ -40,7 +40,6 @@ return new class extends Migration
             $table->string('inactive_reason', 100)->nullable();
 
             $table->boolean('is_cutoff')->default(false)->nullable();
-
             $table->boolean('is_partial')->default(false)->nullable();
             $table->boolean('is_sold')->default(false)->nullable();
             $table->boolean('is_locked')->default(false)->nullable();

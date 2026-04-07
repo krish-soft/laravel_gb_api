@@ -42,7 +42,6 @@ class JobCutOffProductListing implements ShouldQueue
 
             DB::transaction(function () use ($listingService) {
 
-                Log::info("Processing Cutoff for Listings: " . implode(', ', $this->listingIds));
 
                 $listings = ProductListing::with([
                     'seller.primaryDepot.depot.market',
@@ -322,32 +321,18 @@ class JobCutOffProductListing implements ShouldQueue
 
                                 //
                             } else {
-                                //
-                                $marketOrder->flags = array_merge($marketOrder->flags ?? [], [OrderFlagsEum::ORDER_ITEM_SELLER_PACKAGE_UNAVAILABLE->value]);
-                                $marketOrder->save();
+                                //                            
+                                Log::warning("Seller Package unavailable for MarketOrderItem ID: {$marketItem->id}, Market Order ID: {$marketOrder->id}");
 
                                 // throw exception
                                 throw new RuntimeException("Seller Package unavailable for MarketOrderItem ID: {$marketItem->id}, Market Order ID: {$marketOrder->id}");
 
-                                Log::warning("Seller Package unavailable for MarketOrderItem ID: {$marketItem->id}, Market Order ID: {$marketOrder->id}");
                                 // continue; // If no available seller package then skip to avoid creating shipment package without seller package
                             }
                         }
                     }
-
-
-
                     //
                 }
-
-                /*
-                 |--------------------------------------------------------------------------
-                 | FINAL SHIPMENT FLOW CREATION
-                 |--------------------------------------------------------------------------
-                 */
-                // app(ShipmentService::class)->createShipmentAndGroups(ShipmentStatusEnum::PICKUP->value);
-                // app(ShipmentService::class)->createShipmentAndGroups(ShipmentStatusEnum::TRANSFER->value);
-                // app(ShipmentService::class)->createShipmentAndGroups(ShipmentStatusEnum::DISPATCH->value);
             });
 
             // Log::info('CutOff Job FINISHED SUCCESS');

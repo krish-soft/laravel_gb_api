@@ -69,7 +69,7 @@ class DriverVehicle extends BaseModel
     // relationships
     public function driver()
     {
-        return $this->belongsTo(User::class, 'driver_id')->select('id', 'name', 'user_code', 'nickname');
+        return $this->belongsTo(User::class, 'driver_id')->select('id', 'name', 'user_code', 'nickname','user_type','charge_level_code');
     }
 
     public function vehicle()

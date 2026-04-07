@@ -247,10 +247,10 @@ class Order extends BaseModel
     {
         return $this->hasOne(Payment::class, 'source_id', 'id')
             ->where('source_type', self::class);
-            // ->where(function ($query) {
-            //     $query->where('payment_code', $this->reference)
-            //         ->orWhere('gateway_order_id', $this->payment_reference);
-            // });
+        // ->where(function ($query) {
+        //     $query->where('payment_code', $this->reference)
+        //         ->orWhere('gateway_order_id', $this->payment_reference);
+        // });
     }
 
     public function orderRatings()
@@ -296,18 +296,28 @@ class Order extends BaseModel
 
     // Methods for adding and removing flags
 
+    // Methods for adding and removing flags
     public function addFlag(OrderFlagsEum $flag, ?string $reason = null): void
     {
+
         $flags = $this->flags ?? [];
 
         $value = $reason
             ? "{$flag->value}: {$reason}"
             : $flag->value;
 
-        if (!in_array($value, $flags)) {
+
+        if (!in_array($value, $flags, true)) {
+
+
             $flags[] = $value;
+
             $this->flags = array_values($flags);
+
             $this->save();
+
+            // reload model so flags reflect latest DB value
+            $this->refresh();
         }
     }
 
@@ -316,10 +326,11 @@ class Order extends BaseModel
         $flags = collect($this->flags ?? [])
             ->reject(fn($f) => str_starts_with($f, $flag->value))
             ->values()
-            ->toArray();
+            ->all();
 
-        $this->flags = $flags;
-        $this->save();
+        $this->update([
+            'flags' => $flags
+        ]);
     }
 
     //

@@ -50,7 +50,7 @@ class AdminOrderApiController extends ApiResponseWithAdminAuthController
             // shipment packages for this order
             'shipmentPackages.shipment',
 
-            'orderInvoices',
+            'invoices',
             
         ])->where('id', $orderId)->firstOrfail();
 

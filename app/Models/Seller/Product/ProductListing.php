@@ -64,6 +64,8 @@ class ProductListing extends BaseModel
         'is_active',
         'inactive_reason',
 
+        'status',
+
         'is_cutoff',
         'is_partial',
         'is_sold',
@@ -114,7 +116,7 @@ class ProductListing extends BaseModel
         return $this->belongsTo(FulfillmentLocation::class, 'fulfillment_location_id');
     }
 
-    public function productListingInvoices()
+    public function invoices()
     {
         return $this->hasMany(Invoice::class, 'product_listing_id', 'id');
     }

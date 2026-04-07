@@ -296,11 +296,6 @@ class CmdAdminApiController extends ApiResponseWithAdminAuthController
 
     public function cmdBuyerOrderInvoiceGeneration(Request $request)
     {
-        // Log::info('Received request for buyer order invoice generation command', [
-        //     'request_data' => $request->all(),
-        //     'user_id' => $request->user()->id,
-        // ]);
-
 
         $request->validate([
             'start_date' => 'nullable|date',
@@ -312,16 +307,51 @@ class CmdAdminApiController extends ApiResponseWithAdminAuthController
         $endDate = $request->filled('end_date') ? $request->input('end_date') : null;
         $isEnforce = $request->filled('is_enforce') ? filter_var($request->input('is_enforce'), FILTER_VALIDATE_BOOLEAN) : false;
 
-        // 'invoice:buyer-order
-        //                     {startDate?} 
-        //                     {endDate?} 
-        //                     {isEnforce?}';
 
         $command = "invoicing:order {$startDate} {$endDate} {$isEnforce}";
 
         // Log activity
         logActivity(
             'cmd_invoice_buyer_order', // ACTIVITY TYPE
+            $request->user(),       // ACTOR (who did it)
+            null,       // SUBJECT TYPE (what was affected)
+            null,              // SUBJECT ID
+            null,       // SUBJECT CODE (human readable)
+            [
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'is_enforce' => $isEnforce,
+            ]
+        );
+
+        try {
+            Artisan::call($command);
+            $output = Artisan::output();
+            return $this->showSuccessMessage($output);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Failed to execute invoice generation command: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function cmdBuyerDemandOrderInvoiceGeneration(Request $request)
+    {
+
+        $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'is_enforce' => 'nullable|boolean',
+        ]);
+
+        $startDate = $request->filled('start_date') ? $request->input('start_date') : null;
+        $endDate = $request->filled('end_date') ? $request->input('end_date') : null;
+        $isEnforce = $request->filled('is_enforce') ? filter_var($request->input('is_enforce'), FILTER_VALIDATE_BOOLEAN) : false;
+
+
+        $command = "invoicing:demand-order {$startDate} {$endDate} {$isEnforce}";
+
+        // Log activity
+        logActivity(
+            'cmd_invoice_buyer_demand_order', // ACTIVITY TYPE
             $request->user(),       // ACTOR (who did it)
             null,       // SUBJECT TYPE (what was affected)
             null,              // SUBJECT ID
@@ -355,10 +385,6 @@ class CmdAdminApiController extends ApiResponseWithAdminAuthController
         $endDate = $request->filled('end_date') ? $request->input('end_date') : null;
         $isEnforce = $request->filled('is_enforce') ? filter_var($request->input('is_enforce'), FILTER_VALIDATE_BOOLEAN) : false;
 
-        // 'invoice:product-listing
-        //                     {startDate?} 
-        //                     {endDate?} 
-        //                     {isEnforce?}';
 
         $command = "invoicing:product-listing {$startDate} {$endDate} {$isEnforce}";
 
