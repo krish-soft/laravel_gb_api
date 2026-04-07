@@ -337,18 +337,17 @@ class AccountAdminApiController extends ApiResponseWithAdminAuthController
      */
     public function index(Request $request)
     {
-        //
-
         $request->validate([
             'accnt_code' => 'nullable|string',
-            'owner_id' => 'nullable|integer',
+            'owner_id'   => 'nullable|integer',
         ]);
 
-
         $accntCode = $request->input('accnt_code');
-        $ownerId = $request->input('owner_id');
+        $ownerId   = $request->input('owner_id');
 
-        $accntQuery = Account::with('user:id,name,user_code,nickname')->oldest();
+        $accntQuery = Account::with('user:id,name,user_code,nickname')
+            ->whereNotIn('accnt_code', PlatformAccountCodeEnum::casesAsValues())
+            ->oldest();
 
         if ($accntCode) {
             $accntQuery->where('accnt_code', $accntCode);
@@ -358,9 +357,16 @@ class AccountAdminApiController extends ApiResponseWithAdminAuthController
             $accntQuery->where('owner_id', $ownerId);
         }
 
+        $userAccounts = $accntQuery->limit(100)->get();
 
-        $accounts = $accntQuery->limit(100)->get();
+        $platformAccounts = Account::oldest()->with('user:id,name,user_code,nickname')
+            ->whereIn('accnt_code', PlatformAccountCodeEnum::casesAsValues())
+            ->get();
 
+        $accounts = [
+            'platform_accounts' => $platformAccounts,
+            'user_accounts'     => $userAccounts,
+        ];
 
         return $this->successResponse(__('messages.success_messages.success_get'), $accounts);
     }
