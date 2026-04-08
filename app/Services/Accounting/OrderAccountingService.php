@@ -45,6 +45,10 @@ class OrderAccountingService
                 // $taxableItemsAmount = $order->orderItems->sum('taxable_amount');
 
 
+                // Actual amount we received from payment gateway for this order (excluding credit used)
+                $paymentAmount = $payment->amount;
+
+
                 $buyerId = $order->buyer_id;
                 $buyerAccount = Account::getOrCreateByOwner(
                     AccountOwnerTypeEnum::BUYER->value,
@@ -70,78 +74,58 @@ class OrderAccountingService
                 // Chaning only main one entry not from reporting.
                 if (!$this->ledgerExists(
                     $clearingAccount->id,
-                    AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
-                    Order::class,
-                    $order->id,
-                    $order->total_amount, // total without tax
+                    AccountEntryTypeEnum::ORDER_PAYMENT_AMOUNT_BASE->value,
+                    Payment::class,
+                    $payment->id,
+                    $paymentAmount, // total without tax
                     0
                 )) {
                     $accounting->createLedger($clearingAccount, [
-                        'description' => "Payment received (taxable amount) for Order #{$order->order_number}",
-                        'credit' => $order->total_amount, // $order->subtotal, // total without tax  $taxableItemsAmount, // we are storing in each accounts  ,
+                        'description' => "Payment received for Order #{$order->order_number}, Payment #{$payment->payment_code}",
+                        'credit' => $paymentAmount, // $order->subtotal, // total without tax  $taxableItemsAmount, // we are storing in each accounts  ,
                         'debit'  => 0,
-                        'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
+                        'entry_type' => AccountEntryTypeEnum::ORDER_PAYMENT_AMOUNT_BASE->value,
                         'status' => LedgerStatusEnum::AVAILABLE->value,
-                        'source_type' => Order::class,
-                        'source_id' => $order->id,
-                        'source_code' => $order->order_number,
-                        'reference' => $payment->payment_code,
+                        'source_type' => Payment::class,
+                        'source_id' => $payment->id,
+                        'source_code' => $payment->payment_code,
+
+                        'reference' => $payment->order_number,
                         'payment_reference' => $payment->gateway_order_id,
-                        'common_reference' => $order->order_number,
+
+                        'common_reference' => $order->payment_code,
                     ]);
                 }
 
                 if (!$this->ledgerExists(
                     $buyerAccount->id,
-                    AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
-                    Order::class,
-                    $order->id,
-                    $order->total_amount, // total without tax
+                    AccountEntryTypeEnum::ORDER_PAYMENT_AMOUNT_BASE->value,
+                    Payment::class,
+                    $payment->id,
+                    $paymentAmount, // total without tax
                     0
                 )) {
 
                     $accounting->createLedger($buyerAccount, [
-                        'description' => "Payment received for Order #{$order->order_number}",
-                        'credit' =>  $order->total_amount, // we are storing in each accounts  ,
+                        'description' => "Payment received for Order #{$order->order_number}, Payment #{$payment->payment_code}",
+                        'credit' => $paymentAmount, // $order->subtotal, // total without tax  $taxableItemsAmount, // we are storing in each accounts  ,
                         'debit'  => 0,
-                        'entry_type' => AccountEntryTypeEnum::ORDER_BASE_AMOUNT->value,
-                        'status' => LedgerStatusEnum::AVAILABLE->value, // Because Actual How much we sold to them  will finalize letter so
-                        'source_type' => Order::class,
-                        'source_id' => $order->id,
-                        'source_code' => $order->order_number,
-                        'reference' => $payment->payment_code,
+
+                        'entry_type' => AccountEntryTypeEnum::ORDER_PAYMENT_AMOUNT_BASE->value,
+                        'status' => LedgerStatusEnum::AVAILABLE->value,
+
+                        'source_type' => Payment::class,
+                        'source_id' => $payment->id,
+                        'source_code' => $payment->payment_code,
+
+                        'reference' => $payment->order_number,
                         'payment_reference' => $payment->gateway_order_id,
-                        'common_reference' => $order->order_number,
+
+                        'common_reference' => $order->payment_code,
                     ]);
                 }
 
-                if ($order->credit_amount > 0) {
-
-                    if (!$this->ledgerExists(
-                        $buyerAccount->id,
-                        AccountEntryTypeEnum::ORDER_CREDIT_AMOUNT->value,
-                        Order::class,
-                        $order->id,
-                        0,
-                        $order->credit_amount
-                    )) {
-
-                        $accounting->createLedger($buyerAccount, [
-                            'description' => "Credit used for Order #{$order->order_number}",
-                            'credit' => 0,
-                            'debit'  =>  $order->credit_amount, // USED CREDIT AMOUNT
-                            'entry_type' => AccountEntryTypeEnum::ORDER_CREDIT_AMOUNT->value,
-                            'status' => LedgerStatusEnum::AVAILABLE->value, // Because Actual How much we sold to them  will finalize letter so
-                            'source_type' => Order::class,
-                            'source_id' => $order->id,
-                            'source_code' => $order->order_number,
-                            'reference' => $payment->payment_code,
-                            'payment_reference' => $payment->gateway_order_id,
-                            'common_reference' => $order->order_number,
-                        ]);
-                    }
-                }
-
+                // Credit Amount Not needed
 
 
                 $order->order_status =  OrderStatusEnum::ACCOUNTED->value;

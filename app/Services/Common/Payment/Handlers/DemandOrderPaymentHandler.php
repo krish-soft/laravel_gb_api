@@ -5,6 +5,8 @@ namespace App\Services\Common\Payment\Handlers;
 use App\Enum\Common\Cart\CartStatusEnum;
 use App\Enum\Common\Order\OrderStatusEnum;
 use App\Enum\Common\Payment\PaymentStatusEnum;
+use App\Enum\Queue\QueueEnum;
+use App\Jobs\Accounting\JobDemandOrderAccounting;
 use App\Models\Buyer\Order\DemandOrder;
 use App\Models\Common\Payment\Payment;
 use Illuminate\Support\Facades\DB;
@@ -46,10 +48,10 @@ class DemandOrderPaymentHandler
             ]);
 
 
-            // We have to make entry of credit balance used as deduction DEBIT
-
-
-
+            JobDemandOrderAccounting::dispatch($order->id)
+                ->afterCommit() // Only dispatch if transaction successful
+                ->delay(now()->addSeconds(5))
+                ->onQueue(QueueEnum::ACCOUNTING->value);
 
 
             //

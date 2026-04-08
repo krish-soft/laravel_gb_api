@@ -223,8 +223,10 @@ class CheckoutApiController extends ApiResponseWithAuthController
              *  MANUAL (SYNC)
              * ------------------------------------
              */
+            // See if payment balance zaro and credit _balance is more then zero then we have to take as paid and process order without waiting for manual action from admin. This is only in case of credit balance is used and total amount is zero or negative after using credit.
             if (
-                MstPaymentSetting::payInMode() === PaymentMethodEnum::MANUAL->value
+                // MstPaymentSetting::payInMode() === PaymentMethodEnum::MANUAL->value ||
+                ($payment->amount <= 0 && $payment->credit_amount > 0)
             ) {
 
                 $payment->gateway = 'manual';
@@ -256,7 +258,7 @@ class CheckoutApiController extends ApiResponseWithAuthController
             }
 
             // return "Testing no razorpay";
-            
+
             /**
              * ------------------------------------
              * RAZORPAY (ASYNC)

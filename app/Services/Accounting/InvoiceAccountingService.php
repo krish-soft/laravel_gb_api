@@ -46,63 +46,111 @@ class InvoiceAccountingService
 
                 $ownerAccount = Account::getOrCreateByOwner($ownerType, $owner->id);
 
-                $amount = (float) $invoice->total_amount;
-                $absAmount = abs($amount);
-
-                $debit = 0;
-                $credit = 0;
-
                 /*
                 |--------------------------------------------------------------------------
-                | Owner Ledger
+                | Buyer Ledger - Items Taxable (TOTAL)
                 |--------------------------------------------------------------------------
                 */
 
-                switch ($type) {
+                $itemsTaxable = (float)$invoice->invoiceItems->sum('taxable_amount');
 
-                    case InvoiceTypeEnum::SALES->value:
-                        $debit = $absAmount;
-                        break;
+                if ($itemsTaxable != 0) {
 
-                    case InvoiceTypeEnum::SALES_RETURN->value:
-                        $credit = $absAmount;
-                        break;
+                    if (!$accountingService->ledgerExists(
+                        $ownerAccount->id,
+                        AccountEntryTypeEnum::INVOICE_BASE_AMOUNT->value,
+                        Invoice::class,
+                        $invoice->id
+                    )) {
 
-                    case InvoiceTypeEnum::PURCHASE->value:
-                        $credit = $absAmount;
-                        break;
+                        $entry = $this->resolveDirection($type, $itemsTaxable);
 
-                    case InvoiceTypeEnum::PURCHASE_RETURN->value:
-                        $debit = $absAmount;
-                        break;
-
-                    default:
-                        throw new RuntimeException("Unsupported invoice type: {$type}");
+                        $accountingService->createLedger($ownerAccount, [
+                            'description' => "Invoice #{$invoice->invoice_number} - Items",
+                            'credit' => $entry['credit'],
+                            'debit' => $entry['debit'],
+                            'entry_type' => AccountEntryTypeEnum::INVOICE_BASE_AMOUNT->value,
+                            'status' => LedgerStatusEnum::AVAILABLE->value,
+                            'source_type' => Invoice::class,
+                            'source_id' => $invoice->id,
+                            'source_code' => $invoice->invoice_number,
+                            'common_reference' => $invoice->invoice_number
+                        ]);
+                    }
                 }
 
-                // If total becomes negative -> flip entry
-                if ($amount < 0) {
-                    [$debit, $credit] = [$credit, $debit];
-                }
+                /*
+                |--------------------------------------------------------------------------
+                | Buyer Ledger - Charges PER LINE
+                |--------------------------------------------------------------------------
+                */
 
-                if (!$accountingService->ledgerExists(
-                    $ownerAccount->id,
-                    AccountEntryTypeEnum::INVOICE_BASE_AMOUNT->value,
-                    Invoice::class,
-                    $invoice->id
-                )) {
+                foreach ($invoice->invoiceCharges as $charge) {
 
-                    $accountingService->createLedger($ownerAccount, [
-                        'description' => "Invoice #{$invoice->invoice_number}",
-                        'credit' => $credit,
-                        'debit' => $debit,
-                        'entry_type' => AccountEntryTypeEnum::INVOICE_BASE_AMOUNT->value,
-                        'status' => LedgerStatusEnum::AVAILABLE->value,
-                        'source_type' => Invoice::class,
-                        'source_id' => $invoice->id,
-                        'source_code' => $invoice->invoice_number,
-                        'common_reference' => $invoice->invoice_number,
-                    ]);
+                    $chargeTaxable = (float)$charge->taxable_amount;
+                    $chargeTax = (float)$charge->tax_amount;
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Charge Taxable Amount
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if ($chargeTaxable != 0) {
+
+                        if (!$accountingService->ledgerExists(
+                            $ownerAccount->id,
+                            AccountEntryTypeEnum::INVOICE_CHARGE_AMOUNT->value,
+                            InvoiceCharge::class,
+                            $charge->id
+                        )) {
+
+                            $entry = $this->resolveDirection($type, $chargeTaxable);
+
+                            $accountingService->createLedger($ownerAccount, [
+                                'description' => "Invoice #{$invoice->invoice_number} - Charge ({$charge->charge_name})",
+                                'credit' => $entry['credit'],
+                                'debit' => $entry['debit'],
+                                'entry_type' => AccountEntryTypeEnum::INVOICE_CHARGE_AMOUNT->value,
+                                'status' => LedgerStatusEnum::AVAILABLE->value,
+                                'source_type' => InvoiceCharge::class,
+                                'source_id' => $charge->id,
+                                'source_code' => $invoice->invoice_number,
+                                'common_reference' => $invoice->invoice_number
+                            ]);
+                        }
+                    }
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Charge Tax Amount
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if ($chargeTax != 0) {
+
+                        if (!$accountingService->ledgerExists(
+                            $ownerAccount->id,
+                            AccountEntryTypeEnum::INVOICE_TAX_AMOUNT->value,
+                            InvoiceCharge::class,
+                            $charge->id
+                        )) {
+
+                            $entry = $this->resolveDirection($type, $chargeTax);
+
+                            $accountingService->createLedger($ownerAccount, [
+                                'description' => "Invoice #{$invoice->invoice_number} - Charge Tax ({$charge->charge_name})",
+                                'credit' => $entry['credit'],
+                                'debit' => $entry['debit'],
+                                'entry_type' => AccountEntryTypeEnum::INVOICE_TAX_AMOUNT->value,
+                                'status' => LedgerStatusEnum::AVAILABLE->value,
+                                'source_type' => InvoiceCharge::class,
+                                'source_id' => $charge->id,
+                                'source_code' => $invoice->invoice_number,
+                                'common_reference' => $invoice->invoice_number
+                            ]);
+                        }
+                    }
                 }
 
                 /*
@@ -117,33 +165,21 @@ class InvoiceAccountingService
                     PlatformAccountCodeEnum::PLATFORM_CLEARING->value
                 );
 
-                // Is not sales invoice because when we received order we already added total amount under clearning
                 if ($isPurchase || $isPurchaseReturn || $isSalesReturn) {
 
                     foreach ($invoice->invoiceCharges as $charge) {
 
-                        $chargeAmount = (float) $charge->taxable_amount;
-                        $absCharge = abs($chargeAmount);
+                        $chargeAmount = (float)$charge->taxable_amount;
 
-                        if ($absCharge == 0) {
+                        if ($chargeAmount == 0) {
                             continue;
                         }
 
-                        $debitCharge = 0;
-                        $creditCharge = 0;
-
-                        if ($isPurchase) {
-                            $creditCharge = $absCharge;
-                        }
-
-                        if ($isPurchaseReturn || $isSalesReturn) {
-                            $debitCharge = $absCharge;
-                        }
-
-                        // negative adjustment safety
-                        if ($chargeAmount < 0) {
-                            [$debitCharge, $creditCharge] = [$creditCharge, $debitCharge];
-                        }
+                        $entry = $this->resolveDirection(
+                            $isPurchase ? InvoiceTypeEnum::PURCHASE->value : ($isPurchaseReturn ? InvoiceTypeEnum::PURCHASE_RETURN->value :
+                                    InvoiceTypeEnum::SALES_RETURN->value),
+                            $chargeAmount
+                        );
 
                         if (!$accountingService->ledgerExists(
                             $clearingAccount->id,
@@ -154,18 +190,19 @@ class InvoiceAccountingService
 
                             $accountingService->createLedger($clearingAccount, [
                                 'description' => "Invoice #{$invoice->invoice_number} - Charge ({$charge->charge_name})",
-                                'credit' => $creditCharge,
-                                'debit'  => $debitCharge,
+                                'credit' => $entry['credit'],
+                                'debit' => $entry['debit'],
                                 'entry_type' => AccountEntryTypeEnum::INVOICE_CHARGE_AMOUNT->value,
                                 'status' => LedgerStatusEnum::AVAILABLE->value,
                                 'source_type' => InvoiceCharge::class,
                                 'source_id' => $charge->id,
                                 'source_code' => $invoice->invoice_number,
-                                'common_reference' => $invoice->invoice_number,
+                                'common_reference' => $invoice->invoice_number
                             ]);
                         }
                     }
                 }
+
                 /*
                 |--------------------------------------------------------------------------
                 | Finalize
@@ -174,11 +211,9 @@ class InvoiceAccountingService
 
                 $invoice->status = InvoiceStatusEnum::ACCOUNTED->value;
                 $invoice->is_locked = true;
-                $invoice->removeFlag(OrderFlagsEum::INVOICE_ACCOUNTING_ERROR); // remove flag if exists
+                $invoice->removeFlag(OrderFlagsEum::INVOICE_ACCOUNTING_ERROR);
                 $invoice->save();
             });
-
-            //
         } catch (\Throwable $e) {
 
             $invoice->addFlag(OrderFlagsEum::INVOICE_ACCOUNTING_ERROR, $e->getMessage());
@@ -187,5 +222,44 @@ class InvoiceAccountingService
 
             throw $e;
         }
+    }
+
+    private function resolveDirection(string $type, float $amount): array
+    {
+        $abs = abs($amount);
+
+        $debit = 0;
+        $credit = 0;
+
+        switch ($type) {
+
+            case InvoiceTypeEnum::SALES->value:
+                $debit = $abs;
+                break;
+
+            case InvoiceTypeEnum::SALES_RETURN->value:
+                $credit = $abs;
+                break;
+
+            case InvoiceTypeEnum::PURCHASE->value:
+                $credit = $abs;
+                break;
+
+            case InvoiceTypeEnum::PURCHASE_RETURN->value:
+                $debit = $abs;
+                break;
+
+            default:
+                throw new RuntimeException("Invalid invoice type");
+        }
+
+        if ($amount < 0) {
+            [$debit, $credit] = [$credit, $debit];
+        }
+
+        return [
+            'debit' => $debit,
+            'credit' => $credit
+        ];
     }
 }

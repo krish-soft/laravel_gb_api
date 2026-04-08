@@ -228,10 +228,9 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
              * ------------------------------------
              */
             if (
-                MstPaymentSetting::payInMode() === PaymentMethodEnum::MANUAL->value
-                // check credit balance enough then can mark as paid directly without manual payment        
-
-                || ($canUseCredit && $order->credit_amount >= $order->total_amount)
+                // MstPaymentSetting::payInMode() === PaymentMethodEnum::MANUAL->value ||
+                // check credit balance enough then can mark as paid directly without manual payment  
+                ($payment->amount <= 0 && $payment->credit_amount > 0)
             ) {
 
                 $payment->gateway =  ($canUseCredit && $order->credit_amount >= $order->total_amount) ? 'credit_balance' : 'manual';

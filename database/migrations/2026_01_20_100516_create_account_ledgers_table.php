@@ -33,6 +33,7 @@ return new class extends Migration
             // Money movement (only one side non-zero)
             $table->decimal('credit', 15, 2)->default(0.00);
             $table->decimal('debit', 15, 2)->default(0.00);
+            $table->decimal('balance', 15, 2)->default(0.00)->nullable(); // not used yet
 
             // Business meaning (free text, future-safe)
             $table->string('entry_type', 100)->nullable();
@@ -50,7 +51,6 @@ return new class extends Migration
 
             // Recovery / adjustment linking
             $table->unsignedBigInteger('parent_ledger_id')->nullable();
-
 
             $table->string('status', 20)->default(LedgerStatusEnum::PENDING->value)->nullable();
             // Settlement metadata (only when SETTLED)

@@ -33,6 +33,7 @@ class Account extends BaseModel
         'type',
 
         'credit_limit',
+        'is_credit_enabled',
 
         // Actual available balance = credit_balance + available_balance - hold_balance
 
@@ -46,6 +47,8 @@ class Account extends BaseModel
         'inactive_reason',
 
         'remarks',
+
+
     ];
 
     // casts
@@ -57,6 +60,8 @@ class Account extends BaseModel
         'total_credit' => 'decimal:2',
         'total_debit' => 'decimal:2',
         'is_active' => 'boolean',
+        
+        'is_credit_enabled' => 'boolean',
     ];
 
     // scopes

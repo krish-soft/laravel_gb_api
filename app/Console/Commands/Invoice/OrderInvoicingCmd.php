@@ -81,7 +81,7 @@ class OrderInvoicingCmd extends Command
 
         Bus::batch($jobs)
             ->name('Order Invoicing Batch (Grouped by Buyer)')
-            ->onQueue(QueueEnum::INVOICING->value) // assign entire batch to invoicing queue
+            ->onQueue(QueueEnum::INVOICING_CUTOFF->value) // assign entire batch to invoicing queue
             ->dispatch();
 
         $this->info('Batch dispatched successfully.');

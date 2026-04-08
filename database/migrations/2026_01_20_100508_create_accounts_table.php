@@ -24,7 +24,7 @@ return new class extends Migration
 
             // Optional credit limit for certain account types (e.g., seller main account)
             $table->decimal('credit_limit', 15, 2)->default(0.00)->nullable();
-            
+            $table->boolean('is_credit_enabled')->default(false)->nullable();
 
             // 🔴 SNAPSHOT COLUMNS
             $table->decimal('available_balance', 15, 2)->default(0.00); // ready to payout / usable

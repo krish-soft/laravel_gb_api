@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Common\Accounting\Account;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AccountAdminApiController extends ApiResponseWithAdminAuthController
 {
@@ -426,19 +427,22 @@ class AccountAdminApiController extends ApiResponseWithAdminAuthController
      */
     public function update(Request $request, Account $account)
     {
-        //
+        //      
 
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
-            'owner_type' => 'sometimes|string|max:255',
-            'owner_id' => 'sometimes|nullable|integer',
+            // 'owner_type' => 'sometimes|string|max:255',
+            // 'owner_id' => 'sometimes|nullable|integer',
             'currency' => 'sometimes|string|max:3',
             'type' => 'sometimes|string|max:255',
             'is_active' => 'sometimes|boolean',
             'inactive_reason' => 'sometimes|nullable|string|max:1000',
+            'credit_limit' => 'sometimes|numeric',
+            'is_credit_enabled' => 'sometimes|boolean',
+
         ]);
 
-        $account->update($request->all());
+        $account->update($validated);
 
         /// Log activity
         logActivity(
@@ -453,6 +457,7 @@ class AccountAdminApiController extends ApiResponseWithAdminAuthController
                 'owner_id' => $account->owner_id,
                 'is_active' => $account->is_active,
                 'inactive_reason' => $account->inactive_reason,
+                'credit_limit' => $account->credit_limit,
             ]
         );
 

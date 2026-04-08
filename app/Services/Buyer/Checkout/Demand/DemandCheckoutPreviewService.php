@@ -143,14 +143,30 @@ class DemandCheckoutPreviewService
         );
 
         if ($buyerAccount) {
-            $avaliableBalance = $buyerAccount->available_balance;
 
-            if ($avaliableBalance > 0 && $finalTotalAmount > 0) {
-                $canCheckoutWithCredit = true;
-                $creditBalanceToUse = $avaliableBalance;
+            $availableBalance = (float) $buyerAccount->available_balance;
+            $creditLimit = (float) $buyerAccount->credit_limit;
+            $isCreditUseEnabled = (bool) ($buyerAccount->is_credit_enabled ?? false);
+
+            if ($isCreditUseEnabled && $finalTotalAmount > 0) {
+
+                // usable credit = available balance + credit limit
+                $usableBalance = $availableBalance + $creditLimit;
+
+                // if negative, cannot use credit
+                if ($usableBalance > 0) {
+
+                    // cannot use more than order amount
+                    $creditBalanceToUse = min($usableBalance, $finalTotalAmount);
+
+                    if ($creditBalanceToUse > 0) {
+                        $canCheckoutWithCredit = true;
+                    } else {
+                        $creditBalanceToUse = 0;
+                        $canCheckoutWithCredit = false;
+                    }
+                }
             }
-
-            //
         }
 
 
