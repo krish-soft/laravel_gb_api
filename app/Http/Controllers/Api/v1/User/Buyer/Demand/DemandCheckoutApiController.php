@@ -261,7 +261,7 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
                 );
             }
 
-            return "Testing no razorpay";
+            // return "Testing no razorpay";
 
             /**
              * ------------------------------------

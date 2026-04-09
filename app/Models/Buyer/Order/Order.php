@@ -120,6 +120,15 @@ class Order extends BaseModel
             ]);
     }
 
+    public function scopeEligibleForCutoff(Builder $query): Builder
+    {
+        return $query
+            ->whereIn('order_status', [
+                OrderStatusEnum::ACCOUNTED->value,
+                OrderStatusEnum::INVOICED->value,
+            ]);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Helper Methods
@@ -154,7 +163,7 @@ class Order extends BaseModel
             OrderStatusEnum::ACCOUNTED->value, // To Reaccount if needed
             // OrderStatusEnum::INVOICED->value,
         ])
-            && $this->delivery_status === OrderStatusEnum::DELIVERED->value
+            // && $this->delivery_status === OrderStatusEnum::DELIVERED->value // Need to ignore when paymen receive that time we are doing...
             && $this->payment_status === PaymentStatusEnum::PAID->value;
     }
 
@@ -164,7 +173,7 @@ class Order extends BaseModel
             OrderStatusEnum::ACCOUNTED->value,
             OrderStatusEnum::INVOICED->value, // 
         ])
-            && $this->delivery_status === OrderStatusEnum::DELIVERED->value
+            && $this->delivery_status === OrderStatusEnum::DELIVERED->value // Mandatory delivery for invoicing
             && $this->payment_status === PaymentStatusEnum::PAID->value;
     }
 

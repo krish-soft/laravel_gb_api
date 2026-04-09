@@ -4,9 +4,7 @@ namespace App\Console\Commands\Accounting;
 
 use App\Enum\Queue\QueueEnum;
 use App\Jobs\Accounting\JobDemandOrderAccounting;
-use App\Jobs\Accounting\JobOrderAccounting;
 use App\Models\Buyer\Order\DemandOrder;
-use App\Models\Buyer\Order\Order;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Bus;
 

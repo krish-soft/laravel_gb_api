@@ -55,7 +55,9 @@ class OrderPaymentHandler
 
             ]);
 
-            JobOrderAccounting::dispatch($order->id)
+
+            // Account entry will be handled by listener to avoid any delay in response and also to make sure it will be processed even if there is any issue in current transaction
+            JobOrderAccounting::dispatch([$order->id])
                 ->afterCommit() // Only dispatch if transaction successful
                 ->delay(now()->addSeconds(5))
                 ->onQueue(QueueEnum::ACCOUNTING->value);

@@ -48,7 +48,7 @@ class DemandOrderPaymentHandler
             ]);
 
 
-            JobDemandOrderAccounting::dispatch($order->id)
+            JobDemandOrderAccounting::dispatch([$order->id])
                 ->afterCommit() // Only dispatch if transaction successful
                 ->delay(now()->addSeconds(5))
                 ->onQueue(QueueEnum::ACCOUNTING->value);

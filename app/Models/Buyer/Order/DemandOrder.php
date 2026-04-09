@@ -153,7 +153,7 @@ class DemandOrder extends BaseModel
             OrderStatusEnum::ACCOUNTED->value, // To Reaccount if needed
             // OrderStatusEnum::INVOICED->value,
         ])
-            && $this->delivery_status === OrderStatusEnum::DELIVERED->value
+            // && $this->delivery_status === OrderStatusEnum::DELIVERED->value  // Need to ignore when paymen receive that time we are doing...
             && $this->payment_status === PaymentStatusEnum::PAID->value;
     }
 
@@ -163,7 +163,7 @@ class DemandOrder extends BaseModel
             OrderStatusEnum::ACCOUNTED->value,
             OrderStatusEnum::INVOICED->value, // To Re-invoice if needed
         ])
-            && $this->delivery_status === OrderStatusEnum::DELIVERED->value
+            && $this->delivery_status === OrderStatusEnum::DELIVERED->value // Mandatory delivery for invoicing
             && $this->payment_status === PaymentStatusEnum::PAID->value;
     }
 
@@ -243,11 +243,11 @@ class DemandOrder extends BaseModel
     public function payment()
     {
         return $this->hasOne(Payment::class, 'source_id', 'id')
-            ->where('source_type', self::class)
-            ->where(function ($query) {
-                $query->where('payment_code', $this->reference)
-                    ->orWhere('gateway_order_id', $this->payment_reference);
-            });
+            ->where('source_type', self::class);
+        // ->where(function ($query) {
+        //     $query->where('payment_code', $this->reference)
+        //         ->orWhere('gateway_order_id', $this->payment_reference);
+        // });
     }
 
 

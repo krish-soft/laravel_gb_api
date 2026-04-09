@@ -109,6 +109,7 @@ class BuyerCutoffCmd extends Command
 
         $model::query()
             ->whereBetween('order_date', [$startDate, $endDate])
+            
             ->where('delivery_status', OrderStatusEnum::PENDING->value)
             ->where('payment_status', PaymentStatusEnum::PAID->value)
             ->where('is_cutoff', false) // Important to avoid re-processing already cutoff orders
