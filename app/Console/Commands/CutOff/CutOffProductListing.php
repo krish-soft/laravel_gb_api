@@ -19,30 +19,15 @@ class CutOffProductListing extends Command
     public function handle()
     {
         $startDate = $this->argument('startDate') ?? now()->subDay()->toDateString();
-        $endDate   = $this->argument('endDate')   ?? now()->toDateString();
+        $endDate   = $this->argument('endDate') ?? now()->toDateString();
 
         $this->info("Cutoff from {$startDate} to {$endDate}");
 
-        /*
-    |--------------------------------------------------------------------------
-    | STEP 1 — Pull ONLY listings eligible for cutoff
-    |--------------------------------------------------------------------------
-    */
         $listings = ProductListing::query()
-            ->select(['id', 'seller_id']) // IMPORTANT → reduce memory
+            ->select(['id']) // reduce memory
             ->where('is_active', true)
             ->where('is_expired', false)
-            // ->where('is_cutoff', false) // is cuoff used on first cutoff for seller
-            ->whereBetween('listing_date', [
-                $startDate,
-                $endDate
-            ])
-            // ->whereHas('listingItems.listingPackages', function ($q) {
-            //     // $q->where('is_locked', false)
-            //     //     ->where('is_sold', false)
-            //     //     ->whereRaw('qty > sold_qty');
-            //     $q->whereRaw('qty > sold_qty');
-            // })
+            ->whereBetween('listing_date', [$startDate, $endDate])
             ->orderBy('seller_id')
             ->orderBy('id')
             ->get();
@@ -52,43 +37,15 @@ class CutOffProductListing extends Command
             return;
         }
 
-        /*
-    |--------------------------------------------------------------------------
-    | STEP 2 — GROUP BY SELLER
-    |--------------------------------------------------------------------------
-    */
-        $groupedBySeller = $listings->groupBy('seller_id');
-
         $jobs = [];
 
-        /*
-    |--------------------------------------------------------------------------
-    | STEP 3 — Chunk per seller
-    |--------------------------------------------------------------------------
-    */
-        foreach ($groupedBySeller as $sellerId => $sellerListings) {
-
-            $sellerListings->pluck('id')
-                ->chunk(15) // batch size per seller
-                ->each(function ($chunk) use (&$jobs) {
-
-                    $jobs[] = new JobCutOffProductListing($chunk->toArray());
-                });
+        foreach ($listings as $listing) {
+            $jobs[] = new JobCutOffProductListing($listing->id);
         }
 
-        if (empty($jobs)) {
-            $this->warn('No jobs generated.');
-            return;
-        }
-
-        /*
-    |--------------------------------------------------------------------------
-    | STEP 4 — Dispatch batch
-    |--------------------------------------------------------------------------
-    */
         Bus::batch($jobs)
-            ->name('CutOff Product Listing Batch (Grouped by Seller)')
-            ->onQueue(QueueEnum::LISTING_CUTOFF->value) // assign entire batch to cutoff queue
+            ->name('CutOff Product Listing Batch')
+            ->onQueue(QueueEnum::LISTING_CUTOFF->value)
             ->dispatch();
 
         $this->info('Batch dispatched successfully.');

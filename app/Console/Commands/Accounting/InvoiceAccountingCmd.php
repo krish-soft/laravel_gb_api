@@ -33,28 +33,18 @@ class InvoiceAccountingCmd extends Command
      */
     public function handle()
     {
-        //
-
         $startDate = $this->argument('startDate') ?? now()->subDay()->toDateString();
-        $endDate   = $this->argument('endDate')   ?? now()->toDateString();
+        $endDate   = $this->argument('endDate') ?? now()->toDateString();
 
         $this->info("Invoice accounting from {$startDate} to {$endDate}");
 
-
         $invoices = Invoice::query()
-            ->select(['id', 'user_id']) // IMPORTANT → reduce memory         
-            // ->where('is_locked', false)          
-            ->whereNotIn(
-                'status',
-                [
-                    InvoiceStatusEnum::ACCOUNTED->value,
-                    OrderStatusEnum::INVOICED->value
-                ]
-            ) // only unaccounted invoices
-            ->whereBetween('invoice_date', [
-                $startDate,
-                $endDate
+            ->select(['id']) // reduce memory
+            ->whereNotIn('status', [
+                InvoiceStatusEnum::ACCOUNTED->value,
+                OrderStatusEnum::INVOICED->value
             ])
+            ->whereBetween('invoice_date', [$startDate, $endDate])
             ->orderBy('user_id')
             ->orderBy('id')
             ->get();
@@ -64,55 +54,19 @@ class InvoiceAccountingCmd extends Command
             return;
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | STEP 2 — GROUP BY SELLER
-        |--------------------------------------------------------------------------
-        */
-        $groupedByUsers = $invoices->groupBy('user_id');
-
         $jobs = [];
 
-        // Log::info("Total invoices for accounting: {$invoices->count()} across " . $groupedByUsers->count() . " users.");
-
-        /*
-        |--------------------------------------------------------------------------
-        | STEP 3 — Chunk per user
-        |--------------------------------------------------------------------------
-        */
-        foreach ($groupedByUsers as $userId => $userInvoices) {
-
-            $userInvoices->pluck('id')
-                ->chunk(15) // batch size per user
-                ->each(function ($chunk) use (&$jobs) {
-
-                    $jobs[] = new JobInvoiceAccounting($chunk->toArray());
-                });
+        foreach ($invoices as $invoice) {
+            $jobs[] = new JobInvoiceAccounting($invoice->id);
         }
 
-        if (empty($jobs)) {
-            $this->warn('No jobs generated.');
-            return;
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | STEP 4 — Dispatch batch
-        |--------------------------------------------------------------------------
-        */
         Bus::batch($jobs)
-            ->name('Accounting Invoice Batch (Grouped by User)')
-            ->onQueue(QueueEnum::ACCOUNTING_CUTOFF->value) // assign entire batch to accounting queue
+            ->name('Accounting Invoice Batch')
+            ->onQueue(QueueEnum::ACCOUNTING_CUTOFF->value)
             ->dispatch();
 
         $this->info('Batch dispatched successfully.');
-
-
-
-
-        //
     }
-
 
 
 

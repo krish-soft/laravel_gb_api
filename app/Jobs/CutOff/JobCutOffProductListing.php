@@ -4,7 +4,6 @@ namespace App\Jobs\Cutoff;
 
 use App\Enum\Common\Order\OrderFlagsEum;
 use App\Enum\Common\Order\OrderStatusEnum;
-use App\Enum\Common\Package\PackageTypeEnum;
 use App\Enum\Common\Shipment\ShipmentStatusEnum;
 use App\Enum\Common\Shipment\ShipmentTypeEnum;
 use App\Models\Common\Package\SellerPackage;
@@ -13,9 +12,9 @@ use App\Models\Common\Shipment\ShipmentPackage;
 use App\Models\Seller\Product\ProductListing;
 use App\Models\Market\MarketOrder;
 use App\Models\Market\MarketOrderItem;
-use App\Services\Common\Shipment\ShipmentService;
 use App\Services\Seller\Product\ProductListingService;
 use Illuminate\Bus\Batchable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
@@ -23,106 +22,107 @@ use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Throwable;
 
-class JobCutOffProductListing implements ShouldQueue
+class JobCutOffProductListing implements ShouldQueue, ShouldBeUnique
 {
     use Queueable, Batchable;
 
-    protected array $listingIds;
+    protected int $listingId;
 
-    public function __construct(array $listingIds)
+    public function __construct(int $listingId)
     {
-        $this->listingIds = $listingIds;
+        $this->listingId = $listingId;
+    }
+
+    public function uniqueId(): string
+    {
+        return (string) "cutoff_product_listing_" . $this->listingId;
     }
 
     public function handle(ProductListingService $listingService): void
     {
         // Log::info('CutOff Job START', ['listingIds' => $this->listingIds]);
 
+        $listing = ProductListing::with([
+            'seller.primaryDepot.depot.market',
+            'listingItems.product',
+            'listingItems.listingPackages' => fn($q) => $q->available(),
+        ])
+            ->lockForUpdate()
+            ->find($this->listingId);
+
+        if (!$listing) {
+            // Log::warning("Product Listing not found for ID: {$this->listingId}");
+            return; // If listing not found then skip processing
+        }
+
         try {
 
-            DB::transaction(function () use ($listingService) {
+            DB::transaction(function () use ($listingService, $listing) {
 
 
-                $listings = ProductListing::with([
-                    'seller.primaryDepot.depot.market',
-                    'listingItems.product',
-                    'listingItems.listingPackages' => fn($q) => $q->available(),
-                ])
-                    ->whereIn('id', $this->listingIds)
-                    ->lockForUpdate()
-                    ->get();
-
-                foreach ($listings as $listing) {
-
-                    // if ($listing->is_locked) {
-                    //     continue;
-                    // }
-
-                    /* ---------------------------------------------
+                /* ---------------------------------------------
                      | EXPIRE LISTING
                      ---------------------------------------------*/
-                    if (!$listing->is_expired) {
-                        // $listing->is_active  = false; // keep active so can understand it was created and expired via cutoff
-                        $listing->is_expired = true;
-                        $listing->expires_at = now();
-                    }
+                if (!$listing->is_expired) {
+                    // $listing->is_active  = false; // keep active so can understand it was created and expired via cutoff
+                    $listing->is_expired = true;
+                    $listing->expires_at = now();
+                }
 
-                    // In case its pending from first cutoff
-                    if (!$listing->is_cutoff) {
-                        $listing->is_cutoff = true;
-                    }
+                // In case its pending from first cutoff
+                if (!$listing->is_cutoff) {
+                    $listing->is_cutoff = true;
+                }
 
-                    $listing->save();
+                $listing->save();
 
-                    if (!$listing->is_sell_to_market) {
-                        continue;
-                    }
-
-
-
-                    $marketId = $listing->seller->primaryDepot->depot->market_id;
-
-                    // Market Id missing failed the transaction, so we can be sure it exists here
-                    if (!$marketId) {
-                        throw new \RuntimeException("Market ID missing for listing {$listing->listing_code}");
-                    }
+                if (!$listing->is_sell_to_market) {
+                    return;
+                }
 
 
+                $marketId = $listing->seller->primaryDepot->depot->market_id;
 
-                    $seller = $listing->seller;
-                    $depot  = $seller->primaryDepot->depot;
+                // Market Id missing failed the transaction, so we can be sure it exists here
+                if (!$marketId) {
+                    throw new \RuntimeException("Market ID missing for listing {$listing->listing_code}");
+                }
 
-                    /* ---------------------------------------------
+
+                $seller = $listing->seller;
+                $depot  = $seller->primaryDepot->depot;
+
+                /* ---------------------------------------------
                      | CREATE / GET MARKET ORDER
                      ---------------------------------------------*/
-                    $marketOrder = MarketOrder::where('reference', $listing->listing_code)
-                        ->lockForUpdate()
-                        ->first();
+                $marketOrder = MarketOrder::where('reference', $listing->listing_code)
+                    ->lockForUpdate()
+                    ->first();
 
-                    if (!$marketOrder) {
-                        $marketOrder = MarketOrder::create([
-                            'market_id' => $marketId,
-                            'depot_id' => $listing->seller->primaryDepot->depot_id,
+                if (!$marketOrder) {
+                    $marketOrder = MarketOrder::create([
+                        'market_id' => $marketId,
+                        'depot_id' => $listing->seller->primaryDepot->depot_id,
 
-                            'order_status' => OrderStatusEnum::CONFIRMED->value,
-                            'delivery_status' => OrderStatusEnum::PENDING->value,
+                        'order_status' => OrderStatusEnum::CONFIRMED->value,
+                        'delivery_status' => OrderStatusEnum::PENDING->value,
 
-                            'shipping_fulfillment_location_id'
-                            => $listing->seller->primaryDepot->depot->market->fulfillment_location_id,
+                        'shipping_fulfillment_location_id'
+                        => $listing->seller->primaryDepot->depot->market->fulfillment_location_id,
 
-                            'order_date' => date('Y-m-d'),
+                        'order_date' => date('Y-m-d'),
 
-                            'is_manual' => false,
-                            'reference' => $listing->listing_code,
+                        'is_manual' => false,
+                        'reference' => $listing->listing_code,
 
-                            'currency' => 'INR',
-                            'subtotal' => 0,
-                            'tax_amount' => 0,
-                            'total_amount' => 0,
-                        ]);
-                    }
+                        'currency' => 'INR',
+                        'subtotal' => 0,
+                        'tax_amount' => 0,
+                        'total_amount' => 0,
+                    ]);
+                }
 
-                    /*
+                /*
                      |--------------------------------------------------------------------------
                      | STEP 1 — CREATE MARKET ORDER ITEMS (PER PACKAGE CONSOLIDATED)
                      |--------------------------------------------------------------------------
@@ -132,103 +132,103 @@ class JobCutOffProductListing implements ShouldQueue
                      |--------------------------------------------------------------------------
                      */
 
-                    $createdMarketItems = collect();
+                $createdMarketItems = collect();
 
-                    foreach ($listing->listingItems as $item) {
+                foreach ($listing->listingItems as $item) {
 
-                        if (!$item->product) {
-                            throw new \RuntimeException(
-                                "Product missing for listing_item {$item->id}"
-                            );
-                        }
-
-                        foreach ($item->listingPackages as $pkg) {
-
-                            $remain = $pkg->qty - $pkg->sold_qty - $pkg->demand_sold_qty; // for cutoff we have to manage demand sold qty also because we can get demand order from farmer and also direct order from buyer so we have to manage both type of orders in cutoff
-
-                            $shipQty = 0;
-                            if ($remain <= 0) {
-                                continue;
-                            }
-
-                            // Check shipment package status picked up then do it 
-                            if ($pkg->shipmentPackages()) { {
-                                    //
-                                    $pickedUpPackagesCount = $pkg->shipmentPackages()
-                                        ->whereIn('status', [
-                                            ShipmentStatusEnum::PICKED_UP->value,
-                                            ShipmentStatusEnum::ARRIVED_AT_DEPOT->value,
-                                            ShipmentStatusEnum::DELIVERED->value
-                                        ])->count();
-
-                                    if ($pickedUpPackagesCount > 0) {
-                                        // make sure not go beyond remain qty
-                                        if ($pickedUpPackagesCount >= $remain) {
-                                            $shipQty = $remain;
-                                        } else {
-                                            $shipQty = $pickedUpPackagesCount;
-                                        }
-                                    }
-                                }
-                                //
-                            } else {
-                                $shipQty = $remain; // if no shipment package then consider all remain qty for ship qty
-                            }
-
-
-                            $marketItem = MarketOrderItem::create([
-                                'market_order_id' => $marketOrder->id,
-                                'market_order_number' => $marketOrder->market_order_number,
-
-
-                                'product_listing_id' => $listing->id,
-                                'product_listing_item_id' => $item->id,
-                                'product_listing_package_id' => $pkg->id,
-
-                                'seller_id' => $listing->seller_id,
-                                'pickup_fulfillment_location_id' => $listing->fulfillment_location_id,
-                                'listing_code' => $listing->listing_code,
-
-                                'product_id' => $item->product_id,
-                                'product_code' => $item->product->product_code,
-                                'product_name' => $item->product->name,
-
-                                'product_variant_id' => $item?->product_variant_id,
-                                'variant_code' => $item?->product_variant?->variant_code,
-                                'variant_name' => $item?->product_variant?->variant_name,
-
-                                // CONSOLIDATED PER PACKAGE
-                                'order_qty' => $remain,
-                                'ship_qty'  => $shipQty,
-
-                                'pack_size' => $pkg->pack_size,
-                                'pack_unit' => $pkg->pack_unit,
-                                'pack_type_unit' => $pkg->pack_type_unit,
-
-                                'pack_price' => 0,
-                                'per_unit_price' => 0,
-
-                                'discount_amount' => 0,
-                                'discount_type' => null,
-
-                                'taxable_amount' => 0,
-                                'tax_amount' => 0,
-                                'total_amount' => 0,
-                            ]);
-
-                            $createdMarketItems->push([
-                                'marketItem' => $marketItem,
-                                'package'    => $pkg,
-                                'remain'     => $remain,
-                            ]);
-
-                            // mark package processed
-                            $listingService->markPackageSoldFromCutoff($pkg);
-                        }
+                    if (!$item->product) {
+                        throw new \RuntimeException(
+                            "Product missing for listing_item {$item->id}"
+                        );
                     }
 
-                    unset($marketItem, $pkg, $remain, $item);
-                    /*
+                    foreach ($item->listingPackages as $pkg) {
+
+                        $remain = $pkg->qty - $pkg->sold_qty - $pkg->demand_sold_qty; // for cutoff we have to manage demand sold qty also because we can get demand order from farmer and also direct order from buyer so we have to manage both type of orders in cutoff
+
+                        $shipQty = 0;
+                        if ($remain <= 0) {
+                            continue;
+                        }
+
+                        // Check shipment package status picked up then do it 
+                        if ($pkg->shipmentPackages()) { {
+                                //
+                                $pickedUpPackagesCount = $pkg->shipmentPackages()
+                                    ->whereIn('status', [
+                                        ShipmentStatusEnum::PICKED_UP->value,
+                                        ShipmentStatusEnum::ARRIVED_AT_DEPOT->value,
+                                        ShipmentStatusEnum::DELIVERED->value
+                                    ])->count();
+
+                                if ($pickedUpPackagesCount > 0) {
+                                    // make sure not go beyond remain qty
+                                    if ($pickedUpPackagesCount >= $remain) {
+                                        $shipQty = $remain;
+                                    } else {
+                                        $shipQty = $pickedUpPackagesCount;
+                                    }
+                                }
+                            }
+                            //
+                        } else {
+                            $shipQty = $remain; // if no shipment package then consider all remain qty for ship qty
+                        }
+
+
+                        $marketItem = MarketOrderItem::create([
+                            'market_order_id' => $marketOrder->id,
+                            'market_order_number' => $marketOrder->market_order_number,
+
+
+                            'product_listing_id' => $listing->id,
+                            'product_listing_item_id' => $item->id,
+                            'product_listing_package_id' => $pkg->id,
+
+                            'seller_id' => $listing->seller_id,
+                            'pickup_fulfillment_location_id' => $listing->fulfillment_location_id,
+                            'listing_code' => $listing->listing_code,
+
+                            'product_id' => $item->product_id,
+                            'product_code' => $item->product->product_code,
+                            'product_name' => $item->product->name,
+
+                            'product_variant_id' => $item?->product_variant_id,
+                            'variant_code' => $item?->product_variant?->variant_code,
+                            'variant_name' => $item?->product_variant?->variant_name,
+
+                            // CONSOLIDATED PER PACKAGE
+                            'order_qty' => $remain,
+                            'ship_qty'  => $shipQty,
+
+                            'pack_size' => $pkg->pack_size,
+                            'pack_unit' => $pkg->pack_unit,
+                            'pack_type_unit' => $pkg->pack_type_unit,
+
+                            'pack_price' => 0,
+                            'per_unit_price' => 0,
+
+                            'discount_amount' => 0,
+                            'discount_type' => null,
+
+                            'taxable_amount' => 0,
+                            'tax_amount' => 0,
+                            'total_amount' => 0,
+                        ]);
+
+                        $createdMarketItems->push([
+                            'marketItem' => $marketItem,
+                            'package'    => $pkg,
+                            'remain'     => $remain,
+                        ]);
+
+                        // mark package processed
+                        $listingService->markPackageSoldFromCutoff($pkg);
+                    }
+                }
+
+                unset($marketItem, $pkg, $remain, $item);
+                /*
                      |--------------------------------------------------------------------------
                      | STEP 2 — CREATE SHIPMENT PACKAGES (SINGLE PICKUP UNITS)
                      |--------------------------------------------------------------------------
@@ -237,112 +237,115 @@ class JobCutOffProductListing implements ShouldQueue
                      |--------------------------------------------------------------------------
                      */
 
-                    $shipment = Shipment::where('seller_id', $seller->id)
-                        ->where('origin_depot_id', $depot->id) // This one is for dispatch so always from DEPOT
-                        ->where('destination_market_id', $marketOrder->shipping_fulfillment_location_id)  // Destunation of user
-                        ->available()
-                        ->first();
+                $shipment = Shipment::where('seller_id', $seller->id)
+                    ->where('origin_depot_id', $depot->id) // This one is for dispatch so always from DEPOT
+                    ->where('destination_market_id', $marketOrder->shipping_fulfillment_location_id)  // Destunation of user
+                    ->available()
+                    ->first();
 
-                    if (!$shipment) {
+                if (!$shipment) {
 
-                        $shipment = Shipment::create([
-                            'shipment_date' => now()->toDateString(),
-                            'shipment_type' => ShipmentTypeEnum::MARKET_DISPATCH->value,
-                            'seller_id' => $seller->id,
+                    $shipment = Shipment::create([
+                        'shipment_date' => now()->toDateString(),
+                        'shipment_type' => ShipmentTypeEnum::MARKET_DISPATCH->value,
+                        'seller_id' => $seller->id,
 
-                            'origin_type' => ShipmentTypeEnum::DEPOT->value,
-                            'origin_depot_id' => $depot->id, // This one is for dispatch so always from DEPOT
+                        'origin_type' => ShipmentTypeEnum::DEPOT->value,
+                        'origin_depot_id' => $depot->id, // This one is for dispatch so always from DEPOT
 
-                            'destination_type' => ShipmentTypeEnum::MARKET->value,
-                            'destination_market_id' => $marketOrder->shipping_fulfillment_location_id,
+                        'destination_type' => ShipmentTypeEnum::MARKET->value,
+                        'destination_market_id' => $marketOrder->shipping_fulfillment_location_id,
 
-                            'status' => ShipmentStatusEnum::PENDING->value,
-                            'is_seller_dropoff' => $listing->is_seller_dropoff,
-                        ]);
-                    }
+                        'status' => ShipmentStatusEnum::PENDING->value,
+                        'is_seller_dropoff' => $listing->is_seller_dropoff,
+                    ]);
+                }
 
-                    foreach ($createdMarketItems as $row) {
+                foreach ($createdMarketItems as $row) {
 
-                        $marketItem = $row['marketItem'];
-                        $pkg        = $row['package'];
-                        $remain     = $row['remain'];
+                    $marketItem = $row['marketItem'];
+                    $pkg        = $row['package'];
+                    $remain     = $row['remain'];
 
-                        // 
+                    // 
 
-                        for ($i = 1; $i <= $remain; $i++) {
+                    for ($i = 1; $i <= $remain; $i++) {
 
-                            $sellerPackage = SellerPackage::with(['shipmentPackage'])
-                                ->where('seller_id', $seller->id)
-                                ->where('product_listing_package_id', $marketItem->product_listing_package_id)
-                                ->where('product_listing_item_id', $marketItem->product_listing_item_id)
-                                ->where('is_used', false)
-                                ->first();
+                        $sellerPackage = SellerPackage::with(['shipmentPackage'])
+                            ->where('seller_id', $seller->id)
+                            ->where('product_listing_package_id', $marketItem->product_listing_package_id)
+                            ->where('product_listing_item_id', $marketItem->product_listing_item_id)
+                            ->where('is_used', false)
+                            ->first();
 
-                            if ($sellerPackage) {
+                        if ($sellerPackage) {
 
 
-                                $shipmentPackage =  ShipmentPackage::create([
-                                    'shipment_id' => $shipment->id,
-                                    'seller_package_id' => $sellerPackage->id,
+                            $shipmentPackage =  ShipmentPackage::create([
+                                'shipment_id' => $shipment->id,
+                                'seller_package_id' => $sellerPackage->id,
 
-                                    'market_order_id' => $marketOrder->id,
-                                    'market_order_item_id' => $marketItem->id,
+                                'market_order_id' => $marketOrder->id,
+                                'market_order_item_id' => $marketItem->id,
 
-                                    'seller_id' => $seller->id,
-                                    'market_id' => $marketId,
+                                'seller_id' => $seller->id,
+                                'market_id' => $marketId,
 
-                                    'product_listing_package_id' => $marketItem->product_listing_package_id,
-                                    'product_listing_item_id' => $marketItem->product_listing_item_id,
-                                    'product_listing_id' => $marketItem->product_listing_id ?? null,
+                                'product_listing_package_id' => $marketItem->product_listing_package_id,
+                                'product_listing_item_id' => $marketItem->product_listing_item_id,
+                                'product_listing_id' => $marketItem->product_listing_id ?? null,
 
-                                    'product_id' => $marketItem->product_id,
-                                    'product_variant_id' => $marketItem->product_variant_id,
+                                'product_id' => $marketItem->product_id,
+                                'product_variant_id' => $marketItem->product_variant_id,
 
-                                    'qty' => 1,
-                                    'pack_size' => $pkg->pack_size,
-                                    'pack_unit' => $pkg->pack_unit,
-                                    'pack_price' => $pkg->pack_price,
-                                    'pack_type_unit' => $pkg->pack_type_unit,
+                                'qty' => 1,
+                                'pack_size' => $pkg->pack_size,
+                                'pack_unit' => $pkg->pack_unit,
+                                'pack_price' => $pkg->pack_price,
+                                'pack_type_unit' => $pkg->pack_type_unit,
 
-                                    'package_number_market' => ShipmentPackage::generatePackageNumberMarket($marketId),
-                                    'package_number_seller' => $sellerPackage?->shipmentPackage?->package_number_seller,
+                                'package_number_market' => ShipmentPackage::generatePackageNumberMarket($marketId),
+                                'package_number_seller' => $sellerPackage?->shipmentPackage?->package_number_seller,
 
-                                    'is_seller_dropoff' => $listing->is_seller_dropoff,
-                                ]);
+                                'is_seller_dropoff' => $listing->is_seller_dropoff,
+                            ]);
 
-                                $sellerPackage->is_used = true;
-                                $sellerPackage->save();
+                            $sellerPackage->is_used = true;
+                            $sellerPackage->save();
 
-                                // mark market item ship qty
-                                if ($sellerPackage->shipmentPackage && empty($sellerPackage->shipmentPackage->package_number_market)) {
-                                    $sellerPackage->shipmentPackage->package_number_market = $shipmentPackage->package_number_market; // update market package number to seller package for reference;
-                                    $sellerPackage->shipmentPackage->save();
-                                }
-
-                                //
-                            } else {
-                                //                            
-                                Log::warning("Seller Package unavailable for MarketOrderItem ID: {$marketItem->id}, Market Order ID: {$marketOrder->id}");
-
-                                // throw exception
-                                throw new RuntimeException("Seller Package unavailable for MarketOrderItem ID: {$marketItem->id}, Market Order ID: {$marketOrder->id}");
-
-                                // continue; // If no available seller package then skip to avoid creating shipment package without seller package
+                            // mark market item ship qty
+                            if ($sellerPackage->shipmentPackage && empty($sellerPackage->shipmentPackage->package_number_market)) {
+                                $sellerPackage->shipmentPackage->package_number_market = $shipmentPackage->package_number_market; // update market package number to seller package for reference;
+                                $sellerPackage->shipmentPackage->save();
                             }
+
+                            //
+                        } else {
+                            //                            
+                            Log::warning("Seller Package unavailable for MarketOrderItem ID: {$marketItem->id}, Market Order ID: {$marketOrder->id}");
+
+                            // throw exception
+                            throw new RuntimeException("Seller Package unavailable for MarketOrderItem ID: {$marketItem->id}, Market Order ID: {$marketOrder->id}");
+
+                            // continue; // If no available seller package then skip to avoid creating shipment package without seller package
                         }
                     }
-                    //
                 }
+                //
+
+                $listing->removeFlag(OrderFlagsEum::CUTOFF_ERROR); // remove cutoff error flag if exist because cutoff process is successful for this listing now
+
             });
 
             // Log::info('CutOff Job FINISHED SUCCESS');
         } catch (Throwable $e) {
+            $listing->addFlag(OrderFlagsEum::CUTOFF_ERROR, $e->getMessage());
 
-            Log::error('CutOff Job FAILED', [
-                'message' => $e->getMessage(),
-                'file'    => $e->getFile(),
-                'line'    => $e->getLine(),
-            ]);
+            // Log::error('CutOff Job FAILED', [
+            //     'message' => $e->getMessage(),
+            //     'file'    => $e->getFile(),
+            //     'line'    => $e->getLine(),
+            // ]);
 
             throw $e;
         }

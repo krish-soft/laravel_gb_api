@@ -26,6 +26,7 @@ class DemandOrderAccountingService
 
     public function recordPaidOrder(DemandOrder $order, Payment $payment): void
     {
+        
         try {
 
             DB::transaction(function () use ($order, $payment) {

@@ -31,61 +31,36 @@ class MarketOrderAccountingCmd extends Command
      */
     public function handle()
     {
-        //
-
-        // we can proceed with order accounting cutoff around 13 once all order reached
-
-        // 1. All Orders
-
         $startDate = $this->argument('startDate') ?? now()->subDay()->toDateString();
-        $endDate   = $this->argument('endDate')   ?? now()->toDateString();
+        $endDate   = $this->argument('endDate') ?? now()->toDateString();
 
         $this->info("Cutoff from {$startDate} to {$endDate}");
 
-
         $orders = MarketOrder::query()
-            // ->whereBetween('created_at', [
-            //     \Carbon\Carbon::parse($startDate)->startOfDay(),
-            //     \Carbon\Carbon::parse($endDate)->endOfDay(),
-            // ])
+            ->select(['id']) // reduce memory
             ->whereBetween('order_date', [
                 \Carbon\Carbon::parse($startDate)->startOfDay(),
                 \Carbon\Carbon::parse($endDate)->endOfDay(),
             ])
-             ->eligibleForAccounting()
+            ->eligibleForAccounting()
             ->orderBy('market_id')
             ->orderBy('id')
             ->get();
-
 
         if ($orders->isEmpty()) {
             $this->warn('No orders eligible for cutoff.');
             return;
         }
 
-
-        $groupedByMarkets = $orders->groupBy('market_id');
-
         $jobs = [];
 
-        //
-
-        foreach ($groupedByMarkets as $marketId => $marketOrders) {
-            $marketOrders->pluck('id')
-                ->chunk(15) // batch size per market
-                ->each(function ($chunk) use (&$jobs) {
-                    $jobs[] = new JobMarketOrderAccounting($chunk->toArray());
-                });
-        }
-
-        if (empty($jobs)) {
-            $this->warn('No jobs generated.');
-            return;
+        foreach ($orders as $order) {
+            $jobs[] = new JobMarketOrderAccounting($order->id);
         }
 
         Bus::batch($jobs)
-            ->name('CutOff Market Order Accounting Batch (Grouped by Market)')
-            ->onQueue(QueueEnum::ACCOUNTING_CUTOFF->value) // assign entire batch to cutoff queue
+            ->name('CutOff Market Order Accounting Batch')
+            ->onQueue(QueueEnum::ACCOUNTING_CUTOFF->value)
             ->dispatch();
 
         $this->info('Batch dispatched successfully.');

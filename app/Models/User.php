@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Enum\Admin\AdminRoleEnum;
 use App\Enum\Common\Legal\BankStatusEnum;
 use App\Enum\Common\Legal\KycStatusEnum;
+use App\Enum\Common\Shipment\DriverShipmentStatusEnum;
 use App\Enum\User\UserRoleEnum;
 use App\Models\Buyer\Cart\Cart;
 use App\Models\Buyer\Order\Order;
@@ -244,7 +245,8 @@ class User extends Authenticatable
 
     public function deliveryShipments()
     {
-        return $this->hasMany(DriverShipment::class, 'driver_id', 'id');
+        return $this->hasMany(DriverShipment::class, 'driver_id', 'id')
+            ->whereIn('status', [DriverShipmentStatusEnum::COMPLETED->value]);
     }
 
     public function fulfillmentLocations()

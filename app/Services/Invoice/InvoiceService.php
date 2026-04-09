@@ -87,7 +87,7 @@ class InvoiceService
                     // Base on order create all 
                     $invoice->invoiceItems()->create([
                         'item_code' => $orderItem->product_code,
-                        'item_name' => $orderItem->product_name . "[$orderItem->pack_size $orderItem->pack_unit ($orderItem->pack_type_unit)]",
+                        'item_name' => $orderItem->product_name . " [$orderItem->pack_size $orderItem->pack_unit ($orderItem->pack_type_unit)]",
 
                         'order_qty' => $orderItem->order_qty,
                         'unit_price' => $orderItem->pack_price,
@@ -238,7 +238,7 @@ class InvoiceService
                     // Base on order create all 
                     $invoice->invoiceItems()->create([
                         'item_code' => $orderItem->product_code,
-                        'item_name' => $orderItem->product_name . "[$orderItem->pack_size $orderItem->pack_unit ($orderItem->pack_type_unit)]",
+                        'item_name' => $orderItem->product_name . " [$orderItem->pack_size $orderItem->pack_unit ($orderItem->pack_type_unit)]",
 
                         'order_qty' => $orderItem->order_qty,
                         'unit_price' => $orderItem->pack_price, // Alwasy waht order place on price

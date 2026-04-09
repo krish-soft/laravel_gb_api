@@ -35,9 +35,9 @@ class MarketOrderAccountingService
 
             // Productions
             if ($marketOrder->total_amount <= 0) {
-                
+
                 $marketOrder->addFlag(OrderFlagsEum::ACCOUNTING_ERROR, "Market order has invalid payment status or total amount for accounting.");
-               
+
                 throw new RuntimeException("Market Order ID: {$marketOrder->id} has invalid payment status or total amount for accounting.Total Amount: {$marketOrder->total_amount}");
                 // Log::warning("Market Order ID: {$marketOrder->id} has invalid payment status or total amount for accounting. Payment Status: {$marketOrder->payment_status}, Total Amount: {$marketOrder->total_amount}");
             }

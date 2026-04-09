@@ -2,31 +2,30 @@
 
 namespace App\Jobs\Accounting;
 
-use App\Enum\Common\Invoice\InvoiceStatusEnum;
-use App\Enum\Common\Order\OrderStatusEnum;
-use App\Enum\Common\Payment\PaymentStatusEnum;
-use App\Models\Buyer\Order\Order;
 use App\Models\Common\Invoice\Invoice;
-use App\Models\Seller\Product\ProductListing;
 use App\Services\Accounting\InvoiceAccountingService;
-use App\Services\Accounting\OrderAccountingService;
-use App\Services\Accounting\ProductListingAccountingService;
 use Illuminate\Bus\Batchable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-class JobInvoiceAccounting implements ShouldQueue
+class JobInvoiceAccounting implements ShouldQueue, ShouldBeUnique
 {
     use Queueable, Batchable;
 
-    protected array $invoiceIds;
+    protected int $invoiceId;
 
-    public function __construct(array $invoiceIds)
+    public function __construct(int $invoiceId)
     {
-        $this->invoiceIds = $invoiceIds;
+        $this->invoiceId = $invoiceId;
+    }
+
+    public function uniqueId(): string
+    {
+        return (string) "accnt_invoice_" . $this->invoiceId;
     }
 
     /**
@@ -35,28 +34,27 @@ class JobInvoiceAccounting implements ShouldQueue
     public function handle(): void
     {
         //
+        $invoice = Invoice::lockForUpdate()->find($this->invoiceId);
 
-
+        if (!$invoice) {
+            return;
+        }
         try {
+            DB::transaction(function () use ($invoice) {
 
-            DB::transaction(function () {
+                // Log::info("Processing Invoice ID: {$invoice->id} for User ID: {$invoice->user_id}");
+                app(InvoiceAccountingService::class)
+                    ->recordInvoice($invoice);
 
-                $invoices = Invoice::whereIn('id', $this->invoiceIds)->get();
-
-                foreach ($invoices as $invoice) {
-                    // Log::info("Processing Invoice ID: {$invoice->id} for User ID: {$invoice->user_id}");
-                    app(InvoiceAccountingService::class)
-                        ->recordInvoice($invoice);
-                }
                 //
             });
         } catch (Throwable $e) {
 
-            Log::error('Invoice Accounting Job Failed', [
-                'message' => $e->getMessage(),
-                'file'    => $e->getFile(),
-                'line'    => $e->getLine(),
-            ]);
+            // Log::error('Invoice Accounting Job Failed', [
+            //     'message' => $e->getMessage(),
+            //     'file'    => $e->getFile(),
+            //     'line'    => $e->getLine(),
+            // ]);
 
             throw $e;
         }

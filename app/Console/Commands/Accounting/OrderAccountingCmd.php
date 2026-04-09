@@ -31,23 +31,12 @@ class OrderAccountingCmd extends Command
      */
     public function handle()
     {
-        //
-
-        // we can proceed with order accounting cutoff around 13 once all order reached
-
-        // 1. All Orders
-
         $startDate = $this->argument('startDate') ?? now()->subDay()->toDateString();
-        $endDate   = $this->argument('endDate')   ?? now()->toDateString();
+        $endDate   = $this->argument('endDate') ?? now()->toDateString();
 
         $this->info("Cutoff from {$startDate} to {$endDate}");
 
-
         $orders = Order::query()
-            // ->whereBetween('created_at', [
-            //     \Carbon\Carbon::parse($startDate)->startOfDay(),
-            //     \Carbon\Carbon::parse($endDate)->endOfDay(),
-            // ])
             ->whereBetween('order_date', [
                 \Carbon\Carbon::parse($startDate)->startOfDay(),
                 \Carbon\Carbon::parse($endDate)->endOfDay(),
@@ -57,36 +46,20 @@ class OrderAccountingCmd extends Command
             ->orderBy('id')
             ->get();
 
-
         if ($orders->isEmpty()) {
             $this->warn('No orders eligible for cutoff.');
             return;
         }
 
-
-        $groupedByBuyers = $orders->groupBy('buyer_id');
-
         $jobs = [];
 
-        //
-
-        foreach ($groupedByBuyers as $buyerId => $buyerOrders) {
-
-            $buyerOrders->pluck('id')
-                ->chunk(15) // batch size per buyer
-                ->each(function ($chunk) use (&$jobs) {
-                    $jobs[] = new JobOrderAccounting($chunk->toArray());
-                });
-        }
-
-        if (empty($jobs)) {
-            $this->warn('No jobs generated.');
-            return;
+        foreach ($orders as $order) {
+            $jobs[] = new JobOrderAccounting($order->id);
         }
 
         Bus::batch($jobs)
-            ->name('CutOff Order Accounting Batch (Grouped by Buyer)')
-            ->onQueue(QueueEnum::ACCOUNTING_CUTOFF->value) // assign entire batch to cutoff queue
+            ->name('CutOff Order Accounting Batch')
+            ->onQueue(QueueEnum::ACCOUNTING_CUTOFF->value)
             ->dispatch();
 
         $this->info('Batch dispatched successfully.');

@@ -228,7 +228,7 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
              * ------------------------------------
              */
             if (
-                // MstPaymentSetting::payInMode() === PaymentMethodEnum::MANUAL->value ||
+                MstPaymentSetting::payInMode() === PaymentMethodEnum::MANUAL->value || // Testing only - in production we will not allow manual payment method for buyer checkout. It will be only for admin to mark payment as paid when they receive payment outside system.
                 // check credit balance enough then can mark as paid directly without manual payment  
                 ($payment->amount <= 0 && $payment->credit_amount > 0)
             ) {

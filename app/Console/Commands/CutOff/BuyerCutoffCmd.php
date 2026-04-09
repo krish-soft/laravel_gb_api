@@ -109,7 +109,7 @@ class BuyerCutoffCmd extends Command
 
         $model::query()
             ->whereBetween('order_date', [$startDate, $endDate])
-            
+
             ->where('delivery_status', OrderStatusEnum::PENDING->value)
             ->where('payment_status', PaymentStatusEnum::PAID->value)
             ->where('is_cutoff', false) // Important to avoid re-processing already cutoff orders
@@ -119,11 +119,9 @@ class BuyerCutoffCmd extends Command
 
                 $orders->groupBy('buyer_id')->each(function ($buyerOrders) use (&$jobs, $jobClass) {
 
-                    $buyerOrders->pluck('id')
-                        ->chunk(15)
-                        ->each(function ($chunk) use (&$jobs, $jobClass) {
-                            $jobs[] = new $jobClass($chunk->toArray());
-                        });
+                    foreach ($buyerOrders as $order) {
+                        $jobs[] = new $jobClass($order->id);
+                    }
                 });
             });
 
@@ -135,36 +133,20 @@ class BuyerCutoffCmd extends Command
     {
         $jobs = [];
 
-
         ProductListing::query()
-            ->select(['id', 'seller_id'])
+            ->select(['id'])
             ->where('is_active', true)
             ->where('is_expired', false)
-            ->whereBetween(
-                'listing_date',
-                [
-                    $startDate->toDateString(),
-                    $endDate->toDateString()
-
-                    // $startDate,
-                    // $endDate
-                ]
-            )
+            ->whereBetween('listing_date', [
+                $startDate->toDateString(),
+                $endDate->toDateString()
+            ])
             ->chunkById(500, function ($listings) use (&$jobs) {
 
-                $listings->groupBy('seller_id')->each(function ($sellerListings) use (&$jobs) {
-
-                    $sellerListings->pluck('id')
-                        ->chunk(15)
-                        ->each(function ($chunk) use (&$jobs) {
-
-                            $jobs[] = new JobCutOffProductListing(
-                                $chunk->toArray()
-                            );
-                        });
-                });
+                foreach ($listings as $listing) {
+                    $jobs[] = new JobCutOffProductListing($listing->id);
+                }
             });
-
 
         return $jobs;
     }

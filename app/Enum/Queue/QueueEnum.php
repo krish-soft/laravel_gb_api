@@ -14,7 +14,6 @@ enum QueueEnum: string
     case ACCOUNTING_CUTOFF   = 'accounting_cutoff';
     case INVOICING_CUTOFF   = 'invoicing_cutoff';
 
-
         // For real time processing
     case ACCOUNTING   = 'accounting';
     case INVOICING   = 'invoicing';
