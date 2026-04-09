@@ -47,7 +47,7 @@ class DemandCart extends BaseModel
 
     public function buyer()
     {
-        return $this->belongsTo(User::class, 'buyer_id');
+        return $this->belongsTo(User::class, 'buyer_id')->safe();
     }
 
     public function shippingFulfillmentLocation()

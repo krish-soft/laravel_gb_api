@@ -78,14 +78,12 @@ class Shipment extends BaseModel
 
     public function buyer()
     {
-        return $this->belongsTo(User::class, 'buyer_id')
-            ->select(['id', 'name', 'user_code', 'nickname']);
+        return $this->belongsTo(User::class, 'buyer_id')->safe();
     }
 
     public function seller()
     {
-        return $this->belongsTo(User::class, 'seller_id')
-            ->select(['id', 'name', 'user_code', 'nickname']);
+        return $this->belongsTo(User::class, 'seller_id')->safe();
     }
 
     public function originFulfillmentLocation()

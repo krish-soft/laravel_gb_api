@@ -120,6 +120,6 @@ class UserBank extends BaseModel
 
     public function verifiedByUser()
     {
-        return $this->belongsTo(User::class, 'verified_user_id');
+        return $this->belongsTo(User::class, 'verified_user_id')->safe();
     }
 }

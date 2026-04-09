@@ -60,7 +60,7 @@ class Account extends BaseModel
         'total_credit' => 'decimal:2',
         'total_debit' => 'decimal:2',
         'is_active' => 'boolean',
-        
+
         'is_credit_enabled' => 'boolean',
     ];
 
@@ -171,7 +171,7 @@ class Account extends BaseModel
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'owner_id', 'id')->select('id', 'name', 'user_code', 'nickname', 'charge_level_code');
+        return $this->belongsTo(User::class, 'owner_id', 'id')->safe();
     }
 
     // generate unique account code

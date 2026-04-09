@@ -101,12 +101,12 @@ class ShipmentPackage extends BaseModel
 
     public function buyer()
     {
-        return $this->belongsTo(User::class, 'buyer_id')->select('id', 'name', 'user_code', 'nickname', 'user_type', 'charge_level_code');
+        return $this->belongsTo(User::class, 'buyer_id')->safe();
     }
 
     public function seller()
     {
-        return $this->belongsTo(User::class, 'seller_id')->select('id', 'name', 'user_code', 'nickname', 'user_type', 'charge_level_code');
+        return $this->belongsTo(User::class, 'seller_id')->safe();
     }
 
     public function market()

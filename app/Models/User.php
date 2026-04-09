@@ -130,6 +130,21 @@ class User extends Authenticatable
     }
 
 
+    // Scopes
+    public function scopeSafe($query)
+    {
+        return $query->select([
+            'id',
+            'name',
+            'role',
+            'user_code',
+            'nickname',
+            'user_type',
+            'charge_level_code'
+        ]);
+    }
+
+
     protected static function generateUniqueUserCode()
     {
         do {

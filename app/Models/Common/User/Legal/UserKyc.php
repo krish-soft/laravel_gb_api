@@ -116,12 +116,12 @@ class UserKyc extends BaseModel
      */
     public function user()
     {
-        return $this->belongsTo(User::class)->select('id', 'user_code', 'name', 'nickname');
+        return $this->belongsTo(User::class)->safe();
     }
 
     public function verifiedByUser()
     {
-        return $this->belongsTo(User::class, 'verified_user_id')->select('id', 'user_code', 'name', 'nickname');
+        return $this->belongsTo(User::class, 'verified_user_id')->safe();
     }
 
     public function address()

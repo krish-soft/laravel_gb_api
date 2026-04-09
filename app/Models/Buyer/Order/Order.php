@@ -201,7 +201,7 @@ class Order extends BaseModel
 
     public function buyer()
     {
-        return $this->belongsTo(User::class, 'buyer_id', 'id');
+        return $this->belongsTo(User::class, 'buyer_id', 'id')->safe();
     }
 
     // shipping Depot for this order

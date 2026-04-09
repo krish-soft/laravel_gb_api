@@ -39,12 +39,12 @@ class SellerRating extends BaseModel
 
     public function seller()
     {
-        return $this->belongsTo(User::class, 'seller_id', 'id');
+        return $this->belongsTo(User::class, 'seller_id', 'id')->safe();
     }
 
     // Mainly given by buyer & Driver
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id', 'id');
+        return $this->belongsTo(User::class, 'user_id', 'id')->safe();
     }
 }

@@ -21,8 +21,7 @@ class DriverLocation extends Model
     // Relationships
     public function driver()
     {
-        return $this->belongsTo(User::class, 'driver_id');
-
+        return $this->belongsTo(User::class, 'driver_id')->safe();
     }
 
     public function driverShipment()

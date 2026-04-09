@@ -38,12 +38,12 @@ class DriverRating extends BaseModel
 
     public function driver()
     {
-        return $this->belongsTo(User::class, 'driver_id', 'id');
+        return $this->belongsTo(User::class, 'driver_id', 'id')->safe();
     }
 
     // mainly will given by buyer & seller
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id', 'id');
+        return $this->belongsTo(User::class, 'user_id', 'id')->safe();
     }
 }

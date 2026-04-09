@@ -118,7 +118,7 @@ class ActivityLog extends Model
 
     public function actor()
     {
-        return $this->belongsTo(User::class, 'actor_id');
+        return $this->belongsTo(User::class, 'actor_id')->safe();
     }
 
     public function subject()

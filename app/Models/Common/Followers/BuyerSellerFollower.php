@@ -43,12 +43,12 @@ class BuyerSellerFollower extends BaseModel
     // relationships
     public function buyer()
     {
-        return $this->belongsTo(User::class, 'buyer_id', 'id');
+        return $this->belongsTo(User::class, 'buyer_id', 'id')->safe();
     }
 
     public function seller()
     {
-        return $this->belongsTo(User::class, 'seller_id', 'id');
+        return $this->belongsTo(User::class, 'seller_id', 'id')->safe();
     }
 
 

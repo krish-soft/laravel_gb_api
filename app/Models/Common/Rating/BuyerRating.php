@@ -38,14 +38,14 @@ class BuyerRating extends BaseModel
 
     public function buyer()
     {
-        return $this->belongsTo(User::class, 'buyer_id', 'id');
+        return $this->belongsTo(User::class, 'buyer_id', 'id')->safe();
     }
 
 
     // Mainly given by driver
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id', 'id');
+        return $this->belongsTo(User::class, 'user_id', 'id')->safe();
     }
 
     //

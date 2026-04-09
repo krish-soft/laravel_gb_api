@@ -22,7 +22,7 @@ class Cart extends BaseModel
         });
     }
 
-    
+
     protected $fillable = [
         'buyer_id',
         'fulfillment_location_id',
@@ -47,7 +47,7 @@ class Cart extends BaseModel
 
     public function buyer()
     {
-        return $this->belongsTo(User::class, 'buyer_id');
+        return $this->belongsTo(User::class, 'buyer_id')->safe();
     }
 
     public function shippingFulfillmentLocation()

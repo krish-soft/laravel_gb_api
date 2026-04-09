@@ -63,7 +63,7 @@ class DriverShipment extends BaseModel
 
     public function driver()
     {
-        return $this->belongsTo(User::class, 'driver_id')->select('id', 'name', 'user_code', 'nickname', 'charge_level_code');
+        return $this->belongsTo(User::class, 'driver_id')->safe();
     }
 
     public function driverVehicle()
@@ -73,7 +73,7 @@ class DriverShipment extends BaseModel
 
     public function assignedBy()
     {
-        return $this->belongsTo(User::class, 'assigned_by')->select('id', 'name', 'user_code', 'nickname','user_type','charge_level_code');
+        return $this->belongsTo(User::class, 'assigned_by')->safe();
     }
 
     public function driverRatings()
