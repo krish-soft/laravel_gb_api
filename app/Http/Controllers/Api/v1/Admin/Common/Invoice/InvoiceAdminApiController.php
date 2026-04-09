@@ -62,7 +62,7 @@ class InvoiceAdminApiController extends ApiResponseWithAdminAuthController
         $request->validate([
             'user_id'      => 'required|exists:users,id',
             'invoice_date' => 'required|date',
-            'invoice_type' => 'required|in:sales,purchase,delivery',
+            'invoice_type' => 'required|in:sales,purchase,delivery,sales_return,purchase_return',
 
             'items'                      => 'required|array|min:1',
             'items.*.item_name'          => 'required|string',
@@ -80,6 +80,8 @@ class InvoiceAdminApiController extends ApiResponseWithAdminAuthController
         DB::beginTransaction();
 
         try {
+
+            $invoiceType = $request->invoice_type;
 
             $baseAmount = 0;               // only item taxable
             $chargeTaxableTotal = 0;       // only charge taxable
@@ -139,8 +141,44 @@ class InvoiceAdminApiController extends ApiResponseWithAdminAuthController
                 }
             }
 
+            $signItems = 1;
+            $signCharges = 1;
+
+            switch ($invoiceType) {
+
+                case 'sales':
+                    $signItems = 1;
+                    $signCharges = 1;
+                    break;
+
+                case 'purchase':
+                    $signItems = 1;
+                    $signCharges = -1;
+                    break;
+
+                    // we need to store value as positives so accoutning will manage itf
+                // case 'sales_return':
+                //     $signItems = -1;
+                //     $signCharges = -1;
+                //     break;
+
+                // case 'purchase_return':
+                //     $signItems = -1;
+                //     $signCharges = 1;
+                //     break;
+            }
+
+
+            $baseAmount = $baseAmount * $signItems;
+            $chargeTaxableTotal = $chargeTaxableTotal * $signCharges;
+            $totalTax = $totalTax * $signItems;
+
             $subtotal = $baseAmount + $chargeTaxableTotal;
             $totalAmount = $subtotal + $totalTax;
+
+            // ORG
+            // $subtotal = $baseAmount + $chargeTaxableTotal;
+            // $totalAmount = $subtotal + $totalTax;
 
             $invoice->update([
                 'base_amount'  => $baseAmount,
@@ -257,8 +295,47 @@ class InvoiceAdminApiController extends ApiResponseWithAdminAuthController
                 }
             }
 
+            $invoiceType = $invoice->invoice_type;
+
+            $signItems = 1;
+            $signCharges = 1;
+
+            switch ($invoiceType) {
+
+                case 'sales':
+                    $signItems = 1;
+                    $signCharges = 1;
+                    break;
+
+                case 'purchase':
+                    $signItems = 1;
+                    $signCharges = -1;
+                    break;
+
+                    // we need to store value as positives so accoutning will manage it
+                    // case 'sales_return':
+                    //     $signItems = -1;
+                    //     $signCharges = -1;
+                    //     break;
+
+                    // case 'purchase_return':
+                    //     $signItems = -1;
+                    //     $signCharges = 1;
+                    //     break;
+            }
+
+
+            // Apply signs based on invoice type
+            $baseAmount = $baseAmount * $signItems;
+            $chargeTaxableTotal = $chargeTaxableTotal * $signCharges;
+            $totalTax = $totalTax * $signItems;
+
             $subtotal = $baseAmount + $chargeTaxableTotal;
             $totalAmount = $subtotal + $totalTax;
+
+            // ORG
+            // $subtotal = $baseAmount + $chargeTaxableTotal;
+            // $totalAmount = $subtotal + $totalTax;
 
             $invoice->update([
                 'base_amount'  => $baseAmount,
