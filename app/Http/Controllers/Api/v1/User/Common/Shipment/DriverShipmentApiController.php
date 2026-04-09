@@ -806,14 +806,14 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
             ->findOrFail($driverShipmentId);
 
         if ($driverShipment->driver_id !== request()->user()->id) {
-            throw new RuntimeException(__('messages.error_messages.unauthorized_action'), 403);
+            throw new Exception(__('messages.error_messages.unauthorized_action'), 403);
         }
 
         // if driver shipment not accepted do not change any status of packages
         if (
             (!$driverShipment->accepted_at && !in_array($driverShipment->status, [DriverShipmentStatusEnum::ACCEPTED->value, DriverShipmentStatusEnum::IN_TRANSIT->value]))
         ) {
-            throw new RuntimeException("Must accept/start shipment first.", 422);
+            throw new Exception("Must accept/start shipment first.", 422);
         }
 
         if (in_array($driverShipment->status, [
@@ -822,7 +822,7 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
             DriverShipmentStatusEnum::REJECTED->value,
             ShipmentStatusEnum::RETURNED->value,
         ])) {
-            throw new RuntimeException("This shipment has been cancelled/rejected/returned/completed.", 410);
+            throw new Exception("This shipment has been cancelled/rejected/returned/completed.", 410);
         }
 
         // if shipment itself is not started or accepted or in transit
@@ -834,7 +834,7 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
                 DriverShipmentStatusEnum::IN_TRANSIT->value,
             ])
         ) {
-            throw new RuntimeException(
+            throw new Exception(
                 "Shipment is not in a valid state for updating package status.",
                 422
             );
@@ -846,7 +846,7 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
             ->contains($packageId);
 
         if (!$belongs) {
-            throw new RuntimeException('Shipment package not belongs to this shipment.', 404);
+            throw new Exception('Shipment package not belongs to this shipment.', 404);
         }
 
         return $driverShipment;

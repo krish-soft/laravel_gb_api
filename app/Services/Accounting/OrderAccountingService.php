@@ -168,7 +168,7 @@ class OrderAccountingService
 
 
                 $order->order_status =  OrderStatusEnum::ACCOUNTED->value;
-                $order->is_locked = true; // lock order after accounting
+                // $order->is_locked = true;// On Cutoff due to pacakge creation // lock order after accounting
                 $order->removeFlag(OrderFlagsEum::ACCOUNTING_ERROR); // remove accounting error flag if exists
                 $order->save();
 

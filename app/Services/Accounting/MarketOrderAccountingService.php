@@ -119,7 +119,7 @@ class MarketOrderAccountingService
 
             // 
             $marketOrder->order_status =  OrderStatusEnum::ACCOUNTED->value;
-            $marketOrder->is_locked = true; // lock order after accounting
+            $marketOrder->is_locked = true;// on cutoff due to package // lock order after accounting
             $marketOrder->removeFlag(OrderFlagsEum::ACCOUNTING_ERROR); // remove accounting error flag if exists
             $marketOrder->save();
 
