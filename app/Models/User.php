@@ -246,7 +246,7 @@ class User extends Authenticatable
     public function deliveryShipments()
     {
         return $this->hasMany(DriverShipment::class, 'driver_id', 'id')
-            ->whereIn('status', [DriverShipmentStatusEnum::COMPLETED->value]);
+            ->whereNotIn('status', [DriverShipmentStatusEnum::REJECTED->value, DriverShipmentStatusEnum::CANCELLED->value]);
     }
 
     public function fulfillmentLocations()

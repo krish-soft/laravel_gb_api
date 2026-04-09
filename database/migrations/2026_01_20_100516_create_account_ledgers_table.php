@@ -59,6 +59,7 @@ return new class extends Migration
             // Tax flag (excluded from seller/driver payable)
             $table->boolean('is_tax')->default(false)->nullable();
             $table->boolean('is_open_balance')->default(false)->nullable();
+            $table->boolean('is_credit_balance')->default(false)->nullable();
 
             $table->string('remarks')->nullable();
 

@@ -96,6 +96,8 @@ class InvoiceAccountingService
                 }
 
                 if ($isSales) {
+                    $invoice->status = InvoiceStatusEnum::ACCOUNTED->value;
+                    $invoice->save();
                     return; // we don not need charge of its because we already received total amount from buyer, we will handle charge in settlement
                 }
 

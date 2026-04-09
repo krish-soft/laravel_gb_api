@@ -26,7 +26,7 @@ class DemandOrderAccountingService
 
     public function recordPaidOrder(DemandOrder $order, Payment $payment): void
     {
-        
+
         try {
 
             DB::transaction(function () use ($order, $payment) {
@@ -47,6 +47,7 @@ class DemandOrderAccountingService
                 $paymentAmount = $payment->amount;
                 $paymentCreditAmount = $payment->credit_amount; // credit used in this payment if any
 
+                $paymentTotalAmount = $paymentAmount + $paymentCreditAmount;
 
                 // get total of taxable orderItems 
                 // $taxableItemsAmount = $order->demandOrderItems->sum('taxable_amount');
@@ -73,9 +74,7 @@ class DemandOrderAccountingService
                 |-------------------------------------------------
                 */
 
-                if ($paymentAmount) {
-
-
+                if ($paymentAmount > 0) {
 
 
                     // Chaning only main one entry not from reporting.
@@ -104,6 +103,7 @@ class DemandOrderAccountingService
                         ]);
                     }
 
+
                     if (!$this->ledgerExists(
                         $buyerAccount->id,
                         AccountEntryTypeEnum::ORDER_PAYMENT_AMOUNT_BASE->value,
@@ -131,7 +131,6 @@ class DemandOrderAccountingService
                     }
                 }
 
-
                 // Credit Amount  Needed
                 if ($paymentCreditAmount > 0) {
 
@@ -145,7 +144,7 @@ class DemandOrderAccountingService
                         $paymentCreditAmount
                     )) {
                         $accounting->createLedger($buyerAccount, [
-                            'description' => "Payment received for Order #{$order->order_number}, Payment #{$payment->payment_code}",
+                            'description' => "Credit used for Order #{$order->order_number}, Payment #{$payment->payment_code}",
                             'credit' => 0, // $order->subtotal, // total without tax  $taxableItemsAmount, // we are storing in each accounts  ,
                             'debit'  => $paymentCreditAmount,
 
@@ -160,6 +159,7 @@ class DemandOrderAccountingService
                             'payment_reference' => $payment->gateway_order_id,
 
                             'common_reference' => $order->payment_code,
+                            'is_credit_balance' => true,
                         ]);
                     }
                 }

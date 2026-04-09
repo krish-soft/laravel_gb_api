@@ -53,8 +53,10 @@ class AccountLedger extends BaseModel
 
         'settled_at',
 
+        // Only for reporting / settlement, not used in actual accounting
         'is_tax',
         'is_open_balance',
+        'is_credit_balance',
 
         'remarks',
     ];
@@ -65,6 +67,8 @@ class AccountLedger extends BaseModel
         'debit' => 'decimal:2',
         'is_tax' => 'boolean',
         'is_open_balance' => 'boolean',
+        'is_credit_balance' => 'boolean',
+
     ];
 
     // relationships

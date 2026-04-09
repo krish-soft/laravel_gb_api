@@ -51,6 +51,7 @@ class OrderAccountingService
                 $paymentCreditAmount = $payment->credit_amount; // credit used in this payment if any
 
 
+
                 $buyerId = $order->buyer_id;
                 $buyerAccount = Account::getOrCreateByOwner(
                     AccountOwnerTypeEnum::BUYER->value,
@@ -66,9 +67,6 @@ class OrderAccountingService
 
 
                 if ($paymentAmount > 0) {
-
-                    // For clearning we can not use total or sub total because both have inclusive tax and charges total
-                    // and we are seperating in multiple accounts so we need to calulate base amount
 
                     /*
                     |-------------------------------------------------
@@ -102,6 +100,7 @@ class OrderAccountingService
                         ]);
                     }
 
+
                     // Buyer Account
                     if (!$this->ledgerExists(
                         $buyerAccount->id,
@@ -132,6 +131,7 @@ class OrderAccountingService
                     }
                 }
 
+
                 // Credit Amount  Needed
                 if ($paymentCreditAmount > 0) {
 
@@ -145,7 +145,7 @@ class OrderAccountingService
                         $paymentCreditAmount
                     )) {
                         $accounting->createLedger($buyerAccount, [
-                            'description' => "Payment received for Order #{$order->order_number}, Payment #{$payment->payment_code}",
+                            'description' => "Credit used for Order #{$order->order_number}, Payment #{$payment->payment_code}",
                             'credit' => 0, // $order->subtotal, // total without tax  $taxableItemsAmount, // we are storing in each accounts  ,
                             'debit'  => $paymentCreditAmount,
 
