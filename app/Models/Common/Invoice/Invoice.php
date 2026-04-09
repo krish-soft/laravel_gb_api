@@ -6,6 +6,7 @@ use App\Enum\Common\Order\OrderFlagsEum;
 use App\Models\BaseModel;
 use App\Models\Buyer\Order\DemandOrder;
 use App\Models\Buyer\Order\Order;
+use App\Models\Common\Payment\Payment;
 use App\Models\Market\MarketOrder;
 use App\Models\Master\Unique\MstSeqCodeGenerator;
 use App\Models\Seller\Product\ProductListing;
@@ -104,6 +105,18 @@ class Invoice extends BaseModel
     public function productListing()
     {
         return $this->belongsTo(ProductListing::class);
+    }
+
+
+    // If any direct payment or just entry for payment not from order
+    public function payment()
+    {
+        return $this->hasOne(Payment::class, 'source_id', 'id')
+            ->where('source_type', self::class);
+        // ->where(function ($query) {
+        //     $query->where('payment_code', $this->reference)
+        //         ->orWhere('gateway_order_id', $this->payment_reference);
+        // });
     }
 
     // booted generate invoice number 
