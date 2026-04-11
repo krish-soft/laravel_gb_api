@@ -65,16 +65,11 @@
             text-align: center
         }
 
-        .total {
-            background: #fafafa;
-            font-weight: bold;
-        }
-
-        .flowbox {
-            margin-top: 8px;
+        .location-box {
+            margin-top: 10px;
             padding: 6px;
             border: 1px solid #ccc;
-            background: #f9f9f9;
+            background: #fafafa;
         }
     </style>
 
@@ -135,29 +130,28 @@
 
 
 
-    {{-- PRODUCT SUMMARY --}}
+    {{-- PICKUP SUMMARY --}}
 
     <div class="section">
 
-        <b>Product Movement by Shipment Type</b>
+        <b>Pickup Summary (From Location)</b>
 
-        @foreach ($product_summary as $group)
-            <div class="flowbox">
+        @foreach ($from_location_summary as $loc)
+            <div class="location-box">
 
-                <b>{{ strtoupper($group['shipment_type']) }}</b>
+                <b>{{ $loc['location'] }}</b>
 
                 <table>
 
                     <tr>
-                        <th width="40%">Product</th>
+                        <th width="45%">Product</th>
                         <th width="10%">Pack</th>
                         <th width="10%">Unit</th>
-                        <th class="right">Packages</th>
                         <th class="right">Qty</th>
                         <th class="right">Weight</th>
                     </tr>
 
-                    @foreach ($group['products'] as $p)
+                    @foreach ($loc['products'] as $p)
                         <tr>
 
                             <td>
@@ -168,8 +162,6 @@
                             <td class="center">{{ $p['pack_size'] }}</td>
 
                             <td class="center">{{ $p['pack_unit'] }}</td>
-
-                            <td class="right">{{ $p['packages'] }}</td>
 
                             <td class="right">{{ $p['qty'] }}</td>
 
@@ -187,129 +179,47 @@
 
 
 
-    {{-- FLOW SUMMARY --}}
+    {{-- DELIVERY SUMMARY --}}
 
     <div class="section">
 
-        <b>Location Flow Summary</b>
+        <b>Delivery Summary (To Location)</b>
 
-        <table>
+        @foreach ($to_location_summary as $loc)
+            <div class="location-box">
 
-            <tr>
-                <th width="30%">From</th>
-                <th width="30%">To</th>
-                <th class="right">Shipments</th>
-                <th class="right">Packages</th>
-                <th class="right">Qty</th>
-                <th class="right">Weight</th>
-            </tr>
+                <b>{{ $loc['location'] }}</b>
 
-            @foreach ($flow_summary as $f)
-                <tr>
+                <table>
 
-                    <td>{{ $f['from'] }}</td>
+                    <tr>
+                        <th width="45%">Product</th>
+                        <th width="10%">Pack</th>
+                        <th width="10%">Unit</th>
+                        <th class="right">Qty</th>
+                        <th class="right">Weight</th>
+                    </tr>
 
-                    <td>{{ $f['to'] }}</td>
-
-                    <td class="right">{{ $f['shipments'] }}</td>
-
-                    <td class="right">{{ $f['packages'] }}</td>
-
-                    <td class="right">{{ $f['qty'] }}</td>
-
-                    <td class="right">{{ $f['weight'] }}</td>
-
-                </tr>
-            @endforeach
-
-        </table>
-
-    </div>
-
-
-
-    {{-- FLOW DETAILS --}}
-
-    <div class="section">
-
-        <b>Shipment Flow Details</b>
-
-        @foreach ($flow_details as $flow)
-            <div class="flowbox">
-
-                <b>
-                    {{ $flow['from']['addr_name'] ?? '' }}
-                    →
-                    {{ $flow['to']['addr_name'] ?? '' }}
-                </b>
-
-                @foreach ($flow['shipments'] as $s)
-                    <table>
-
-                        <tr>
-                            <th width="40%">Shipment</th>
-                            <th width="15%">Date</th>
-                            <th width="15%">Type</th>
-                            <th width="15%">Status</th>
-                        </tr>
-
+                    @foreach ($loc['products'] as $p)
                         <tr>
 
-                            <td>{{ $s['shipment_number'] }}</td>
+                            <td>
+                                <b>{{ $p['product']['name'] ?? 'N/A' }}</b><br>
+                                <span class="meta">{{ $p['product']['product_code'] ?? '' }}</span>
+                            </td>
 
-                            <td>{{ $s['shipment_date'] }}</td>
+                            <td class="center">{{ $p['pack_size'] }}</td>
 
-                            <td>{{ $s['shipment_type'] }}</td>
+                            <td class="center">{{ $p['pack_unit'] }}</td>
 
-                            <td>{{ $s['status'] }}</td>
+                            <td class="right">{{ $p['qty'] }}</td>
 
-                        </tr>
-
-                    </table>
-
-
-                    <table>
-
-                        <tr>
-                            <th width="40%">Product</th>
-                            <th width="10%">Pack</th>
-                            <th width="10%">Unit</th>
-                            <th class="right">Qty</th>
-                            <th class="right">Weight</th>
-                        </tr>
-
-                        @foreach ($s['items'] as $i)
-                            <tr>
-
-                                <td>
-                                    <b>{{ $i['product']['name'] ?? 'N/A' }}</b><br>
-                                    <span class="meta">{{ $i['product']['product_code'] ?? '' }}</span>
-                                </td>
-
-                                <td class="center">{{ $i['pack_size'] }}</td>
-
-                                <td class="center">{{ $i['pack_unit'] }}</td>
-
-                                <td class="right">{{ $i['qty'] }}</td>
-
-                                <td class="right">{{ $i['weight'] }}</td>
-
-                            </tr>
-                        @endforeach
-
-
-                        <tr class="total">
-
-                            <td colspan="3">Shipment Total</td>
-
-                            <td class="right">{{ $s['total']['qty'] }}</td>
-
-                            <td class="right">{{ $s['total']['weight'] }}</td>
+                            <td class="right">{{ $p['weight'] }}</td>
 
                         </tr>
+                    @endforeach
 
-                    </table>
-                @endforeach
+                </table>
 
             </div>
         @endforeach
