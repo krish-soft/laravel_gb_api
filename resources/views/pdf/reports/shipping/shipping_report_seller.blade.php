@@ -21,7 +21,7 @@
         }
 
         body {
-            font-family: 'NotoGujarati', 'NotoHindi';
+            font-family: 'NotoGujarati', 'NotoHindi', sans-serif;
             font-size: 11px;
             color: #1a1a1a;
         }
