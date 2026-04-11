@@ -86,17 +86,19 @@
             background: #f9f9f9;
         }
     </style>
-</head>
 
+</head>
 
 <body>
 
 
-    {{-- HEADER --}}
+    <!-- HEADER -->
 
     <div class="header">
 
-        <div class="title">Shipping Report By Buyer</div>
+        <div class="title">
+            Shipping Report By Buyer
+        </div>
 
         <div class="meta">
             Date : {{ $filters['start_date'] }} → {{ $filters['end_date'] }}
@@ -106,7 +108,7 @@
 
 
 
-    {{-- PRODUCT SUMMARY --}}
+    <!-- PRODUCT SUMMARY -->
 
     <div class="section">
 
@@ -115,27 +117,46 @@
         <table>
 
             <tr>
-                <th width="40%">Product</th>
+
+                <th width="35%">Product</th>
+
                 <th width="10%">Unit</th>
+
                 <th class="right">Qty</th>
+
                 <th class="right">Shipped</th>
+
                 <th class="right">Weight</th>
+
                 <th class="right">Amount</th>
+
             </tr>
+
 
             @foreach ($product_summary as $p)
                 <tr>
 
                     <td>
+
                         <b>{{ $p['product']['name'] }}</b><br>
-                        <span class="meta">{{ $p['product']['product_code'] }}</span>
+
+                        <span class="meta">
+                            {{ $p['product']['product_code'] }}
+                        </span>
+
                     </td>
 
-                    <td class="center">{{ $p['pack_unit'] }}</td>
+                    <td class="center">
+                        {{ $p['pack_unit'] }}
+                    </td>
 
-                    <td class="right">{{ $p['qty'] }}</td>
+                    <td class="right">
+                        {{ $p['qty'] }}
+                    </td>
 
-                    <td class="right">{{ $p['shipped_qty'] }}</td>
+                    <td class="right">
+                        {{ $p['shipped_qty'] }}
+                    </td>
 
                     <td class="right">
                         {{ $p['weight'] }} {{ $p['pack_unit'] }}
@@ -154,7 +175,8 @@
 
 
 
-    {{-- BUYER REPORTS --}}
+
+    <!-- BUYER REPORTS -->
 
     @foreach ($buyer_reports as $buyer)
         <div class="section">
@@ -171,20 +193,33 @@
             </div>
 
 
+
             <table>
 
                 <tr>
-                    <th width="20%">Source</th>
-                    <th width="15%">Order No</th>
-                    <th width="25%">Product</th>
+
+                    <th width="10%">Source</th>
+
+                    <th width="12%">Order</th>
+
+                    <th width="22%">Product</th>
+
                     <th width="7%">Pack</th>
-                    <th width="7%">Unit</th>
-                    <th width="7%">Type</th>
+
+                    <th width="8%">Unit</th>
+
+                    <th class="right">Rate</th>
+
                     <th class="right">Qty</th>
+
                     <th class="right">Shipped</th>
+
                     <th class="right">Weight</th>
+
                     <th class="right">Amount</th>
+
                 </tr>
+
 
 
                 @foreach ($buyer['items'] as $item)
@@ -199,8 +234,13 @@
                         </td>
 
                         <td>
+
                             <b>{{ $item['product']['name'] }}</b><br>
-                            <span class="meta">{{ $item['product']['product_code'] }}</span>
+
+                            <span class="meta">
+                                {{ $item['product']['product_code'] }}
+                            </span>
+
                         </td>
 
                         <td class="pack">
@@ -211,8 +251,8 @@
                             {{ $item['pack_unit'] }}
                         </td>
 
-                        <td>
-                            {{ $item['pack_type_unit'] }}
+                        <td class="right">
+                            {{ number_format($item['rate'], 2) }}
                         </td>
 
                         <td class="right">
@@ -236,13 +276,15 @@
 
 
 
-                {{-- BUYER TOTAL --}}
+                <!-- BUYER TOTAL -->
 
                 @foreach ($buyer['total'] as $t)
                     <tr class="total">
 
                         <td colspan="6">
+
                             Total {{ $t['pack_unit'] }}
+
                         </td>
 
                         <td class="right">
@@ -272,7 +314,8 @@
 
 
 
-    {{-- GRAND TOTAL --}}
+
+    <!-- GRAND TOTAL -->
 
     <div class="section">
 
@@ -281,11 +324,17 @@
         <table>
 
             <tr>
+
                 <th width="20%">Unit</th>
+
                 <th class="right">Qty</th>
+
                 <th class="right">Shipped</th>
+
                 <th class="right">Weight</th>
+
                 <th class="right">Amount</th>
+
             </tr>
 
 

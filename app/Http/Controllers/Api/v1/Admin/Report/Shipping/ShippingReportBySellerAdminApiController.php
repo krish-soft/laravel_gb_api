@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api\v1\Admin\Report\Shipping;
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
 use App\Models\Seller\Product\ProductListing;
 use Illuminate\Http\Request;
-use PDF;
+// use PDF;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 
 class ShippingReportBySellerAdminApiController extends ApiResponseWithAdminAuthController
 {
