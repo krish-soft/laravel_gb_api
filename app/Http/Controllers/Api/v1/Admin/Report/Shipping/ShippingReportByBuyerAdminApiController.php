@@ -15,6 +15,12 @@ class ShippingReportByBuyerAdminApiController extends ApiResponseWithAdminAuthCo
     public function getShippingBuyerReport(Request $request)
     {
 
+        $request->validate([
+            'depot_id'   => 'nullable|exists:mst_depots,id',
+            'start_date' => 'nullable|date',
+            'end_date'   => 'nullable|date',
+        ]);
+
         $start = $request->start_date ?? now()->subDay()->toDateString();
         $end = $request->end_date ?? now()->toDateString();
 
@@ -24,6 +30,9 @@ class ShippingReportByBuyerAdminApiController extends ApiResponseWithAdminAuthCo
             'orderItems.shipmentPackages.shipment'
         ])
             ->whereBetween('order_date', [$start, $end])
+            ->when($request->filled('depot_id'), function ($q) use ($request) {
+                $q->where('depot_id', $request->depot_id);
+            })
             ->get();
 
 
@@ -32,6 +41,9 @@ class ShippingReportByBuyerAdminApiController extends ApiResponseWithAdminAuthCo
             'demandOrderItems.shipmentPackages.shipment'
         ])
             ->whereBetween('order_date', [$start, $end])
+            ->when($request->filled('depot_id'), function ($q) use ($request) {
+                $q->where('depot_id', $request->depot_id);
+            })
             ->get();
 
 

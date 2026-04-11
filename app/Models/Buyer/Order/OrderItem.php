@@ -5,6 +5,7 @@ namespace App\Models\Buyer\Order;
 use App\Models\BaseModel;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
 use App\Models\Common\Shipment\ShipmentPackage;
+use App\Models\Master\Product\MstProduct;
 use App\Models\Seller\Product\ProductListing;
 use App\Models\Seller\Product\ProductListingItem;
 use App\Models\Seller\Product\ProductListingPackage;
@@ -93,6 +94,11 @@ class OrderItem extends BaseModel
     public function pickupFulfillmentLocation()
     {
         return $this->belongsTo(FulfillmentLocation::class, 'pickup_fulfillment_location_id', 'id');
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(MstProduct::class, 'product_id', 'id');
     }
 
     // public function shipmentPackages()

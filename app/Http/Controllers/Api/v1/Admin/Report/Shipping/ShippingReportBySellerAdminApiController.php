@@ -15,12 +15,23 @@ class ShippingReportBySellerAdminApiController extends ApiResponseWithAdminAuthC
     public function getShippingSellerReport(Request $request)
     {
 
+        $request->validate([
+            'depot_id'   => 'nullable|exists:mst_depots,id',
+            'start_date' => 'nullable|date',
+            'end_date'   => 'nullable|date',
+        ]);
+
+
         $start = $request->start_date ?? now()->subDay()->toDateString();
         $end = $request->end_date ?? now()->toDateString();
 
         // load listings
         $listings = ProductListing::with(['seller', 'listingItems.product', 'listingItems.listingPackages.shipmentPackages.shipment'])
-            ->whereBetween('listing_date', [$start, $end])->get();
+            ->whereBetween('listing_date', [$start, $end])
+            ->when($request->filled('depot_id'), function ($q) use ($request) {
+                $q->where('depot_id', $request->depot_id);
+            })
+            ->get();
 
         // flatten packages
         $packages = $listings->flatMap->listingItems->flatMap->listingPackages;

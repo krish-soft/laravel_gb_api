@@ -4,6 +4,7 @@ namespace App\Models\Buyer\Order;
 
 use App\Models\BaseModel;
 use App\Models\Common\Shipment\ShipmentPackage;
+use App\Models\Master\Product\MstProduct;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -80,4 +81,11 @@ class DemandOrderItem extends BaseModel
     {
         return $this->hasMany(ShipmentPackage::class, 'demand_order_item_id');
     }
+
+    public function product()
+    {
+        return $this->belongsTo(MstProduct::class, 'product_id', 'id');
+    }
+
+    //
 }

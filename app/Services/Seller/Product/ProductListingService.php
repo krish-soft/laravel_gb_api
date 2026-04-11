@@ -25,10 +25,13 @@ class ProductListingService
                 );
             }
 
+            $primaryDepotData = $user?->primaryDepot?->depot;
+
             $listing = new ProductListing();
             $listing->fill($this->onlyFillable($listing, $data));
             $listing->seller_id = $user->id;
             $listing->listing_date = now()->toDateString();
+            $listing->depot_id = $primaryDepotData?->id;
             $listing->is_active = true;
             $listing->is_sold = false;
             $listing->is_partial = false;

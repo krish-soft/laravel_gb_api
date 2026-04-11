@@ -43,6 +43,7 @@ use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstFinanceSettingApiControl
 use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstPaymentSettingApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Vehicle\MstVehicleApiController;
 use App\Http\Controllers\Api\v1\Admin\Report\Order\OrderReportAdminApiController;
+use App\Http\Controllers\Api\v1\Admin\Report\Order\SaleOrderReportAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Report\Shipping\ShippingReportByBuyerAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Report\Shipping\ShippingReportBySellerAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Seller\Product\AdminProductListingApiController;
@@ -646,6 +647,9 @@ Route::group([
             Route::prefix('report')->group(function () {
 
                 Route::get('orders-by-depot', [OrderReportAdminApiController::class, 'getOrdersReportByDepot']);
+
+                // Sales report (Buyer related)
+                Route::get('sales', [SaleOrderReportAdminApiController::class, 'getSaleOrderReport']);
 
 
                 // Shipping

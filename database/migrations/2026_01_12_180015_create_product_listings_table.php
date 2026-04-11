@@ -22,6 +22,11 @@ return new class extends Migration
                 ->constrained('users')
                 ->cascadeOnDelete(); // Only Seller Can List Market Items
 
+            $table->foreignId('depot_id')
+                ->nullable()
+                ->constrained('mst_depots')
+                ->restrictOnDelete();
+
             // Pickup 
             $table->foreignId('fulfillment_location_id')
                 ->nullable()
