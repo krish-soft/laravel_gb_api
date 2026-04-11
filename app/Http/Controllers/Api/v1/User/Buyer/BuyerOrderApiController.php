@@ -103,24 +103,7 @@ class BuyerOrderApiController extends ApiResponseWithAuthController
         $order = Order::query()
             ->where('buyer_id', $buyer->id)
             ->where('id', $orderId)
-            ->with(['shipmentPackages' => function ($query) {
-                $query->select(
-                    'id',
-                    'order_id', // IMPORTANT (required for relation)
-                    'product_name',
-                    'qty',
-                    'ship_qty',
-                    'pack_size',
-                    'pack_price',
-                    'pack_unit',
-                    'pack_type_unit',
-                    'shipment_package_number',
-                    'package_number',
-                    'status',
-                    'seller_status',
-                    'buyer_status'
-                );
-            }])
+            ->with(['shipmentPackages'])
             ->firstOrFail();
 
         $packages = $order->shipmentPackages
