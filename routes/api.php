@@ -46,6 +46,7 @@ use App\Http\Controllers\Api\v1\Admin\Report\Order\OrderReportAdminApiController
 use App\Http\Controllers\Api\v1\Admin\Report\Order\SaleOrderReportAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Report\Shipping\ShippingReportByBuyerAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Report\Shipping\ShippingReportBySellerAdminApiController;
+use App\Http\Controllers\Api\v1\Admin\Report\Shipping\ShippingReportByShipmentAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Seller\Product\AdminProductListingApiController;
 use App\Http\Controllers\Api\v1\Admin\Settlement\SettlementAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Settlement\SettlementBatchAdminApiController;
@@ -436,6 +437,7 @@ Route::group([
         Route::get('shipping/seller', [ShippingReportBySellerAdminApiController::class, 'getShippingSellerReport']);
         Route::get('shipping/buyer', [ShippingReportByBuyerAdminApiController::class, 'getShippingBuyerReport']);
 
+                Route::get('shipping/shipment', [ShippingReportByShipmentAdminApiController::class, 'getShippingShipmentReport']);
 
 
 
@@ -655,6 +657,7 @@ Route::group([
                 // Shipping
                 Route::get('shipping/seller', [ShippingReportBySellerAdminApiController::class, 'getShippingSellerReport']);
                 Route::get('shipping/buyer', [ShippingReportByBuyerAdminApiController::class, 'getShippingBuyerReport']);
+                Route::get('shipping/shipment', [ShippingReportByShipmentAdminApiController::class, 'getShippingShipmentReport']);
 
                 //
 

@@ -56,7 +56,6 @@ class Shipment extends BaseModel
 
     protected $casts = [
         'shipment_date' => 'date:Y-m-d',
-
         'is_seller_dropoff' => 'boolean',
         'is_buyer_pickup' => 'boolean',
     ];
