@@ -43,6 +43,7 @@ use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstFinanceSettingApiControl
 use App\Http\Controllers\Api\v1\Admin\Master\Setting\MstPaymentSettingApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Vehicle\MstVehicleApiController;
 use App\Http\Controllers\Api\v1\Admin\Report\Order\OrderReportAdminApiController;
+use App\Http\Controllers\Api\v1\Admin\Report\Shipping\ShippingReportByBuyerAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Report\Shipping\ShippingReportBySellerAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Seller\Product\AdminProductListingApiController;
 use App\Http\Controllers\Api\v1\Admin\Settlement\SettlementAdminApiController;
@@ -432,6 +433,7 @@ Route::group([
 
         // Testing Admin
         Route::get('shipping/seller', [ShippingReportBySellerAdminApiController::class, 'getShippingSellerReport']);
+        Route::get('shipping/buyer', [ShippingReportByBuyerAdminApiController::class, 'getShippingBuyerReport']);
 
 
 
@@ -648,6 +650,7 @@ Route::group([
 
                 // Shipping
                 Route::get('shipping/seller', [ShippingReportBySellerAdminApiController::class, 'getShippingSellerReport']);
+                Route::get('shipping/buyer', [ShippingReportByBuyerAdminApiController::class, 'getShippingBuyerReport']);
 
                 //
 
