@@ -58,7 +58,12 @@ class ShippingReportBySellerAdminApiController extends ApiResponseWithAdminAuthC
             'grand_totals' => $grandTotals
         ];
 
-        if ($request->boolean('is_pdf_export')) return $this->pdf($res);
+        if ($request->boolean('is_pdf_export')) {
+
+
+            return  $this->successResponse(__('messages.success_messages.success_get'), $this->pdf($res));
+        }
+
 
         return $this->successResponse(__('messages.success_messages.success_get'), $res);
     }
@@ -132,8 +137,12 @@ class ShippingReportBySellerAdminApiController extends ApiResponseWithAdminAuthC
         $pdf = PDF::loadView('pdf.reports.shipping.shipping_report_seller', $data)
             ->setPaper('a4');
 
-        $fileName = 'shipping_report_' . now()->format('Ymd_His') . '.pdf';
 
-        return $pdf->stream($fileName);
+        return storeFileWithSignedUrl($pdf->output());
+
+
+        // $fileName = 'shipping_report_' . now()->format('Ymd_His') . '.pdf';
+
+        // return $pdf->stream($fileName);
     }
 }

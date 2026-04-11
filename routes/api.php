@@ -117,6 +117,25 @@ Route::get('/files/{path}', function ($path) {
     ->name('files.view')
     ->middleware('signed');
 
+// Public files
+Route::get('/public-files/{path}', function ($path) {
+
+    $disk = 'public';
+
+    abort_unless(Storage::disk($disk)->exists($path), 404);
+
+    $file = Storage::disk($disk)->path($path);
+
+    if (request()->boolean('download')) {
+
+        return response()->download($file)->deleteFileAfterSend(true);
+    }
+
+    return response()->file($file);
+})
+    ->where('path', '.*')
+    ->name('public.files.view')
+    ->middleware('signed');
 
 // routes/web.php or api.php
 Route::get('/payment/status/{payment}', function (Request $request, string $payment) {

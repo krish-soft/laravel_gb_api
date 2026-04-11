@@ -7,6 +7,9 @@ use App\Models\Master\MstFinancialYear;
 use App\Models\Master\Setting\MstFinanceSetting;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 
 // Global helper for activity logging
 if (!function_exists('logActivity')) {
@@ -28,8 +31,7 @@ if (!function_exists('logActivity')) {
         ?int    $subjectId = null,
         ?string $subjectCode = null,
         array   $meta = []
-    ): void
-    {
+    ): void {
 
         ActivityLog::log(
             event: $event,
@@ -55,8 +57,7 @@ if (!function_exists('uploadPublicFile')) {
         string                         $path,
         ?string                        $oldFile = null,
         bool                           $deleteOldFile = true,
-    ): ?string
-    {
+    ): ?string {
 
         return FileUploadHelper::upload(
             $file,
@@ -82,8 +83,7 @@ if (!function_exists('uploadPrivateFile')) {
         string                         $path,
         ?string                        $oldFile = null,
         bool                           $deleteOldFile = true,
-    ): ?string
-    {
+    ): ?string {
 
         return PrivateFileUploadHelper::upload(
             $file,
@@ -133,5 +133,36 @@ if (!function_exists('currentFyEnd')) {
     function currentFyEnd()
     {
         return currentFy()->end_date;
+    }
+}
+
+
+
+if (!function_exists('storeFileWithSignedUrl')) {
+
+    function storeFileWithSignedUrl(
+        string $content,
+        string $folder = 'temp',
+        string $extension = 'pdf',
+        string $disk = 'public',
+        int $minutes = 5,
+        bool $download = true
+    ): string {
+
+        $path = $folder . '/' . Str::uuid() . '.' . $extension;
+
+        Storage::disk($disk)->put($path, $content);
+
+        // choose route based on disk
+        $route = $disk === 'public' ? 'public.files.view' : 'files.view';
+
+        return URL::temporarySignedRoute(
+            $route,
+            now()->addMinutes($minutes),
+            [
+                'path' => $path,
+                'download' => $download
+            ]
+        );
     }
 }
