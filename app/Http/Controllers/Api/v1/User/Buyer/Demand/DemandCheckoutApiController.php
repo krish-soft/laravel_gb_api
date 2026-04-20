@@ -6,39 +6,33 @@ use App\Enum\Common\ActionCodeEnum;
 use App\Enum\Common\Legal\KycStatusEnum;
 use App\Enum\Common\Payment\PaymentMethodEnum;
 use App\Http\Controllers\ApiResponseWithAuthController;
-use App\Models\Buyer\Cart\Cart;
 use App\Models\Buyer\Cart\DemandCart;
 use App\Models\Buyer\Order\DemandOrder;
 use App\Models\Buyer\Order\Order;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
 use App\Models\Common\Payment\Payment;
-use App\Models\Master\Setting\MstAppSetting;
 use App\Models\Master\Setting\MstFinanceSetting;
 use App\Models\Master\Setting\MstPaymentSetting;
-
-use App\Services\Buyer\Checkout\Demand\DemandCheckoutPreviewService;
 use App\Services\Buyer\Checkout\Demand\DemandCheckoutConfirmService;
+use App\Services\Buyer\Checkout\Demand\DemandCheckoutPreviewService;
 use App\Services\Common\Payment\Gateways\RazorpayService;
 use App\Services\Common\Payment\Handlers\DemandOrderPaymentHandler;
-use App\Services\Common\Payment\Handlers\OrderPaymentHandler;
 use App\Services\Common\Payment\PaymentService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use RuntimeException;
 
 class DemandCheckoutApiController extends ApiResponseWithAuthController
 {
-
     /**
      * -------------------------------------------------
      * Checkout Preview
      * -------------------------------------------------
      */
     public function preview(
-        Request                $request,
+        Request $request,
         DemandCheckoutPreviewService $service,
     ) {
 
@@ -52,11 +46,11 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
             $cart = DemandCart::with('buyer', 'demandCartItems')->where('buyer_id', $request->user()->id)
                 ->where('status', 'active')
                 ->with([
-                    'demandCartItems.product'
+                    'demandCartItems.product',
                 ])
                 ->firstOrFail();
 
-            // 
+            //
 
             return $this->successResponse(
                 __('messages.success_messages.checkout_preview'),
@@ -74,11 +68,11 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
      * -------------------------------------------------
      */
     public function confirm(
-        Request                $request,
+        Request $request,
         DemandCheckoutConfirmService $checkoutService,
-        PaymentService         $paymentService,
-        RazorpayService        $razorpayService,
-        DemandOrderPaymentHandler   $orderPaymentHandler
+        PaymentService $paymentService,
+        RazorpayService $razorpayService,
+        DemandOrderPaymentHandler $orderPaymentHandler
     ) {
         $user = $request->user();
 
@@ -96,7 +90,6 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
             'is_buyer_pickup' => 'required|boolean',
         ]);
 
-
         $cart = DemandCart::where('id', $data['demand_cart_id'])
             ->where('buyer_id', $user->id)
             ->where('status', 'active')
@@ -104,7 +97,7 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
             ->latest()
             ->first();
 
-        if (!$cart) {
+        if (! $cart) {
             return $this->showErrorMessage(
                 __('messages.error_messages.cart_not_active_or_converted'),
                 404
@@ -113,16 +106,14 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
 
         $fulfillmentLocationId = $data['fulfillment_location_id'] ?? null;
 
-
         $fulfillmentLocation = FulfillmentLocation::findOrFail($fulfillmentLocationId);
 
         if ($fulfillmentLocation->user_id !== $user->id) {
             return $this->showErrorMessage(
-                __('messages.error_messages.unauthorized_action' . " - Invalid fulfillment location"),
+                __('messages.error_messages.unauthorized_action'.' - Invalid fulfillment location'),
                 400
             );
         }
-
 
         if ($fulfillmentLocation->status !== KycStatusEnum::APPROVED->value) {
             return $this->showErrorMessage(
@@ -136,7 +127,6 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
         $canUseCredit = $cartMeta['can_checkout_with_credit'] ?? false;
         $creditBalanceToUse = $cartMeta['credit_balance_to_use'] ?? 0;
 
-
         // also check  can checkour and message
         // if (!($cartMeta['can_checkout'] ?? false)) {
         //     return $this->showErrorMessage(
@@ -146,14 +136,13 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
         // }
 
         $charges = $cartMeta['charges'] ?? null;
-        // if not found then give error 
-        if (!is_array($charges) || count($charges) === 0) {
+        // if not found then give error
+        if (! is_array($charges) || count($charges) === 0) {
             throw new RuntimeException(__('messages.error_messages.invalid_checkout_charges'));
         }
 
         // $previewData = app(CheckoutPreviewService::class)->preview($cart, $data['is_buyer_pickup']);
         // $charges = $previewData['charges'];
-
 
         $totalAmount = $cart->getTotalCartItemAmount();
         foreach ($charges as $charge) {
@@ -169,13 +158,13 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
              */
             $order = $checkoutService->confirm(
                 $cart,
-                $charges, //$data['charges'],
+                $charges, // $data['charges'],
                 $data['payment_method'],
                 $fulfillmentLocation,
                 $cartMeta
             );
 
-            // 
+            //
             logActivity(
                 'checkout_demand_order_created',
                 $user,
@@ -184,7 +173,7 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
                 $order->order_number,
                 [
                     'order_amount' => $order->total_amount,
-                    'credit_amount' => $order->credit_amount
+                    'credit_amount' => $order->credit_amount,
                 ]
             );
 
@@ -192,17 +181,15 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
              * 2️⃣ Create Payment (INITIATED)
              */
             $payment = $paymentService->initiate([
-                'source_type'   => DemandOrder::class,
-                'source_id'     => $order->id,
-                'source_code'   => $order->order_number,
-                'user_id'       => $user->id,
-                'order_amount'   => $order->total_amount,
-                'payment_type'  => 'checkout',
+                'source_type' => DemandOrder::class,
+                'source_id' => $order->id,
+                'source_code' => $order->order_number,
+                'user_id' => $user->id,
+                'order_amount' => $order->total_amount,
+                'payment_type' => 'checkout',
                 'payment_method' => $data['payment_method'],
                 'credit_amount' => $canUseCredit ? $creditBalanceToUse : 0,
             ]);
-
-
 
             //
             logActivity(
@@ -229,11 +216,11 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
              */
             if (
                 MstPaymentSetting::payInMode() === PaymentMethodEnum::MANUAL->value || // Testing only - in production we will not allow manual payment method for buyer checkout. It will be only for admin to mark payment as paid when they receive payment outside system.
-                // check credit balance enough then can mark as paid directly without manual payment  
+                // check credit balance enough then can mark as paid directly without manual payment
                 ($payment->amount <= 0 && $payment->credit_amount > 0)
             ) {
 
-                $payment->gateway =  ($canUseCredit && $order->credit_amount >= $order->total_amount) ? 'credit_balance' : 'manual';
+                $payment->gateway = ($canUseCredit && $order->credit_amount >= $order->total_amount) ? 'credit_balance' : 'manual';
                 $payment->save();
 
                 $payment->markPaid('MANUAL');
@@ -256,7 +243,10 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
 
                 return $this->successResponse(
                     __('messages.success_messages.order_created'),
-                    ['order_code' => $order->order_number],
+                    [
+                        'is_razorpay' => true,
+                        'order_number' => $order->order_number,
+                    ],
                     201
                 );
             }
@@ -309,8 +299,10 @@ class DemandCheckoutApiController extends ApiResponseWithAuthController
             return $this->successResponse(
                 __('messages.success_messages.proceed_to_payment'),
                 [
+                    'is_razorpay' => true,
+                    'order_number' => $order->order_number,
                     'payment_code' => $payment->payment_code,
-                    'payment_url'  => $paymentUrl,
+                    'payment_url' => $paymentUrl,
                 ],
                 201,
                 ActionCodeEnum::PAYMENT_RAZORPAY
