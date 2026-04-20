@@ -93,14 +93,14 @@ class JobBuyerCutoffDirectOrder implements ShouldQueue, ShouldBeUnique
                             ->first();
 
                         if (!$sellerPackage) {
-                            // throw new \Exception("Seller Package unavailable for OrderItem ID: {$orderItem->id}, Order ID: {$order->id}");
+                            throw new \Exception("Seller Package unavailable for OrderItem ID: {$orderItem->id}, Order ID: {$order->id}");
                             // Log::warning("Seller Package unavailable for OrderItem ID: {$orderItem->id}, Order ID: {$order->id}");
                             continue; // If no available seller package then skip to
                         }
 
-                        if ($existShipmentPackage) {
-                            continue; // If already exist then skip to avoid duplication
-                        }
+                        // if ($existShipmentPackage) {
+                        //     continue; // If already exist then skip to avoid duplication
+                        // }
 
                         $shipmentPackage = ShipmentPackage::create([
                             'shipment_id' => $shipment->id,

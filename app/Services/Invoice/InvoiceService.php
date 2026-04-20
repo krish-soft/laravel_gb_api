@@ -6,11 +6,9 @@ use App\Enum\Common\Invoice\InvoiceStatusEnum;
 use App\Enum\Common\Invoice\InvoiceTypeEnum;
 use App\Enum\Common\Order\OrderFlagsEum;
 use App\Enum\Common\Order\OrderStatusEnum;
-use App\Enum\Common\Shipment\ShipmentStatusEnum;
 use App\Enum\Common\Shipment\ShipmentTypeEnum;
 use App\Models\Buyer\Order\DemandOrder;
 use App\Models\Buyer\Order\Order;
-use App\Models\Common\Accounting\Account;
 use App\Models\Common\Shipment\ShipmentPackage;
 use App\Models\Master\Setting\MstBusinessSetting;
 use App\Models\Master\Setting\MstFinanceSetting;
@@ -24,13 +22,12 @@ use Throwable;
 
 class InvoiceService
 {
-
     // Direct Order Invoice
     public function generateOrderInvoiceData(Order $order)
     {
         // Not PDF only Invoice data
 
-        //    
+        //
         try {
             DB::transaction(function () use ($order) {
 
@@ -39,7 +36,7 @@ class InvoiceService
                     'invoices',
                     'shipmentPackages',
                     'orderCharges',
-                    'orderItems', // seller not to load 
+                    'orderItems', // seller not to load
                 ]);
 
                 $buyer = $order->buyer;
@@ -54,7 +51,7 @@ class InvoiceService
 
                 $business = MstBusinessSetting::getOrCreate(); // Assuming you have a business settings table with necessary info
 
-                // Invoice 
+                // Invoice
                 $invoice = $order->invoices()->create([
                     'user_id' => $order->buyer_id,
                     'order_id' => $order->id,
@@ -75,19 +72,18 @@ class InvoiceService
                     'customer_ship_addr_code' => $order->ship_addr_code, // need
                 ]);
 
-
                 // First Create a Invoice for each Order Item then base on shipment package delivered or not make reverse or final invoice
                 foreach ($orderItems as $orderItem) {
 
-                    // 
+                    //
                     $taxableAmount = $orderItem->ship_qty * $orderItem->pack_price; // we are storing in each accounts  , we can also have separate field for base amount without tax and charges if needed
                     $taxAmount = 0; // we can also calculate tax based on tax code if needed
                     $totalAmount = $taxableAmount + $taxAmount;
 
-                    // Base on order create all 
+                    // Base on order create all
                     $invoice->invoiceItems()->create([
                         'item_code' => $orderItem->product_code,
-                        'item_name' => $orderItem->product_name . " [$orderItem->pack_size $orderItem->pack_unit ($orderItem->pack_type_unit)]",
+                        'item_name' => $orderItem->product_name." [$orderItem->pack_size $orderItem->pack_unit ($orderItem->pack_type_unit)]",
 
                         'order_qty' => $orderItem->order_qty,
                         'unit_price' => $orderItem->pack_price,
@@ -119,13 +115,12 @@ class InvoiceService
                     //
                 }
 
-                // So not get total 
+                // So not get total
 
                 $baseAmount = $invoice->invoiceItems()->sum('taxable_amount');
-                $subtotalAmount = $baseAmount  + $invoice->invoiceCharges()->sum('taxable_amount');
+                $subtotalAmount = $baseAmount + $invoice->invoiceCharges()->sum('taxable_amount');
                 $taxAmount = $invoice->invoiceItems()->sum('tax_amount') + $invoice->invoiceCharges()->sum('tax_amount');
                 $totalAmount = $subtotalAmount + $taxAmount;
-
 
                 $invoice->update([
                     'base_amount' => $baseAmount,
@@ -149,8 +144,6 @@ class InvoiceService
             throw $e;
         }
 
-
-
         //
     }
 
@@ -159,7 +152,7 @@ class InvoiceService
     {
         // Not PDF only Invoice data
 
-        //     
+        //
         try {
             DB::transaction(function () use ($order) {
 
@@ -168,7 +161,7 @@ class InvoiceService
                     'invoices',
                     'shipmentPackages',
                     'demandOrderCharges',
-                    'demandOrderItems', // seller not to load 
+                    'demandOrderItems', // seller not to load
                 ]);
 
                 $buyer = $order->buyer;
@@ -183,10 +176,10 @@ class InvoiceService
 
                 $business = MstBusinessSetting::getOrCreate(); // Assuming you have a business settings table with necessary info
 
-                // Invoice 
+                // Invoice
                 $invoice = $order->invoices()->create([
                     'user_id' => $order->buyer_id,
-                    'order_id' => $order->id,
+                    'demand_order_id' => $order->id,
 
                     'reference' => $order->order_number, // we can also have separate invoice reference if needed
 
@@ -204,11 +197,10 @@ class InvoiceService
                     'customer_ship_addr_code' => $order->ship_addr_code, // need
                 ]);
 
-
                 // First Create a Invoice for each Order Item then base on shipment package delivered or not make reverse or final invoice
                 foreach ($orderItems as $orderItem) {
 
-                    // Price We have to calculate from Price Module 
+                    // Price We have to calculate from Price Module
                     // Because its demand order we have to calculate baseon what market price set in morning.
 
                     $productId = $orderItem->product_id;
@@ -223,22 +215,21 @@ class InvoiceService
                         $invoice->invoice_date // we have to take price based on invoice date because order can be place before but invoice generate later and price can be different based on date
                     );
 
-
-                    if (!$pricedata || $pricedata->final_price <= 0) {
+                    if (! $pricedata || $pricedata->final_price <= 0) {
                         throw new RuntimeException("Price data not found for product Code: {$orderItem->product_code} in Order Number: {$order->order_number}");
                     }
 
                     $totalShipQty = $orderItem->ship_qty + $orderItem->seller_ship_qty; // we can also have separate field for ship qty and seller ship qty if needed, because in some case we can have different ship qty from seller and what we record in order item, so to avoid confusion we can have separate field for that
 
-                    // 
-                    $taxableAmount =  $totalShipQty * $pricedata->final_price; // we are storing in each accounts  , we can also have separate field for base amount without tax and charges if needed
+                    //
+                    $taxableAmount = $totalShipQty * $pricedata->final_price; // we are storing in each accounts  , we can also have separate field for base amount without tax and charges if needed
                     $taxAmount = 0; // we can also calculate tax based on tax code if needed
                     $totalAmount = $taxableAmount + $taxAmount;
 
-                    // Base on order create all 
+                    // Base on order create all
                     $invoice->invoiceItems()->create([
                         'item_code' => $orderItem->product_code,
-                        'item_name' => $orderItem->product_name . " [$orderItem->pack_size $orderItem->pack_unit ($orderItem->pack_type_unit)]",
+                        'item_name' => $orderItem->product_name." [$orderItem->pack_size $orderItem->pack_unit ($orderItem->pack_type_unit)]",
 
                         'order_qty' => $orderItem->order_qty,
                         'unit_price' => $orderItem->pack_price, // Alwasy waht order place on price
@@ -270,13 +261,12 @@ class InvoiceService
                     //
                 }
 
-                // So not get total 
+                // So not get total
 
                 $baseAmount = $invoice->invoiceItems()->sum('taxable_amount');
-                $subtotalAmount = $baseAmount  + $invoice->invoiceCharges()->sum('taxable_amount');
+                $subtotalAmount = $baseAmount + $invoice->invoiceCharges()->sum('taxable_amount');
                 $taxAmount = $invoice->invoiceItems()->sum('tax_amount') + $invoice->invoiceCharges()->sum('tax_amount');
                 $totalAmount = $subtotalAmount + $taxAmount;
-
 
                 $invoice->update([
                     'base_amount' => $baseAmount,
@@ -299,7 +289,6 @@ class InvoiceService
 
             throw $e;
         }
-
 
         //
     }
@@ -352,7 +341,7 @@ class InvoiceService
                         $pkg->shipment->shipment_type,
                         [
                             ShipmentTypeEnum::DISPATCH->value,
-                            ShipmentTypeEnum::MARKET_DISPATCH->value
+                            ShipmentTypeEnum::MARKET_DISPATCH->value,
                         ],
                         true
                     );
@@ -374,7 +363,7 @@ class InvoiceService
                     $packUnit = $shpPkg->pack_unit;
                     $packTypeUnit = $shpPkg->pack_type_unit;
 
-                    // Demand if 
+                    // Demand if
                     if ($pkgType == 'demand_order') {
 
                         $pricedata = app(ProductPriceCalculationService::class)->calculateFinalPrice(
@@ -386,23 +375,21 @@ class InvoiceService
                             $invoice->invoice_date // we have to take price based on invoice date because order can be place before but invoice generate later and price can be different based on date
                         );
 
-
-                        if (!$pricedata || $pricedata->final_price <= 0) {
+                        if (! $pricedata || $pricedata->final_price <= 0) {
                             throw new RuntimeException("Price data not found for product Code: {$shpPkg->product->product_code} in Listing Code: {$productListing->listing_code}");
                         }
                         $packPrice = $pricedata->final_price ?? $packPrice;
-                    } else  if ($pkgType == 'market_order') {
+                    } elseif ($pkgType == 'market_order') {
                         // For market order we have to take price from order because its already place and price is fix for that
                         $packPrice = 0; // MARKET PRICE Will Come from
                     }
 
-
                     // Line Total
-                    $lineTaxableAmount =     $packQty  * $packPrice; // we are storing in each accounts  , we can also have separate field for base amount without tax and charges if needed
+                    $lineTaxableAmount = $packQty * $packPrice; // we are storing in each accounts  , we can also have separate field for base amount without tax and charges if needed
                     $lineTaxAmount = 0; // we can also calculate tax based on tax code if needed
                     $lineTotalAmount = $lineTaxableAmount + $lineTaxAmount;
 
-                    $itemNameSuffix = "";
+                    $itemNameSuffix = '';
                     if ($pkgType == 'market_order') {
                         $itemNameSuffix = " ($pkgType : The price rate based on market.)";
                     } else {
@@ -411,12 +398,12 @@ class InvoiceService
 
                     $invoice->invoiceItems()->create([
                         'item_code' => $shpPkg->product->product_code,
-                        'item_name' => $shpPkg->product->name . " [$packSize $packUnit ($packTypeUnit)] " . $itemNameSuffix,
+                        'item_name' => $shpPkg->product->name." [$packSize $packUnit ($packTypeUnit)] ".$itemNameSuffix,
 
-                        'order_qty' =>  $packQty,
+                        'order_qty' => $packQty,
                         'unit_price' => $pkgType == 'market_order' ? 0 : $shpPkg->pack_price, // Alwasy waht order place on price
 
-                        'ship_qty' =>  $packQty, // we have to take demand ship qty because in some case seller can update ship qty and what we record in listing package can be different, so to avoid confusion we can have separate field for that
+                        'ship_qty' => $packQty, // we have to take demand ship qty because in some case seller can update ship qty and what we record in listing package can be different, so to avoid confusion we can have separate field for that
                         'ship_unit_price' => $packPrice, // Latest optimize
 
                         'taxable_amount' => $lineTaxableAmount,
@@ -434,8 +421,7 @@ class InvoiceService
 
                     $totalDeliveryTaxable += $deliveryData->charge_taxable;
                     $totalDeliveryTax += $deliveryData->charge_tax;
-                    $totalDeliveryCharge +=   $totalDeliveryTaxable  + $totalDeliveryTax;
-
+                    $totalDeliveryCharge += $totalDeliveryTaxable + $totalDeliveryTax;
 
                     $pkgArr[] = [
                         'order_qty' => $shpPkg->qty,
@@ -445,17 +431,14 @@ class InvoiceService
                         'pack_type_unit' => $shpPkg->pack_type_unit,
                     ];
 
-
                     $totalTaxableAmount += $lineTaxableAmount;
                     $totalShipQty += $packQty;
-
-
 
                     //
                 }
 
                 // Delivery Charge (only if applicable)
-                if (!$productListing->is_seller_dropoff && $totalDeliveryTaxable > 0) {
+                if (! $productListing->is_seller_dropoff && $totalDeliveryTaxable > 0) {
 
                     $invoice->invoiceCharges()->create([
                         'charge_name' => 'Delivery Charge',
@@ -499,8 +482,6 @@ class InvoiceService
                     'total_amount' => $totalAmount,
                 ]);
 
-
-
                 // Mark Product Listing Invoice
                 $productListing->status = OrderStatusEnum::INVOICED->value;
                 $productListing->removeFlag(OrderFlagsEum::INVOICING_ERROR); // remove flag if exists
@@ -522,18 +503,18 @@ class InvoiceService
 
         $chargeService = app(ChargeCalculationService::class);
 
-        // Create Arr 
-        $pkg =  [
+        // Create Arr
+        $pkg = [
             [
-                'order_qty'  => $shipmentPackage->qty,
-                'pack_size'  => $shipmentPackage->pack_size,
+                'order_qty' => $shipmentPackage->qty,
+                'pack_size' => $shipmentPackage->pack_size,
                 'pack_price' => $shipmentPackage->pack_price,
-                'pack_unit'  => $shipmentPackage->pack_unit,
+                'pack_unit' => $shipmentPackage->pack_unit,
                 'pack_type_unit' => $shipmentPackage->pack_type_unit,
-            ]
+            ],
         ];
 
-        $deliveryChargesData  = $chargeService->calculateDeliveryCharges(
+        $deliveryChargesData = $chargeService->calculateDeliveryCharges(
             $chargeLevelCode,
             $pkg,
             $shipmentPackage->is_buyer_pickup ?? false,
@@ -542,8 +523,6 @@ class InvoiceService
 
         return (object) $deliveryChargesData;
     }
-
-
 
     //
 }
