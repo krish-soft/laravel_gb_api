@@ -62,6 +62,7 @@ return new class extends Migration
 
             // Expiry (for yearly re-KYC)
 
+            $table->boolean('is_re_kyc')->default(false)->nullable();
             $table->boolean('is_expired')->default(false)->nullable();
             $table->timestamp('expired_at')->nullable();
 

@@ -376,6 +376,19 @@ class User extends Authenticatable
         return $result;
     }
 
+    public function isReKyc(): bool
+    {
+        if (!$this->kyc) {
+            return false;
+        }
+        $result =  $this->kyc && $this->kyc->is_re_kyc;
+
+        // unload relation to prevent N+1 issue
+        $this->unsetRelation('kyc');
+
+        return $result;
+    }
+
     public function kycReviewComment(): string
     {
         if (!$this->kyc) {

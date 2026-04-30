@@ -9,9 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class UserKyc extends BaseModel
 {
-
     use SoftDeletes;
-
 
     protected $fillable = [
         'user_id',
@@ -32,7 +30,7 @@ class UserKyc extends BaseModel
         // Verification fields
         'status',
 
-
+        'is_re_kyc',
         'is_verified',
         'verification_mode',
         'verified_at',
@@ -52,7 +50,6 @@ class UserKyc extends BaseModel
         'remarks',
     ];
 
-
     protected $guarded = [
         'kyc_code',
     ];
@@ -63,8 +60,10 @@ class UserKyc extends BaseModel
     protected $casts = [
         // 'pan_card_number'    => 'encrypted',   // PAN encrypted
         'verified_at' => 'datetime',
-        'expired_at'  => 'datetime',
-        'is_expired'  => 'boolean',
+        'expired_at' => 'datetime',
+        'is_expired' => 'boolean',
+        'is_re_kyc' => 'boolean',
+        'is_verified' => 'boolean',
     ];
 
     protected $hidden = [
@@ -78,7 +77,6 @@ class UserKyc extends BaseModel
         // 'verified_user_id',
         // 'review_comment',
     ];
-
 
     /**
      * Auto-generate unique KYC code
@@ -129,13 +127,10 @@ class UserKyc extends BaseModel
         return $this->belongsTo(Address::class, 'addr_code', 'addr_code');
     }
 
-
     public function legalDocuments()
     {
         return $this->hasMany(UserLegalDocument::class, 'user_kyc_id', 'id');
     }
-
-
 
     //
 }

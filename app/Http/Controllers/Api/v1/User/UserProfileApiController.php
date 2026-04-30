@@ -41,7 +41,9 @@ class UserProfileApiController extends ApiResponseWithAuthController
             // KYC Status
             'is_kyc_submitted' => $user->isKycSubmitted(),
             'is_kyc_approved' => $user->isKycApproved(),
+            'is_re_kyc' => $user->isReKyc(),
             'kyc_review_comment' => $user->kycReviewComment(),
+
 
             // Vehicle KYC
             'is_vehicle_kyc_submitted' => $user->isVehicleKycSubmitted(),
