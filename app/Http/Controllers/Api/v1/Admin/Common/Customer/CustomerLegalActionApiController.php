@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\v1\Admin\Common\Customer;
 
 use App\Enum\Common\Legal\KycStatusEnum;
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
-use App\Http\Controllers\Controller;
 use App\Models\Common\User\Legal\UserKyc;
 use App\Models\Common\User\Legal\UserLegalDocument;
 use App\Models\Common\User\Legal\VehicleKyc;
@@ -20,7 +19,9 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
 {
     //
     protected KycService $kycService;
+
     protected BankService $bankService;
+
     protected VehicleKycService $vehicleKycService;
 
     public function __construct(KycService $kycService, BankService $bankService, VehicleKycService $vehicleKycService)
@@ -33,7 +34,6 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
     /**
      *  KYC List
      */
-
     public function addNewKyc(Request $request)
     {
         $request->validate([
@@ -43,7 +43,7 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
 
             'aadhaar_number' => 'required|digits:12',
             'aadhaar_front_image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
-            'aadhaar_back_image'  => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            'aadhaar_back_image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
 
             'pan_card_number' => 'nullable|string|max:15',
             'pan_card_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
@@ -61,10 +61,8 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
             $request->allFiles()    // uploaded files
         );
 
-
-
         return $this->successResponse(__('messages.success_messages.kyc_submitted'), null, 200);
-        // 
+        //
     }
 
     public function getKycList(Request $request)
@@ -72,7 +70,7 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
         //
         $userKycQuery = UserKyc::with('user:id,user_code,name')->latest();
 
-        if ($request->has('status') && !is_null($request->status)) {
+        if ($request->has('status') && ! is_null($request->status)) {
             $userKycQuery->where('status', $request->status);
         } else {
             // if (!request()->user()->isSuperAdminGroup()) {
@@ -82,10 +80,8 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
 
         $userKycList = $userKycQuery->get();
 
-
-        return  $this->successResponse(__('messages.success_messages.success_get'),  $userKycList, 200);
+        return $this->successResponse(__('messages.success_messages.success_get'), $userKycList, 200);
     }
-
 
     public function getKycDetails(Request $request, $kycId)
     {
@@ -106,9 +102,6 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
 
         $userKyc->depots = $depots;
 
-
-
-
         // log Activity
         logActivity(
             'admin_user_seen_kyc_details',
@@ -123,7 +116,6 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
 
         return $this->successResponse(__('messages.success_messages.success_get'), $userKyc, 200);
     }
-
 
     public function updateKycStatus(Request $request)
     {
@@ -143,6 +135,7 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
         $requestData = [
             'status' => $status,
             'review_comment' => $request->review_comment,
+            'is_re_kyc' => $request->is_re_kyc ?? false,
         ];
 
         $this->kycService->verifyKyc(
@@ -158,7 +151,6 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
     /**
      *  Legal Document List
      */
-
     public function getLegalDocumentList(Request $request)
     {
         //
@@ -170,9 +162,8 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
 
         $legalDocuments = UserLegalDocument::where('user_id', $userId)->get();
 
-        return  $this->successResponse(__('messages.success_messages.success_get'), $legalDocuments, 200);
+        return $this->successResponse(__('messages.success_messages.success_get'), $legalDocuments, 200);
     }
-
 
     public function deleteLegalDocument(Request $request)
     {
@@ -199,35 +190,30 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
             ]
         );
 
-        return  $this->successResponse(__('messages.success_messages.success_delete'), null, 200);
+        return $this->successResponse(__('messages.success_messages.success_delete'), null, 200);
     }
-
 
     /**
      *  Vehicle KYC List
      */
-
-
     public function getVehicleKycList(Request $request)
     {
-        //    
+        //
 
         $vehicleKycQuery = VehicleKyc::with('user')->latest();
 
-        if ($request->has('status') && !is_null($request->status)) {
+        if ($request->has('status') && ! is_null($request->status)) {
             $vehicleKycQuery->where('status', $request->status);
         } else {
-            if (!request()->user()->isSuperAdminGroup()) {
+            if (! request()->user()->isSuperAdminGroup()) {
                 $vehicleKycQuery->whereIn('status', [KycStatusEnum::PENDING->value, KycStatusEnum::UNDER_REVIEW->value]);
             }
         }
 
         $vehicleKycList = $vehicleKycQuery->get();
 
-
-        return  $this->successResponse(__('messages.success_messages.success_get'),  $vehicleKycList, 200);
+        return $this->successResponse(__('messages.success_messages.success_get'), $vehicleKycList, 200);
     }
-
 
     public function getVehicleKycDetails(Request $request, $kycId)
     {
@@ -240,8 +226,6 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
             $vehicleKyc->status = KycStatusEnum::UNDER_REVIEW->value;
             $vehicleKyc->save();
         }
-
-
 
         // log Activity
         logActivity(
@@ -257,9 +241,6 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
 
         return $this->successResponse(__('messages.success_messages.success_get'), $vehicleKyc, 200);
     }
-
-
-
 
     public function updateVehicleKycStatus(Request $request)
     {
@@ -290,9 +271,6 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
 
         return $this->successResponse(__('messages.success_messages.success_update'), $vehicleKyc, 200);
     }
-
-
-
 
     //
 }
