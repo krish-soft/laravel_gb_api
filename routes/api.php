@@ -234,6 +234,7 @@ Route::group([
 
         // KYC Routes
         Route::post('/kyc', [UserKycApiController::class, 'storeKyc']); // Add KYC
+        Route::get('/kyc', [UserKycApiController::class, 'getKyc']); // Get KYC
         Route::put('/kyc/update', [UserKycApiController::class, 'updateKyc']); // Update / Re-KYC
         Route::get('/kyc/signed-url', [UserKycApiController::class, 'signedUserKycUrl']); // Get signed URL for KYC form
 

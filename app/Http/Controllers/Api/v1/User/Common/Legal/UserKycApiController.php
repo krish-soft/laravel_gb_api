@@ -11,7 +11,6 @@ use RuntimeException;
 
 class UserKycApiController extends ApiResponseWithAuthController
 {
-
     public function signedUserKycUrl(Request $request)
     {
         $user = $request->user();
@@ -27,7 +26,7 @@ class UserKycApiController extends ApiResponseWithAuthController
         return $this->successResponse(
             __('messages.success_messages.success_get'),
             [
-                'user_kyc_signed_url' => $signedUrl
+                'user_kyc_signed_url' => $signedUrl,
             ]
         );
     }
@@ -42,7 +41,7 @@ class UserKycApiController extends ApiResponseWithAuthController
 
             'aadhaar_number' => 'required|digits:12',
             'aadhaar_front_image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
-            'aadhaar_back_image'  => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            'aadhaar_back_image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
 
             'pan_card_number' => 'nullable|string|max:15',
             'pan_card_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
@@ -63,7 +62,6 @@ class UserKycApiController extends ApiResponseWithAuthController
         if ($age < 18) {
             return $this->showErrorMessage(__('messages.error_messages.not_adult'), 422);
         }
-
 
         try {
             $kycService->addKyc(
@@ -90,7 +88,7 @@ class UserKycApiController extends ApiResponseWithAuthController
 
             'aadhaar_number' => 'nullable|digits:12',
             'aadhaar_front_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            'aadhaar_back_image'  => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'aadhaar_back_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
 
             'pan_card_number' => 'nullable|string|max:15',
             'pan_card_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
@@ -112,9 +110,24 @@ class UserKycApiController extends ApiResponseWithAuthController
         }
     }
 
+    // get Kyc
+    public function getKyc(Request $request)
+    {
+        $user = $request->user();
 
+        $kycData = $user->kyc; // Assuming User model has 'kyc' relationship
 
+        if (! $kycData) {
+            return $this->showErrorMessage(__('messages.error_messages.kyc_not_found'), 404);
+        }
 
+        return $this->successResponse(
+            __('messages.success_messages.success_get'),
+            [
+                'kyc' => $kycData,
+            ]
+        );
+    }
 
     // End of class
 }
