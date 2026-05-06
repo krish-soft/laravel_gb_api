@@ -244,7 +244,7 @@ class CheckoutApiController extends ApiResponseWithAuthController
                 return $this->successResponse(
                     __('messages.success_messages.order_created'),
                     [
-                        'is_razorpay' => true,
+                        'is_razorpay' => false,
                         'order_number' => $order->order_number,
                     ],
                     201

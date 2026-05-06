@@ -159,7 +159,7 @@ Route::group([
     'prefix' => 'v1',
     'middleware' => [
         'app-checker', // Custom Middleware to check app status
-        'ms-api-key-checker', // Custom Middleware to check microservice API key
+        // 'ms-api-key-checker', // Custom Middleware to check microservice API key
 
     ]
 ], function () {
