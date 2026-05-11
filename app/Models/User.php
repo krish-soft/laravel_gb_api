@@ -140,7 +140,8 @@ class User extends Authenticatable
             'user_code',
             'nickname',
             'user_type',
-            'charge_level_code'
+            'charge_level_code',
+            'addr_code'
         ]);
     }
 

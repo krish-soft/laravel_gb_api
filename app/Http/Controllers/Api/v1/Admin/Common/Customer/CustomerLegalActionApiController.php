@@ -87,7 +87,8 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
     {
         //
 
-        $userKyc = UserKyc::with(['legalDocuments', 'user'])->where('id', $kycId)->firstOrFail();
+        $userKyc = UserKyc::with(['legalDocuments', 'user.address'])->where('id', $kycId)->firstOrFail();
+        // Log::info(json_encode($userKyc, JSON_PRETTY_PRINT));
 
         // If status is PENDING, change to UNDER_REVIEW
         if ($userKyc->status === KycStatusEnum::PENDING->value) {
