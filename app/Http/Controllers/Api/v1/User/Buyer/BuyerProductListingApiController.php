@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\v1\User\Buyer;
 
 use App\Http\Controllers\ApiResponseWithAuthController;
-use App\Http\Controllers\Controller;
 use App\Models\Seller\Product\ProductListing;
 use App\Policies\Buyer\BuyerPolicyManager;
 use Illuminate\Http\Request;
@@ -15,13 +14,12 @@ class BuyerProductListingApiController extends ApiResponseWithAuthController
 
     // What buyer can see in product listing
 
-
     public function getBuyerProductSummary(Request $request)
     {
         $buyer = $request->user();
 
-        $limit  = min((int)$request->get('limit', 20), 100);
-        $offset = (int)$request->get('offset', 0);
+        $limit = min((int) $request->get('limit', 20), 100);
+        $offset = (int) $request->get('offset', 0);
         $sortBy = $request->get('sort_by', 'product_name');
         $sortDir = $request->get('sort_dir', 'asc') === 'desc';
 
@@ -38,13 +36,23 @@ class BuyerProductListingApiController extends ApiResponseWithAuthController
                 $totalSold = $packages->sum('sold_qty');
                 $available = $totalQty - $totalSold;
 
-                if ($available <= 0) return null;
+                // Unit Wise total
+                $totalWeight = $packages->sum(fn ($pkg) => $pkg->pack_size * $pkg->qty);
+                $soldWeight = $packages->sum(fn ($pkg) => $pkg->pack_size * $pkg->sold_qty);
+
+                if ($available <= 0) {
+                    return null;
+                }
 
                 return [
                     'product' => $items->first()->product,
                     'total_qty' => $totalQty,
                     'total_sold_qty' => $totalSold,
                     'total_available_qty' => $available,
+                    'total_weight' => $totalWeight,
+                    'sold_weight' => $soldWeight,
+                    'available_weight' => $totalWeight - $soldWeight,
+                    'unit' => optional($packages->first())->pack_unit ?? 'N/A',
                 ];
             })
             ->filter()
@@ -52,22 +60,22 @@ class BuyerProductListingApiController extends ApiResponseWithAuthController
 
         // Sorting
         if ($sortBy === 'product_name') {
-            $products = $products->sortBy('product_name', SORT_NATURAL | SORT_FLAG_CASE, $sortDir);
+            $products = $products->sortBy(fn ($p) => $p['product']->name, SORT_NATURAL | SORT_FLAG_CASE, $sortDir);
         }
 
         $data = $products
             ->slice($offset, $limit)
             ->values();
 
-        return  $this->successResponse(__('messages.success_messages.success_get'), $data);
+        return $this->successResponse(__('messages.success_messages.success_get'), $data);
     }
 
     public function getBuyerProductPackages(Request $request, $productId)
     {
         $buyer = $request->user();
 
-        $limit  = min((int)$request->get('limit', 20), 100);
-        $offset = (int)$request->get('offset', 0);
+        $limit = min((int) $request->get('limit', 20), 100);
+        $offset = (int) $request->get('offset', 0);
         $sortBy = $request->get('sort_by');
         $sortDir = $request->get('sort_dir', 'asc') === 'desc';
 
@@ -87,10 +95,18 @@ class BuyerProductListingApiController extends ApiResponseWithAuthController
 
                 $available = $pkg->qty - $pkg->sold_qty;
 
-                if ($available <= 0) return false;
-                if ($minRemainingQty !== null && $available < $minRemainingQty) return false;
-                if ($minPrice !== null && $pkg->pack_price < $minPrice) return false;
-                if ($maxPrice !== null && $pkg->pack_price > $maxPrice) return false;
+                if ($available <= 0) {
+                    return false;
+                }
+                if ($minRemainingQty !== null && $available < $minRemainingQty) {
+                    return false;
+                }
+                if ($minPrice !== null && $pkg->pack_price < $minPrice) {
+                    return false;
+                }
+                if ($maxPrice !== null && $pkg->pack_price > $maxPrice) {
+                    return false;
+                }
 
                 return true;
             });
@@ -98,7 +114,7 @@ class BuyerProductListingApiController extends ApiResponseWithAuthController
         // Sorting
         $packages = match ($sortBy) {
             'price' => $packages->sortBy('pack_price', SORT_REGULAR, $sortDir),
-            'remaining_qty' => $packages->sortBy(fn($p) => $p->qty - $p->sold_qty, SORT_REGULAR, $sortDir),
+            'remaining_qty' => $packages->sortBy(fn ($p) => $p->qty - $p->sold_qty, SORT_REGULAR, $sortDir),
             'pack_size' => $packages->sortBy('pack_size', SORT_REGULAR, $sortDir),
             default => $packages
         };
@@ -117,7 +133,7 @@ class BuyerProductListingApiController extends ApiResponseWithAuthController
 
                     'available_qty' => $pkg->qty - $pkg->sold_qty,
                     'total_weight' => $pkg->pack_size * $pkg->qty,
-                    //  
+                    //
                     'sold_weight' => $pkg->pack_size * $pkg->sold_qty,
                     'remaining_weight' => $pkg->pack_size * ($pkg->qty - $pkg->sold_qty),
 
@@ -126,7 +142,7 @@ class BuyerProductListingApiController extends ApiResponseWithAuthController
                     'picture2_url' => $pkg->picture2_url,
                     'picture3_url' => $pkg->picture3_url,
 
-                    // 
+                    //
                     'nickname' => $pkg->seller->nickname ?? 'N/A',
                 ];
             })
@@ -140,16 +156,14 @@ class BuyerProductListingApiController extends ApiResponseWithAuthController
             'packages' => $packages,
         ];
 
-        return  $this->successResponse(__('messages.success_messages.success_get'), $data);
+        return $this->successResponse(__('messages.success_messages.success_get'), $data);
     }
-
-
 
     private function baseBuyerListingQuery($buyer, ?int $productId = null)
     {
         $query = ProductListing::with([
             'listingItems.product',
-            'listingItems.listingPackages'
+            'listingItems.listingPackages',
         ])
             ->where('is_active', true)
             ->where('is_expired', false)
@@ -163,15 +177,11 @@ class BuyerProductListingApiController extends ApiResponseWithAuthController
 
         return $query->get()
             ->filter(
-                fn($listing) =>
-                BuyerPolicyManager::canBuyerSeeProductListing($buyer, $listing)
+                fn ($listing) => BuyerPolicyManager::canBuyerSeeProductListing($buyer, $listing)
             );
     }
 
-
-
-
-    ## ORG
+    // # ORG
 
     // public function getBuyerProductListing(Request $request)
     // {
@@ -303,7 +313,6 @@ class BuyerProductListingApiController extends ApiResponseWithAuthController
     //         ->filter()
     //         ->values();
 
-
     //     // Log::info(json_encode($products, JSON_PRETTY_PRINT));
     //     /*
     //     |--------------------------------------------------------------------------
@@ -331,21 +340,6 @@ class BuyerProductListingApiController extends ApiResponseWithAuthController
     //         ->slice($offset, $limit)
     //         ->values();
     // }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     //
 }
