@@ -74,7 +74,7 @@ class CustomerLegalActionApiController extends ApiResponseWithAdminAuthControlle
             $userKycQuery->where('status', $request->status);
         } else {
             // if (!request()->user()->isSuperAdminGroup()) {
-            $userKycQuery->whereIn('status', [KycStatusEnum::PENDING->value, KycStatusEnum::UNDER_REVIEW->value]);
+            $userKycQuery->whereIn('status', [KycStatusEnum::PENDING->value, KycStatusEnum::UNDER_REVIEW->value, KycStatusEnum::REJECTED->value]);
             // }
         }
 
