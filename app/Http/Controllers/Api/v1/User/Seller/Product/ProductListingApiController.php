@@ -4,13 +4,11 @@ namespace App\Http\Controllers\Api\v1\User\Seller\Product;
 
 use App\Http\Controllers\ApiResponseWithAuthController;
 use App\Models\Seller\Product\ProductListing;
-use App\Services\Seller\Product\ProductListingService;
 use App\Services\Seller\Product\ProductListingChargePreviewService;
+use App\Services\Seller\Product\ProductListingService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
-use Razorpay\Api\Product;
 use RuntimeException;
 
 class ProductListingApiController extends ApiResponseWithAuthController
@@ -24,21 +22,22 @@ class ProductListingApiController extends ApiResponseWithAuthController
 
     public function getProductListing(Request $request)
     {
-        if (!$request->user()->isSeller()) {
+        if (! $request->user()->isSeller()) {
             return $this->showErrorMessage(__('messages.error_messages.unauthorized_access'), 403);
         }
-
 
         $productListingQuery = ProductListing::latest()->with([
             'fulfillmentLocation',
             'listingItems.product',
             'listingItems.productVariant',
             'listingItems.listingPackages',
-            'shipmentPackages'
+            'shipmentPackages',
         ])->where('seller_id', $request->user()->id);
 
         if ($request->has('is_active')) {
             $productListingQuery->where('is_active', $request->input('is_active'));
+        } if ($request->has('start_date') && $request->has('end_date')) {
+            $productListingQuery->whereBetween('created_at', [$request->input('start_date'), $request->input('end_date')]);
         } else {
             $productListingQuery->where('is_active', true);
         }
@@ -47,7 +46,6 @@ class ProductListingApiController extends ApiResponseWithAuthController
 
         return $this->successResponse(__('messages.success_messages.success_get'), $productListings, 200);
     }
-
 
     public function previewWithCharges(Request $request, ProductListingChargePreviewService $service)
     {
@@ -89,10 +87,8 @@ class ProductListingApiController extends ApiResponseWithAuthController
         }
     }
 
-
     public function createListing(Request $request)
     {
-
 
         try {
             $data = $request->validate($this->createRules());
@@ -182,16 +178,14 @@ class ProductListingApiController extends ApiResponseWithAuthController
             // 'fulfillment_location_id' => 'required|integer|exists:fulfillment_locations,id',
             'fulfillment_location_id' => Rule::exists('fulfillment_locations', 'id')->where('user_id', request()->user()->id),
 
-
             'is_sell_to_market' => 'required|boolean',
             'is_seller_dropoff' => 'required|boolean',
             'is_buyer_pickup' => 'nullable|boolean',
 
             'productListingItems' => 'required|array|min:1',
-            'productListingItems.*.is_organic' =>  'required|boolean', // organic
-            'productListingItems.*.product_id' =>  'required|integer|exists:mst_products,id',
+            'productListingItems.*.is_organic' => 'required|boolean', // organic
+            'productListingItems.*.product_id' => 'required|integer|exists:mst_products,id',
             'productListingItems.*.product_variant_id' => 'nullable|integer|exists:mst_product_variants,id',
-
 
             'productListingItems.*.productListingPackages' => 'required|array|min:1',
             'productListingItems.*.productListingPackages.*.qty' => 'required|numeric|min:0.01',
