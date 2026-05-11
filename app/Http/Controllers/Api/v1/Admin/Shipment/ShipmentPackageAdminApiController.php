@@ -79,73 +79,91 @@ class ShipmentPackageAdminApiController extends ApiResponseWithAdminAuthControll
 
         /*
         |--------------------------------------------------------------------------
-        | REGULAR DEPOT (same depot)
+        | REGULAR DEPOT (Only when origin_depot = destination_depot, NO duplication)
         |--------------------------------------------------------------------------
         */
         $regularDepot = $packages
-            ->filter(fn($p) => $p->shipment)
-            ->flatMap(function ($p) {
-
-                $rows = [];
-
-                // Pickup flow (incoming to depot)
-                if ($p->shipment->origin_depot_id) {
-
-                    $rows[] = [
-                        'depot_id' => $p->shipment->origin_depot_id,
-                        'depot_name' => $p->shipment->originDepot?->name,
-                        'flow' => 'pickup',
-                        'status' => $p->status,
-                        'package' => $p
-                    ];
+            ->filter(function ($p) {
+                // Only single-depot packages (same origin & destination, or only one exists)
+                if (!$p->shipment) {
+                    return false;
                 }
-
-                // Shipping flow (outgoing from depot)
-                if ($p->shipment->destination_depot_id) {
-
-                    $rows[] = [
-                        'depot_id' => $p->shipment->destination_depot_id,
-                        'depot_name' => $p->shipment->destinationDepot?->name,
-                        'flow' => 'shipping',
-                        'status' => $p->status,
-                        'package' => $p
-                    ];
+                
+                $origin = $p->shipment->origin_depot_id;
+                $destination = $p->shipment->destination_depot_id;
+                
+                // Include only if: both same, or only one exists
+                if ($origin && $destination && $origin === $destination) {
+                    return true; // Same depot
                 }
-
-                return $rows;
+                if ($origin && !$destination) {
+                    return true; // Pickup only
+                }
+                if ($destination && !$origin) {
+                    return true; // Delivery only
+                }
+                return false;
             })
-            ->groupBy(function ($row) {
-
-                return $row['depot_id']
-                    . '-' . $row['flow']
-                    . '-' . $row['status'];
+            ->groupBy(function ($p) {
+                $origin = $p->shipment->origin_depot_id;
+                $destination = $p->shipment->destination_depot_id;
+                
+                // Determine depot and flow
+                if ($origin && $destination && $origin === $destination) {
+                    $depotId = $origin;
+                    $flow = 'same_depot';
+                } elseif ($origin && !$destination) {
+                    $depotId = $origin;
+                    $flow = 'pickup';
+                } else {
+                    $depotId = $destination;
+                    $flow = 'delivery';
+                }
+                
+                return "{$depotId}-{$flow}-{$p->status}";
             })
             ->map(function ($rows) {
-
                 $first = $rows->first();
-
+                $origin = $first->shipment->origin_depot_id;
+                $destination = $first->shipment->destination_depot_id;
+                
+                // Get depot name based on flow
+                if ($origin && $destination && $origin === $destination) {
+                    $depotId = $origin;
+                    $depotName = $first->shipment->originDepot?->name;
+                    $flow = 'same_depot';
+                } elseif ($origin && !$destination) {
+                    $depotId = $origin;
+                    $depotName = $first->shipment->originDepot?->name;
+                    $flow = 'pickup';
+                } else {
+                    $depotId = $destination;
+                    $depotName = $first->shipment->destinationDepot?->name;
+                    $flow = 'delivery';
+                }
+                
                 return [
-                    'depot_id' => $first['depot_id'],
-                    'depot_name' => $first['depot_name'],
-                    'flow' => $first['flow'], // pickup or shipping
-                    'status' => $first['status'],
-                    'total_packages' => count($rows),
-                    'packages' => collect($rows)->pluck('package')->values()
+                    'depot_id' => $depotId,
+                    'depot_name' => $depotName,
+                    'flow' => $flow,
+                    'status' => $first->status,
+                    'total_packages' => $rows->count(),
+                    'packages' => $rows->values()
                 ];
             })
             ->values();
+
         /*
         |--------------------------------------------------------------------------
-        | CROSS DEPOT (hub transfers)
+        | CROSS DEPOT (hub transfers - origin_depot ≠ destination_depot, NO from regularDepot)
         |--------------------------------------------------------------------------
         */
-
         $crossDepot = $packages
             ->filter(function ($p) {
-
                 return $p->shipment
                     && $p->shipment->origin_depot_id
-                    != $p->shipment->destination_depot_id;
+                    && $p->shipment->destination_depot_id
+                    && $p->shipment->origin_depot_id !== $p->shipment->destination_depot_id;
             })
             ->groupBy(function ($p) {
 
@@ -232,19 +250,36 @@ class ShipmentPackageAdminApiController extends ApiResponseWithAdminAuthControll
         $logistics = collect([
 
             [
-                'action_type' => 'pickup_needed',
+                'action_type' => 'seller_dropoff_available',
+                'description' => 'Seller can dropoff package',
+                'packages' => $packages
+                    ->where('is_seller_dropoff', true)
+            ],
+
+            [
+                'action_type' => 'buyer_pickup_available',
+                'description' => 'Buyer can pickup package',
+                'packages' => $packages
+                    ->where('is_buyer_pickup', true)
+            ],
+
+            [
+                'action_type' => 'driver_pickup_needed',
+                'description' => 'Driver pickup required (seller not dropoff)',
                 'packages' => $packages
                     ->where('is_seller_dropoff', false)
             ],
 
             [
-                'action_type' => 'delivery_needed',
+                'action_type' => 'driver_delivery_needed',
+                'description' => 'Driver delivery required (buyer not pickup)',
                 'packages' => $packages
                     ->where('is_buyer_pickup', false)
             ],
 
             [
                 'action_type' => 'self_handled',
+                'description' => 'Self-handled (seller dropoff + buyer pickup)',
                 'packages' => $packages
                     ->where('is_seller_dropoff', true)
                     ->where('is_buyer_pickup', true)
@@ -256,6 +291,8 @@ class ShipmentPackageAdminApiController extends ApiResponseWithAdminAuthControll
                 return [
 
                     'action_type' => $row['action_type'],
+
+                    'description' => $row['description'],
 
                     'total_packages' =>
                     $row['packages']->count(),
