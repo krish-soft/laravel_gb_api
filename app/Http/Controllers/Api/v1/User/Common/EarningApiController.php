@@ -70,6 +70,7 @@ class EarningApiController extends ApiResponseWithAuthController
         $data = [
             'available_balance' => $userAccount->available_balance,
             'hold_balance' => $userAccount->hold_balance,
+            'credit_limit' => $userAccount->credit_limit,
             // 'total_credit' => $userAccount->total_credit,
             // 'total_debit' => $userAccount->total_debit,
             'ledgers' => $ledgers,
