@@ -537,16 +537,21 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
 
     public function complete(Request $request, DriverShipment $driverShipment, OneTimePasswordService $otpService)
     {
-
+        /*
+        |--------------------------------------------------------------------------
+        | AUTHORIZATION & VALIDATION
+        |--------------------------------------------------------------------------
+        */
         if ($driverShipment->driver_id !== request()->user()->id) {
             return $this->errorResponse("Unauthorized", 403);
         }
 
         $request->validate([
-            'proof_image' => 'required|image|max:2048', // Optional proof image
+            'proof_image' => 'required|image|max:2048',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
-
+            'otp' => 'nullable|string|min:4|max:8',
+            'request_id' => 'nullable|string',
         ]);
 
         $shipment = $driverShipment->shipment;
@@ -555,33 +560,37 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
             return $this->showErrorMessage(__('messages.error_messages.not_found'), 404);
         }
 
-        $shipment->load('shipmentPackages');
-
+        // ✅ Check if shipment is already completed/cancelled
         if (in_array($driverShipment->status, [
             DriverShipmentStatusEnum::CANCELLED->value,
-            ShipmentStatusEnum::RETURNED->value,
             DriverShipmentStatusEnum::COMPLETED->value,
+            DriverShipmentStatusEnum::REJECTED->value,
         ])) {
-            return $this->errorResponse("This shipment has been cancelled/returned/completed. Cannot complete.", 410);
+            return $this->errorResponse("This shipment cannot be completed. Current status: {$driverShipment->status}", 410);
         }
 
-        // Only for buyer dispatch confirmation.
+        if (in_array($shipment->status, [ShipmentStatusEnum::RETURNED->value])) {
+            return $this->errorResponse("This shipment has been returned and cannot be completed.", 410);
+        }
+
+        $shipment->load('shipmentPackages');
+
+        /*
+        |--------------------------------------------------------------------------
+        | DISPATCH OTP VERIFICATION (only for buyer dispatch)
+        |--------------------------------------------------------------------------
+        */
         if (
-            $shipment->shipment_type == ShipmentStatusEnum::DISPATCH->value
+            $shipment->shipment_type === ShipmentTypeEnum::DISPATCH->value
             && $shipment->buyer_id !== null
         ) {
-            // we need OTP
             $request->validate([
                 'otp' => 'required|string|min:4|max:8',
-                'request_id' => 'required|string', // To identify which OTP request this is for
+                'request_id' => 'required|string',
             ]);
 
-            $driverShipment = DriverShipment::with('shipment.buyer')->find($driverShipment->id);
-            $buyer = User::findOrFail($driverShipment->shipment->buyer_id);
+            $buyer = User::findOrFail($shipment->buyer_id);
 
-            // Check OTP logic here (if implemented)
-
-            // If not matching then return error response
             if (!$otpService->verify(
                 $buyer,
                 OtpPurposeEnum::DELIVERY_CONFIRMATION->value,
@@ -589,209 +598,279 @@ class DriverShipmentApiController extends ApiResponseWithAuthController
                 $request->otp,
                 $request->phone_number
             )) {
-                // return $this->showErrorMessage('Invalid or expired OTP', 422);
                 return $this->showErrorMessage(__('messages.error_messages.invalid_or_expired_otp'), 422);
             }
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | PRE-CHECK: Validate packages based on shipment type
+        |--------------------------------------------------------------------------
+        */
+        try {
+            $this->validatePackagesForCompletion($shipment);
+        } catch (RuntimeException $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        }
 
+        /*
+        |--------------------------------------------------------------------------
+        | TRANSACTION: Update all related data
+        |--------------------------------------------------------------------------
+        */
+        try {
+            DB::transaction(function () use ($request, $driverShipment, $shipment) {
+                $this->processShipmentCompletion($request, $driverShipment, $shipment);
+            });
 
-
-
-        DB::transaction(function () use ($request, $driverShipment, $shipment) {
-
-            $type = $shipment->shipment_type;
-
-            $packages = $shipment->shipmentPackages;
-
-            // Store image if provided and save path in driver shipment for record
-            if ($request->hasFile('proof_image')) {
-                $imagePath = $request->file('proof_image')->store('driver_shipment_proofs', 'public');
-                $driverShipment->update(['proof_image_path' => $imagePath]);
-            }
-
-            /*
-            |--------------------------------------------------------------------------
-            | 1️⃣ FIRST CHECK — BLOCK IF ALL PENDING
-            |--------------------------------------------------------------------------
-            */
-
-            if (in_array($type, [ShipmentTypeEnum::PICKUP->value, ShipmentTypeEnum::MARKET_PICKUP->value])) {
-
-                // all or one of pending then cannot complete pickup because if all pending then there is no action taken by driver and if one of them not pending then we can say driver has taken action for pickup so we can allow to complete pickup and move to next step which is internal transfer or dispatch based on shipment type.
-                $allPending = $packages->every(function ($package) {
-                    return $package->status === ShipmentStatusEnum::PENDING->value;
-                });
-
-                if ($allPending) {
-                    throw new RuntimeException("Cannot complete pickup. All packages are still pending.");
-                }
-            }
-
-            if (in_array($type, [ShipmentTypeEnum::DISPATCH->value, ShipmentTypeEnum::MARKET_DISPATCH->value])) {
-
-                $allPending = $packages->every(function ($package) {
-                    return $package->status === ShipmentStatusEnum::PENDING->value
-                        // || $package->status !== ShipmentStatusEnum::DELIVERED->value 
-
-                    ;
-                });
-
-                if ($allPending) {
-                    throw new RuntimeException("Cannot complete dispatch. No package delivered.");
-                }
-            }
-
-            /*
-            |--------------------------------------------------------------------------
-            | 2️⃣ NORMAL FLOW
-            |--------------------------------------------------------------------------
-            */
-
-            foreach ($packages as $package) {
-
-                $orderItem = $package?->orderItem;
-                $demandOrderItem = $package?->demandOrderItem;
-                $marketOrderItem = $package?->marketOrderItem;
-                $productListingPackage = $package?->productListingPackage;
-
-                // We have to increase ship qty in order_item
-                if (
-                    in_array($type, [ShipmentTypeEnum::PICKUP->value, ShipmentTypeEnum::MARKET_PICKUP->value])
-                    && !in_array($type, [ShipmentStatusEnum::NOT_PICKED_UP->value, ShipmentStatusEnum::PENDING->value])
-                ) {
-
-                    // but we need to ensure not go beyound $orderItem->qty which is actual order qty because in some case we can have more ship qty than order qty because of some mistake or change in order after shipment created so to avoid that we need to check that also
-                    if ($orderItem) {
-                        $orderItem->ship_qty = min(($orderItem->ship_qty ?? 0) + $package->qty, $orderItem->qty);
-                        $orderItem->save();
-                    }
-
-                    if ($demandOrderItem) {
-                        $demandOrderItem->ship_qty = min(($demandOrderItem->ship_qty ?? 0) + $package->qty, $demandOrderItem->order_qty);
-                        $demandOrderItem->save();
-                    }
-
-                    if ($marketOrderItem) {
-                        $marketOrderItem->ship_qty = min(($marketOrderItem->ship_qty ?? 0) + $package->qty, $marketOrderItem->qty);
-                        $marketOrderItem->save();
-                    }
-
-
-                    // If Only 
-                    if ($productListingPackage && $package->seller_id) {
-                        $productListingPackage->ship_qty = min(($productListingPackage->ship_qty ?? 0) + $package->qty, $productListingPackage->qty);
-                        $productListingPackage->save();
-                    }
-                }
-
-
-                if (in_array($type, [ShipmentTypeEnum::PICKUP->value, ShipmentTypeEnum::MARKET_PICKUP->value])) {
-
-                    // Only process if package is picked and not already arrived
-                    if (
-                        $package->status === ShipmentStatusEnum::PICKED_UP->value &&
-                        $package->status !== ShipmentStatusEnum::ARRIVED_AT_DEPOT->value
-                    ) {
-
-                        $package->update([
-                            'status' => ShipmentStatusEnum::ARRIVED_AT_DEPOT->value,
-                        ]);
-                    }
-                }
-
-                if (in_array($type, [ShipmentTypeEnum::TRANSFER->value])) {
-
-                    if ($package->status === ShipmentStatusEnum::ARRIVED_AT_DEPOT->value) {
-                        $package->update([
-                            'status' => ShipmentStatusEnum::INTERNAL_TRANSFER->value,
-                        ]);
-                    }
-                }
-
-                if (in_array($type, [ShipmentTypeEnum::DISPATCH->value, ShipmentTypeEnum::MARKET_DISPATCH->value])) {
-
-                    if ($package->status === ShipmentStatusEnum::DELIVERED->value) {
-                        $package->update([
-                            'status' => ShipmentStatusEnum::DELIVERED->value,
-                            'delivered_at' => now(),
-                        ]);
-                    }
-                }
-            }
-
-
-
-            // Check for dispatch if all or order_id or marker_order_id is same and status have delivereed then mark that order as delivered because in dispatch we can have multiple package for same order or market order and if any of them delivered then we can say order is delivered because buyer receive at least one package of that order.
-            if (in_array($type, [ShipmentTypeEnum::DISPATCH->value, ShipmentTypeEnum::MARKET_DISPATCH->value])) {
-
-                // Based on shipment pacakges to there parent order_id, demand_order_id or market_order_id make them delivered 
-                // $firstPackage = $packages->first();
-
-                if ($package->order_id) {
-                    $order = $package->order;
-                    if ($order->delivery_status !== OrderStatusEnum::DELIVERED->value) { // to avoid multiple update and event trigger if multiple package of same market order   
-                        $order->delivery_status = OrderStatusEnum::DELIVERED->value;
-                    }
-                    $order->save();
-                }
-
-                if ($package->demand_order_id) {
-                    $order = $package->demandOrder;
-                    if ($order->delivery_status !== OrderStatusEnum::DELIVERED->value) { // to avoid multiple update and event trigger if multiple package of same market order   
-                        $order->delivery_status = OrderStatusEnum::DELIVERED->value;
-                    }
-                    $order->save();
-                }
-
-                if ($package->market_order_id) {
-                    $order = $package->marketOrder;
-
-                    $pickupMarketShipmentPackage = ShipmentPackage::where('seller_package_id', $package->seller_package_id)
-                        ->where('product_listing_package_id', $package->product_listing_package_id)
-                        ->where('shipment_id', '!=', $shipment->id) // exclude current dispatch shipment
-                        ->first();
-
-                    if ($pickupMarketShipmentPackage && $pickupMarketShipmentPackage->status === ShipmentStatusEnum::PICKED_UP->value) {
-                        $marketItem = $package->marketOrderItem;
-                        if ($marketItem) {
-                            // need to increaste ship_qty to match the pickup qty because we are creating one shipment package per pickup unit but in market order item we have consolidated qty per package so we need to update ship_qty to match the pickup qty for correct reporting and tracking
-                            $marketItem->ship_qty = min(($marketItem->ship_qty ?? 0) + $package->qty, $marketItem->qty);
-                            $marketItem->save();
-                        }
-                    }
-
-
-                    if ($order->delivery_status !== OrderStatusEnum::DELIVERED->value) { // to avoid multiple update and event trigger if multiple package of same market order   
-                        $order->delivery_status = OrderStatusEnum::DELIVERED->value;
-                    }
-                    $order->save();
-                }
-
-                // Now to increase its ship qty
-
-
-
-                //
-            }
-
-            /*
-            |--------------------------------------------------------------------------
-            | 3️⃣ COMPLETE SHIPMENT
-            |--------------------------------------------------------------------------
-            */
-
-            $driverShipment->update([
-                'completed_at' => now(),
-                'status' => DriverShipmentStatusEnum::COMPLETED->value,
+            return $this->showSuccessMessage(__('messages.success_messages.success_update'));
+        } catch (Exception $e) {
+            Log::error('Shipment completion error', [
+                'driver_shipment_id' => $driverShipment->id,
+                'error' => $e->getMessage(),
             ]);
+            return $this->errorResponse('Failed to complete shipment: ' . $e->getMessage(), 500);
+        }
+    }
 
-            $shipment->update([
-                'status' => DriverShipmentStatusEnum::COMPLETED->value,
-            ]);
+    /*
+    |--------------------------------------------------------------------------
+    | Helper: Validate Packages for Completion
+    |--------------------------------------------------------------------------
+    */
+    private function validatePackagesForCompletion($shipment): void
+    {
+        $type = $shipment->shipment_type;
+        $packages = $shipment->shipmentPackages;
+
+        if ($packages->isEmpty()) {
+            throw new RuntimeException("No packages found in this shipment.");
+        }
+
+        /*
+        | PICKUP: At least one package must be picked up (not all PENDING)
+        */
+        if (in_array($type, [ShipmentTypeEnum::PICKUP->value, ShipmentTypeEnum::MARKET_PICKUP->value])) {
+            $allPending = $packages->every(fn($p) => $p->status === ShipmentStatusEnum::PENDING->value);
+
+            if ($allPending) {
+                throw new RuntimeException("Cannot complete pickup. All packages are still pending - no action has been taken.");
+            }
+        }
+
+        /*
+        | DISPATCH: At least one package must be delivered (not all PENDING)
+        */
+        if (in_array($type, [ShipmentTypeEnum::DISPATCH->value, ShipmentTypeEnum::MARKET_DISPATCH->value])) {
+            $allPending = $packages->every(fn($p) => $p->status === ShipmentStatusEnum::PENDING->value);
+
+            if ($allPending) {
+                throw new RuntimeException("Cannot complete dispatch. No package has been delivered.");
+            }
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Helper: Process Shipment Completion
+    |--------------------------------------------------------------------------
+    */
+    private function processShipmentCompletion($request, $driverShipment, $shipment): void
+    {
+        $type = $shipment->shipment_type;
+        $packages = $shipment->shipmentPackages;
+
+        // 🎯 Store proof image
+        if ($request->hasFile('proof_image')) {
+            $imagePath = $request->file('proof_image')->store('driver_shipment_proofs', 'public');
+            $driverShipment->update(['proof_image_path' => $imagePath]);
+        }
+
+        // 🎯 Track orders to update (for deduplication)
+        $ordersToUpdate = collect();
+
+        /*
+        |--------------------------------------------------------------------------
+        | 1️⃣ PROCESS PACKAGES BY SHIPMENT TYPE
+        |--------------------------------------------------------------------------
+        */
+        foreach ($packages as $package) {
+            $this->processPackageByType($type, $package, $ordersToUpdate);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | 2️⃣ UPDATE ALL ORDERS (deduplicated)
+        |--------------------------------------------------------------------------
+        */
+        $ordersToUpdate->each(function ($order) {
+            if ($order && $order->delivery_status !== OrderStatusEnum::DELIVERED->value) {
+                $order->delivery_status = OrderStatusEnum::DELIVERED->value;
+                $order->save();
+            }
         });
 
-        return $this->showSuccessMessage(__('messages.success_messages.success_update'));
+        /*
+        |--------------------------------------------------------------------------
+        | 3️⃣ MARK DRIVER SHIPMENT & SHIPMENT AS COMPLETED
+        |--------------------------------------------------------------------------
+        */
+        $driverShipment->update([
+            'completed_at' => now(),
+            'status' => DriverShipmentStatusEnum::COMPLETED->value,
+        ]);
+
+        $shipment->update([
+            'status' => ShipmentStatusEnum::COMPLETED->value,
+        ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Helper: Process Individual Package
+    |--------------------------------------------------------------------------
+    */
+    private function processPackageByType($type, $package, $ordersToUpdate): void
+    {
+        /*
+        |--------------------------------------------------------------------------
+        | PICKUP FLOW
+        |--------------------------------------------------------------------------
+        */
+        if (in_array($type, [ShipmentTypeEnum::PICKUP->value, ShipmentTypeEnum::MARKET_PICKUP->value])) {
+            // ✅ Update ship_qty for orders (only if package is picked up)
+            if ($package->status !== ShipmentStatusEnum::PENDING->value) {
+                $this->incrementOrderShipQty($package);
+            }
+
+            // ✅ Move package status to ARRIVED_AT_DEPOT (only if currently PICKED_UP)
+            if ($package->status === ShipmentStatusEnum::PICKED_UP->value) {
+                $package->update(['status' => ShipmentStatusEnum::ARRIVED_AT_DEPOT->value]);
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | TRANSFER FLOW
+        |--------------------------------------------------------------------------
+        */
+        if ($type === ShipmentTypeEnum::TRANSFER->value) {
+            // ✅ Move package to INTERNAL_TRANSFER (only if at depot)
+            if ($package->status === ShipmentStatusEnum::ARRIVED_AT_DEPOT->value) {
+                $package->update(['status' => ShipmentStatusEnum::INTERNAL_TRANSFER->value]);
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | DISPATCH FLOW
+        |--------------------------------------------------------------------------
+        */
+        if (in_array($type, [ShipmentTypeEnum::DISPATCH->value, ShipmentTypeEnum::MARKET_DISPATCH->value])) {
+            // ✅ Only update if not already delivered
+            if ($package->status !== ShipmentStatusEnum::DELIVERED->value) {
+                $package->update([
+                    'status' => ShipmentStatusEnum::DELIVERED->value,
+                    'delivered_at' => now(),
+                ]);
+            }
+
+            // ✅ Queue parent order for update (will be deduplicated later)
+            $this->queueOrderForUpdate($package, $ordersToUpdate);
+
+            // ✅ For market orders, handle special market pickup logic
+            if ($package->market_order_id) {
+                $this->handleMarketOrderPickupLogic($package);
+            }
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Helper: Increment Order Ship Qty
+    |--------------------------------------------------------------------------
+    */
+    private function incrementOrderShipQty($package): void
+    {
+        $qty = $package->qty ?? 0;
+
+        if ($package->orderItem) {
+            $package->orderItem->ship_qty = min(
+                ($package->orderItem->ship_qty ?? 0) + $qty,
+                $package->orderItem->qty
+            );
+            $package->orderItem->save();
+        }
+
+        if ($package->demandOrderItem) {
+            $package->demandOrderItem->ship_qty = min(
+                ($package->demandOrderItem->ship_qty ?? 0) + $qty,
+                $package->demandOrderItem->order_qty
+            );
+            $package->demandOrderItem->save();
+        }
+
+        if ($package->marketOrderItem) {
+            $package->marketOrderItem->ship_qty = min(
+                ($package->marketOrderItem->ship_qty ?? 0) + $qty,
+                $package->marketOrderItem->qty
+            );
+            $package->marketOrderItem->save();
+        }
+
+        if ($package->productListingPackage && $package->seller_id) {
+            $package->productListingPackage->ship_qty = min(
+                ($package->productListingPackage->ship_qty ?? 0) + $qty,
+                $package->productListingPackage->qty
+            );
+            $package->productListingPackage->save();
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Helper: Queue Order for Update (with deduplication by ID)
+    |--------------------------------------------------------------------------
+    */
+    private function queueOrderForUpdate($package, $ordersToUpdate): void
+    {
+        if ($package->order_id && $package->order) {
+            $ordersToUpdate->put("order_{$package->order_id}", $package->order);
+        }
+
+        if ($package->demand_order_id && $package->demandOrder) {
+            $ordersToUpdate->put("demand_order_{$package->demand_order_id}", $package->demandOrder);
+        }
+
+        if ($package->market_order_id && $package->marketOrder) {
+            $ordersToUpdate->put("market_order_{$package->market_order_id}", $package->marketOrder);
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Helper: Handle Market Order Pickup Logic
+    |--------------------------------------------------------------------------
+    */
+    private function handleMarketOrderPickupLogic($package): void
+    {
+        // Find the corresponding pickup package for this market order
+        $pickupMarketPackage = ShipmentPackage::where('seller_package_id', $package->seller_package_id)
+            ->where('product_listing_package_id', $package->product_listing_package_id)
+            ->where('shipment_id', '!=', $package->shipment_id) // exclude current dispatch shipment
+            ->first();
+
+        if ($pickupMarketPackage && $pickupMarketPackage->status === ShipmentStatusEnum::PICKED_UP->value) {
+            $marketItem = $package->marketOrderItem;
+            if ($marketItem) {
+                // Increase ship_qty to match pickup qty for accurate tracking
+                $marketItem->ship_qty = min(
+                    ($marketItem->ship_qty ?? 0) + ($package->qty ?? 0),
+                    $marketItem->qty
+                );
+                $marketItem->save();
+            }
+        }
     }
 
 
