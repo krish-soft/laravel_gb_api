@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Log;
 
 class DriverShipmentAdminApiController extends ApiResponseWithAdminAuthController
 {
-
     /*
     |--------------------------------------------------------------------------
     | GET AVAILABLE DRIVERS
@@ -36,14 +35,18 @@ class DriverShipmentAdminApiController extends ApiResponseWithAdminAuthControlle
         // Log::info('Depots IDs for available drivers: ' . implode(', ', $depotsIds));
 
         $drivers = DriverVehicle::with([
-            'driver.depots'
+            'driver.depots',
         ])
             ->active()
-            ->where('is_available_for_delivery', true)
+
             ->whereHas('driver.depots', function ($q) use ($depotsIds) {
                 $q->whereIn('depot_id', $depotsIds);
             })
+            ->whereHas('driver', function ($q) {
+                $q->where('is_available_for_delivery', true);
+            })
             ->get();
+
         return $this->successResponse(__('messages.success_messages.success_get'), $drivers);
     }
 
@@ -59,7 +62,7 @@ class DriverShipmentAdminApiController extends ApiResponseWithAdminAuthControlle
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'driver_id' => 'nullable|exists:users,id',
             'shipment_number' => 'nullable|string',
-            'status' => 'nullable|in:' . implode(',', DriverShipmentStatusEnum::casesAsValues()),
+            'status' => 'nullable|in:'.implode(',', DriverShipmentStatusEnum::casesAsValues()),
         ]);
 
         $query = DriverShipment::with([
@@ -86,8 +89,7 @@ class DriverShipmentAdminApiController extends ApiResponseWithAdminAuthControlle
         if ($request->filled('shipment_number')) {
             $query->whereHas(
                 'shipment',
-                fn($q) =>
-                $q->where('shipment_number', 'like', '%' . $request->shipment_number . '%')
+                fn ($q) => $q->where('shipment_number', 'like', '%'.$request->shipment_number.'%')
             );
         }
 
@@ -120,9 +122,6 @@ class DriverShipmentAdminApiController extends ApiResponseWithAdminAuthControlle
 
         $shipment = Shipment::findOrFail($request->shipment_id);
 
-
-
-
         // Check if shipment already assigned
 
         $driverShipment = DriverShipment::create([
@@ -140,7 +139,7 @@ class DriverShipmentAdminApiController extends ApiResponseWithAdminAuthControlle
             $shipment->update(['status' => ShipmentStatusEnum::ASSIGNED->value]);
         }
 
-        // 
+        //
 
         $this->sendAssignedNotification($driverShipment);
 
@@ -166,10 +165,8 @@ class DriverShipmentAdminApiController extends ApiResponseWithAdminAuthControlle
             ->firstOrFail();
 
         if ($driverShipment->accepted_at || $vehicle->driver_id === $driverShipment->driver_id) {
-            return $this->errorResponse("Driver already accepted.", 422);
+            return $this->errorResponse('Driver already accepted.', 422);
         }
-
-
 
         $driverShipment->update([
             'driver_id' => $vehicle->driver_id,
@@ -192,11 +189,11 @@ class DriverShipmentAdminApiController extends ApiResponseWithAdminAuthControlle
     public function cancel(DriverShipment $driverShipment)
     {
         if ($driverShipment->started_at) {
-            return $this->errorResponse("Cannot cancel after start.", 422);
+            return $this->errorResponse('Cannot cancel after start.', 422);
         }
 
         if (in_array($driverShipment->status, [DriverShipmentStatusEnum::CANCELLED->value, DriverShipmentStatusEnum::REJECTED->value])) {
-            return $this->errorResponse("Already cancelled or rejected.", 422);
+            return $this->errorResponse('Already cancelled or rejected.', 422);
         }
 
         DB::transaction(function () use ($driverShipment) {
@@ -208,7 +205,6 @@ class DriverShipmentAdminApiController extends ApiResponseWithAdminAuthControlle
             $shipment = $driverShipment->shipment;
             $shipment->update(['status' => ShipmentStatusEnum::PENDING->value]);
         });
-
 
         // $driverShipment->delete();
 
