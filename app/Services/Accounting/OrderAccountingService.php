@@ -9,7 +9,6 @@ use App\Enum\Accounting\PlatformAccountCodeEnum;
 use App\Enum\Common\Order\OrderFlagsEum;
 use App\Enum\Common\Order\OrderStatusEnum;
 use App\Models\Buyer\Order\Order;
-use App\Models\Buyer\Order\OrderItem;
 use App\Models\Common\Accounting\Account;
 use App\Models\Common\Accounting\AccountLedger;
 use App\Models\Common\Payment\Payment;
@@ -19,38 +18,31 @@ use RuntimeException;
 
 class OrderAccountingService
 {
-
-    /// PLATFORM + BUYER + SELLER, ORDER RECEIVED LEDGERS
-
+    // / PLATFORM + BUYER + SELLER, ORDER RECEIVED LEDGERS
 
     public function recordPaidOrder(Order $order, Payment $payment): void
     {
         try {
 
-
             DB::transaction(function () use ($order, $payment) {
 
-
-                if (!$order || !$payment) {
+                if (! $order || ! $payment) {
                     throw new RuntimeException("Order or Payment not found for Order ID: {$order->id} and Payment ID: {$payment->id}");
                 }
 
                 if ($order->total_amount != ($payment->amount + $payment->credit_amount)) {
-                    $order->addFlag(OrderFlagsEum::ACCOUNTING_ERROR, "Payment amount does not match order total");
+                    $order->addFlag(OrderFlagsEum::ACCOUNTING_ERROR, 'Payment amount does not match order total');
                     throw new RuntimeException("Payment amount does not match order total for Order ID: {$order->id} and Payment ID: {$payment->id}");
                 }
 
                 $accounting = app(AccountingService::class);
 
-                // get total of taxable orderItems 
+                // get total of taxable orderItems
                 // $taxableItemsAmount = $order->orderItems->sum('taxable_amount');
-
 
                 // Actual amount we received from payment gateway for this order (excluding credit used)
                 $paymentAmount = $payment->amount;
                 $paymentCreditAmount = $payment->credit_amount; // credit used in this payment if any
-
-
 
                 $buyerId = $order->buyer_id;
                 $buyerAccount = Account::getOrCreateByOwner(
@@ -65,7 +57,6 @@ class OrderAccountingService
                     PlatformAccountCodeEnum::PLATFORM_CLEARING->value,
                 );
 
-
                 if ($paymentAmount > 0) {
 
                     /*
@@ -75,7 +66,7 @@ class OrderAccountingService
                     */
 
                     // Chaning only main one entry not from reporting.
-                    if (!$this->ledgerExists(
+                    if (! $this->ledgerExists(
                         $clearingAccount->id,
                         AccountEntryTypeEnum::ORDER_PAYMENT_AMOUNT_BASE->value,
                         Payment::class,
@@ -86,23 +77,21 @@ class OrderAccountingService
                         $accounting->createLedger($clearingAccount, [
                             'description' => "Payment received for Order #{$order->order_number}, Payment #{$payment->payment_code}",
                             'credit' => $paymentAmount, // $order->subtotal, // total without tax  $taxableItemsAmount, // we are storing in each accounts  ,
-                            'debit'  => 0,
+                            'debit' => 0,
                             'entry_type' => AccountEntryTypeEnum::ORDER_PAYMENT_AMOUNT_BASE->value,
                             'status' => LedgerStatusEnum::AVAILABLE->value,
                             'source_type' => Payment::class,
                             'source_id' => $payment->id,
                             'source_code' => $payment->payment_code,
 
-                            'reference' => $payment->order_number,
+                            'reference' => $order->order_number, // For better traceability we can use order number here because payment code can be same for multiple orders in case of partial payments
                             'payment_reference' => $payment->gateway_order_id,
-
-                            'common_reference' => $order->payment_code,
+                            'common_reference' => $payment->payment_code,
                         ]);
                     }
 
-
                     // Buyer Account
-                    if (!$this->ledgerExists(
+                    if (! $this->ledgerExists(
                         $buyerAccount->id,
                         AccountEntryTypeEnum::ORDER_PAYMENT_AMOUNT_BASE->value,
                         Payment::class,
@@ -114,29 +103,27 @@ class OrderAccountingService
                         $accounting->createLedger($buyerAccount, [
                             'description' => "Payment received for Order #{$order->order_number}, Payment #{$payment->payment_code}",
                             'credit' => $paymentAmount, // $order->subtotal, // total without tax  $taxableItemsAmount, // we are storing in each accounts  ,
-                            'debit'  => 0,
+                            'debit' => 0,
 
                             'entry_type' => AccountEntryTypeEnum::ORDER_PAYMENT_AMOUNT_BASE->value,
-                            'status' => LedgerStatusEnum::AVAILABLE->value,
+                            'status' => LedgerStatusEnum::PENDING->value,
 
                             'source_type' => Payment::class,
                             'source_id' => $payment->id,
                             'source_code' => $payment->payment_code,
 
-                            'reference' => $payment->order_number,
+                            'reference' => $order->order_number, // For better traceability we can use order number here because payment code can be same for multiple orders in case of partial payments
                             'payment_reference' => $payment->gateway_order_id,
-
-                            'common_reference' => $order->payment_code,
+                            'common_reference' => $payment->payment_code,
                         ]);
                     }
                 }
-
 
                 // Credit Amount  Needed
                 if ($paymentCreditAmount > 0) {
 
                     // Buyer Account
-                    if (!$this->ledgerExists(
+                    if (! $this->ledgerExists(
                         $buyerAccount->id,
                         AccountEntryTypeEnum::ORDER_PAYMENT_AMOUNT_BASE->value,
                         Payment::class,
@@ -147,7 +134,7 @@ class OrderAccountingService
                         $accounting->createLedger($buyerAccount, [
                             'description' => "Credit used for Order #{$order->order_number}, Payment #{$payment->payment_code}",
                             'credit' => 0, // $order->subtotal, // total without tax  $taxableItemsAmount, // we are storing in each accounts  ,
-                            'debit'  => $paymentCreditAmount,
+                            'debit' => $paymentCreditAmount,
 
                             'entry_type' => AccountEntryTypeEnum::ORDER_PAYMENT_AMOUNT_BASE->value,
                             'status' => LedgerStatusEnum::AVAILABLE->value,
@@ -156,23 +143,22 @@ class OrderAccountingService
                             'source_id' => $payment->id,
                             'source_code' => $payment->payment_code,
 
-                            'reference' => $payment->order_number,
+                            'reference' => $order->order_number, // For better traceability we can use order number here because payment code can be same for multiple orders in case of partial payments
                             'payment_reference' => $payment->gateway_order_id,
+                            'common_reference' => $payment->payment_code,
 
-                            'common_reference' => $order->payment_code,
+                            'is_credit_balance' => true,
+
                         ]);
                     }
                 }
 
                 //
 
-
-                $order->order_status =  OrderStatusEnum::ACCOUNTED->value;
+                $order->order_status = OrderStatusEnum::ACCOUNTED->value;
                 // $order->is_locked = true;// On Cutoff due to pacakge creation // lock order after accounting
                 $order->removeFlag(OrderFlagsEum::ACCOUNTING_ERROR); // remove accounting error flag if exists
                 $order->save();
-
-
 
                 //
             });
@@ -199,15 +185,15 @@ class OrderAccountingService
 
         // ✅ Normalize to 2 decimal (match DB DECIMAL)
         $credit = is_null($credit) ? null : number_format($credit, 2, '.', '');
-        $debit  = is_null($debit)  ? null : number_format($debit, 2, '.', '');
+        $debit = is_null($debit) ? null : number_format($debit, 2, '.', '');
 
         return AccountLedger::query()
             ->where('account_id', $accountId)
             ->where('entry_type', $entryType)
             ->where('source_type', $sourceType)
             ->where('source_id', $sourceId)
-            ->when(!is_null($credit), fn($q) => $q->where('credit', $credit))
-            ->when(!is_null($debit), fn($q) => $q->where('debit', $debit))
+            ->when(! is_null($credit), fn ($q) => $q->where('credit', $credit))
+            ->when(! is_null($debit), fn ($q) => $q->where('debit', $debit))
             ->exists();
     }
 }

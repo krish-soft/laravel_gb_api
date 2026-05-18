@@ -10,6 +10,7 @@ use App\Enum\Common\Invoice\InvoiceStatusEnum;
 use App\Enum\Common\Invoice\InvoiceTypeEnum;
 use App\Enum\Common\Order\OrderFlagsEum;
 use App\Models\Common\Accounting\Account;
+use App\Models\Common\Accounting\AccountLedger;
 use App\Models\Common\Invoice\Invoice;
 use App\Models\Common\Invoice\InvoiceCharge;
 use Illuminate\Support\Facades\DB;
@@ -18,9 +19,9 @@ use RuntimeException;
 
 /**
  * Invoice Accounting Service
- * 
+ *
  * Handles accounting entries for invoices with proper debit/credit management.
- * 
+ *
  * Sign Convention:
  * - Positive amounts: Money received by the account (increases balance)
  * - Negative amounts: Money owed from the account (decreases balance)
@@ -47,7 +48,7 @@ class InvoiceAccountingService
                 $owner = $invoice->user;
                 $ownerType = Account::getOwnerTypeByUser($owner);
 
-                if (!$ownerType) {
+                if (! $ownerType) {
                     throw new RuntimeException(
                         "Unknown user type for Invoice #{$invoice->invoice_number}, User ID: {$owner->id}"
                     );
@@ -57,7 +58,7 @@ class InvoiceAccountingService
                 $this->recordBaseAmount($invoice, $ownerType, $owner->id);
 
                 // Step 2: Record charges (only for non-sales invoices)
-                if (!$this->isSalesInvoice($invoice)) {
+                if (! $this->isSalesInvoice($invoice)) {
                     $this->recordCharges($invoice);
                 }
 
@@ -93,10 +94,44 @@ class InvoiceAccountingService
         )) {
             return;
         }
+        
+        // If its sales invoice then we have to
+        // relese pending ledger to available because
+        // we have created pending ledger on invoice creation
+        // to reflect pending balance in account
+        if ($invoice->invoice_type === InvoiceTypeEnum::SALES->value) {
+            // for that buyer get pending ledger
+
+            $refNumber = null;
+            if (isset($invoice->order)) {
+                $refNumber = $invoice->order->order_number;
+            } elseif (isset($invoice->marketOrder)) {
+                $refNumber = $invoice->marketOrder->market_order_number;
+            } elseif (isset($invoice->demandOrder)) {
+                $refNumber = $invoice->demandOrder->order_number;
+            }
+
+            if (isset($refNumber)) {
+                $ledgers = AccountLedger::where('account_id', $ownerAccount->id)
+                    ->where('reference', $refNumber)
+                    ->where('status', LedgerStatusEnum::PENDING->value)
+                    ->get();
+
+                if ($ledgers->count() > 0) {
+                    foreach ($ledgers as $ledger) {
+                        $this->accountingService->markAvailable($ledger);
+                    }
+                }
+                //
+
+            } else {
+                Log::warning("No reference number found for Sales Invoice #{$invoice->invoice_number} to release pending ledger");
+            }
+        }
 
         // Get signed amount (positive = money in, negative = money out)
         $signedAmount = $this->getSignedBaseAmount($invoice);
-        
+
         // Convert signed amount to debit/credit
         [$debit, $credit] = $this->convertSignedToDebitCredit($signedAmount);
 
@@ -276,15 +311,15 @@ class InvoiceAccountingService
 
     /**
      * Convert signed amount to debit/credit
-     * 
-     * Standard accounting: 
+     *
+     * Standard accounting:
      * - Assets/Expenses: Debit = increase, Credit = decrease
      * - Liabilities/Income: Debit = decrease, Credit = increase
-     * 
+     *
      * Simplified rule used here:
      * - Positive signed amount: Debit (for most accounts, represents increase)
      * - Negative signed amount: Credit (represents decrease/liability)
-     * 
+     *
      * @return array [debit, credit]
      */
     private function convertSignedToDebitCredit(float $signedAmount): array

@@ -27,7 +27,7 @@ return new class extends Migration
             $table->string('email')->nullable();
 
             // OTP data
-            $table->string('otp_code', 10);
+            $table->string('otp_code');  // Hash of the OTP code for security
             $table->timestamp('expires_at');
             $table->timestamp('verified_at')->nullable();
 
