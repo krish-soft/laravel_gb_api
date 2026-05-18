@@ -10,16 +10,15 @@ use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserLoginApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserLogoutApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserRegisterApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserResetPasswordApiController;
-use App\Http\Controllers\Api\v1\Admin\Common\Fulfillment\AdminFulfillmentLocationApiController;
-use App\Http\Controllers\Api\v1\Admin\Common\Payment\PaymentReconcileApiController;
-use App\Http\Controllers\Api\v1\Admin\Common\Payment\PayoutApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Customer\CustomerApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Customer\CustomerLegalActionApiController;
+use App\Http\Controllers\Api\v1\Admin\Common\Fulfillment\AdminFulfillmentLocationApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Invoice\InvoiceAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Payment\AdminPaymentApiController;
+use App\Http\Controllers\Api\v1\Admin\Common\Payment\PaymentReconcileApiController;
+use App\Http\Controllers\Api\v1\Admin\Common\Payment\PayoutApiController;
 use App\Http\Controllers\Api\v1\Admin\DashboardAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Market\MarketOrderAdminApiController;
-use App\Http\Controllers\Api\v1\Admin\Shipment\ShipmentPackageAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\MstChargeLevelApiController;
 use App\Http\Controllers\Api\v1\Admin\Master\Charge\Rule\MstDeliveryChargeRuleApiController;
@@ -52,12 +51,13 @@ use App\Http\Controllers\Api\v1\Admin\Settlement\SettlementAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Settlement\SettlementBatchAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Shipment\DriverShipmentAdminApiController;
 use App\Http\Controllers\Api\v1\Admin\Shipment\ShipmentAdminApiController;
-use App\Http\Controllers\Api\v1\User\Buyer\Demand\BuyerDemandProductListingApiController;
+use App\Http\Controllers\Api\v1\Admin\Shipment\ShipmentPackageAdminApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\BuyerOrderApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\BuyerProductListingApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\CartApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\CheckoutApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\Demand\BuyerDemandOrderApiController;
+use App\Http\Controllers\Api\v1\User\Buyer\Demand\BuyerDemandProductListingApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\Demand\DemandCartApiController;
 use App\Http\Controllers\Api\v1\User\Buyer\Demand\DemandCheckoutApiController;
 use App\Http\Controllers\Api\v1\User\Common\Auth\UserLoginApiController;
@@ -65,6 +65,7 @@ use App\Http\Controllers\Api\v1\User\Common\Auth\UserLogoutApiController;
 use App\Http\Controllers\Api\v1\User\Common\Auth\UserRegisterApiController;
 use App\Http\Controllers\Api\v1\User\Common\Auth\UserResetPasswordApiController;
 use App\Http\Controllers\Api\v1\User\Common\BuyerSellerFollowerApiController;
+use App\Http\Controllers\Api\v1\User\Common\DriverApiController;
 use App\Http\Controllers\Api\v1\User\Common\EarningApiController;
 use App\Http\Controllers\Api\v1\User\Common\Fulfillment\FulfillmentLocationApiController;
 use App\Http\Controllers\Api\v1\User\Common\Legal\UserBankApiController;
@@ -72,13 +73,11 @@ use App\Http\Controllers\Api\v1\User\Common\Legal\UserKycApiController;
 use App\Http\Controllers\Api\v1\User\Common\Legal\UserVehicleKycApiController;
 use App\Http\Controllers\Api\v1\User\Common\RatingApiController;
 use App\Http\Controllers\Api\v1\User\Common\Shipment\DriverShipmentApiController;
-use App\Http\Controllers\Api\v1\User\Common\DriverApiController;
 use App\Http\Controllers\Api\v1\user\DeliveryOtpActionApiController;
 use App\Http\Controllers\Api\v1\User\Seller\Product\ProductListingApiController;
 use App\Http\Controllers\Api\v1\User\UserDashboardApiController;
 use App\Http\Controllers\Api\v1\User\UserProfileApiController;
 use App\Http\Controllers\Api\v1\Utils\UtilsApiController;
-use App\Http\Controllers\Api\v1\Utils\UtilsWithAuthApiController;
 use App\Http\Controllers\Web\Webhooks\RazorpayBankVerificationWebhookHandler;
 use App\Http\Controllers\Web\Webhooks\RazorpayPayoutWebhookController;
 use App\Http\Controllers\Web\Webhooks\RazorpayWebhookController;
@@ -143,14 +142,14 @@ Route::get('/public-files/{path}', function ($path) {
 // routes/web.php or api.php
 Route::get('/payment/status/{payment}', function (Request $request, string $payment) {
 
-    if (!$request->hasValidSignature()) {
+    if (! $request->hasValidSignature()) {
         abort(403);
     }
 
     $payment = Payment::where('payment_code', $payment)->firstOrFail();
 
     return response()->json([
-        'status'       => $payment->status,       // initiated | paid | failed
+        'status' => $payment->status,       // initiated | paid | failed
         'order_number' => optional($payment->source())->order_number,
     ]);
 })->name('payment.status');
@@ -161,10 +160,10 @@ Route::group([
         'app-checker', // Custom Middleware to check app status
         // 'ms-api-key-checker', // Custom Middleware to check microservice API key
 
-    ]
+    ],
 ], function () {
 
-    ## Public Routes
+    // # Public Routes
 
     // Signup
     Route::post('/signup/otp/send', [UserRegisterApiController::class, 'sendRegistrationOtp']);
@@ -177,13 +176,11 @@ Route::group([
     Route::post('/forget/otp/send', [UserResetPasswordApiController::class, 'sendForgotPasswordOtp']);
     Route::post('/forget/reset', [UserResetPasswordApiController::class, 'resetPassword']);
 
-
     // Utils
     Route::prefix('utils')->group(function () {
         Route::get('states', [UtilsApiController::class, 'getStateList']);
         Route::get('app-meta', [UtilsApiController::class, 'getAppMetaInfo']);
         Route::get('enums', [UtilsApiController::class, 'getAlLEnums']);
-
 
         Route::get('markets', [UtilsApiController::class, 'getMarketList']);
         Route::get('units', [UtilsApiController::class, 'getUnitList']);
@@ -196,26 +193,22 @@ Route::group([
         Route::get('platform-accounts', [UtilsApiController::class, 'getPlatformAccountsList']);
     });
 
-
     /**
      *  Regular User Auth Protected Routes
      */
 
-    ## Auth Protected Routes
-    ## Regular User Auth Protected Routes
+    // # Auth Protected Routes
+    // # Regular User Auth Protected Routes
     Route::group([
         'middleware' => [
             'auth:sanctum', // Sanctum Authentication
-            'user-checker' // Custom Middleware to check token expiry
-        ]
+            'user-checker', // Custom Middleware to check token expiry
+        ],
     ], function () {
-
-
 
         // Logout
         Route::post('/signout', [UserLogoutApiController::class, 'logout']);
         Route::post('/signout/all', [UserLogoutApiController::class, 'logoutAllDevices']);
-
 
         Route::prefix('user')->group(function () {
 
@@ -227,6 +220,7 @@ Route::group([
 
             // address
             Route::post('/profile/address', [UserProfileApiController::class, 'saveAddress']);
+           	Route::get('/profile/address', [UserProfileApiController::class, 'getAddress']);
             Route::post('/profile/billingAddress', [UserProfileApiController::class, 'saveBillingAddress']);
 
             //
@@ -245,17 +239,15 @@ Route::group([
         // Bank Routes
         Route::apiResource('userBank', UserBankApiController::class);
 
-
         // Fulfillment Location Routes
         Route::apiResource('fulfillmentLocation', FulfillmentLocationApiController::class);
         Route::post('fulfillmentLocation/address/{fulfillmentLocation}', [FulfillmentLocationApiController::class, 'saveAddress']);
 
-
         // Which Required KYC Approved User Only
         Route::group([
             'middleware' => [
-                'user-legal-checker' // Custom Middleware to check user legal (KYC) status // Testing Removed
-            ]
+                'user-legal-checker', // Custom Middleware to check user legal (KYC) status // Testing Removed
+            ],
         ], function () {
 
             // Seller/Farmer Routes
@@ -265,7 +257,7 @@ Route::group([
             Route::prefix('seller')
                 ->middleware([
                     'seller-checker', // Custom Middleware to check if user is seller
-                    'seller-cutoff' // Custom Middleware to check seller cutoff time
+                    'seller-cutoff', // Custom Middleware to check seller cutoff time
 
                 ])
                 ->group(function () {
@@ -284,6 +276,9 @@ Route::group([
                     //
                 });
 
+            // Both are using
+            Route::get('products', [BuyerProductListingApiController::class, 'getBuyerProductSummary']);
+            Route::get('products/package/details/{productId}', [BuyerProductListingApiController::class, 'getBuyerProductPackages']);
 
             // Buyer/Trader Routes
             Route::prefix('buyer')->middleware([
@@ -291,12 +286,8 @@ Route::group([
             ])->group(function () {
 
                 Route::middleware([
-                    'buyer-cutoff' // Custom Middleware to check buyer cutoff time
+                    'buyer-cutoff', // Custom Middleware to check buyer cutoff time
                 ])->group(function () {
-
-
-                    Route::get('products', [BuyerProductListingApiController::class, 'getBuyerProductSummary']);
-                    Route::get('products/package/details/{productId}', [BuyerProductListingApiController::class, 'getBuyerProductPackages']);
 
                     // Cart Routes
                     Route::prefix('cart')->group(function () {
@@ -325,13 +316,11 @@ Route::group([
                 Route::prefix('demand')->group(function () {
 
                     Route::middleware([
-                        'buyer-cutoff' // Custom Middleware to check buyer cutoff time
+                        'buyer-cutoff', // Custom Middleware to check buyer cutoff time
                     ])->group(function () {
-
 
                         Route::get('products', [BuyerDemandProductListingApiController::class, 'getBuyerProductSummary']);
                         Route::get('products/package/details/{productId}', [BuyerDemandProductListingApiController::class, 'getBuyerProductPackages']);
-
 
                         Route::prefix('cart')->group(function () {
                             Route::get('active', [DemandCartApiController::class, 'getActiveCart']);
@@ -348,29 +337,24 @@ Route::group([
                         });
                     }); //
 
-
                     Route::prefix('order')->group(function () {
                         Route::get('list', [BuyerDemandOrderApiController::class, 'getBuyerOrders']);
                         Route::get('details/{orderId}', [BuyerDemandOrderApiController::class, 'getBuyerOrderDetails']);
                         Route::get('shipment-packages/{orderId}', [BuyerDemandOrderApiController::class, 'getOrderShipmentPackages']);
                     });
 
-
                     //
                 }); //
-
-
-
 
                 //
             });
 
             Route::prefix('delivery')->middleware([
-                'delivery-checker' // Custom Middleware to check if user is delivery
+                'delivery-checker', // Custom Middleware to check if user is delivery
             ])->group(function () {
 
                 // Vehicle addition pending & images
-                // make driver online offline    
+                // make driver online offline
                 Route::prefix('driver')->group(function () {
                     Route::get('online-status', [DriverApiController::class, 'getDriverOnlineOfflineStatus']);
                     Route::post('online-status/update', [DriverApiController::class, 'updateDriverOnlineOffline']);
@@ -390,27 +374,22 @@ Route::group([
                     Route::post('start/{driverShipment}', [DriverShipmentApiController::class, 'start']);
                     Route::post('completed/{driverShipment}', [DriverShipmentApiController::class, 'complete']);
 
-                    // Route::post('update/shipment-Package/status', [DriverShipmentApiController::class, 'updateShipmentPackageStatus']);            
+                    // Route::post('update/shipment-Package/status', [DriverShipmentApiController::class, 'updateShipmentPackageStatus']);
                     Route::post('package/update-status', [DriverShipmentApiController::class, 'updateShipmentPackageStatus']);
 
                     // OTP Verification for sensitive actions
                     Route::post('otp-request/delivery-confirmation', [DeliveryOtpActionApiController::class, 'requestDeliveryConfirmationOtp']);
                 });
 
-
-
-
-
                 //
             });
 
-            // Common for users 
+            // Common for users
             Route::prefix('earnings')->group(function () {
 
                 //
                 Route::get('/', [EarningApiController::class, 'getEarningsData']);
             });
-
 
             Route::prefix('ratings')->group(function () {
 
@@ -421,7 +400,6 @@ Route::group([
                 Route::post('/buyer', [RatingApiController::class, 'giveBuyerRating']);
                 //
             });
-
 
             Route::prefix('followers')->group(function () {
 
@@ -438,9 +416,7 @@ Route::group([
         Route::get('shipping/seller', [ShippingReportBySellerAdminApiController::class, 'getShippingSellerReport']);
         Route::get('shipping/buyer', [ShippingReportByBuyerAdminApiController::class, 'getShippingBuyerReport']);
 
-                Route::get('shipping/shipment', [ShippingReportByShipmentAdminApiController::class, 'getShippingShipmentReport']);
-
-
+        Route::get('shipping/shipment', [ShippingReportByShipmentAdminApiController::class, 'getShippingShipmentReport']);
 
         //
     });
@@ -449,25 +425,23 @@ Route::group([
      *  ADMIN
      */
 
-
-    ## Admin User Auth Protected Routes
+    // # Admin User Auth Protected Routes
     Route::group([
         'prefix' => 'admin',
     ], function () {
 
-        ## Admin User Public Routes
+        // # Admin User Public Routes
 
         Route::post('/signin', [AdminUserLoginApiController::class, 'login']);
 
         Route::post('/forget/otp/send', [AdminUserResetPasswordApiController::class, 'sendForgotPasswordOtp']);
         Route::post('/forget/reset', [AdminUserResetPasswordApiController::class, 'resetPassword']);
 
-
         Route::group([
             'middleware' => [
                 'auth:sanctum', // Sanctum Authentication
-                'admin-user-checker' // Custom Middleware to check admin things
-            ]
+                'admin-user-checker', // Custom Middleware to check admin things
+            ],
         ], function () {
 
             Route::post('/register', [AdminUserRegisterApiController::class, 'register']); // Admin User Registration
@@ -479,7 +453,6 @@ Route::group([
 
             Route::get('/dashboard', [DashboardAdminApiController::class, 'getDashboardData']);
             Route::apiResource('adminUser', AdminUserAdminApiController::class); // Manage Admin users
-
 
             // Product Listing Routes
             Route::prefix('listing')->group(function () {
@@ -506,7 +479,6 @@ Route::group([
                 //
             });
 
-
             Route::prefix('market-order')->group(function () {
                 Route::get('/', [MarketOrderAdminApiController::class, 'getOrdersList']);
                 Route::get('/{orderId}', [MarketOrderAdminApiController::class, 'getOrderDetails']);
@@ -522,14 +494,12 @@ Route::group([
 
             Route::apiResource('invoice', InvoiceAdminApiController::class);
 
-
-            // Razorpay Payments  
+            // Razorpay Payments
             Route::prefix('payment')->group(function () {
                 Route::get('/', [AdminPaymentApiController::class, 'getPaymentsList']);
                 Route::get('/{paymentId}', [AdminPaymentApiController::class, 'getPaymentDetails']);
                 Route::post('/reconcile', [PaymentReconcileApiController::class, 'reconcile']);
             });
-
 
             // Razorpay Payouts
             Route::prefix('payouts')->group(function () {
@@ -539,7 +509,7 @@ Route::group([
                 Route::post('{payout}/reconcile', [PayoutApiController::class, 'reconcile']);
             });
 
-            // Accounting 
+            // Accounting
             Route::prefix('accounting')->group(function () {
 
                 Route::get('summary', [AccountAdminApiController::class, 'summary']);
@@ -550,7 +520,7 @@ Route::group([
 
                 // Settlement Preview
                 Route::prefix('settlement')->group(function () {
-                    // Settlement Batch Creation 
+                    // Settlement Batch Creation
                     Route::get('preview', [SettlementAdminApiController::class, 'getPayoutSettlementPreview']);
                     Route::post('create-batch', [SettlementAdminApiController::class, 'createSettlementBatch']);
 
@@ -562,7 +532,6 @@ Route::group([
                 });
             });
 
-
             // Regular User Management
             Route::prefix('customer')->group(function () {
                 Route::apiResource('customer', CustomerApiController::class); // Manage Regular user
@@ -570,20 +539,19 @@ Route::group([
                 Route::get('/search', [CustomerApiController::class, 'searchCustomerAutocomplete']); // Manage Regular user
 
                 Route::post('/address', [CustomerApiController::class, 'saveAddress']); // Manage Regular user
-                Route::post('/billingAddress', [CustomerApiController::class, 'saveBillingAddress']); // 
+                Route::post('/billingAddress', [CustomerApiController::class, 'saveBillingAddress']); //
 
-                ## Customers Actions 
+                // # Customers Actions
                 Route::post('addDepot', [CustomerApiController::class, 'addDepot']);
                 Route::delete('removeDepot/{userDepot}', [CustomerApiController::class, 'removeDepot']);
 
-
-                ## Others for searching
+                // # Others for searching
                 Route::post('/details-by-code', [CustomerApiController::class, 'getUserDataByCode']);
 
                 //
             });
 
-            ## Legal Actions
+            // # Legal Actions
             Route::prefix('legal')->group(function () {
 
                 Route::get('kyc', [CustomerLegalActionApiController::class, 'getKycList']);
@@ -599,7 +567,6 @@ Route::group([
                 Route::put('kyc/vehicle/status/{id}', [CustomerLegalActionApiController::class, 'updateVehicleKycStatus']);
             });
 
-
             // Fulfillment Location Routes
             Route::apiResource('fulfillmentLocation', AdminFulfillmentLocationApiController::class);
             Route::post('fulfillmentLocation/addDepot', [AdminFulfillmentLocationApiController::class, 'addDepot']);
@@ -614,7 +581,6 @@ Route::group([
                 // Shipment and Groups Management
                 Route::apiResource('shipment', ShipmentAdminApiController::class)->only(['index', 'show']);
 
-
                 // Driver and Vehicle Assignment
                 Route::post('assign-shipment-to-driver', [DriverShipmentAdminApiController::class, 'assignDriver']);
                 Route::post('change-driver-shipment/{driverShipment}', [DriverShipmentAdminApiController::class, 'changeDriver']);
@@ -622,7 +588,7 @@ Route::group([
                 Route::get('drivers', [DriverShipmentAdminApiController::class, 'getDriversWithAvailableVehicles']);
                 Route::get('driver-shipments', [DriverShipmentAdminApiController::class, 'getDriverShipments']);
 
-                //  
+                //
             });
 
             Route::prefix('cmd')->group(function () {
@@ -632,7 +598,7 @@ Route::group([
                 Route::post('cutoff/seller', [CmdAdminApiController::class, 'cmdCutoffSeller']);
                 Route::post('cutoff/buyer', [CmdAdminApiController::class, 'cmdCutoffBuyer']);
 
-                // accounting commands        
+                // accounting commands
                 Route::post('accounting/order', [CmdAdminApiController::class, 'cmdAccountingOrder']);
                 Route::post('accounting/demand-order', [CmdAdminApiController::class, 'cmdAccountingDemandOrder']);
                 Route::post('accounting/market-order', [CmdAdminApiController::class, 'cmdAccountingMarketOrder']);
@@ -646,14 +612,13 @@ Route::group([
                 //
             });
 
-            ## Report
+            // # Report
             Route::prefix('report')->group(function () {
 
                 Route::get('orders-by-depot', [OrderReportAdminApiController::class, 'getOrdersReportByDepot']);
 
                 // Sales report (Buyer related)
                 Route::get('sales', [SaleOrderReportAdminApiController::class, 'getSaleOrderReport']);
-
 
                 // Shipping
                 Route::get('shipping/seller', [ShippingReportBySellerAdminApiController::class, 'getShippingSellerReport']);
@@ -665,8 +630,8 @@ Route::group([
                 //
             });
 
-            ###
-            ##### Master  Routes
+            // ##
+            // #### Master  Routes
             Route::prefix('master')->group(function () {
 
                 Route::apiResource('mstUnit', MstUnitApiController::class);
@@ -683,7 +648,6 @@ Route::group([
                 Route::post('mstDepot/{depot}/uploadPicture', [MstDepotApiController::class, 'uploadPhoto']); // Upload photo for depot
                 Route::delete('mstDepot/{depot}/deletePicture', [MstDepotApiController::class, 'deletePhoto']); // Delete photo for depot
 
-
                 // Product
                 Route::apiResource('mstProductCategory', MstProductCategoryApiController::class);
                 Route::apiResource('mstProduct', MstProductApiController::class);
@@ -699,7 +663,6 @@ Route::group([
                 Route::apiResource('mstChargeLevel', MstChargeLevelApiController::class);
                 Route::apiResource('mstDeliveryChargeRule', MstDeliveryChargeRuleApiController::class);
                 Route::apiResource('mstMinimumOrderChargeRule', MstMinimumOrderChargeRuleApiController::class);
-
 
                 // Settings
                 Route::prefix('setting')->group(function () {
@@ -733,14 +696,11 @@ Route::group([
                 //
             });
 
-
             //
         });
 
-
         //
     });
-
 
     //
 });

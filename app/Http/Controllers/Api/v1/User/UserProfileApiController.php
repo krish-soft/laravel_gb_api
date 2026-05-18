@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\v1\User;
 
 use App\Enum\AddressTypeEnum;
 use App\Http\Controllers\ApiResponseWithAuthController;
-use App\Http\Controllers\Controller;
 use App\Http\Requests\AddressRequest;
 use App\Models\Common\Address;
 use App\Models\User;
@@ -17,7 +16,6 @@ class UserProfileApiController extends ApiResponseWithAuthController
     public function metaDetails(Request $request)
     {
         $user = $request->user();
-
 
         $userPrimaryDepotData = [];
         $userPrimaryDepot = $user->primaryDepot;
@@ -37,13 +35,11 @@ class UserProfileApiController extends ApiResponseWithAuthController
             'phone_number' => $user->phone_number,
             'user_type' => $user->user_type, // buyer, seller, delivery
 
-
             // KYC Status
             'is_kyc_submitted' => $user->isKycSubmitted(),
             'is_kyc_approved' => $user->isKycApproved(),
             'is_re_kyc' => $user->isReKyc(),
             'kyc_review_comment' => $user->kycReviewComment(),
-
 
             // Vehicle KYC
             'is_vehicle_kyc_submitted' => $user->isVehicleKycSubmitted(),
@@ -52,7 +48,7 @@ class UserProfileApiController extends ApiResponseWithAuthController
 
             'is_bank_verified' => $user->isBankVerified(),
 
-            'is_account_disabled' => !$user->is_active,
+            'is_account_disabled' => ! $user->is_active,
             'account_disabled_message' => $user->inactive_reason ?? null,
             // 'is_available_for_delivery'=> $user->isAvailableForDelivery(), // Only for delivery users
 
@@ -60,10 +56,8 @@ class UserProfileApiController extends ApiResponseWithAuthController
 
         ];
 
-
         return $this->successResponse(__('messages.success_messages.success_get'), $meta, 200);
     }
-
 
     public function getProfile(Request $request)
     {
@@ -75,16 +69,14 @@ class UserProfileApiController extends ApiResponseWithAuthController
         return $this->successResponse(__('messages.success_messages.success_get'), $user, 200);
     }
 
-
-
     public function updateProfile(Request $request)
     {
         $user = $request->user();
 
         $request->validate([
             'name' => 'required|string|max:150',
-            'email' => 'nullable|email|max:255|unique:users,email,' . $user->id,
-            'phone_number' => 'nullable|string|max:20|unique:users,phone_number,' . $user->id,
+            'email' => 'nullable|email|max:255|unique:users,email,'.$user->id,
+            'phone_number' => 'nullable|string|max:20|unique:users,phone_number,'.$user->id,
         ]);
 
         $user->name = $request->input('name');
@@ -95,7 +87,6 @@ class UserProfileApiController extends ApiResponseWithAuthController
         return $this->showSuccessMessage(__('messages.success_messages.success_update'), 200);
     }
 
-
     public function updatePassword(Request $request)
     {
         $user = $request->user();
@@ -105,20 +96,30 @@ class UserProfileApiController extends ApiResponseWithAuthController
             'new_password' => 'required|string|min:8|confirmed',
         ]);
         // Check current password
-        if (!password_verify($request->input('current_password'), $user->password)) {
+        if (! password_verify($request->input('current_password'), $user->password)) {
             return $this->showErrorMessage(__('messages.error_messages.invalid_current_password'), 422);
         }
 
         $user->password = bcrypt($request->input('new_password'));
         $user->save();
 
-
-
         return $this->showSuccessMessage(__('messages.success_messages.success_update'), 200);
     }
 
+    //
 
-    // 
+    public function getAddress()
+    {
+        $user = request()->user();
+        $address = $user->address ?? []; // Assuming User model has 'address' relationship
+
+        return $this->successResponse(
+            __('messages.success_messages.success_get'),
+            $address,
+            200
+        );
+
+    }
 
     public function saveAddress(AddressRequest $request)
     {
@@ -128,13 +129,11 @@ class UserProfileApiController extends ApiResponseWithAuthController
 
         if ($user->isBuyer()) {
             $data['addr_type'] = AddressTypeEnum::SHIP->value;
-        } else if ($user->isSeller()) {
+        } elseif ($user->isSeller()) {
             $data['addr_type'] = AddressTypeEnum::PICK->value;
-        } else if ($user->isDelivery()) {
+        } elseif ($user->isDelivery()) {
             $data['addr_type'] = AddressTypeEnum::DELIVERY_PARTNER_HUB->value;
         }
-
-
 
         if ($user->addr_code) {
             // UPDATE
@@ -174,7 +173,6 @@ class UserProfileApiController extends ApiResponseWithAuthController
         );
     }
 
-
     public function saveBillingAddress(AddressRequest $request)
     {
 
@@ -183,13 +181,11 @@ class UserProfileApiController extends ApiResponseWithAuthController
 
         if ($user->isBuyer()) {
             $data['addr_type'] = AddressTypeEnum::SHIP->value;
-        } else if ($user->isSeller()) {
+        } elseif ($user->isSeller()) {
             $data['addr_type'] = AddressTypeEnum::PICK->value;
-        } else if ($user->isDelivery()) {
+        } elseif ($user->isDelivery()) {
             $data['addr_type'] = AddressTypeEnum::DELIVERY_PARTNER_HUB->value;
         }
-
-
 
         if ($user->bill_addr_code) {
             // UPDATE
@@ -228,7 +224,6 @@ class UserProfileApiController extends ApiResponseWithAuthController
             200
         );
     }
-
 
     //
 }

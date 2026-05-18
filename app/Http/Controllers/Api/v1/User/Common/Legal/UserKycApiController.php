@@ -117,9 +117,11 @@ class UserKycApiController extends ApiResponseWithAuthController
 
         $kycData = $user->kyc; // Assuming User model has 'kyc' relationship
 
-        if (! $kycData) {
+        if (!$kycData) {
             return $this->showErrorMessage(__('messages.error_messages.kyc_not_found'), 404);
         }
+
+        $kycData->user_address = $user->address ?? []; // Include user address in response
 
         return $this->successResponse(
             __('messages.success_messages.success_get'),

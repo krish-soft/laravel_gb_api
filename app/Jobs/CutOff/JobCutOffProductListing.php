@@ -9,9 +9,9 @@ use App\Enum\Common\Shipment\ShipmentTypeEnum;
 use App\Models\Common\Package\SellerPackage;
 use App\Models\Common\Shipment\Shipment;
 use App\Models\Common\Shipment\ShipmentPackage;
-use App\Models\Seller\Product\ProductListing;
 use App\Models\Market\MarketOrder;
 use App\Models\Market\MarketOrderItem;
+use App\Models\Seller\Product\ProductListing;
 use App\Services\Seller\Product\ProductListingService;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -22,9 +22,9 @@ use Illuminate\Support\Facades\Log;
 use RuntimeException;
 use Throwable;
 
-class JobCutOffProductListing implements ShouldQueue, ShouldBeUnique
+class JobCutOffProductListing implements ShouldBeUnique, ShouldQueue
 {
-    use Queueable, Batchable;
+    use Batchable, Queueable;
 
     protected int $listingId;
 
@@ -35,7 +35,7 @@ class JobCutOffProductListing implements ShouldQueue, ShouldBeUnique
 
     public function uniqueId(): string
     {
-        return (string) "cutoff_product_listing_" . $this->listingId;
+        return (string) 'cutoff_product_listing_'.$this->listingId;
     }
 
     public function handle(ProductListingService $listingService): void
@@ -45,12 +45,12 @@ class JobCutOffProductListing implements ShouldQueue, ShouldBeUnique
         $listing = ProductListing::with([
             'seller.primaryDepot.depot.market',
             'listingItems.product',
-            'listingItems.listingPackages' => fn($q) => $q->available(),
+            'listingItems.listingPackages' => fn ($q) => $q->available(),
         ])
             ->lockForUpdate()
             ->find($this->listingId);
 
-        if (!$listing) {
+        if (! $listing) {
             // Log::warning("Product Listing not found for ID: {$this->listingId}");
             return; // If listing not found then skip processing
         }
@@ -59,38 +59,35 @@ class JobCutOffProductListing implements ShouldQueue, ShouldBeUnique
 
             DB::transaction(function () use ($listingService, $listing) {
 
-
                 /* ---------------------------------------------
                      | EXPIRE LISTING
                      ---------------------------------------------*/
-                if (!$listing->is_expired) {
+                if (! $listing->is_expired) {
                     // $listing->is_active  = false; // keep active so can understand it was created and expired via cutoff
                     $listing->is_expired = true;
                     $listing->expires_at = now();
                 }
 
                 // In case its pending from first cutoff
-                if (!$listing->is_cutoff) {
+                if (! $listing->is_cutoff) {
                     $listing->is_cutoff = true;
                 }
 
                 $listing->save();
 
-                if (!$listing->is_sell_to_market) {
+                if (! $listing->is_sell_to_market) {
                     return;
                 }
-
 
                 $marketId = $listing->seller->primaryDepot->depot->market_id;
 
                 // Market Id missing failed the transaction, so we can be sure it exists here
-                if (!$marketId) {
+                if (! $marketId) {
                     throw new \RuntimeException("Market ID missing for listing {$listing->listing_code}");
                 }
 
-
                 $seller = $listing->seller;
-                $depot  = $seller->primaryDepot->depot;
+                $depot = $seller->primaryDepot->depot;
 
                 /* ---------------------------------------------
                      | CREATE / GET MARKET ORDER
@@ -99,7 +96,7 @@ class JobCutOffProductListing implements ShouldQueue, ShouldBeUnique
                     ->lockForUpdate()
                     ->first();
 
-                if (!$marketOrder) {
+                if (! $marketOrder) {
                     $marketOrder = MarketOrder::create([
                         'market_id' => $marketId,
                         'depot_id' => $listing->seller->primaryDepot->depot_id,
@@ -107,8 +104,7 @@ class JobCutOffProductListing implements ShouldQueue, ShouldBeUnique
                         'order_status' => OrderStatusEnum::CONFIRMED->value,
                         'delivery_status' => OrderStatusEnum::PENDING->value,
 
-                        'shipping_fulfillment_location_id'
-                        => $listing->seller->primaryDepot->depot->market->fulfillment_location_id,
+                        'shipping_fulfillment_location_id' => $listing->seller->primaryDepot->depot->market->fulfillment_location_id,
 
                         'order_date' => date('Y-m-d'),
 
@@ -136,7 +132,7 @@ class JobCutOffProductListing implements ShouldQueue, ShouldBeUnique
 
                 foreach ($listing->listingItems as $item) {
 
-                    if (!$item->product) {
+                    if (! $item->product) {
                         throw new \RuntimeException(
                             "Product missing for listing_item {$item->id}"
                         );
@@ -151,35 +147,33 @@ class JobCutOffProductListing implements ShouldQueue, ShouldBeUnique
                             continue;
                         }
 
-                        // Check shipment package status picked up then do it 
-                        if ($pkg->shipmentPackages()) { {
-                                //
-                                $pickedUpPackagesCount = $pkg->shipmentPackages()
-                                    ->whereIn('status', [
-                                        ShipmentStatusEnum::PICKED_UP->value,
-                                        ShipmentStatusEnum::ARRIVED_AT_DEPOT->value,
-                                        ShipmentStatusEnum::DELIVERED->value
-                                    ])->count();
+                        // Check shipment package status picked up then do it
+                        if ($pkg->shipmentPackages()) {
+                            //
+                            $pickedUpPackagesCount = $pkg->shipmentPackages()
+                                ->whereIn('status', [
+                                    ShipmentStatusEnum::PICKED_UP->value,
+                                    ShipmentStatusEnum::ARRIVED_AT_DEPOT->value,
+                                    ShipmentStatusEnum::DELIVERED->value,
+                                ])->count();
 
-                                if ($pickedUpPackagesCount > 0) {
-                                    // make sure not go beyond remain qty
-                                    if ($pickedUpPackagesCount >= $remain) {
-                                        $shipQty = $remain;
-                                    } else {
-                                        $shipQty = $pickedUpPackagesCount;
-                                    }
+                            if ($pickedUpPackagesCount > 0) {
+                                // make sure not go beyond remain qty
+                                if ($pickedUpPackagesCount >= $remain) {
+                                    $shipQty = $remain;
+                                } else {
+                                    $shipQty = $pickedUpPackagesCount;
                                 }
                             }
+
                             //
                         } else {
                             $shipQty = $remain; // if no shipment package then consider all remain qty for ship qty
                         }
 
-
                         $marketItem = MarketOrderItem::create([
                             'market_order_id' => $marketOrder->id,
                             'market_order_number' => $marketOrder->market_order_number,
-
 
                             'product_listing_id' => $listing->id,
                             'product_listing_item_id' => $item->id,
@@ -199,7 +193,7 @@ class JobCutOffProductListing implements ShouldQueue, ShouldBeUnique
 
                             // CONSOLIDATED PER PACKAGE
                             'order_qty' => $remain,
-                            'ship_qty'  => $shipQty,
+                            'ship_qty' => $shipQty,
 
                             'pack_size' => $pkg->pack_size,
                             'pack_unit' => $pkg->pack_unit,
@@ -218,13 +212,19 @@ class JobCutOffProductListing implements ShouldQueue, ShouldBeUnique
 
                         $createdMarketItems->push([
                             'marketItem' => $marketItem,
-                            'package'    => $pkg,
-                            'remain'     => $remain,
+                            'package' => $pkg,
+                            'remain' => $remain,
                         ]);
 
                         // mark package processed
                         $listingService->markPackageSoldFromCutoff($pkg);
                     }
+                }
+
+                //
+                if ($createdMarketItems->isEmpty()) {
+                    $marketOrder->delete();
+                    return;
                 }
 
                 unset($marketItem, $pkg, $remain, $item);
@@ -243,7 +243,7 @@ class JobCutOffProductListing implements ShouldQueue, ShouldBeUnique
                     ->available()
                     ->first();
 
-                if (!$shipment) {
+                if (! $shipment) {
 
                     $shipment = Shipment::create([
                         'shipment_date' => now()->toDateString(),
@@ -264,10 +264,10 @@ class JobCutOffProductListing implements ShouldQueue, ShouldBeUnique
                 foreach ($createdMarketItems as $row) {
 
                     $marketItem = $row['marketItem'];
-                    $pkg        = $row['package'];
-                    $remain     = $row['remain'];
+                    $pkg = $row['package'];
+                    $remain = $row['remain'];
 
-                    // 
+                    //
 
                     for ($i = 1; $i <= $remain; $i++) {
 
@@ -280,8 +280,7 @@ class JobCutOffProductListing implements ShouldQueue, ShouldBeUnique
 
                         if ($sellerPackage) {
 
-
-                            $shipmentPackage =  ShipmentPackage::create([
+                            $shipmentPackage = ShipmentPackage::create([
                                 'shipment_id' => $shipment->id,
                                 'seller_package_id' => $sellerPackage->id,
 
@@ -321,12 +320,11 @@ class JobCutOffProductListing implements ShouldQueue, ShouldBeUnique
 
                             //
                         } else {
-                            //                            
+                            //
                             Log::warning("Seller Package unavailable for MarketOrderItem ID: {$marketItem->id}, Market Order ID: {$marketOrder->id}");
 
                             // throw exception
                             throw new RuntimeException("Seller Package unavailable for MarketOrderItem ID: {$marketItem->id}, Market Order ID: {$marketOrder->id}");
-
                             // continue; // If no available seller package then skip to avoid creating shipment package without seller package
                         }
                     }
