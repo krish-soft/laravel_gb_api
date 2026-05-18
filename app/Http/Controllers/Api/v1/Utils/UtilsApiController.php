@@ -16,7 +16,6 @@ use App\Enum\Common\Module\AppModuleEnum;
 use App\Enum\User\UserRoleEnum;
 use App\Enum\User\UserTypeEnum;
 use App\Http\Controllers\ApiResponseController;
-use App\Http\Controllers\Controller;
 use App\Models\Common\Accounting\Account;
 use App\Models\Master\Market\MstMarket;
 use App\Models\Master\MstFinancialYear;
@@ -25,10 +24,7 @@ use App\Models\Master\MstState;
 use App\Models\Master\MstUnit;
 use App\Models\Master\Product\MstProduct;
 use App\Models\Master\Setting\MstAppSetting;
-use App\Models\Master\Setting\MstFinanceSetting;
-use App\Models\Setting\AppSetting;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class UtilsApiController extends ApiResponseController
 {
@@ -37,30 +33,31 @@ class UtilsApiController extends ApiResponseController
     public function getStateList()
     {
         $list = MstState::active()->get();
+
         return $this->successResponse(__('messages.success_messages.success_get'), $list);
     }
 
     public function getUnitList()
     {
         $list = MstUnit::active()->get();
+
         return $this->successResponse(__('messages.success_messages.success_get'), $list);
     }
 
     public function getPackTypeUnitList()
     {
         $list = MstPackType::active()->get();
+
         return $this->successResponse(__('messages.success_messages.success_get'), $list);
     }
-
 
     public function getAppMetaInfo()
     {
 
         $appSetting = MstAppSetting::getOrCreate();
 
-
         $data = [
-            'app_name' =>  $appSetting->app_name,
+            'app_name' => $appSetting->app_name,
             'current_financial_year_code' => currentFy()->code,
 
             'is_maintenance_mode' => MstAppSetting::isMaintenanceMode(),
@@ -73,21 +70,26 @@ class UtilsApiController extends ApiResponseController
             'is_force_driver_android_update' => MstAppSetting::isForceDriverAndroidUpdate(),
             'driver_android_app_version' => MstAppSetting::getDriverAppAndroidVersion(),
 
+            // New App Update Info
+            'is_buyer_kyc' => env('IS_BUYER_KYC', true),
+            'is_seller_kyc' => env('IS_SELLER_KYC', true),
+
+            'is_app_store_update' => env('IS_APP_STORE_UPDATE', false),
+            'app_store_update_url' => env('APP_UPDATE_URL', null),
+
         ];
 
         return $this->successResponse(__('messages.success_messages.success_get'), $data);
     }
 
-
     public function getAlLEnums()
     {
         $commonData = [
             'user_roles' => UserRoleEnum::casesAsValues(),
-            'user_types' =>  UserTypeEnum::casesAsValues(),
+            'user_types' => UserTypeEnum::casesAsValues(),
         ];
 
         $adminData = [];
-
 
         if (request()->user() && request()->user()->isAdminManagement()) {
             // Add more enums for admin users if needed
@@ -112,9 +114,7 @@ class UtilsApiController extends ApiResponseController
 
                 // 'app_modules' => AppModuleEnum::casesAsArray(),
 
-
-
-                // 
+                //
 
             ];
         }
@@ -129,7 +129,7 @@ class UtilsApiController extends ApiResponseController
             foreach ($values as $value) {
                 $processData[$enumName][] = [
                     'id' => $value,
-                    'value'  => $value,
+                    'value' => $value,
                     'label' => ucfirst(strtolower((string) $value)),
                 ];
             }
@@ -146,12 +146,8 @@ class UtilsApiController extends ApiResponseController
                 ->toArray();
         }
 
-
-
         return $this->successResponse(__('messages.success_messages.success_get'), $processData);
     }
-
-
 
     public function getMarketList()
     {
@@ -159,9 +155,9 @@ class UtilsApiController extends ApiResponseController
         if (request()->user()) {
             $list = MstMarket::active()->get();
         }
+
         return $this->successResponse(__('messages.success_messages.success_get'), $list);
     }
-
 
     public function getProducts()
     {
@@ -181,6 +177,7 @@ class UtilsApiController extends ApiResponseController
             $product = MstProduct::findOrFail($productId);
             $variants = $product->variants()->active()->get();
         }
+
         return $this->successResponse(__('messages.success_messages.success_get'), $variants);
     }
 
@@ -191,9 +188,9 @@ class UtilsApiController extends ApiResponseController
             $product = MstProduct::findOrFail($productId);
             $packagings = $product->packagings()->active()->get();
         }
+
         return $this->successResponse(__('messages.success_messages.success_get'), $packagings);
     }
-
 
     public function getPlatformAccountsList()
     {
@@ -202,9 +199,9 @@ class UtilsApiController extends ApiResponseController
             $list = Account::active()->where('owner_type', AccountOwnerTypeEnum::PLATFORM->value)
                 ->select('id', 'name', 'owner_type', 'available_balance', 'accnt_code')->get();
         }
+
         return $this->successResponse(__('messages.success_messages.success_get'), $list);
     }
-
 
     //
 }
