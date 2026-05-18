@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands\Cutoff;
+namespace App\Console\Commands\CutOff;
 
 use App\Enum\Common\Order\OrderStatusEnum;
 use App\Enum\Common\Payment\PaymentStatusEnum;

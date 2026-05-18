@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands\Cutoff;
+namespace App\Console\Commands\CutOff;
 
 use App\Enum\Queue\QueueEnum;
 use Illuminate\Console\Command;
