@@ -89,22 +89,22 @@ class Invoice extends BaseModel
 
     public function order()
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(Order::class,'order_id');
     }
 
     public function demandOrder()
     {
-        return $this->belongsTo(DemandOrder::class);
+        return $this->belongsTo(DemandOrder::class,'demand_order_id');
     }
 
     public function marketOrder()
     {
-        return $this->belongsTo(MarketOrder::class);
+        return $this->belongsTo(MarketOrder::class,'market_order_id');
     }
 
     public function productListing()
     {
-        return $this->belongsTo(ProductListing::class);
+        return $this->belongsTo(ProductListing::class,'product_listing_id');
     }
 
 

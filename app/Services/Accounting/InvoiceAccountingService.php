@@ -16,174 +16,236 @@ use App\Models\Common\Invoice\InvoiceCharge;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
+use Throwable;
 
-/**
- * Invoice Accounting Service
- *
- * Handles accounting entries for invoices with proper debit/credit management.
- *
- * Sign Convention:
- * - Positive amounts: Money received by the account (increases balance)
- * - Negative amounts: Money owed from the account (decreases balance)
- * - These are converted to proper debit/credit based on account type
- */
 class InvoiceAccountingService
 {
-    private AccountingService $accountingService;
-
-    public function __construct(AccountingService $accountingService)
-    {
-        $this->accountingService = $accountingService;
-    }
+    public function __construct(
+        private AccountingService $accountingService
+    ) {}
 
     /**
-     * Record invoice accounting entries
+     * Record Invoice Accounting
      */
     public function recordInvoice(Invoice $invoice): void
     {
         try {
+
             DB::transaction(function () use ($invoice) {
-                $invoice->load(['user', 'invoiceItems', 'invoiceCharges']);
+
+                $invoice->load([
+                    'user',
+                    'invoiceCharges',
+                    'order',
+                    'marketOrder',
+                    'demandOrder',
+                ]);
 
                 $owner = $invoice->user;
+
                 $ownerType = Account::getOwnerTypeByUser($owner);
 
                 if (! $ownerType) {
                     throw new RuntimeException(
-                        "Unknown user type for Invoice #{$invoice->invoice_number}, User ID: {$owner->id}"
+                        "Invalid owner type for Invoice #{$invoice->invoice_number}"
                     );
                 }
 
-                // Step 1: Record base invoice amount
-                $this->recordBaseAmount($invoice, $ownerType, $owner->id);
+                $ownerAccount = Account::getOrCreateByOwner(
+                    $ownerType,
+                    $owner->id
+                );
 
-                // Step 2: Record charges (only for non-sales invoices)
-                if (! $this->isSalesInvoice($invoice)) {
-                    $this->recordCharges($invoice);
+                // Release pending ledgers for sales invoice
+                if ($invoice->invoice_type === InvoiceTypeEnum::SALES->value) {
+                    $this->releasePendingLedger($invoice, $ownerAccount);
                 }
 
-                // Step 3: Mark invoice as accounted
+                // Base Amount
+                $this->recordBaseAmount(
+                    $invoice,
+                    $ownerAccount
+                );
+
+                // Charges
+                $this->recordCharges($invoice);
+
+                // Mark Accounted
                 $invoice->status = InvoiceStatusEnum::ACCOUNTED->value;
                 $invoice->is_locked = true;
+                $invoice->removeFlag(OrderFlagsEum::INVOICE_ACCOUNTING_ERROR);
                 $invoice->save();
             });
-        } catch (\Exception $e) {
-            $invoice->addFlag(OrderFlagsEum::INVOICE_ACCOUNTING_ERROR, $e->getMessage());
-            Log::error("Invoice Accounting Error: {$invoice->invoice_number} | {$e->getMessage()}", [
-                'invoice_id' => $invoice->id,
-                'invoice_type' => $invoice->invoice_type,
-                'exception' => $e,
-            ]);
+
+        } catch (Throwable $e) {
+
+            $invoice->addFlag(
+                OrderFlagsEum::INVOICE_ACCOUNTING_ERROR,
+                $e->getMessage()
+            );
+
+            Log::error(
+                'Invoice Accounting Error',
+                [
+                    'invoice_id' => $invoice->id,
+                    'invoice_number' => $invoice->invoice_number,
+                    'message' => $e->getMessage(),
+                ]
+            );
+
             throw $e;
         }
     }
 
     /**
-     * Record base invoice amount with proper debit/credit handling
+     * Record Main Invoice Amount
      */
-    private function recordBaseAmount(Invoice $invoice, string $ownerType, int $ownerId): void
-    {
-        $ownerAccount = Account::getOrCreateByOwner($ownerType, $ownerId);
+    private function recordBaseAmount(
+        Invoice $invoice,
+        Account $account
+    ): void {
 
-        // Skip if ledger already exists
         if ($this->accountingService->ledgerExists(
-            $ownerAccount->id,
+            $account->id,
             AccountEntryTypeEnum::INVOICE_BASE_AMOUNT->value,
             Invoice::class,
             $invoice->id
         )) {
             return;
         }
-        
-        // If its sales invoice then we have to
-        // relese pending ledger to available because
-        // we have created pending ledger on invoice creation
-        // to reflect pending balance in account
-        if ($invoice->invoice_type === InvoiceTypeEnum::SALES->value) {
-            // for that buyer get pending ledger
 
-            $refNumber = null;
-            if (isset($invoice->order)) {
-                $refNumber = $invoice->order->order_number;
-            } elseif (isset($invoice->marketOrder)) {
-                $refNumber = $invoice->marketOrder->market_order_number;
-            } elseif (isset($invoice->demandOrder)) {
-                $refNumber = $invoice->demandOrder->order_number;
-            }
+        $debit = 0;
+        $credit = 0;
 
-            if (isset($refNumber)) {
-                $ledgers = AccountLedger::where('account_id', $ownerAccount->id)
-                    ->where('reference', $refNumber)
-                    ->where('status', LedgerStatusEnum::PENDING->value)
-                    ->get();
+        /*
+        |--------------------------------------------------------------------------
+        | HARDCODED ACCOUNTING RULES
+        |--------------------------------------------------------------------------
+        */
 
-                if ($ledgers->count() > 0) {
-                    foreach ($ledgers as $ledger) {
-                        $this->accountingService->markAvailable($ledger);
-                    }
+        switch ($invoice->invoice_type) {
+
+            // Customer owes platform
+            case InvoiceTypeEnum::SALES->value:
+
+                $debit = $invoice->total_amount;
+                // Credit amount exist on payment
+                // We need to remove credit amount because already added entry in begin so if for that order exist...
+                //
+                $creditAmount = 0;
+                if ($invoice->order) {
+                    $creditAmount = $invoice?->order?->payment?->credit_amount ?? 0;
+                } elseif ($invoice->demandOrder) {
+                    $creditAmount = $invoice?->demandOrder?->payment?->credit_amount ?? 0;
                 }
                 //
+                $debit = $debit - $creditAmount;
 
-            } else {
-                Log::warning("No reference number found for Sales Invoice #{$invoice->invoice_number} to release pending ledger");
-            }
+                break;
+
+                // Reverse customer amount
+            case InvoiceTypeEnum::SALES_RETURN->value:
+
+                $credit = $invoice->total_amount;
+
+                break;
+
+                // Platform owes supplier
+            case InvoiceTypeEnum::PURCHASE->value:
+
+                $credit = $invoice->total_amount;
+
+                break;
+
+                // Reverse supplier payable
+            case InvoiceTypeEnum::PURCHASE_RETURN->value:
+
+                $debit = $invoice->total_amount;
+
+                break;
+
+            default:
+
+                throw new RuntimeException(
+                    "Unsupported invoice type: {$invoice->invoice_type}"
+                );
         }
 
-        // Get signed amount (positive = money in, negative = money out)
-        $signedAmount = $this->getSignedBaseAmount($invoice);
+        $this->accountingService->createLedger(
+            $account,
+            [
+                'description' => $this->buildInvoiceDescription($invoice),
 
-        // Convert signed amount to debit/credit
-        [$debit, $credit] = $this->convertSignedToDebitCredit($signedAmount);
+                'debit' => $debit,
+                'credit' => $credit,
 
-        $description = $this->buildInvoiceDescription($invoice);
+                'entry_type' => AccountEntryTypeEnum::INVOICE_BASE_AMOUNT->value,
 
-        $this->accountingService->createLedger($ownerAccount, [
-            'description' => $description,
-            'credit' => $credit,
-            'debit' => $debit,
-            'entry_type' => AccountEntryTypeEnum::INVOICE_BASE_AMOUNT->value,
-            'status' => LedgerStatusEnum::AVAILABLE->value,
-            'source_type' => Invoice::class,
-            'source_id' => $invoice->id,
-            'source_code' => $invoice->invoice_number,
-            'common_reference' => $invoice->invoice_number,
-        ]);
+                'status' => LedgerStatusEnum::AVAILABLE->value,
+
+                'source_type' => Invoice::class,
+                'source_id' => $invoice->id,
+
+                'source_code' => $invoice->invoice_number,
+                'common_reference' => $invoice->invoice_number,
+            ]
+        );
     }
 
     /**
-     * Record invoice charges and taxes
+     * Record Charges
      */
     private function recordCharges(Invoice $invoice): void
     {
-        $clearingAccount = Account::getOrCreateByOwner(
+        if (
+            in_array(
+                $invoice->invoice_type,
+                [
+                    InvoiceTypeEnum::SALES->value,
+                    InvoiceTypeEnum::SALES_RETURN->value,
+                ]
+            )
+        ) {
+            return;
+        }
+
+        $platformAccount = Account::getOrCreateByOwner(
             AccountOwnerTypeEnum::PLATFORM->value,
             null,
             PlatformAccountCodeEnum::PLATFORM_CLEARING->value
         );
 
         foreach ($invoice->invoiceCharges as $charge) {
-            // Record charge amount
-            if ($charge->taxable_amount != 0) {
-                $this->recordChargeAmount($charge, $invoice, $clearingAccount);
-            }
 
-            // Record charge tax
-            if ($charge->tax_amount != 0) {
-                $this->recordChargeTax($charge, $invoice, $clearingAccount);
-            }
+            $this->recordChargeAmount(
+                $invoice,
+                $charge,
+                $platformAccount
+            );
+
+            $this->recordChargeTax(
+                $invoice,
+                $charge,
+                $platformAccount
+            );
         }
     }
 
     /**
-     * Record individual charge amount
+     * Record Charge Amount
      */
     private function recordChargeAmount(
-        InvoiceCharge $charge,
         Invoice $invoice,
-        Account $clearingAccount
+        InvoiceCharge $charge,
+        Account $account
     ): void {
+
+        if ($charge->taxable_amount <= 0) {
+            return;
+        }
+
         if ($this->accountingService->ledgerExists(
-            $clearingAccount->id,
+            $account->id,
             AccountEntryTypeEnum::INVOICE_CHARGE_AMOUNT->value,
             InvoiceCharge::class,
             $charge->id
@@ -191,35 +253,61 @@ class InvoiceAccountingService
             return;
         }
 
-        // Get signed amount (positive = platform earns, negative = platform refunds)
-        $signedAmount = $this->getSignedChargeAmount($charge, $invoice);
-        [$debit, $credit] = $this->convertSignedToDebitCredit($signedAmount);
+        $debit = 0;
+        $credit = 0;
 
-        $description = "Invoice #{$invoice->invoice_number} - Charge ({$charge->charge_name})";
+        switch ($invoice->invoice_type) {
 
-        $this->accountingService->createLedger($clearingAccount, [
-            'description' => $description,
-            'credit' => $credit,
-            'debit' => $debit,
-            'entry_type' => AccountEntryTypeEnum::INVOICE_CHARGE_AMOUNT->value,
-            'status' => LedgerStatusEnum::AVAILABLE->value,
-            'source_type' => InvoiceCharge::class,
-            'source_id' => $charge->id,
-            'source_code' => $invoice->invoice_number,
-            'common_reference' => $invoice->invoice_number,
-        ]);
+            case InvoiceTypeEnum::PURCHASE->value:
+
+                $credit = $charge->taxable_amount;
+
+                break;
+
+            case InvoiceTypeEnum::PURCHASE_RETURN->value:
+
+                $debit = $charge->taxable_amount;
+
+                break;
+        }
+
+        $invoiceLabel = self::buildInvoiceDescription($invoice);
+        $this->accountingService->createLedger(
+            $account,
+            [
+                'description' => "{$invoiceLabel} Charge {$charge->charge_name}",
+
+                'debit' => $debit,
+                'credit' => $credit,
+
+                'entry_type' => AccountEntryTypeEnum::INVOICE_CHARGE_AMOUNT->value,
+
+                'status' => LedgerStatusEnum::AVAILABLE->value,
+
+                'source_type' => InvoiceCharge::class,
+                'source_id' => $charge->id,
+
+                'source_code' => $invoice->invoice_number,
+                'common_reference' => $invoice->invoice_number,
+            ]
+        );
     }
 
     /**
-     * Record individual charge tax
+     * Record Charge Tax
      */
     private function recordChargeTax(
-        InvoiceCharge $charge,
         Invoice $invoice,
-        Account $clearingAccount
+        InvoiceCharge $charge,
+        Account $account
     ): void {
+
+        if ($charge->tax_amount <= 0) {
+            return;
+        }
+
         if ($this->accountingService->ledgerExists(
-            $clearingAccount->id,
+            $account->id,
             AccountEntryTypeEnum::INVOICE_CHARGE_TAX->value,
             InvoiceCharge::class,
             $charge->id
@@ -227,139 +315,98 @@ class InvoiceAccountingService
             return;
         }
 
-        // Get signed amount (positive = platform earns, negative = platform refunds)
-        $signedAmount = $this->getSignedChargeTax($charge, $invoice);
-        [$debit, $credit] = $this->convertSignedToDebitCredit($signedAmount);
+        $debit = 0;
+        $credit = 0;
 
-        $description = "Invoice #{$invoice->invoice_number} - Charge Tax ({$charge->charge_name})";
+        switch ($invoice->invoice_type) {
 
-        $this->accountingService->createLedger($clearingAccount, [
-            'description' => $description,
-            'credit' => $credit,
-            'debit' => $debit,
-            'entry_type' => AccountEntryTypeEnum::INVOICE_CHARGE_TAX->value,
-            'status' => LedgerStatusEnum::AVAILABLE->value,
-            'source_type' => InvoiceCharge::class,
-            'source_id' => $charge->id,
-            'source_code' => $invoice->invoice_number,
-            'common_reference' => $invoice->invoice_number,
-        ]);
-    }
+            case InvoiceTypeEnum::PURCHASE->value:
 
-    /*
-    |--------------------------------------------------------------------------
-    | PRIVATE HELPERS: Signed Amount Calculations
-    |--------------------------------------------------------------------------
-    */
+                $credit = $charge->tax_amount;
 
-    /**
-     * Get signed base amount
-     * Positive = money received by owner, Negative = money owed by owner
-     */
-    private function getSignedBaseAmount(Invoice $invoice): float
-    {
-        $amount = $invoice->total_amount;
+                break;
 
-        return match ($invoice->invoice_type) {
-            InvoiceTypeEnum::SALES->value => $amount,              // Buyer owes us (money in)
-            InvoiceTypeEnum::SALES_RETURN->value => -$amount,      // We owe buyer (money out)
-            InvoiceTypeEnum::PURCHASE->value => -$amount,          // We owe supplier (money out)
-            InvoiceTypeEnum::PURCHASE_RETURN->value => $amount,    // Supplier owes us (money in)
-            default => throw new RuntimeException("Unsupported invoice type: {$invoice->invoice_type}"),
-        };
+            case InvoiceTypeEnum::PURCHASE_RETURN->value:
+
+                $debit = $charge->tax_amount;
+
+                break;
+        }
+
+        $this->accountingService->createLedger(
+            $account,
+            [
+                'description' => "Invoice #{$invoice->invoice_number} Tax {$charge->charge_name}",
+
+                'debit' => $debit,
+                'credit' => $credit,
+
+                'entry_type' => AccountEntryTypeEnum::INVOICE_CHARGE_TAX->value,
+
+                'status' => LedgerStatusEnum::AVAILABLE->value,
+
+                'source_type' => InvoiceCharge::class,
+                'source_id' => $charge->id,
+
+                'source_code' => $invoice->invoice_number,
+                'common_reference' => $invoice->invoice_number,
+            ]
+        );
     }
 
     /**
-     * Get signed charge amount
-     * For platform: Positive = platform earns (money in), Negative = platform refunds (money out)
+     * Release Pending Ledger
      */
-    private function getSignedChargeAmount(InvoiceCharge $charge, Invoice $invoice): float
-    {
-        $amount = $charge->taxable_amount;
+    private function releasePendingLedger(
+        Invoice $invoice,
+        Account $account
+    ): void {
 
-        return match ($invoice->invoice_type) {
-            InvoiceTypeEnum::SALES->value => $amount,              // Platform earns
-            InvoiceTypeEnum::SALES_RETURN->value => -$amount,      // Platform refunds
-            InvoiceTypeEnum::PURCHASE->value => $amount,           // Platform earns
-            InvoiceTypeEnum::PURCHASE_RETURN->value => -$amount,   // Platform refunds
-            default => 0,
-        };
-    }
+        $reference = null;
 
-    /**
-     * Get signed tax amount
-     * For platform: Positive = platform earns (money in), Negative = platform refunds (money out)
-     */
-    private function getSignedChargeTax(InvoiceCharge $charge, Invoice $invoice): float
-    {
-        $amount = $charge->tax_amount;
+        if ($invoice->order) {
+            $reference = $invoice->order->order_number;
+        } elseif ($invoice->marketOrder) {
+            $reference = $invoice->marketOrder->market_order_number;
+        } elseif ($invoice->demandOrder) {
+            $reference = $invoice->demandOrder->order_number;
+        }
 
-        return match ($invoice->invoice_type) {
-            InvoiceTypeEnum::SALES->value => $amount,              // Platform earns
-            InvoiceTypeEnum::SALES_RETURN->value => -$amount,      // Platform refunds
-            InvoiceTypeEnum::PURCHASE->value => $amount,           // Platform earns
-            InvoiceTypeEnum::PURCHASE_RETURN->value => -$amount,   // Platform refunds
-            default => 0,
-        };
-    }
+        if (! $reference) {
+            return;
+        }
 
-    /*
-    |--------------------------------------------------------------------------
-    | PRIVATE HELPERS: Debit/Credit Conversion
-    |--------------------------------------------------------------------------
-    */
+        $ledgers = AccountLedger::query()
+            ->where('account_id', $account->id)
+            ->where('reference', $reference)
+            ->where('status', LedgerStatusEnum::PENDING->value)
+            ->get();
 
-    /**
-     * Convert signed amount to debit/credit
-     *
-     * Standard accounting:
-     * - Assets/Expenses: Debit = increase, Credit = decrease
-     * - Liabilities/Income: Debit = decrease, Credit = increase
-     *
-     * Simplified rule used here:
-     * - Positive signed amount: Debit (for most accounts, represents increase)
-     * - Negative signed amount: Credit (represents decrease/liability)
-     *
-     * @return array [debit, credit]
-     */
-    private function convertSignedToDebitCredit(float $signedAmount): array
-    {
-        if ($signedAmount > 0) {
-            return [abs($signedAmount), 0];  // Debit for positive
-        } elseif ($signedAmount < 0) {
-            return [0, abs($signedAmount)];  // Credit for negative
-        } else {
-            return [0, 0];  // Zero amounts
+        foreach ($ledgers as $ledger) {
+            $this->accountingService->markAvailable($ledger);
         }
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | PRIVATE HELPERS: Utility Methods
-    |--------------------------------------------------------------------------
-    */
-
     /**
-     * Check if invoice is a sales type (early exit for charge recording)
+     * Description
      */
-    private function isSalesInvoice(Invoice $invoice): bool
-    {
-        return $invoice->invoice_type === InvoiceTypeEnum::SALES->value;
-    }
+    private function buildInvoiceDescription(
+        Invoice $invoice
+    ): string {
 
-    /**
-     * Build descriptive invoice label
-     */
-    private function buildInvoiceDescription(Invoice $invoice): string
-    {
-        $actionLabel = match ($invoice->invoice_type) {
-            InvoiceTypeEnum::SALES->value => 'Sales',
-            InvoiceTypeEnum::SALES_RETURN->value => 'Sales Return',
-            InvoiceTypeEnum::PURCHASE->value => 'Purchase',
-            InvoiceTypeEnum::PURCHASE_RETURN->value => 'Purchase Return',
+        $label = match ($invoice->invoice_type) {
+
+            InvoiceTypeEnum::SALES->value => 'Sales Invoice',
+
+            InvoiceTypeEnum::SALES_RETURN->value => 'Sales Return Invoice',
+
+            InvoiceTypeEnum::PURCHASE->value => 'Purchase Invoice',
+
+            InvoiceTypeEnum::PURCHASE_RETURN->value => 'Purchase Return Invoice',
+
             default => 'Invoice',
         };
 
-        return "Invoice #{$invoice->invoice_number} - {$actionLabel}";
+        return "{$label} #{$invoice->invoice_number}";
     }
 }
