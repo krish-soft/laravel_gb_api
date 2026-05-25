@@ -24,6 +24,7 @@ use App\Models\Master\MstState;
 use App\Models\Master\MstUnit;
 use App\Models\Master\Product\MstProduct;
 use App\Models\Master\Setting\MstAppSetting;
+use App\Models\Master\Setting\MstCutoffSetting;
 use Illuminate\Http\Request;
 
 class UtilsApiController extends ApiResponseController
@@ -55,6 +56,7 @@ class UtilsApiController extends ApiResponseController
     {
 
         $appSetting = MstAppSetting::getOrCreate();
+        $cutoffSetting = MstCutoffSetting::getOrCreate();
 
         $data = [
             'app_name' => $appSetting->app_name,
@@ -77,6 +79,12 @@ class UtilsApiController extends ApiResponseController
             'is_app_store_update' => env('IS_APP_STORE_UPDATE', false),
             'app_store_update_url' => env('APP_UPDATE_URL', null),
 
+            // Get Cutoff Times
+            'seller_start_time' => $cutoffSetting->seller_start_time,
+            'seller_end_time' => $cutoffSetting->seller_end_time,
+
+            'buyer_start_time' => $cutoffSetting->buyer_start_time,
+            'buyer_end_time' => $cutoffSetting->buyer_end_time,
         ];
 
         return $this->successResponse(__('messages.success_messages.success_get'), $data);
