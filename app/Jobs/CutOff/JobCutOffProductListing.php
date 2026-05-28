@@ -224,6 +224,7 @@ class JobCutOffProductListing implements ShouldBeUnique, ShouldQueue
                 //
                 if ($createdMarketItems->isEmpty()) {
                     $marketOrder->delete();
+
                     return;
                 }
 
@@ -240,10 +241,11 @@ class JobCutOffProductListing implements ShouldBeUnique, ShouldQueue
                 $shipment = Shipment::where('seller_id', $seller->id)
                     ->where('origin_depot_id', $depot->id) // This one is for dispatch so always from DEPOT
                     ->where('destination_market_id', $marketOrder->shipping_fulfillment_location_id)  // Destunation of user
+                    ->where('is_seller_dropoff', $listing->is_seller_dropoff) // To keep seperate from 
                     ->available()
                     ->first();
 
-                if (! $shipment) {
+                if (!$shipment) {
 
                     $shipment = Shipment::create([
                         'shipment_date' => now()->toDateString(),
@@ -258,6 +260,7 @@ class JobCutOffProductListing implements ShouldBeUnique, ShouldQueue
 
                         'status' => ShipmentStatusEnum::PENDING->value,
                         'is_seller_dropoff' => $listing->is_seller_dropoff,
+
                     ]);
                 }
 

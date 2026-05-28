@@ -57,6 +57,7 @@ class JobBuyerCutoffDemandOrder implements ShouldQueue, ShouldBeUnique
                 $deliveryShipment = Shipment::where('buyer_id', $demandOrder->buyer_id)
                     ->where('origin_depot_id', $demandOrder->depot_id) // This one is for dispatch so always from DEPOT
                     ->where('destination_flmnt_location_id', $demandOrder->shipping_fulfillment_location_id)  // Destunation of user
+                    ->where('is_buyer_pickup', $demandOrder->is_buyer_pickup) // To keep seperate from dispatch because for buyer cutoff always pickup
                     ->available()
                     ->first();
 
@@ -206,6 +207,7 @@ class JobBuyerCutoffDemandOrder implements ShouldQueue, ShouldBeUnique
                 $pickupShipment = Shipment::where('buyer_id', $demandOrder->buyer_id)
                     ->where('origin_market_id',  $marketId) // This one is for dispatch so always from MARKET
                     ->where('destination_depot_id', $demandOrder->depot_id)  // Destunation of user
+                    ->where('is_buyer_pickup', $demandOrder->is_buyer_pickup) // To keep seperate from dispatch because for buyer cutoff always pickup
                     ->available()
                     ->first();
 

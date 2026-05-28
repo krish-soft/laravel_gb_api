@@ -54,6 +54,7 @@ class JobBuyerCutoffDirectOrder implements ShouldQueue, ShouldBeUnique
                 $shipment = Shipment::where('buyer_id', $order->buyer_id)
                     ->where('origin_depot_id', $order->depot_id) // This one is for dispatch so always from DEPOT
                     ->where('destination_flmnt_location_id', $order->shipping_fulfillment_location_id)  // Destunation of user
+                    ->where('is_buyer_pickup', $order->is_buyer_pickup) // To keep seperate from dispatch because for buyer cutoff always pickup
                     ->available()
                     ->first();
 
