@@ -220,7 +220,7 @@ Route::group([
 
             // address
             Route::post('/profile/address', [UserProfileApiController::class, 'saveAddress']);
-           	Route::get('/profile/address', [UserProfileApiController::class, 'getAddress']);
+            Route::get('/profile/address', [UserProfileApiController::class, 'getAddress']);
             Route::post('/profile/billingAddress', [UserProfileApiController::class, 'saveBillingAddress']);
 
             //
@@ -309,6 +309,7 @@ Route::group([
                 Route::prefix('order')->group(function () {
                     Route::get('list', [BuyerOrderApiController::class, 'getBuyerOrders']);
                     Route::get('details/{orderId}', [BuyerOrderApiController::class, 'getBuyerOrderDetails']);
+                    Route::get('invoices/{orderId}', [BuyerOrderApiController::class, 'getBuyerOrderInvoices']);
                     Route::get('shipment-packages/{orderId}', [BuyerOrderApiController::class, 'getOrderShipmentPackages']);
                 });
 
