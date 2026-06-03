@@ -438,7 +438,7 @@ class InvoiceService
                 }
 
                 // Delivery Charge (only if applicable)
-                if (! $productListing->is_seller_dropoff && $totalDeliveryTaxable > 0) {
+                if (!$productListing->is_seller_dropoff && $totalDeliveryTaxable > 0) {
 
                     $invoice->invoiceCharges()->create([
                         'charge_name' => 'Delivery Charge',
