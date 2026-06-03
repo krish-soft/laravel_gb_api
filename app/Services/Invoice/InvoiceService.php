@@ -419,8 +419,8 @@ class InvoiceService
                         $shpPkg
                     );
 
-                    $totalDeliveryTaxable += isset($deliveryData) ? $deliveryData->charge_taxable : 0;
-                    $totalDeliveryTax += isset($deliveryData) ? $deliveryData->charge_tax : 0;
+                    $totalDeliveryTaxable += isset($deliveryData->charge_taxable ) ? $deliveryData->charge_taxable : 0;
+                    $totalDeliveryTax += isset($deliveryData->charge_tax) ? $deliveryData->charge_tax : 0;
                     $totalDeliveryCharge += $totalDeliveryTaxable + $totalDeliveryTax;
 
                     $pkgArr[] = [
