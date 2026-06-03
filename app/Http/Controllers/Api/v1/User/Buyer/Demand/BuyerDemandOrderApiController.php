@@ -3,31 +3,28 @@
 namespace App\Http\Controllers\Api\v1\User\Buyer\Demand;
 
 use App\Http\Controllers\ApiResponseWithAuthController;
-use App\Http\Controllers\Controller;
 use App\Models\Buyer\Order\DemandOrder;
-use App\Models\Buyer\Order\Order;
 use Illuminate\Http\Request;
 
 class BuyerDemandOrderApiController extends ApiResponseWithAuthController
 {
     //
 
-
     public function getBuyerOrders(Request $request)
     {
         $buyer = $request->user();
 
         $request->validate([
-            'year'         => 'nullable|integer|min:2000|max:' . now()->year,
-            'month'        => 'nullable|integer|min:1|max:12',
+            'year' => 'nullable|integer|min:2000|max:'.now()->year,
+            'month' => 'nullable|integer|min:1|max:12',
             'order_number' => 'nullable|string|max:50',
-            'order_date'   => 'nullable|date',
-            'status'       => 'nullable|string|max:50',
-            'limit'        => 'nullable|integer|min:10|max:100',
-            'offset'       => 'nullable|integer|min:0',
+            'order_date' => 'nullable|date',
+            'status' => 'nullable|string|max:50',
+            'limit' => 'nullable|integer|min:10|max:100',
+            'offset' => 'nullable|integer|min:0',
         ]);
 
-        $limit  = min((int) $request->get('limit', 50), 100); // default 50
+        $limit = min((int) $request->get('limit', 50), 100); // default 50
         $offset = (int) $request->get('offset', 0);
 
         $query = DemandOrder::query()
@@ -43,7 +40,7 @@ class BuyerDemandOrderApiController extends ApiResponseWithAuthController
             })
 
             ->when($request->filled('order_number'), function ($q) use ($request) {
-                $q->where('order_number', 'like', '%' . $request->order_number . '%');
+                $q->where('order_number', 'like', '%'.$request->order_number.'%');
             })
 
             ->when($request->filled('order_date'), function ($q) use ($request) {
@@ -67,7 +64,6 @@ class BuyerDemandOrderApiController extends ApiResponseWithAuthController
         );
     }
 
-
     public function getBuyerOrderDetails(Request $request, $orderId)
     {
         $buyer = $request->user();
@@ -81,15 +77,29 @@ class BuyerDemandOrderApiController extends ApiResponseWithAuthController
             ->where('id', $orderId)
             ->firstOrFail();
 
-
-
-
         return $this->successResponse(
             __('messages.success_messages.success_get'),
             $order
         );
     }
 
+    public function getBuyerOrderInvoices(Request $request, $orderId)
+    {
+        $buyer = $request->user();
+
+        $order = DemandOrder::query()
+            ->with([
+                'invoices',
+            ])
+            ->where('buyer_id', $buyer->id)
+            ->where('id', $orderId)
+            ->firstOrFail();
+
+        return $this->successResponse(
+            __('messages.success_messages.success_get'),
+            $order->invoices
+        );
+    }
 
     public function getOrderShipmentPackages(Request $request, $orderId)
     {
@@ -130,7 +140,6 @@ class BuyerDemandOrderApiController extends ApiResponseWithAuthController
             $packages
         );
     }
-
 
     //
 }

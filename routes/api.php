@@ -341,6 +341,7 @@ Route::group([
                     Route::prefix('order')->group(function () {
                         Route::get('list', [BuyerDemandOrderApiController::class, 'getBuyerOrders']);
                         Route::get('details/{orderId}', [BuyerDemandOrderApiController::class, 'getBuyerOrderDetails']);
+                        Route::get('invoices/{orderId}', [BuyerDemandOrderApiController::class, 'getBuyerOrderInvoices']);
                         Route::get('shipment-packages/{orderId}', [BuyerDemandOrderApiController::class, 'getOrderShipmentPackages']);
                     });
 
