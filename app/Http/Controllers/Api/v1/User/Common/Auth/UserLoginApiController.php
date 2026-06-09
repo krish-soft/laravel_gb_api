@@ -64,6 +64,13 @@ class UserLoginApiController extends ApiResponseController
             }
         }
 
+
+        if ($user) {
+            $user->last_login_at = now();
+            $user->last_login_ip = $request->ip();
+            $user->save();
+        }
+
         // Generate token with expiry and device_id as abilities
         $token = $user->createToken(
             "auth_token|role:{$user->role}|device_id:{$deviceId}",

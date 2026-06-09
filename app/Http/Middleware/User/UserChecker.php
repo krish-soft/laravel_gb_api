@@ -51,16 +51,7 @@ class UserChecker
                 403
             );
         }
-
-        // last login update
-        if ($user) {
-            $user->last_login_at = now();
-            $user->last_login_ip = $request->ip();
-            $user->save();
-        }
-
-
-
+      
         return $next($request);
     }
 }
