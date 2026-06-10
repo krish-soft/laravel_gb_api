@@ -4,6 +4,7 @@ namespace App\Observers\User;
 
 use App\Enum\User\UserRoleEnum;
 use App\Models\Common\Accounting\Account;
+use App\Models\Master\Depot\MstDepot;
 use App\Models\User;
 
 class UserObserver
@@ -19,6 +20,20 @@ class UserObserver
             Account::getOwnerTypeByUser($user),
             $user->id
         );
+
+
+        // Default Assign Depot (Kim)
+        try {
+
+            // Get First Depot as Kim 
+            $defaultDepot = MstDepot::first();
+            if ($defaultDepot) {
+                $user->depots()->attach($defaultDepot->id, ['is_primary' => true]);
+            }
+        } catch (\Exception $e) {
+            // Log the error but do not fail the user creation
+            \Log::error("Failed to assign default depot to user ID {$user->id}: " . $e->getMessage());
+        }
     }
 
     /**

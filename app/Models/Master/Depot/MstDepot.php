@@ -46,7 +46,7 @@ class MstDepot extends BaseModel
         'picture',
         'name',
         'code',
-        'other_code',
+        'short_code',
 
         'addr_code',
 

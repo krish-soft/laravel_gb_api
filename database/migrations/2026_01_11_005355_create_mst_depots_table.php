@@ -21,6 +21,7 @@ return new class extends Migration
 
             $table->string('name', 150);
             $table->string('code', 50);
+            $table->string('short_code', 10)->nullable();
 
             // Location
             $table->string('addr_code', 50)->nullable();
