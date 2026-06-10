@@ -104,6 +104,16 @@ class JobSellerCutoff implements ShouldQueue, ShouldBeUnique
                     }
                 }
 
+                // Need to cancel listing if no package to sell to market
+                if (!$listing->is_sell_to_market && $listing->total_sold_qty > 0) {
+                    $listing->update([
+                        'is_expired' => true,
+                        'expires_at' => now(),
+                        'is_cutoff'  => true,
+                    ]);
+                    return;
+                }
+
                 /*
                      |--------------------------------------------------------------------------
                      | If no packages → skip shipment
