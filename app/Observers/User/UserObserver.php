@@ -27,7 +27,7 @@ class UserObserver
 
             // Get First Depot as Kim 
             $defaultDepot = MstDepot::first();
-            if ($defaultDepot) {
+            if ($defaultDepot && !$user->hasAssignedDepot()) {
                 $user->depots()->attach($defaultDepot->id, ['is_primary' => true]);
             }
         } catch (\Exception $e) {
