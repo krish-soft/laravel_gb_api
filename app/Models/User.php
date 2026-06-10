@@ -249,6 +249,11 @@ class User extends Authenticatable
         return $this->hasOne(UserDepot::class, 'user_id', 'id')->where('is_primary', true);
     }
 
+    public function hasAssignedDepot(): bool
+    {
+        return $this->primaryDepot()->exists();
+    }
+
     public function buyerOrders()
     {
         return $this->hasMany(Order::class, 'buyer_id', 'id');

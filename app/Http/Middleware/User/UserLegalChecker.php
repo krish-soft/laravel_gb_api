@@ -22,24 +22,32 @@ class UserLegalChecker
     {
         $user = $request->user();
 
-        // Secondly Check Kyc approved or not
-        if ($user && !$user->isKycApproved()) {
-
-            // Check is it pending or have comment
-            $kyc = $user->kyc ?? null;
-
-            if ($kyc && $kyc->status === KycStatusEnum::PENDING->value) {
-                $rviewComment = $kyc->review_comment ?? null;
-
-                if ($rviewComment) {
-                    return $this->showErrorMessageWithAction(__('messages.error_messages.kyc_already_under_review' . ":'\n" . $rviewComment), 403, ActionCodeEnum::FORCE_KYC);
-                }
-
-                return $this->showErrorMessageWithAction(__('messages.error_messages.kyc_already_under_review'), 403, ActionCodeEnum::FORCE_KYC);
-            }
-
-            return $this->showErrorMessageWithAction(__('messages.error_messages.kyc_not_approved'), 403, ActionCodeEnum::FORCE_KYC);
+        // Check for Depot Assigned or not 
+        if ($user && !$user->hasAssignedDepot()) {
+            return $this->showErrorMessageWithAction(__('messages.error_messages.depot_not_assigned'), 403);
         }
+
+        // By passing KYC for now 
+        // Secondly Check Kyc approved or not
+        // KYC Start
+        // if ($user && !$user->isKycApproved()) {
+
+        //     // Check is it pending or have comment
+        //     $kyc = $user->kyc ?? null;
+
+        //     if ($kyc && $kyc->status === KycStatusEnum::PENDING->value) {
+        //         $rviewComment = $kyc->review_comment ?? null;
+
+        //         if ($rviewComment) {
+        //             return $this->showErrorMessageWithAction(__('messages.error_messages.kyc_already_under_review' . ":'\n" . $rviewComment), 403, ActionCodeEnum::FORCE_KYC);
+        //         }
+
+        //         return $this->showErrorMessageWithAction(__('messages.error_messages.kyc_already_under_review'), 403, ActionCodeEnum::FORCE_KYC);
+        //     }
+
+        //     return $this->showErrorMessageWithAction(__('messages.error_messages.kyc_not_approved'), 403, ActionCodeEnum::FORCE_KYC);
+        // }
+        // KYC END
 
 
 
