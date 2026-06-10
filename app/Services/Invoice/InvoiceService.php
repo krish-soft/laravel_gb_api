@@ -414,7 +414,7 @@ class InvoiceService
                     ]);
 
                     $deliveryData = [];
-                    
+
                     // Delivery charge for order shipments
                     $deliveryData = $this->getDeliveryCharge(
                         $seller->charge_level_code,
@@ -423,7 +423,13 @@ class InvoiceService
 
                     $totalDeliveryTaxable += isset($deliveryData->charge_taxable) ? $deliveryData->charge_taxable : 0;
                     $totalDeliveryTax += isset($deliveryData->charge_tax) ? $deliveryData->charge_tax : 0;
-                    $totalDeliveryCharge += $totalDeliveryTaxable + $totalDeliveryTax;
+                    $totalDeliveryCharge = $totalDeliveryTaxable + $totalDeliveryTax;
+
+                    // Log::info([
+                    //     'totalDeliveryTaxable' => $totalDeliveryTaxable,
+                    //     'totalDeliveryTax' => $totalDeliveryTax,
+                    //     'totalDeliveryCharge' => $totalDeliveryCharge,
+                    // ]);
 
                     $pkgArr[] = [
                         'order_qty' => $shpPkg->qty,
@@ -447,7 +453,7 @@ class InvoiceService
                         'qty' => 1,
                         'taxable_amount' => $totalDeliveryTaxable,
                         'tax_amount' => $totalDeliveryTax,
-                        'total_amount' => $totalDeliveryCharge,
+                        'total_amount' =>  $totalDeliveryTaxable + $totalDeliveryTax,
                     ]);
                 }
 
