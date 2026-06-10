@@ -580,8 +580,10 @@ Route::group([
                 Route::apiResource('shipmentPackage', ShipmentPackageAdminApiController::class)->only(['index', 'show']);
                 Route::put('shipmentPackage/status/{shipmentPackage}', [ShipmentPackageAdminApiController::class, 'updateStatus']);
 
+
                 // Shipment and Groups Management
                 Route::apiResource('shipment', ShipmentAdminApiController::class)->only(['index', 'show']);
+                Route::put('shipment/status/{shipment}', [ShipmentAdminApiController::class, 'updateShipmentStatus']);
 
                 // Driver and Vehicle Assignment
                 Route::post('assign-shipment-to-driver', [DriverShipmentAdminApiController::class, 'assignDriver']);

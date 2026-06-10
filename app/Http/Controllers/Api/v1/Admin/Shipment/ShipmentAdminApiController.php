@@ -81,6 +81,21 @@ class ShipmentAdminApiController extends ApiResponseWithAdminAuthController
         return $this->successResponse(__('messages.success_messages.success_get'), $shipment);
     }
 
+    // Update Shipment Status
+    public function updateShipmentStatus(Request $request, Shipment $shipment)
+    {
+        $request->validate([
+            'status' => 'required|string|in:' . implode(',', ShipmentStatusEnum::casesAsValues()),
+        ]);
+
+        // Validate status transition logic
+        $shipment->status = $request->input('status');
+        $shipment->save();
+
+
+        return $this->successResponse(__('messages.success_messages.success_update'), $shipment);
+    }
+
 
 
 
