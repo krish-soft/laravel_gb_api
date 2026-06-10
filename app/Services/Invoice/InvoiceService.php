@@ -83,7 +83,7 @@ class InvoiceService
                     // Base on order create all
                     $invoice->invoiceItems()->create([
                         'item_code' => $orderItem->product_code,
-                        'item_name' => $orderItem->product_name." [$orderItem->pack_size $orderItem->pack_unit ($orderItem->pack_type_unit)]",
+                        'item_name' => $orderItem->product_name . " [$orderItem->pack_size $orderItem->pack_unit ($orderItem->pack_type_unit)]",
 
                         'order_qty' => $orderItem->order_qty,
                         'unit_price' => $orderItem->pack_price,
@@ -229,7 +229,7 @@ class InvoiceService
                     // Base on order create all
                     $invoice->invoiceItems()->create([
                         'item_code' => $orderItem->product_code,
-                        'item_name' => $orderItem->product_name." [$orderItem->pack_size $orderItem->pack_unit ($orderItem->pack_type_unit)]",
+                        'item_name' => $orderItem->product_name . " [$orderItem->pack_size $orderItem->pack_unit ($orderItem->pack_type_unit)]",
 
                         'order_qty' => $orderItem->order_qty,
                         'unit_price' => $orderItem->pack_price, // Alwasy waht order place on price
@@ -398,7 +398,7 @@ class InvoiceService
 
                     $invoice->invoiceItems()->create([
                         'item_code' => $shpPkg->product->product_code,
-                        'item_name' => $shpPkg->product->name." [$packSize $packUnit ($packTypeUnit)] ".$itemNameSuffix,
+                        'item_name' => $shpPkg->product->name . " [$packSize $packUnit ($packTypeUnit)] " . $itemNameSuffix,
 
                         'order_qty' => $packQty,
                         'unit_price' => $pkgType == 'market_order' ? 0 : $shpPkg->pack_price, // Alwasy waht order place on price
@@ -413,13 +413,15 @@ class InvoiceService
                         'reference' => $pkgType,
                     ]);
 
+                    $deliveryData = [];
+                    
                     // Delivery charge for order shipments
                     $deliveryData = $this->getDeliveryCharge(
                         $seller->charge_level_code,
                         $shpPkg
                     );
 
-                    $totalDeliveryTaxable += isset($deliveryData->charge_taxable ) ? $deliveryData->charge_taxable : 0;
+                    $totalDeliveryTaxable += isset($deliveryData->charge_taxable) ? $deliveryData->charge_taxable : 0;
                     $totalDeliveryTax += isset($deliveryData->charge_tax) ? $deliveryData->charge_tax : 0;
                     $totalDeliveryCharge += $totalDeliveryTaxable + $totalDeliveryTax;
 
