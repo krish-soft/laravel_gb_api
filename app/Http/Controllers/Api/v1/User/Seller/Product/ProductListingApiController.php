@@ -8,6 +8,7 @@ use App\Services\Seller\Product\ProductListingChargePreviewService;
 use App\Services\Seller\Product\ProductListingService;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use RuntimeException;
 
@@ -26,6 +27,12 @@ class ProductListingApiController extends ApiResponseWithAuthController
             return $this->showErrorMessage(__('messages.error_messages.unauthorized_access'), 403);
         }
 
+        Log::info("API_QUERY :" . json_encode([
+            'endpoint' => 'getProductListing',
+            'user_id' => $request->user()->id,
+            'query_params' => $request->all(),
+        ], JSON_PRETTY_PRINT));
+
         $productListingQuery = ProductListing::latest()->with([
             'fulfillmentLocation',
             'listingItems.product',
@@ -36,10 +43,14 @@ class ProductListingApiController extends ApiResponseWithAuthController
 
         if ($request->has('is_active')) {
             $productListingQuery->where('is_active', $request->input('is_active'));
-        } if ($request->has('start_date') && $request->has('end_date')) {
-            $productListingQuery->whereBetween('created_at', [$request->input('start_date'), $request->input('end_date')]);
+        }
+        if ($request->has('start_date') && $request->has('end_date')) {
+            $productListingQuery->whereBetween('listing_date', [$request->input('start_date'), $request->input('end_date')]);
         } else {
-            $productListingQuery->where('is_active', true);
+            // Log::info("Default");
+            $productListingQuery
+                ->where('is_active', true)
+                ->where('is_expired', false);
         }
 
         $productListings = $productListingQuery->get();
