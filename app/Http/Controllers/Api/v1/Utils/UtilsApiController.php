@@ -13,6 +13,7 @@ use App\Enum\Common\Legal\KycReviewEnum;
 use App\Enum\Common\Legal\KycStatusEnum;
 use App\Enum\Common\Legal\LegalDocumentTypeEnum;
 use App\Enum\Common\Module\AppModuleEnum;
+use App\Enum\Common\Shipment\ShipmentStatusEnum;
 use App\Enum\User\UserRoleEnum;
 use App\Enum\User\UserTypeEnum;
 use App\Http\Controllers\ApiResponseController;
@@ -119,6 +120,9 @@ class UtilsApiController extends ApiResponseController
                 'platform_accounts' => PlatformAccountCodeEnum::casesAsValues(),
 
                 'financial_years' => MstFinancialYear::active()->pluck('id')->toArray(),
+
+                'shipment_statuses' => ShipmentStatusEnum::casesAsValues(),
+            
 
                 // 'app_modules' => AppModuleEnum::casesAsArray(),
 
