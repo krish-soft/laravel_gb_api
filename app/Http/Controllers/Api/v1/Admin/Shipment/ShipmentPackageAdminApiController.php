@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api\v1\Admin\Shipment;
 
+use App\Enum\Common\Shipment\ShipmentStatusEnum;
+use App\Enum\Common\Shipment\ShipmentTypeEnum;
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
 use App\Models\Common\Shipment\ShipmentPackage;
 use Illuminate\Http\Request;
@@ -88,10 +90,10 @@ class ShipmentPackageAdminApiController extends ApiResponseWithAdminAuthControll
                 if (!$p->shipment) {
                     return false;
                 }
-                
+
                 $origin = $p->shipment->origin_depot_id;
                 $destination = $p->shipment->destination_depot_id;
-                
+
                 // Include only if: both same, or only one exists
                 if ($origin && $destination && $origin === $destination) {
                     return true; // Same depot
@@ -107,7 +109,7 @@ class ShipmentPackageAdminApiController extends ApiResponseWithAdminAuthControll
             ->groupBy(function ($p) {
                 $origin = $p->shipment->origin_depot_id;
                 $destination = $p->shipment->destination_depot_id;
-                
+
                 // Determine depot and flow
                 if ($origin && $destination && $origin === $destination) {
                     $depotId = $origin;
@@ -119,14 +121,14 @@ class ShipmentPackageAdminApiController extends ApiResponseWithAdminAuthControll
                     $depotId = $destination;
                     $flow = 'delivery';
                 }
-                
+
                 return "{$depotId}-{$flow}-{$p->status}";
             })
             ->map(function ($rows) {
                 $first = $rows->first();
                 $origin = $first->shipment->origin_depot_id;
                 $destination = $first->shipment->destination_depot_id;
-                
+
                 // Get depot name based on flow
                 if ($origin && $destination && $origin === $destination) {
                     $depotId = $origin;
@@ -141,7 +143,7 @@ class ShipmentPackageAdminApiController extends ApiResponseWithAdminAuthControll
                     $depotName = $first->shipment->destinationDepot?->name;
                     $flow = 'delivery';
                 }
-                
+
                 return [
                     'depot_id' => $depotId,
                     'depot_name' => $depotName,
@@ -331,5 +333,54 @@ class ShipmentPackageAdminApiController extends ApiResponseWithAdminAuthControll
                 'logistics_action_summary' => $logistics,
             ]
         );
+    }
+
+
+    public function updateStatus(Request $request, ShipmentPackage $shipmentPackage)
+    {
+        $request->validate([
+            'status' => 'required|string|in:' . implode(',', ShipmentStatusEnum::casesAsValues()),
+        ]);
+
+        $status = $request->input('status');
+        // If Shipment Type Pickup 
+
+        $shipmentType = $shipmentPackage->shipment?->shipment_type;
+
+        if ($shipmentType == ShipmentTypeEnum::PICKUP->value) {
+            if (!in_array($status, [
+                ShipmentStatusEnum::PENDING->value,
+                ShipmentStatusEnum::CANCELLED->value,
+                ShipmentStatusEnum::PICKED_UP->value,
+                ShipmentStatusEnum::NOT_PICKED_UP->value,
+                ShipmentStatusEnum::ARRIVED_AT_DEPOT->value,
+                ShipmentStatusEnum::IN_TRANSIT->value,
+                ShipmentStatusEnum::INTERNAL_TRANSFER->value,
+                ShipmentStatusEnum::SHIPPED->value,
+                ShipmentStatusEnum::DAMAGED->value,
+                ShipmentStatusEnum::LOST->value,
+            ])) {
+                return $this->errorResponse('Invalid status for Pickup shipment type', 422);
+            }
+        } else if ($shipmentType == ShipmentTypeEnum::DISPATCH->value) {
+            if (!in_array($status, [
+                ShipmentStatusEnum::PENDING->value,
+                ShipmentStatusEnum::CANCELLED->value,
+                ShipmentStatusEnum::DISPATCHED->value,
+                ShipmentStatusEnum::DELIVERED->value,
+                ShipmentStatusEnum::OUT_FOR_DELIVERY->value,
+                ShipmentStatusEnum::IN_TRANSIT->value,
+                ShipmentStatusEnum::INTERNAL_TRANSFER->value,
+                ShipmentStatusEnum::DAMAGED->value,
+                ShipmentStatusEnum::LOST->value,
+            ])) {
+                return $this->errorResponse('Invalid status for Delivery shipment type', 422);
+            }
+        }
+
+        $shipmentPackage->status =  $status;
+        $shipmentPackage->save();
+
+        return $this->successResponse(__('messages.success_messages.success_update'), 200);
     }
 }
