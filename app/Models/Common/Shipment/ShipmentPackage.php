@@ -9,6 +9,7 @@ use App\Models\Buyer\Order\Order;
 use App\Models\Buyer\Order\OrderItem;
 use App\Models\Common\Fulfillment\FulfillmentLocation;
 use App\Models\Common\Package\SellerPackage;
+use App\Models\Common\User\UserDepot;
 use App\Models\Market\MarketOrder;
 use App\Models\Market\MarketOrderItem;
 use App\Models\Master\Depot\MstDepot;
@@ -316,6 +317,10 @@ class ShipmentPackage extends BaseModel
     ): string {
 
         [$start, $end] = self::businessWindow();
+        // DEPOT PREFIX using SHORT CODE: KIM-...
+        $depotPrefix = 'DPT'; // default
+
+
 
         // ✅ PREFIX RESOLVER (separate pattern)
         // Buyer  → A-5
@@ -329,6 +334,12 @@ class ShipmentPackage extends BaseModel
             $prefix = "MK-{$alpha}";
             $series = 'MKT';
             $seriesId = $marketId;
+
+            // Market PrimaryDepot for scoping
+            $marketPrimaryDepot = MstDepot::where('market_id', $marketId)->first();
+            if ($marketPrimaryDepot) {
+                $depotPrefix = $marketPrimaryDepot->short_code;
+            }
         }
         if (!empty($sellerId)) {
 
@@ -337,6 +348,14 @@ class ShipmentPackage extends BaseModel
             $prefix = "SL-{$alpha}";
             $series = 'SEL';
             $seriesId = $sellerId;
+
+            // Get Seller PrimaryDepot for scoping
+            $sellerPrimaryDepot = UserDepot::where('user_id', $sellerId)->where('is_primary', true)->first();
+            if ($sellerPrimaryDepot) {
+                $depotPrefix = $sellerPrimaryDepot->short_code;
+            }
+
+            //
         } elseif (!empty($buyerId)) {
 
             $buyerIndex = $buyerId % 18278;
@@ -344,6 +363,11 @@ class ShipmentPackage extends BaseModel
             $prefix = "BU-{$alpha}";
             $series = 'BUY';
             $seriesId = $buyerId;
+
+            $buyerPrimaryDepot = UserDepot::where('user_id', $buyerId)->where('is_primary', true)->first();
+            if ($buyerPrimaryDepot) {
+                $depotPrefix = $buyerPrimaryDepot->short_code;
+            }
         } else {
 
             $prefix = 'SY';
@@ -384,7 +408,8 @@ class ShipmentPackage extends BaseModel
         // 🔥 runtime increment
         self::$runtimeSequence[$key]++;
 
-        return "{$prefix}-" . self::$runtimeSequence[$key];
+        // return "{$prefix}-" . self::$runtimeSequence[$key]; // ORG
+        return "{$depotPrefix}-{$prefix}-" . self::$runtimeSequence[$key];
     }
 
     // Only For Seller
