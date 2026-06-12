@@ -10,6 +10,7 @@ use App\Http\Requests\AddressRequest;
 use App\Models\Common\Address;
 use App\Models\Common\User\UserDepot;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -26,6 +27,8 @@ class CustomerApiController extends ApiResponseWithAdminAuthController
             'q' => 'nullable|string|max:255',
             'role' => 'nullable|string|in:' . implode(',', UserRoleEnum::casesAsValues()),
             'is_active' => 'nullable|boolean',
+            'start_date' => 'nullable|date|required_with:end_date|before_or_equal:end_date',
+            'end_date' => 'nullable|date|required_with:start_date|after_or_equal:start_date',
             'per_page' => 'nullable|integer|min:1|max:100',
         ]);
 
@@ -50,6 +53,13 @@ class CustomerApiController extends ApiResponseWithAdminAuthController
 
         if ($request->filled('is_active')) {
             $query->where('is_active', $request->boolean('is_active'));
+        }
+
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $startDate = Carbon::parse($request->input('start_date'))->startOfDay();
+            $endDate = Carbon::parse($request->input('end_date'))->endOfDay();
+
+            $query->whereBetween('created_at', [$startDate, $endDate]);
         }
 
         $users = $query
