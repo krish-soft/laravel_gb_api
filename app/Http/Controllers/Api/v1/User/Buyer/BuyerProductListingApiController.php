@@ -32,7 +32,7 @@ class BuyerProductListingApiController extends ApiResponseWithAuthController
         $products = $productListings
             ->flatMap->listingItems
             ->groupBy('product.id')
-            ->map(function ($items) {
+            ->map(function ($items) use ($pastPurchasedProductLookup) {
 
                 $packages = $items->flatMap->listingPackages;
 
