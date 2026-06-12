@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserLoginApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserLogoutApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserRegisterApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserResetPasswordApiController;
+use App\Http\Controllers\Api\v1\Admin\Common\Auth\AdminUserProfileApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Customer\CustomerApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Customer\CustomerLegalActionApiController;
 use App\Http\Controllers\Api\v1\Admin\Common\Fulfillment\AdminFulfillmentLocationApiController;
@@ -452,6 +453,7 @@ Route::group([
             Route::get('user-profile', function (Request $request) {
                 return $request->user();
             });
+            Route::put('/profile/password', [AdminUserProfileApiController::class, 'updatePassword']);
 
             Route::get('/dashboard', [DashboardAdminApiController::class, 'getDashboardData']);
             Route::apiResource('adminUser', AdminUserAdminApiController::class); // Manage Admin users
