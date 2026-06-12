@@ -66,6 +66,7 @@ class CustomerApiController extends ApiResponseWithAdminAuthController
             ->select([
                 'id',
                 'user_code',
+                'nickname',
                 'name',
                 'email',
                 'phone_number',
@@ -86,6 +87,7 @@ class CustomerApiController extends ApiResponseWithAdminAuthController
                 UserRoleEnum::DELIVERY->value => 'Driver',
                 default => 'Customer',
             };
+            $user->created_at_formatted = $user->created_at->format('Y-m-d H:i:s');
 
             return $user;
         });
