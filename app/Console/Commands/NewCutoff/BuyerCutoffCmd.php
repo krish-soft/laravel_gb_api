@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Console\Commands\Cutoff;
+namespace App\Console\Commands\NewCutoff;
 
+use Illuminate\Console\Command;
 use App\Enum\Common\Order\OrderStatusEnum;
 use App\Enum\Common\Payment\PaymentStatusEnum;
 use App\Enum\Queue\QueueEnum;
@@ -12,7 +13,6 @@ use App\Models\Buyer\Order\DemandOrder;
 use App\Models\Buyer\Order\Order;
 use App\Models\Seller\Product\ProductListing;
 use Carbon\Carbon;
-use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
 
@@ -150,6 +150,4 @@ class BuyerCutoffCmd extends Command
 
         return $jobs;
     }
-
-    //
 }

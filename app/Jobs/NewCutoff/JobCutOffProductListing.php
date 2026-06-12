@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Jobs\Cutoff;
+namespace App\Jobs\NewCutoff;
 
 use App\Enum\Common\Order\OrderFlagsEum;
 use App\Enum\Common\Order\OrderStatusEnum;

@@ -1,45 +1,32 @@
 <?php
 
-namespace App\Console\Commands\Cutoff;
+namespace App\Console\Commands\NewCutoff;
 
 use App\Enum\Queue\QueueEnum;
-use App\Jobs\Cutoff\JobSellerCutoff;
-use App\Models\Seller\Product\ProductListing;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Bus;
+use App\Models\Seller\Product\ProductListing;
+use App\Jobs\CutOff\JobCutOffProductListing;
 
-class SellerCutoffCmd extends Command
+class CutOffProductListing extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'cutoff:seller
+    protected $signature = 'cutoff:product-listing
                             {startDate?} 
                             {endDate?}';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Command to perform seller cutoff operations.';
+    protected $description = 'Batch cutoff for product listings.';
 
-    /**
-     * Execute the console command.
-     */
     public function handle()
     {
         $startDate = $this->argument('startDate') ?? now()->subDay()->toDateString();
         $endDate   = $this->argument('endDate') ?? now()->toDateString();
 
-        $this->info("Seller cutoff from {$startDate} to {$endDate}");
+        $this->info("Cutoff from {$startDate} to {$endDate}");
 
         $listings = ProductListing::query()
             ->select(['id']) // reduce memory
             ->where('is_active', true)
-            ->where('is_cutoff', false)
+            ->where('is_expired', false)
             ->whereBetween('listing_date', [$startDate, $endDate])
             ->orderBy('seller_id')
             ->orderBy('id')
@@ -53,14 +40,14 @@ class SellerCutoffCmd extends Command
         $jobs = [];
 
         foreach ($listings as $listing) {
-            $jobs[] = new JobSellerCutoff($listing->id);
+            $jobs[] = new JobCutOffProductListing($listing->id);
         }
 
         Bus::batch($jobs)
-            ->name('Seller Cutoff Batch')
-            ->onQueue(QueueEnum::SELLER_CUTOFF->value)
+            ->name('CutOff Product Listing Batch')
+            ->onQueue(QueueEnum::LISTING_CUTOFF->value)
             ->dispatch();
 
-        $this->info('Seller Cutoff batch dispatched successfully.');
+        $this->info('Batch dispatched successfully.');
     }
 }
