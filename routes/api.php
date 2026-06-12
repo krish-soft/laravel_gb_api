@@ -463,6 +463,8 @@ Route::group([
 
                 Route::get('/', [AdminProductListingApiController::class, 'getListings']);
                 Route::get('/{id}', [AdminProductListingApiController::class, 'getListingDetails']);
+                Route::get('/{id}/invoices', [AdminProductListingApiController::class, 'getListingInvoices']);
+
 
                 Route::post('create', [AdminProductListingApiController::class, 'createListing']);
                 Route::post('cancel/{listingId}', [AdminProductListingApiController::class, 'cancelListing']);
