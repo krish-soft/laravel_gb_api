@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Jobs\CutOff;
+namespace App\Jobs\Cutoff;
 
 use App\Enum\Common\Order\OrderFlagsEum;
 use App\Enum\Common\Shipment\ShipmentStatusEnum;
