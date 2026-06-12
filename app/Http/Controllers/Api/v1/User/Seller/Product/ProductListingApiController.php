@@ -27,11 +27,11 @@ class ProductListingApiController extends ApiResponseWithAuthController
             return $this->showErrorMessage(__('messages.error_messages.unauthorized_access'), 403);
         }
 
-        Log::info("API_QUERY :" . json_encode([
-            'endpoint' => 'getProductListing',
-            'user_id' => $request->user()->id,
-            'query_params' => $request->all(),
-        ], JSON_PRETTY_PRINT));
+        // Log::info("API_QUERY :" . json_encode([
+        //     'endpoint' => 'getProductListing',
+        //     'user_id' => $request->user()->id,
+        //     'query_params' => $request->all(),
+        // ], JSON_PRETTY_PRINT));
 
         $productListingQuery = ProductListing::latest()->with([
             'fulfillmentLocation',

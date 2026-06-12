@@ -4,6 +4,7 @@ namespace App\Observers\User;
 
 use App\Enum\User\UserRoleEnum;
 use App\Models\Common\Accounting\Account;
+use App\Models\Common\User\UserDepot;
 use App\Models\Master\Depot\MstDepot;
 use App\Models\User;
 
@@ -28,7 +29,11 @@ class UserObserver
             // Get First Depot as Kim 
             $defaultDepot = MstDepot::first();
             if ($defaultDepot && !$user->hasAssignedDepot()) {
-                $user->depots()->attach($defaultDepot->id, ['is_primary' => true]);
+                UserDepot::create([
+                    'user_id' => $user->id,
+                    'depot_id' => $defaultDepot->id,
+                    'is_primary' => true,
+                ]);
             }
         } catch (\Exception $e) {
             // Log the error but do not fail the user creation
