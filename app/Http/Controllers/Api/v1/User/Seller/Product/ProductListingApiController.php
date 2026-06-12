@@ -6,6 +6,7 @@ use App\Http\Controllers\ApiResponseWithAuthController;
 use App\Models\Seller\Product\ProductListing;
 use App\Services\Seller\Product\ProductListingChargePreviewService;
 use App\Services\Seller\Product\ProductListingService;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -27,6 +28,11 @@ class ProductListingApiController extends ApiResponseWithAuthController
             return $this->showErrorMessage(__('messages.error_messages.unauthorized_access'), 403);
         }
 
+        $request->validate([
+            'start_date' => 'nullable|date|required_with:end_date|before_or_equal:end_date',
+            'end_date' => 'nullable|date|required_with:start_date|after_or_equal:start_date',
+        ]);
+
         // Log::info("API_QUERY :" . json_encode([
         //     'endpoint' => 'getProductListing',
         //     'user_id' => $request->user()->id,
@@ -44,8 +50,11 @@ class ProductListingApiController extends ApiResponseWithAuthController
         if ($request->has('is_active')) {
             $productListingQuery->where('is_active', $request->input('is_active'));
         }
-        if ($request->has('start_date') && $request->has('end_date')) {
-            $productListingQuery->whereBetween('listing_date', [$request->input('start_date'), $request->input('end_date')]);
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $startDate = Carbon::parse($request->input('start_date'))->startOfDay();
+            $endDate = Carbon::parse($request->input('end_date'))->endOfDay();
+
+            $productListingQuery->whereBetween('listing_date', [$startDate, $endDate]);
         } else {
             // Log::info("Default");
             $productListingQuery
