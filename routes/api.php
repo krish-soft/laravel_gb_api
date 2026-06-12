@@ -536,6 +536,7 @@ Route::group([
 
             // Regular User Management
             Route::prefix('customer')->group(function () {
+                Route::get('/list', [CustomerApiController::class, 'index']);
                 Route::apiResource('customer', CustomerApiController::class); // Manage Regular user
 
                 Route::get('/search', [CustomerApiController::class, 'searchCustomerAutocomplete']); // Manage Regular user

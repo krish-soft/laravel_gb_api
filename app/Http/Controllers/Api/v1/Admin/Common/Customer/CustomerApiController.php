@@ -17,6 +17,72 @@ use Illuminate\Support\Str;
 class CustomerApiController extends ApiResponseWithAdminAuthController
 {
 
+    /**
+     * Display a listing of customers for admin.
+     */
+    public function index(Request $request)
+    {
+        $request->validate([
+            'q' => 'nullable|string|max:255',
+            'role' => 'nullable|string|in:' . implode(',', UserRoleEnum::casesAsValues()),
+            'is_active' => 'nullable|boolean',
+            'per_page' => 'nullable|integer|min:1|max:100',
+        ]);
+
+        $query = User::query()
+            ->whereIn('role', UserRoleEnum::casesAsValues())
+            ->orderByDesc('id');
+
+        if ($request->filled('q')) {
+            $searchTerm = $request->input('q');
+
+            $query->where(function ($subQuery) use ($searchTerm) {
+                $subQuery->where('name', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('phone_number', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('email', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('user_code', 'like', '%' . $searchTerm . '%');
+            });
+        }
+
+        if ($request->filled('role')) {
+            $query->where('role', $request->role);
+        }
+
+        if ($request->filled('is_active')) {
+            $query->where('is_active', $request->boolean('is_active'));
+        }
+
+        $users = $query
+            ->select([
+                'id',
+                'user_code',
+                'name',
+                'email',
+                'phone_number',
+                'role',
+                'user_type',
+                'charge_level_code',
+                'is_active',
+                'is_important',
+                'inactive_reason',
+                'created_at',
+            ])
+            ->paginate($request->integer('per_page', 20));
+
+        $users->getCollection()->transform(function ($user) {
+            $user->customer_type_label = match ($user->role) {
+                UserRoleEnum::BUYER->value => 'Buyer',
+                UserRoleEnum::SELLER->value => 'Seller',
+                UserRoleEnum::DELIVERY->value => 'Driver',
+                default => 'Customer',
+            };
+
+            return $user;
+        });
+
+        return $this->successResponse(__('messages.success_messages.success_get'), $users, 200);
+    }
+
 
     public function searchCustomerAutocomplete(Request $request)
     {
