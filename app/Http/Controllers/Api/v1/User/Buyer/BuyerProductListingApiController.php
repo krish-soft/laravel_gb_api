@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Api\v1\User\Buyer;
 
 use App\Http\Controllers\ApiResponseWithAuthController;
+use App\Models\Buyer\Order\DemandOrderItem;
+use App\Models\Buyer\Order\OrderItem;
 use App\Models\Seller\Product\ProductListing;
 use App\Policies\Buyer\BuyerPolicyManager;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class BuyerProductListingApiController extends ApiResponseWithAuthController
 {
@@ -17,6 +18,9 @@ class BuyerProductListingApiController extends ApiResponseWithAuthController
     public function getBuyerProductSummary(Request $request)
     {
         $buyer = $request->user();
+        $pastPurchasedProductLookup = array_flip(
+            $this->getPastPurchasedProductIds((int) $buyer->id)
+        );
 
         $limit = min((int) $request->get('limit', 20), 100);
         $offset = (int) $request->get('offset', 0);
@@ -46,6 +50,7 @@ class BuyerProductListingApiController extends ApiResponseWithAuthController
 
                 return [
                     'product' => $items->first()->product,
+                    'past_purchased' => isset($pastPurchasedProductLookup[$items->first()->product_id]),
                     'total_qty' => $totalQty,
                     'total_sold_qty' => $totalSold,
                     'total_available_qty' => $available,
@@ -58,10 +63,27 @@ class BuyerProductListingApiController extends ApiResponseWithAuthController
             ->filter()
             ->values();
 
+        // Prioritize products that buyer purchased previously.
+        [$pastProducts, $otherProducts] = $products->partition(
+            fn($p) => (bool)($p['past_purchased'] ?? false)
+        );
+
         // Sorting
         if ($sortBy === 'product_name') {
-            $products = $products->sortBy(fn($p) => $p['product']->name, SORT_NATURAL | SORT_FLAG_CASE, $sortDir);
+            $pastProducts = $pastProducts->sortBy(
+                fn($p) => $p['product']->name,
+                SORT_NATURAL | SORT_FLAG_CASE,
+                $sortDir
+            );
+
+            $otherProducts = $otherProducts->sortBy(
+                fn($p) => $p['product']->name,
+                SORT_NATURAL | SORT_FLAG_CASE,
+                $sortDir
+            );
         }
+
+        $products = $pastProducts->concat($otherProducts)->values();
 
         $data = $products
             ->slice($offset, $limit)
@@ -181,6 +203,36 @@ class BuyerProductListingApiController extends ApiResponseWithAuthController
             ->filter(
                 fn($listing) => BuyerPolicyManager::canBuyerSeeProductListing($buyer, $listing)
             );
+    }
+
+    /**
+     * Product IDs purchased by buyer from order and demand-order history.
+     *
+     * NOTE:
+     * - order_items does not have product_id directly.
+     * - We must resolve it through product_listing_items.product_id.
+     */
+    private function getPastPurchasedProductIds(int $buyerId): array
+    {
+        $orderProductIds = OrderItem::query()
+            ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->join('product_listing_items', 'product_listing_items.id', '=', 'order_items.product_listing_item_id')
+            ->where('orders.buyer_id', $buyerId)
+            ->whereNotNull('product_listing_items.product_id')
+            ->pluck('product_listing_items.product_id');
+
+        $demandOrderProductIds = DemandOrderItem::query()
+            ->join('demand_orders', 'demand_orders.id', '=', 'demand_order_items.demand_order_id')
+            ->where('demand_orders.buyer_id', $buyerId)
+            ->whereNotNull('demand_order_items.product_id')
+            ->pluck('demand_order_items.product_id');
+
+        return $orderProductIds
+            ->merge($demandOrderProductIds)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
     }
 
     // # ORG
