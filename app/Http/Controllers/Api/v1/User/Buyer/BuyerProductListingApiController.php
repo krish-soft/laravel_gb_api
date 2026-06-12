@@ -6,6 +6,7 @@ use App\Http\Controllers\ApiResponseWithAuthController;
 use App\Models\Buyer\Order\DemandOrderItem;
 use App\Models\Buyer\Order\OrderItem;
 use App\Models\Common\Shipment\ShipmentPackage;
+use App\Models\Master\Product\MstProduct;
 use App\Models\Seller\Product\ProductListing;
 use App\Policies\Buyer\BuyerPolicyManager;
 use Illuminate\Http\Request;
@@ -111,6 +112,16 @@ class BuyerProductListingApiController extends ApiResponseWithAuthController
      */
     public function getBuyerProductPackages(Request $request, $productId)
     {
+        if (!is_numeric($productId)) {
+            return $this->showErrorMessage(__('messages.error_messages.invalid_product'), 422);
+        }
+
+        $productId = (int) $productId;
+
+        if (!MstProduct::query()->where('id', $productId)->exists()) {
+            return $this->showErrorMessage(__('messages.error_messages.not_found'), 404);
+        }
+
         $buyer = $request->user();
         $pastSellerIds = $this->getPastPurchasedSellerIds((int)$buyer->id);
         $pastSellerLookup = array_flip($pastSellerIds);
