@@ -35,6 +35,8 @@ class UserProfileApiController extends ApiResponseWithAuthController
             'phone_number' => $user->phone_number,
             'user_type' => $user->user_type, // buyer, seller, delivery
 
+            'is_address' => $user->address ? true : false,
+
             // KYC Status
             'is_kyc_submitted' => $user->isKycSubmitted(),
             'is_kyc_approved' => $user->isKycApproved(),
@@ -75,8 +77,8 @@ class UserProfileApiController extends ApiResponseWithAuthController
 
         $request->validate([
             'name' => 'required|string|max:150',
-            'email' => 'nullable|email|max:255|unique:users,email,'.$user->id,
-            'phone_number' => 'nullable|string|max:20|unique:users,phone_number,'.$user->id,
+            'email' => 'nullable|email|max:255|unique:users,email,' . $user->id,
+            'phone_number' => 'nullable|string|max:20|unique:users,phone_number,' . $user->id,
         ]);
 
         $user->name = $request->input('name');
@@ -118,7 +120,6 @@ class UserProfileApiController extends ApiResponseWithAuthController
             $address,
             200
         );
-
     }
 
     public function saveAddress(AddressRequest $request)
