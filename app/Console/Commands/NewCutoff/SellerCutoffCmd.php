@@ -3,7 +3,7 @@
 namespace App\Console\Commands\NewCutoff;
 
 use App\Enum\Queue\QueueEnum;
-use App\Jobs\Cutoff\JobSellerCutoff;
+use App\Jobs\NewCutoff\JobSellerCutoff;
 use App\Models\Seller\Product\ProductListing;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Bus;

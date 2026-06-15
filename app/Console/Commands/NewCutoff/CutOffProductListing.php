@@ -6,7 +6,7 @@ use App\Enum\Queue\QueueEnum;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Bus;
 use App\Models\Seller\Product\ProductListing;
-use App\Jobs\CutOff\JobCutOffProductListing;
+use App\Jobs\NewCutoff\JobCutOffProductListing;
 
 class CutOffProductListing extends Command
 {
