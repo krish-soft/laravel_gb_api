@@ -269,6 +269,8 @@ Route::group([
                         Route::post('create', [ProductListingApiController::class, 'createListing']);
                         Route::post('preview-charge', [ProductListingApiController::class, 'previewWithCharges']);
                         Route::post('cancel/{listingId}', [ProductListingApiController::class, 'cancelListing']);
+                        Route::get('/{id}/invoices', [ProductListingApiController::class, 'getListingInvoices']);
+
 
                         Route::put('packages/{packageId}', [ProductListingApiController::class, 'updatePackage']);
                         Route::post('packages/cancel/{packageId}', [ProductListingApiController::class, 'deletePackage']);
@@ -463,7 +465,6 @@ Route::group([
 
                 Route::get('/', [AdminProductListingApiController::class, 'getListings']);
                 Route::get('/{id}', [AdminProductListingApiController::class, 'getListingDetails']);
-                Route::get('/{id}/invoices', [AdminProductListingApiController::class, 'getListingInvoices']);
 
 
                 Route::post('create', [AdminProductListingApiController::class, 'createListing']);

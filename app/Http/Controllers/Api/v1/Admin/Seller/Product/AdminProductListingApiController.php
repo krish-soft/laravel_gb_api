@@ -76,16 +76,7 @@ class AdminProductListingApiController extends ApiResponseWithAuthController
         return $this->successResponse(__('messages.success_messages.success_get'), $listingDetails, 200);
     }
 
-    public function getListingInvoices(Request $request, $listingId)
-    {
-
-        $invoices = ProductListing::with('invoices')
-            ->where('id', $listingId)
-            ->first()
-            ->invoices;
-
-        return $this->successResponse(__('messages.success_messages.success_get'), $invoices, 200);
-    }
+   
 
     public function updatePackage(Request $request, int $packageId)
     {
