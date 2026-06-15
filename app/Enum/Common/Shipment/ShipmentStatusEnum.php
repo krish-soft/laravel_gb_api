@@ -30,9 +30,9 @@ enum ShipmentStatusEnum: string
     case COMPLETED = 'completed';
 
         //  grouping status
-    // case PICKUP = 'pickup';
-    // case TRANSFER = 'transfer';
-    // case DISPATCH = 'dispatch';
+    case PICKUP = 'pickup';
+    case TRANSFER = 'transfer';
+    case DISPATCH = 'dispatch';
     case GROUPED = 'grouped';
 
     public static function casesAsValues(): array
