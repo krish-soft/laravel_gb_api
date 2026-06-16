@@ -258,13 +258,17 @@ Route::group([
             Route::prefix('seller')
                 ->middleware([
                     'seller-checker', // Custom Middleware to check if user is seller
-                    'seller-cutoff', // Custom Middleware to check seller cutoff time
 
                 ])
                 ->group(function () {
 
+                    Route::get('/listing/history', [ProductListingApiController::class, 'getProductListing']);
+
+
                     // Product Listing Routes
-                    Route::prefix('listing')->group(function () {
+                    Route::prefix('listing')->middleware([
+                        'seller-cutoff', // Custom Middleware to check seller cutoff time
+                    ])->group(function () {
                         Route::get('/', [ProductListingApiController::class, 'getProductListing']);
                         Route::post('create', [ProductListingApiController::class, 'createListing']);
                         Route::post('preview-charge', [ProductListingApiController::class, 'previewWithCharges']);
