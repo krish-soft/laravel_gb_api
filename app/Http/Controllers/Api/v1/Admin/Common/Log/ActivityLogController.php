@@ -14,32 +14,41 @@ class ActivityLogController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $logs = ActivityLog::latest('created_at')->get();
-        $logs = $logs->map(function ($log) {
+        $request->validate([
+            'from_date' => 'nullable|date',
+            'to_date' => 'nullable|date|after_or_equal:from_date',
+        ]);
 
+        $query = ActivityLog::query();
+
+        if (
+            $request->filled('from_date') &&
+            $request->filled('to_date')
+        ) {
+            $query->where('created_at', '>=', $request->input('from_date') . ' 00:00:00')
+                ->where('created_at', '<=', $request->input('to_date') . ' 23:59:59');
+        }
+        $logs = $query->latest('created_at')->get();
+
+
+        $logs = $logs->map(function ($log) {
             return [
                 'id' => $log->id,
                 'event' => $log->event,
 
-                // ACTOR
                 'user_id' => $log->actor_id,
                 'user_code' => $log->actor_code,
                 'user_name' => $log->actor_snapshot['name'] ?? null,
                 'user_email' => $log->actor_snapshot['email'] ?? null,
                 'user_phone_number' => $log->actor_snapshot['phone_number'] ?? null,
-                // 'user_role' => $log->actor_snapshot['role'] ?? null,
                 'user_type' => $log->actor_snapshot['user_type'] ?? null,
 
-
-                // META (important)
                 'addr_code' => $log->meta['addr_code'] ?? null,
                 'bill_addr_code' => $log->meta['bill_addr_code'] ?? null,
 
-                // SYSTEM
-                // 'ip_address' => $log->ip_address,
-                // LAST LOGIN 🔥
                 'last_login_at' => $log->actor->last_login_at ?? null,
                 'last_login_ip' => $log->actor->last_login_ip ?? null,
+
                 'created_at' => $log->created_at->format('Y-m-d H:i:s'),
             ];
         });
