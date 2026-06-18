@@ -111,7 +111,7 @@ class JobSellerCutoff implements ShouldQueue, ShouldBeUnique
                         'is_expired' => true,
                         'expires_at' => now(),
                         'is_cutoff'  => true,
-                    ]);                  
+                    ]);
                 }
 
                 /*
@@ -131,6 +131,7 @@ class JobSellerCutoff implements ShouldQueue, ShouldBeUnique
                 $shipment = Shipment::where('seller_id', $seller->id)
                     ->where('origin_flmnt_location_id', $listing->fulfillment_location_id)
                     ->where('destination_depot_id', $depot->id)
+                    ->where('is_seller_dropoff', $listing->is_seller_dropoff)
                     ->available()
                     ->first();
 
