@@ -7,6 +7,7 @@ use App\Http\Controllers\ApiResponseWithAuthController;
 use App\Http\Requests\AddressRequest;
 use App\Models\Common\Address;
 use App\Models\User;
+use App\Models\Common\Log\ActivityLog;
 use Illuminate\Http\Request;
 
 class UserProfileApiController extends ApiResponseWithAuthController
@@ -86,6 +87,23 @@ class UserProfileApiController extends ApiResponseWithAuthController
         // $user->phone_number = $request->input('phone_number'); // can not change phone numnber
         $user->save();
 
+
+        // 🔥 LOG profile  CHANGE  by poonam
+        ActivityLog::log(
+            'user_profile_updated',
+            $user,
+            User::class,
+            $user->id,
+            $user->user_code,
+            [
+                'updated_fields' => [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                ]
+            ]
+        );
+
+
         return $this->showSuccessMessage(__('messages.success_messages.success_update'), 200);
     }
 
@@ -104,6 +122,18 @@ class UserProfileApiController extends ApiResponseWithAuthController
 
         $user->password = bcrypt($request->input('new_password'));
         $user->save();
+
+        // 🔥 LOG PASSWORD CHANGE  by poonam
+        ActivityLog::log(
+            'user_password_updated',
+            $user,
+            User::class,
+            $user->id,
+            $user->user_code,
+            [
+                'action' => 'password_changed'
+            ]
+        );
 
         return $this->showSuccessMessage(__('messages.success_messages.success_update'), 200);
     }

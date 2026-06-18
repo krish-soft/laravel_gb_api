@@ -6,28 +6,24 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 
-// Do not extend BaseModel to avoid logging loops
-
 class ActivityLog extends Model
 {
-
     protected $fillable = [
         'event',
 
-        // ACTOR (who did it)
         'actor_type',
         'actor_id',
         'actor_code',
+        'actor_snapshot',
 
-        // SUBJECT (what / whose data)
         'subject_type',
         'subject_id',
         'subject_code',
+        'subject_snapshot',
 
         'related_type',
         'related_id',
 
-        // Extra context
         'meta',
         'ip_address',
         'user_agent',
@@ -36,74 +32,87 @@ class ActivityLog extends Model
 
     protected $casts = [
         'meta' => 'array',
+        'actor_snapshot' => 'array',
+        'subject_snapshot' => 'array',
     ];
 
-    /* =========================================================
-       ===================== QUICK LOGGER ======================
-       ========================================================= */
+    /* ===================== LOGGER ====================== */
 
     public static function log(
         string $event,
-
-        // ACTOR
         ?User $actor = null,
-
-        // SUBJECT
         ?string $subjectType = null,
         ?int $subjectId = null,
         ?string $subjectCode = null,
-
-        // META
         array $meta = [],
-
         ?string $relatedType = null,
         ?int $relatedId = null,
     ): ?self {
         try {
 
-            // ---------- ACTOR INFO ----------
+            /* ---------- ACTOR ---------- */
             $actorType = 'system';
-            $actorId   = null;
+            $actorId = null;
             $actorCode = null;
             $userGroup = 'system';
 
+            $actorSnapshot = null;
+
             if ($actor) {
                 $actorType = $actor->isAdminManagement() ? 'admin' : 'user';
-                $actorId   = $actor->id;
-                $actorCode = substr($actor->user_code, 0, 100);
+
+                $actorId = $actor->id;
+                $actorCode = $actor->user_code;
                 $userGroup = $actorType;
+
+                $actorSnapshot = [
+                    'id' => $actor->id,
+                    'user_code' => $actor->user_code,
+                    'name' => $actor->name,
+                    'email' => $actor->email,
+                    'phone_number' => $actor->phone_number,
+                    'role' => $actor->role,
+                    'user_type' => $actor->user_type,
+                ];
             }
 
+            /* ---------- SUBJECT ---------- */
+            $subjectSnapshot = null;
+
+            if ($subjectType && $subjectId) {
+                $subjectSnapshot = [
+                    'id' => $subjectId,
+                    'code' => $subjectCode,
+                    'type' => $subjectType,
+                ];
+            }
+
+            /* ---------- CREATE LOG ---------- */
             return self::create([
-                'event'        => substr($event, 0, 100),
+                'event' => substr($event, 0, 100),
 
-                // ACTOR
-                'actor_type'   => $actorType,
-                'actor_id'     => $actorId,
-                'actor_code'   => $actorCode,
+                'actor_type' => $actorType,
+                'actor_id' => $actorId,
+                'actor_code' => $actorCode,
+                'actor_snapshot' => $actorSnapshot,
 
-                // SUBJECT
-                'subject_type' => $subjectType ? substr($subjectType, 0, 100) : null,
-                'subject_id'   => $subjectId,
-                'subject_code' => $subjectCode ? substr($subjectCode, 0, 100) : null,
+                'subject_type' => $subjectType,
+                'subject_id' => $subjectId,
+                'subject_code' => $subjectCode,
+                'subject_snapshot' => $subjectSnapshot,
 
-                // RELATED
-                'related_type' => $relatedType ? substr($relatedType, 0, 100) : null,
-                'related_id'   => $relatedId,
+                'related_type' => $relatedType,
+                'related_id' => $relatedId,
 
-                // META
-                'meta'         => $meta ?: null,
+                'meta' => $meta ?: null,
 
-                // REQUEST INFO
-                'ip_address'   => request()?->ip() ? substr(request()->ip(), 0, 45) : null,
-                'user_agent'   => request()?->userAgent()
-                    ? substr(request()->userAgent(), 0, 255)
-                    : null,
+                'ip_address' => request()?->ip(),
+                'user_agent' => request()?->userAgent(),
 
-                'user_group'   => $userGroup,
+                'user_group' => $userGroup,
             ]);
+
         } catch (\Throwable $e) {
-            // NEVER break main app
             Log::error('Activity log failed', [
                 'event' => $event,
                 'error' => $e->getMessage(),
@@ -112,13 +121,11 @@ class ActivityLog extends Model
         }
     }
 
-    /* =========================================================
-       ===================== RELATIONS =========================
-       ========================================================= */
+    /* ===================== RELATIONS ====================== */
 
     public function actor()
     {
-        return $this->belongsTo(User::class, 'actor_id')->safe();
+        return $this->belongsTo(User::class, 'actor_id');
     }
 
     public function subject()
@@ -130,31 +137,4 @@ class ActivityLog extends Model
     {
         return $this->morphTo();
     }
-
-
-    public function toLog(): array
-    {
-        return [
-            'log_type'       => 'activity',
-
-            'subject_type'   => $this->subject_type,
-            'subject_id'     => $this->subject_id,
-
-            'related_type'   => $this->related_type,
-            'related_id'     => $this->related_id,
-
-            'auditable_type' => null,
-            'auditable_id'   => null,
-
-            'action'         => $this->event,
-            'meta'           => $this->meta,
-
-            'created_at'     => $this->created_at,
-            'log'            => $this,
-        ];
-    }
-
-
-
-    //
 }

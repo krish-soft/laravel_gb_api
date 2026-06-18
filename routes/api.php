@@ -86,6 +86,7 @@ use App\Models\Common\Payment\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use App\Http\Controllers\Api\v1\Admin\Common\Log\ActivityLogController;
 
 // Public Payment Route
 Route::post('/webhooks/razorpay/payments', [RazorpayWebhookController::class, 'handle']);
@@ -440,6 +441,11 @@ Route::group([
     ], function () {
 
         // # Admin User Public Routes
+
+        Route::get(
+            '/report/activity-logs',
+            [ActivityLogController::class, 'index']
+        );
 
         Route::post('/signin', [AdminUserLoginApiController::class, 'login']);
 
