@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\v1\Admin\Shipment;
 
 use App\Enum\Common\Shipment\DriverShipmentStatusEnum;
 use App\Enum\Common\Shipment\ShipmentStatusEnum;
+use App\Enum\User\UserRoleEnum;
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
 use App\Models\Common\Shipment\Shipment;
 use App\Models\Delivery\DriverShipment;
@@ -36,14 +37,17 @@ class DriverShipmentAdminApiController extends ApiResponseWithAdminAuthControlle
 
         $drivers = DriverVehicle::with([
             'driver.depots',
+            'driver.driverLocation',
         ])
             ->active()
 
-            ->whereHas('driver.depots', function ($q) use ($depotsIds) {
-                $q->whereIn('depot_id', $depotsIds);
-            })
+            // ->whereHas('driver.depots', function ($q) use ($depotsIds) {
+            //     $q->whereIn('depot_id', $depotsIds);
+            // })
             ->whereHas('driver', function ($q) {
-                $q->where('is_available_for_delivery', true);
+                $q->where('role', UserRoleEnum::DELIVERY->value)
+                    ->where('is_active', true)
+                    ->where('is_available_for_delivery', true);
             })
             ->get();
 
@@ -67,6 +71,7 @@ class DriverShipmentAdminApiController extends ApiResponseWithAdminAuthControlle
 
         $query = DriverShipment::with([
             'driver',
+            'driver.driverLocation',
             'driverVehicle',
             'shipment.shipmentPackages',
             'assignedBy',
@@ -118,6 +123,11 @@ class DriverShipmentAdminApiController extends ApiResponseWithAdminAuthControlle
 
         $vehicle = DriverVehicle::where('id', $request->driver_vehicle_id)
             ->where('is_available_for_delivery', true)
+            ->whereHas('driver', function ($q) {
+                $q->where('role', UserRoleEnum::DELIVERY->value)
+                    ->where('is_active', true)
+                    ->where('is_available_for_delivery', true);
+            })
             ->firstOrFail();
 
         $shipment = Shipment::findOrFail($request->shipment_id);
@@ -162,6 +172,11 @@ class DriverShipmentAdminApiController extends ApiResponseWithAdminAuthControlle
 
         $vehicle = DriverVehicle::where('id', $request->driver_vehicle_id)
             ->where('is_available_for_delivery', true)
+            ->whereHas('driver', function ($q) {
+                $q->where('role', UserRoleEnum::DELIVERY->value)
+                    ->where('is_active', true)
+                    ->where('is_available_for_delivery', true);
+            })
             ->firstOrFail();
 
         if ($driverShipment->accepted_at || $vehicle->driver_id === $driverShipment->driver_id) {
