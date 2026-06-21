@@ -7,6 +7,7 @@ use App\Enum\Accounting\PlatformAccountCodeEnum;
 use App\Http\Controllers\ApiResponseWithAdminAuthController;
 use App\Http\Controllers\Controller;
 use App\Models\Common\Accounting\Account;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -341,10 +342,18 @@ class AccountAdminApiController extends ApiResponseWithAdminAuthController
         $request->validate([
             'accnt_code' => 'nullable|string',
             'owner_id'   => 'nullable|integer',
+            'query' => 'nullable|string',
+            'owner_type' => 'nullable|string|in:all,buyer,seller,delivery',
+            'scope' => 'nullable|string|in:all,collect,pay,negative,positive,zero',
+            'is_pdf_export' => 'nullable|boolean',
+            'fetch_all' => 'nullable|boolean',
         ]);
 
         $accntCode = $request->input('accnt_code');
         $ownerId   = $request->input('owner_id');
+        $queryText = trim((string) $request->input('query', ''));
+        $ownerType = $request->input('owner_type', 'all');
+        $scope = $request->input('scope', 'all');
 
         $accntQuery = Account::with('user:id,name,user_code,nickname')
             ->whereNotIn('accnt_code', PlatformAccountCodeEnum::casesAsValues())
@@ -358,7 +367,47 @@ class AccountAdminApiController extends ApiResponseWithAdminAuthController
             $accntQuery->where('owner_id', $ownerId);
         }
 
-        $userAccounts = $accntQuery->limit(100)->get();
+        if ($ownerType !== 'all') {
+            $accntQuery->where('owner_type', $ownerType);
+        }
+
+        if (in_array($scope, ['collect', 'negative'], true)) {
+            $accntQuery->whereRaw('CAST(COALESCE(available_balance, 0) AS DECIMAL(20,4)) <= -0.005');
+        } elseif (in_array($scope, ['pay', 'positive'], true)) {
+            $accntQuery->whereRaw('CAST(COALESCE(available_balance, 0) AS DECIMAL(20,4)) >= 0.005');
+        } elseif ($scope === 'zero') {
+            $accntQuery->whereRaw('ABS(CAST(COALESCE(available_balance, 0) AS DECIMAL(20,4))) < 0.005');
+        }
+
+        if ($scope === 'all') {
+            $accntQuery->reorder()
+                ->orderByRaw('ABS(CAST(COALESCE(available_balance, 0) AS DECIMAL(20,4))) ASC')
+                ->orderBy('id', 'asc');
+        }
+
+        if ($queryText !== '') {
+            $accntQuery->where(function ($q) use ($queryText) {
+                $q->where('accnt_code', 'like', '%'.$queryText.'%')
+                    ->orWhere('name', 'like', '%'.$queryText.'%')
+                    ->orWhere('owner_type', 'like', '%'.$queryText.'%')
+                    ->orWhereHas('user', function ($uq) use ($queryText) {
+                        $uq->where('name', 'like', '%'.$queryText.'%')
+                            ->orWhere('user_code', 'like', '%'.$queryText.'%')
+                            ->orWhere('nickname', 'like', '%'.$queryText.'%');
+                    });
+            });
+        }
+
+        $userAccounts = ($request->boolean('is_pdf_export') || $request->boolean('fetch_all'))
+            ? $accntQuery->get()
+            : $accntQuery->limit(100)->get();
+
+        if ($request->boolean('is_pdf_export')) {
+            return $this->successResponse(
+                __('messages.success_messages.success_get'),
+                $this->pdf($userAccounts)
+            );
+        }
 
         $platformAccounts = Account::oldest()->with('user:id,name,user_code,nickname')
             ->whereIn('accnt_code', PlatformAccountCodeEnum::casesAsValues())
@@ -370,6 +419,16 @@ class AccountAdminApiController extends ApiResponseWithAdminAuthController
         ];
 
         return $this->successResponse(__('messages.success_messages.success_get'), $accounts);
+    }
+
+    protected function pdf($accounts)
+    {
+        $pdf = Pdf::loadView('pdf.reports.accounting.account_balance_report', [
+            'generatedAt' => now(),
+            'accounts' => $accounts,
+        ]);
+
+        return storeFileWithSignedUrl($pdf->output());
     }
 
     /**
